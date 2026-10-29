@@ -222,6 +222,7 @@ function applyPlaceUi(){
     $("trip-from").value="";$("trip-to").value="";$("trip-from").placeholder=fav?"z. B. Düsseldorf-Heerdt":"Startbahnhof oder Adresse";$("trip-to").placeholder="Zielbahnhof oder Adresse";
     if(!fav)setKpi("k-bahn","Suche<small> Bahn</small>","Verbindung suchen · Abfahrten vor Ort","info");}
   $("app-title").textContent="Lagebild "+C.town;
+  $("wx-h").innerHTML="Wetter <strong>"+esc(C.name)+"</strong>";
   if(typeof route==="function")route();
   document.title="Lagebild "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
@@ -614,7 +615,8 @@ async function loadEinsaetze(){
   const card=$("einsaetze-card");card.hidden=C.key!=="datteln";if(card.hidden)return;
   try{const d=await getData("einsaetze-kreis-re.json");const all=d.data.rows||[];
     const here=all.filter(x=>/datteln/i.test(x.ort)),other=all.filter(x=>!/datteln/i.test(x.ort));
-    const tbl=(rows)=>'<div class="tbl-wrap"><table><thead><tr><th>Zeit</th><th>Ort</th><th>Straße</th><th>Einsatzstichwort</th></tr></thead><tbody>'+rows.map(x=>'<tr><td><b>'+esc(x.time.slice(0,5))+'</b> <span class="muted small">'+esc(x.date.slice(0,6))+'</span></td><td>'+esc(x.ort)+'</td><td class="wrap-txt">'+esc(x.strasse)+'</td><td class="wrap-txt">'+(x.laufend?'<span class="pill p-bad"><i></i>läuft</span> ':'')+'<b>'+esc(x.stichwort)+'</b></td></tr>').join("")+'</tbody></table></div>';
+    const tbl=(rows)=>'<div class="ein-list">'+rows.map(x=>'<div class="ein'+(x.laufend?" run":"")+'"><div class="z"><b>'+esc(x.time.slice(0,5))+'</b><div class="muted small">'+esc(x.date.slice(0,6))+'</div></div><div class="s">'+esc(x.stichwort)+'</div>'+
+      (x.laufend?'<span class="pill p-bad"><i></i>läuft</span>':'<span class="pill p-ok"><i></i>beendet</span>')+'<div class="o">'+esc(x.ort)+(x.strasse?' · '+esc(x.strasse):'')+'</div></div>').join("")+'</div>';
     const running=here.filter(x=>x.laufend).length;
     setKpi("k-ein",String(here.length)+"<small> in Datteln</small>",here[0]?here[0].stichwort+" · "+here[0].date.slice(0,6):"keine Einsätze in Datteln",running?"bad":here.length?"warn":"ok");
     $("einsaetze").innerHTML='<div class="facts">'+fact(String(here.length),"Einsätze Datteln")+fact(String(running),"laufend in Datteln")+fact(String(all.length),"Einsätze im Kreis")+fact(esc(d.data.updated||"–"),"Stand Leitstelle")+'</div>'+
