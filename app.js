@@ -45,11 +45,10 @@ const SRC={
   pegel:{name:"Wasserstand",prov:"WSV – PEGELONLINE",url:"https://pegelonline.wsv.de/webservice/dokuRestapi",ep:"pegelonline.wsv.de/webservices/rest-api/v2"},
   ab:{name:"Autobahn: Staus, Sperrungen, Baustellen, Webcams, E-Laden",prov:"Autobahn GmbH des Bundes",url:"https://autobahn.api.bund.dev/",ep:"verkehr.autobahn.de/o/autobahn"},
   fuel:{name:"Spritpreise",prov:"Tankerkönig (MTS-K)",url:"https://creativecommons.tankerkoenig.de/",ep:"creativecommons.tankerkoenig.de/json/list.php"},
-  efa:{name:"Abfahrten Nahverkehr (VRR)",prov:"VRR – EFA",url:"https://www.vrr.de/de/fahrplan/",ep:"efa.vrr.de (über Datensammler)"},
-  db:{name:"Abfahrten Bahn & Bus",prov:"db.transport.rest (DB-Daten)",url:"https://v6.db.transport.rest/",ep:"v6.db.transport.rest (über Datensammler)"},
+  efa:{name:"Rheinbahn & Bus vor Ort",prov:"Rheinbahn / Fahrplanauskunft",url:"https://www.rheinbahn.de/",ep:"Fahrplanauskunft (über Datensammler)"},
   bike:{name:"Leihräder",prov:"nextbike",url:"https://www.nextbike.de/",ep:"maps.nextbike.net/maps/nextbike-live.json"},
   vt:{name:"Stadtverkehr & Parkhäuser live",prov:"Verkehrszentrale Düsseldorf",url:"https://vtmanager.duesseldorf.de/info/",ep:"vtmanager.duesseldorf.de/geoserverwfs"},
-  trips:{name:"Bahn-Verbindungen",prov:"VRR – EFA (inkl. DB)",url:"https://www.vrr.de/de/fahrplanauskunft/",ep:"efa.vrr.de XML_TRIP_REQUEST2 (über Datensammler)"},
+  trips:{name:"Deutsche Bahn Düsseldorf ⇄ Recklinghausen",prov:"Deutsche Bahn (IRIS) & Fahrplanauskunft",url:"https://www.bahn.de/",ep:"über Datensammler"},
   einsaetze:{name:"Feuerwehreinsätze Kreis Recklinghausen",prov:"Kreisleitstelle Recklinghausen",url:"https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp",ep:"kreis-re.de (über Datensammler)"},
   blaulicht:{name:"Polizei & Feuerwehr",prov:"Presseportal Blaulicht",url:"https://www.presseportal.de/blaulicht/",ep:"presseportal.de/rss (über Datensammler)"},
   park:{name:"P+R, Behindertenparkplätze, AED, WC, Radstationen",prov:"Open Data Düsseldorf",url:"https://opendata.duesseldorf.de/",ep:"opendata.duesseldorf.de (über Datensammler)"},
@@ -881,11 +880,12 @@ async function loadFuel(){
 
 // ================= ÖPNV =================
 async function loadEFA(){
-  if(!C.efaDefault){setStatus("efa",true,"nicht im VRR-Gebiet");return;}
+  if(!C.efaDefault){setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   const stop=STOPS[C.key]||C.efaDefault;
-  $("efa-title").textContent="Abfahrten "+stop.replace(/^Düsseldorf[, ]*/,"");
+  $("efa-title").textContent=C.isDus?"Rheinbahn · "+stop.replace(/^Düsseldorf[, ]*/,""):"Abfahrten "+stop;
+  $("efa-src").textContent=C.isDus?"Bus, U- und Straßenbahn · Echtzeit":"Bus & Bahn vor Ort · Echtzeit";
   if(stop!==C.efaDefault||!FAVKEYS.includes(C.key)){
-    $("efa").innerHTML=stateBox("Für „"+stop+"“ sind noch keine Abfahrten hinterlegt – sag Claude Bescheid, dann wird die Haltestelle im Datensammler ergänzt.",link("https://www.vrr.de/de/fahrplanauskunft/","VRR-Auskunft"));return;}
+    $("efa").innerHTML=stateBox("Für „"+stop+"“ sind noch keine Abfahrten hinterlegt – sag Claude Bescheid, dann wird die Haltestelle im Datensammler ergänzt.",link(C.isDus?"https://www.rheinbahn.de/":"https://www.bahn.de/",C.isDus?"Rheinbahn":"bahn.de"));return;}
   try{const d=await getData("efa-"+C.key+".json");const now=Date.now()-60e3;
     const rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now).slice(0,14);
     if(!rows.length){$("efa").innerHTML=stateBox("Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
@@ -894,7 +894,7 @@ async function loadEFA(){
     if(false){const x=rows[0];setKpi("k-oepnv",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>",esc(d.data.stop.replace(/^Düsseldorf,?\s*/,""))+" → "+esc(x.dir),"info");}
     $("efa").innerHTML='<div class="muted small">'+esc(d.data.stop)+' · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
     setStatus("efa",true,"Stand "+dataAge(d));
-  }catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link("https://www.vrr.de/de/fahrplanauskunft/","VRR-Auskunft"));}
+  }catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link(C.isDus?"https://www.rheinbahn.de/":"https://www.bahn.de/",C.isDus?"Rheinbahn":"bahn.de"));}
 }
 function depTable(rows){
   let r='<table><thead><tr><th>Zeit</th><th>Linie</th><th>Richtung</th><th class="num">Gleis/Steig</th><th class="num">+min</th></tr></thead><tbody>';
@@ -1031,7 +1031,7 @@ function renderSources(){
 let busy=false,lastSlow=0,slowKey="";
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
-  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadDep(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
+  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
   if(C.isDus)tasks.push(loadVT(),loadGarages());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){

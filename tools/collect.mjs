@@ -348,14 +348,6 @@ for (const [k, p] of Object.entries(PLACES)) {
   tasks.push(job("nina-" + k + ".json", () => ninaDashboard(p)));
   tasks.push(job("uba-" + k + ".json", () => uba(p)));
   if (p.efa) tasks.push(job("efa-" + k + ".json", async () => { const r = await efa(p.efa); console.log("::notice::Abfahrten " + k + ": " + r.stop + " – " + r.rows.length + " Fahrten, z. B. " + r.rows.slice(0, 3).map(x => x.line + " " + x.dir).join(" | ")); return r; }));
-  tasks.push(job("db-" + k + ".json", async () => {
-    try { return await dbDeps(p); }
-    catch (e) {
-      if (k !== "dus") throw e;
-      const r = await efa("Düsseldorf Hbf"); // Ersatz: VRR-Auskunft, nur Züge
-      return { stop: "Düsseldorf Hbf", dist: null, source: "VRR", rows: r.rows.filter(x => /^(ICE|IC|EC|ECE|RE|RB|S|NJ|FLX|RRX)\s?\d/i.test(x.line)).map(x => ({ planned: x.planned, delay: x.est ? Math.round((new Date(x.est) - new Date(x.planned)) / 6e4) : null, line: x.line, dir: x.dir, plat: x.plat, cancelled: x.cancelled })) };
-    }
-  }));
 }
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
