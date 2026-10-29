@@ -809,7 +809,7 @@ async function loadDep(){
     if(!rows.length){$("dep").innerHTML=stateBox("Keine weiteren Abfahrten im abgerufenen Zeitraum.");setStatus("db",true);return;}
     $("dep").innerHTML='<div class="muted small">'+(d.data.dist!=null?"nächste Haltestelle, "+fmt(d.data.dist)+" m entfernt · ":"")+'Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
     setStatus("db",true,"Stand "+dataAge(d));
-  }catch(e){setStatus("db",false,errText(e));$("dep").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link("https://www.bahn.de/","bahn.de"));}
+  }catch(e){const m=/404/.test(errText(e))?"Bahn-Schnittstelle derzeit nicht erreichbar":errText(e);setStatus("db",false,m);$("dep").innerHTML=stateBox("Bahn-Abfahrten nicht verfügbar – "+m+". Bus und Bahn im VRR stehen links.",link("https://www.bahn.de/","bahn.de"));}
 }
 async function loadBike(){
   try{
