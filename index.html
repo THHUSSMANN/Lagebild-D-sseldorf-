@@ -237,6 +237,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div role="button" tabindex="0" class="kpi tile" data-view="bezirke" id="k-bez" data-dus><div class="lbl">Stadtbezirke</div><div class="val">–</div><div class="note">Wetter je Bezirk</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="rhein" id="k-rhein"><div class="lbl" id="k-rhein-lbl">Pegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="verkehr" id="k-verk"><div class="lbl">Verkehr im Detail</div><div class="val">–</div><div class="note">Baustellen, Webcams, Tanken</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="bahn" id="k-bahn"><div class="lbl">Bahn RE ⇄ D</div><div class="val">–</div><div class="note">Recklinghausen Hbf ⇄ Düsseldorf Hbf</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="oepnv" id="k-oepnv"><div class="lbl">ÖPNV &amp; Rad</div><div class="val">–</div><div class="note">Abfahrten</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="parken" id="k-park" data-dus><div class="lbl">Parken &amp; Service</div><div class="val">–</div><div class="note">freie Plätze in der Nähe</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="alltag" id="k-strom"><div class="lbl">Kalender &amp; Nachrichten</div><div class="val">–</div><div class="note">Feiertage, Ferien, Strompreis</div></div>
@@ -373,6 +374,19 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 </div>
 
+<div class="view" id="v-bahn" data-view="bahn" hidden>
+<section id="bahn"><div class="sec-title"><h2>Bahn-Verbindungen</h2></div></section>
+  <section class="card" id="trips-card">
+    <div class="card-head"><h2>Bahn-Verbindungen</h2><span class="src">VRR-Fahrplanauskunft mit DB-Fernverkehr · Echtzeit</span></div>
+    <div id="trips"><div class="state">wird geladen …</div></div>
+    <form id="trip-form" class="settings" style="margin-top:6px">
+      <div class="field"><label for="trip-from">Von</label><input id="trip-from" type="text" autocomplete="off" placeholder="z. B. Düsseldorf-Heerdt"></div>
+      <div class="field"><label for="trip-to">Nach</label><input id="trip-to" type="text" autocomplete="off" placeholder="z. B. Köln Hbf"></div>
+      <div class="field"><label>&nbsp;</label><div class="row" style="gap:8px"><button type="submit" id="trip-db">Bei bahn.de suchen</button><button type="button" id="trip-gm">Google Maps</button></div></div>
+    </form>
+  </section>
+</div>
+
 <div class="view" id="v-oepnv" data-view="oepnv" hidden>
 <section id="oepnv"><div class="sec-title"><h2>ÖPNV &amp; Rad</h2></div></section>
 <div class="grid">
@@ -383,15 +397,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <section class="card">
     <div class="card-head"><h2 id="dep-title">Düsseldorf Hbf · Bahn</h2><span class="src">DB-Fahrplandaten (db.transport.rest)</span></div>
     <div id="dep"><div class="state">Abfahrten werden geladen …</div></div>
-  </section>
-  <section class="card wide" id="trips-card">
-    <div class="card-head"><h2>Bahn-Verbindungen</h2><span class="src">VRR-Fahrplanauskunft mit DB-Fernverkehr · Echtzeit</span></div>
-    <div id="trips"><div class="state">wird geladen …</div></div>
-    <form id="trip-form" class="settings" style="margin-top:6px">
-      <div class="field"><label for="trip-from">Von</label><input id="trip-from" type="text" autocomplete="off" placeholder="z. B. Düsseldorf-Heerdt"></div>
-      <div class="field"><label for="trip-to">Nach</label><input id="trip-to" type="text" autocomplete="off" placeholder="z. B. Köln Hbf"></div>
-      <div class="field"><label>&nbsp;</label><div class="row" style="gap:8px"><button type="submit" id="trip-db">Bei bahn.de suchen</button><button type="button" id="trip-gm">Google Maps</button></div></div>
-    </form>
   </section>
   <section class="card">
     <div class="card-head"><h2>Leihräder in der Nähe</h2><span class="src">nextbike</span></div>
@@ -503,6 +508,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=20"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>

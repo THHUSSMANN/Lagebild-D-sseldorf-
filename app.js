@@ -215,6 +215,7 @@ function applyPlaceUi(){
   $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
   $("k-ein").hidden=C.key!=="datteln";
+  $("k-bahn").hidden=!(C.isDus||C.key==="datteln");
   $("app-title").textContent="Lagebild "+C.town;
   if(typeof route==="function")route();
   document.title="Lagebild "+C.town;
@@ -628,6 +629,11 @@ async function loadTrips(){
     const t2=x=>x?hhmm(x):"–";
     const del=(p,e)=>{if(!p||!e)return"";const m=Math.round((new Date(e)-new Date(p))/6e4);return m>0?' <span style="color:var(--bad);font-weight:600">+'+m+'</span>':"";};
     const now=Date.now()-60e3;
+    {const first=k=>{const t=list.find(x=>x.key===k);const j=t&&(t.journeys||[]).find(j=>new Date(j.depEst||j.dep).getTime()>=now);return j;};
+      const k1=C.isDus?"dus-re":"re-dus",j=first(k1);
+      if(j){const m=j.depEst&&j.dep?Math.round((new Date(j.depEst)-new Date(j.dep))/6e4):0;
+        setKpi("k-bahn",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",(C.isDus?"nach Recklinghausen":"nach Düsseldorf")+" · an "+hhmm(j.arrEst||j.arr)+" · "+j.changes+" Umst.",m>=10?"warn":"info");}
+      else setKpi("k-bahn","–","keine Fahrt im abgerufenen Zeitraum","info");}
     box.innerHTML=list.map(t=>{
       const js=(t.journeys||[]).filter(j=>new Date(j.depEst||j.dep).getTime()>=now);
       const head='<div class="sublbl" style="margin-top:6px">'+esc(t.from)+' → '+esc(t.to)+'</div>';
