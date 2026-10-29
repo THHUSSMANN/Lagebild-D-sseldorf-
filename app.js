@@ -193,6 +193,23 @@ function buildSelect(){
   selEl.value=sel;if(selEl.value!==sel){sel="dus-4";selEl.value=sel;}
 }
 buildSelect();
+// Rot blinkender Hinweis bei aktiven Warnungen
+function setAlarm(n,title){document.body.classList.toggle("alarm",n>0);const b=$("alarmbar");b.hidden=!n;
+  if(n)b.textContent="⚠ "+(n===1?"1 aktive Warnung":n+" aktive Warnungen")+" für "+C.town+": "+(title||"")+" – antippen";}
+// Radio
+let RADIO=null;
+const RADIO_SITE={wdr2:"https://www.ardsounds.de/livestream/wdr-2",wdr4:"https://www.ardsounds.de/livestream/wdr-4",antenne:"https://www.antenneduesseldorf.de/"};
+(async()=>{try{RADIO=(await getData("radio.json")).data;}catch(e){}})();
+$("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");if(!b)return;const a=$("radio-audio"),k=b.dataset.st;
+  const all=document.querySelectorAll("#radio .rbtn");
+  if(b.classList.contains("on")||b.classList.contains("load")){a.pause();a.removeAttribute("src");a.load();all.forEach(x=>x.classList.remove("on","load"));return;}
+  if(!RADIO){try{RADIO=(await getData("radio.json")).data;}catch(err){}}
+  const url=RADIO&&RADIO[k]&&RADIO[k].url;
+  if(!url){window.open(RADIO_SITE[k],"_blank","noopener");return;}
+  all.forEach(x=>x.classList.remove("on","load"));b.classList.add("load");
+  a.src=url;a.play().then(()=>{b.classList.remove("load");b.classList.add("on");}).catch(()=>{b.classList.remove("load");window.open(RADIO_SITE[k],"_blank","noopener");});
+});
+$("radio-audio").addEventListener("error",()=>document.querySelectorAll("#radio .rbtn").forEach(x=>x.classList.remove("on","load")));
 // Schnellwahl der Lieblingsstädte im Kopf
 function buildFavs(){
   const dusSub=C.isDus?(C.short||""):"Oberkassel / Heerdt";
@@ -221,6 +238,7 @@ function clearPlaceViews(){
 }
 function applyPlaceUi(){
   buildFavs();
+  $("gmaps-btn").href="https://www.google.com/maps/@"+C.center.lat+","+C.center.lon+",13z/data=!5m1!1e1";
   ROUTES_TXT=routesFor(C.key);ROUTES=parseRoutes(ROUTES_TXT);$("routes").value=ROUTES_TXT;
   $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
@@ -454,7 +472,7 @@ async function loadAlerts(){
   const box=$("alerts");
   if(!okD&&!okN){box.innerHTML=stateBox("Warnungen konnten nicht geladen werden. Bitte direkt prüfen:",link("https://warnung.bund.de/meldungen","NINA")+" · "+link("https://www.dwd.de/DE/wetter/warnungen_gemeinden/warnWetter_node.html","DWD"));setKpi("k-warn","?","nicht geladen","warn");return;}
   const nN=out.filter(a=>a.nina).length;
-  if(!out.length){box.innerHTML='<div class="state good">Keine aktiven NINA- oder DWD-Warnungen für '+esc(C.town)+'.'+((okD&&okN)?"":" ("+(!okN?"NINA":"DWD")+" nicht erreichbar)")+'</div>';setKpi("k-warn","0","keine aktiven Warnungen","ok");return;}
+  if(!out.length){box.innerHTML='<div class="state good">Keine aktiven NINA- oder DWD-Warnungen für '+esc(C.town)+'.'+((okD&&okN)?"":" ("+(!okN?"NINA":"DWD")+" nicht erreichbar)")+'</div>';setKpi("k-warn","0","keine aktiven Warnungen","ok");setAlarm(0);return;}
   const sc=s=>{s=String(s).toLowerCase();return s==="extreme"?"crit":s==="severe"?"bad":s==="moderate"?"warn":"info";};
   const sevDe={extreme:"extrem",severe:"Unwetter / schwer",moderate:"markant",minor:"Hinweis"};
   box.innerHTML=(okN?'':'<div class="state">NINA nicht erreichbar – nur DWD-Warnungen. '+link("https://warnung.bund.de/meldungen","NINA öffnen")+'</div>')+
@@ -462,6 +480,7 @@ async function loadAlerts(){
     (a.area?'<div class="meta">Gebiet: '+esc(a.area)+'</div>':'')+(a.text?'<p>'+esc(a.text)+'</p>':'')+(a.instr?'<details><summary>Handlungsempfehlung</summary><p>'+esc(a.instr)+'</p></details>':'')+
     (a.id?'<div class="meta">'+link("https://warnung.bund.de/meldungen/"+encodeURIComponent(a.id),"Meldung mit Handlungsempfehlungen öffnen")+'</div>':'')+
     '<div class="meta">'+esc(a.src)+(a.sev?' · '+esc(sevDe[String(a.sev).toLowerCase()]||a.sev):'')+(a.from?' · ab '+dateTime(a.from):'')+(a.to?' bis '+dateTime(a.to):'')+'</div></div>').join("");
+  setAlarm(out.length,out[0].title);
   const top=sc(out[0].sev);setKpi("k-warn",String(out.length),(nN?nN+" × NINA · ":"")+out[0].title,top==="info"?"warn":top);
 }
 
