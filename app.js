@@ -193,7 +193,7 @@ function buildSelect(){
 }
 buildSelect();
 selEl.addEventListener("change",()=>{
-  if(selEl.value==="__add"){selEl.value=sel;location.hash="#einstellungen";setTimeout(()=>$("place-q").focus(),300);return;}
+  if(selEl.value==="__add"){selEl.value=sel;location.hash="einstellungen";setTimeout(()=>$("place-q").focus(),300);return;}
   choose(selEl.value);
 });
 function choose(v,scroll){
@@ -212,7 +212,10 @@ function clearPlaceViews(){
 function applyPlaceUi(){
   ROUTES_TXT=routesFor(C.key);ROUTES=parseRoutes(ROUTES_TXT);$("routes").value=ROUTES_TXT;
   $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
-  document.querySelectorAll("[data-dus]").forEach(el=>el.hidden=!C.isDus);
+  document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
+  $("k-ein").hidden=C.key!=="datteln";
+  $("app-title").textContent="Lagebild "+C.town;
+  if(typeof route==="function")route();
   document.title="Lagebild "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
   $("gmaps").href="https://www.google.com/maps/@"+C.center.lat+","+C.center.lon+","+(C.isDus?12:11)+"z/data=!5m1!1e1";
@@ -292,7 +295,7 @@ function renderWeather(){
   $("wx-place").textContent=C.name+(C.detail?" · "+C.detail:"");
   if(!WX||!WX[C.wxIdx]){if(status.wx&&!status.wx.ok)$("wx-now").innerHTML=stateBox("Wetterdaten nicht verfügbar – "+status.wx.msg);return;}
   const w=WX[C.wxIdx],c=w.current,[txt,ic]=wmo(c.weather_code),day=w.daily;
-  setKpi("k-temp",fmt(c.temperature_2m,1)+"<small> °C</small>","gefühlt "+fmt(c.apparent_temperature,1)+" °C · "+C.short);
+  setKpi("k-temp",icon(ic)+" "+fmt(c.temperature_2m,1)+"<small> °C</small>",txt+" · Böen "+fmt(c.wind_gusts_10m)+" km/h",bft(c.wind_gusts_10m)>=9?"bad":bft(c.wind_gusts_10m)>=7?"warn":"info");
   setKpi("k-wx",icon(ic)+" <span style='font-size:21px'>"+esc(txt)+"</span>","Regenrisiko heute "+fmt(day.precipitation_probability_max[0])+" %");
   const g=c.wind_gusts_10m,bf=bft(g);
   setKpi("k-wind",fmt(c.wind_speed_10m)+"<small> / "+fmt(g)+" km/h</small>","aus "+windDir(c.wind_direction_10m)+" · Böen Bft "+bf,bf>=9?"bad":bf>=7?"warn":"ok");
@@ -391,6 +394,7 @@ function renderDistricts(){
   BEZIRKE.forEach((b,i)=>{r+=row("dus-"+b.id,'<b>'+b.id+'</b> '+esc(b.name),i);
     STADTTEILE.forEach((t,j)=>{if(t.bezirk===b.id)r+=row("dus-"+t.key,'<b>'+b.id+'</b> '+esc(t.name),10+j);});});
   $("districts").innerHTML=r+'</tbody></table>';
+  {const ts=BEZIRKE.map((b,i)=>WX[i]&&WX[i].current.temperature_2m).filter(v=>v!=null);if(ts.length)setKpi("k-bez",fmt(Math.min(...ts))+"–"+fmt(Math.max(...ts))+"<small> °C</small>","Spanne über alle Bezirke");}
   $("districts").querySelectorAll("tr.click").forEach(tr=>{const f=()=>choose(tr.dataset.v,true);tr.addEventListener("click",f);tr.addEventListener("keydown",e=>{if(e.key==="Enter")f();});});
 }
 
@@ -550,6 +554,7 @@ function renderGarages(){
   if(!C.isDus)return;
   if(!GARAGES){$("park-ph").innerHTML=stateBox("Parkhaus-Belegung nicht verfügbar.",link("https://vtmanager.duesseldorf.de/info/?parkquartier#main","Verkehrszentrale"));return;}
   const s=GARAGES.map(p=>({...p,km:distKm(C.lat,C.lon,p.lat,p.lon)})).sort((a,b)=>a.km-b.km).slice(0,8);
+  {const g=s.find(p=>p.status===1&&p.kurzparkermax&&p.kurzparkerbelegt!=null);if(g)setKpi("k-park",fmt(Math.max(0,g.kurzparkermax-g.kurzparkerbelegt))+"<small> frei</small>",(g.bezeichnung||g.name)+" · "+fmt(g.km,1)+" km",(g.kurzparkerbelegt/g.kurzparkermax)>=.95?"bad":"ok");}
   const tr=t=>t>0?"↑":t<0?"↓":"";
   $("park-ph").innerHTML='<div class="list">'+s.map(p=>{const max=p.kurzparkermax,used=p.kurzparkerbelegt,free=(max!=null&&used!=null)?Math.max(0,max-used):null;
     const q=max&&used!=null?used/max:null;const cls=q==null||p.status!==1?"":q>=.95?"bad":q>=.8?"warn":"ok";
@@ -578,6 +583,7 @@ async function loadVT(){
     const item=(x,badge)=>'<div class="li"><span class="tag '+(x.kind==="Sperrung"?"ab":"alt")+'">'+esc(badge||x.kind)+'</span><div class="t">'+esc(x.short||x.name)+'</div><div class="r"></div>'+
       '<div class="d">'+esc(range(x))+(x.text?'<details><summary>Details</summary>'+esc(x.text)+'</details>':'')+'</div></div>';
     const nSp=active.filter(x=>x.kind==="Sperrung").length;
+    setKpi("k-vt",String(nSp)+"<small> Sperrungen</small>",ev.length?ev.length+" Veranstaltung(en) angekündigt":"keine Veranstaltungen",nSp>30?"warn":"info");
     $("vt-sum").innerHTML=fact(String(nSp),"Sperrungen aktiv")+fact(String(active.length-nSp),"Meldungen / Baustellen")+fact(String(ev.length),"Veranstaltungen angekündigt")+fact(String(soon.length),"neu in 7 Tagen");
     $("vt-now").innerHTML=active.length?'<div class="list">'+active.slice(0,15).map(x=>item(x)).join("")+'</div>'+(active.length>15?'<div class="muted small">+ '+(active.length-15)+' weitere</div>':''):'<div class="state good">Keine aktiven Sperrungen.</div>';
     $("vt-events").innerHTML=ev.length?'<div class="list">'+ev.slice(0,8).map(x=>item(x,"Event")).join("")+'</div>':'<div class="state good">Keine angekündigten Veranstaltungen.</div>';
@@ -602,6 +608,7 @@ async function loadEinsaetze(){
     const here=all.filter(x=>/datteln/i.test(x.ort)),other=all.filter(x=>!/datteln/i.test(x.ort));
     const tbl=(rows)=>'<div class="tbl-wrap"><table><thead><tr><th>Zeit</th><th>Ort</th><th>Straße</th><th>Einsatzstichwort</th></tr></thead><tbody>'+rows.map(x=>'<tr><td><b>'+esc(x.time.slice(0,5))+'</b> <span class="muted small">'+esc(x.date.slice(0,6))+'</span></td><td>'+esc(x.ort)+'</td><td class="wrap-txt">'+esc(x.strasse)+'</td><td class="wrap-txt">'+(x.laufend?'<span class="pill p-bad"><i></i>läuft</span> ':'')+'<b>'+esc(x.stichwort)+'</b></td></tr>').join("")+'</tbody></table></div>';
     const running=here.filter(x=>x.laufend).length;
+    setKpi("k-ein",String(here.length)+"<small> in Datteln</small>",here[0]?here[0].stichwort+" · "+here[0].date.slice(0,6):"keine Einsätze in Datteln",running?"bad":here.length?"warn":"ok");
     $("einsaetze").innerHTML='<div class="facts">'+fact(String(here.length),"Einsätze Datteln")+fact(String(running),"laufend in Datteln")+fact(String(all.length),"Einsätze im Kreis")+fact(esc(d.data.updated||"–"),"Stand Leitstelle")+'</div>'+
       '<div class="sublbl">Datteln</div>'+(here.length?tbl(here):'<div class="state good">Keine Einsätze in Datteln im angezeigten Zeitraum.</div>')+
       '<details style="margin-top:8px"><summary>Übrige Einsätze im Kreis Recklinghausen ('+other.length+')</summary>'+tbl(other)+'</details>'+
@@ -614,6 +621,8 @@ async function loadBlaulicht(){
   if(!FAVKEYS.includes(C.key)){$("bl").innerHTML=stateBox("Meldungen sind für Düsseldorf und die Favoriten hinterlegt. Für "+C.town+":",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal "+C.town));return;}
   try{const d=await getData("blaulicht-"+C.key+".json");const list=d.data||[];
     if(!list.length){$("bl").innerHTML='<div class="state good">Keine aktuellen Meldungen.</div>';setStatus("blaulicht",true);return;}
+    const day=list.filter(x=>Date.now()-new Date(x.date)<864e5).length;
+    setKpi("k-bl",String(day)+"<small> heute</small>",list[0]?list[0].title.replace(/^(POL|FW)[-\w ]*:\s*/,"").slice(0,60):"",day?"warn":"info");
     const tag=s=>/feuerwehr|^fw/i.test(s)?["FW","bad"]:/polizei|^pol/i.test(s)?["POL","ab"]:["INFO","alt"];
     $("bl").innerHTML='<div class="list">'+list.slice(0,12).map(x=>{const t=tag(x.source+" "+x.title);
       return '<div class="li"><span class="tag '+(t[1]==="bad"?"":t[1])+'" style="'+(t[1]==="bad"?"background:var(--bad);color:#fff":"")+'">'+t[0]+'</span><a class="t" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener" style="color:var(--fg);text-decoration:none">'+esc(x.title.replace(/^(POL|FW)[-\w ]*:\s*/,""))+'</a>'+
@@ -789,6 +798,7 @@ async function loadAutobahn(){
     (isClosed(i)?'<span class="pill p-bad" style="margin-right:6px"><i></i>Sperrung</span>':'')+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
     (msgs.length>15?'<div class="muted small">+ '+(msgs.length-15)+' weitere</div>':''):'<div class="state good">Keine weiteren Behinderungen im Umkreis.</div>';
   const rw=uniq(got.roadworks).sort((a,b)=>a.km-b.km);
+  setKpi("k-verk",String(rw.length)+"<small> Baustellen</small>",uniq(got.webcam).length+" Webcams · "+uniq(got.electric_charging_station).length+" Ladepunkte","info");
   $("roadworks").innerHTML=rw.length?'<div class="list">'+rw.slice(0,12).map(i=>'<div class="li"><span class="tag ab">'+esc(i.ab)+'</span><div class="t">'+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
     '<div class="muted small">'+rw.length+' Baustellen im Umkreis von '+RADIUS_KM+' km</div>':'<div class="state good">Keine Baustellen im Umkreis.</div>';
   const cams=uniq(got.webcam).filter(c=>c.imageurl).sort((a,b)=>a.km-b.km).slice(0,12);
@@ -825,6 +835,7 @@ async function loadEFA(){
   try{const d=await getData("efa-"+C.key+".json");const now=Date.now()-60e3;
     const rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now).slice(0,14);
     if(!rows.length){$("efa").innerHTML=stateBox("Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
+    {const x=rows[0];setKpi("k-oepnv",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>",esc(d.data.stop.replace(/^Düsseldorf,?\s*/,""))+" → "+esc(x.dir),"info");}
     $("efa").innerHTML='<div class="muted small">'+esc(d.data.stop)+' · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
     setStatus("efa",true,"Stand "+dataAge(d));
   }catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link("https://www.vrr.de/de/fahrplanauskunft/","VRR-Auskunft"));}
@@ -951,6 +962,7 @@ function renderSources(){
     const pill=!st?'<span class="pill"><i></i>ausstehend</span>':st.ok?'<span class="pill p-ok"><i></i>live '+hhmm(st.at)+(st.msg?" · "+esc(st.msg):"")+'</span>':'<span class="pill p-bad"><i></i>'+esc(st.msg)+'</span>';
     r+='<tr><td><b>'+esc(s.name)+'</b></td><td><a href="'+s.url+'" target="_blank" rel="noopener">'+esc(s.prov)+'</a></td><td class="mono">'+esc(s.ep)+'</td><td>'+pill+'</td></tr>';});
   $("sources").innerHTML=r+'</tbody></table>';
+  {const v=Object.values(status),ok=v.filter(x=>x.ok).length;setKpi("k-src",ok+"<small> / "+v.length+" live</small>",v.length-ok?(v.length-ok)+" ohne Daten":"alle Quellen erreichbar",v.length-ok>3?"warn":"ok");}
 }
 
 // ================= Ablauf =================
@@ -974,12 +986,49 @@ let pending=false,lastRun=0;
 function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"});
   $("sub").textContent=new Date().toLocaleDateString("de-DE",{...TZ,weekday:"long",day:"numeric",month:"long",year:"numeric"})+" · KW "+isoWeek(new Date());}
 $("refresh").addEventListener("click",()=>refreshAll(true));
-// Kacheln der Lage-Leiste springen zum passenden Bereich
-const KPI_TARGET={"k-temp":"wetter","k-wx":"wetter","k-wind":"wetter","k-aq":"luft","k-rhein":"rhein","k-warn":"warnungen","k-traffic":"staus","k-strom":"strom"};
-Object.entries(KPI_TARGET).forEach(([id,target])=>{const el=$(id);if(!el)return;
-  el.dataset.go=target;el.setAttribute("role","link");el.tabIndex=0;el.setAttribute("aria-label",el.querySelector(".lbl").textContent+" – zum Bereich springen");
-  const go=()=>{const t=$(target);if(t)t.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});};
-  el.addEventListener("click",go);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});});
+// ================= Übersicht, Ansichten, Anordnen =================
+const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
+function tileAvailable(v){const t=document.querySelector('#tiles .tile[data-view="'+v+'"]');return t&&!t.hidden;}
+function applyTileOrder(){
+  const order=load("tile_order")||TILE_DEFAULT;const box=$("tiles");
+  [...order,...TILE_DEFAULT.filter(v=>!order.includes(v))].forEach(v=>{const t=box.querySelector('.tile[data-view="'+v+'"]');if(t)box.appendChild(t);});
+}
+function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view));buildViewbar();}
+function buildViewbar(){
+  const cur=location.hash.slice(1);
+  $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>'<a href="#'+t.dataset.view+'" class="'+(t.dataset.view===cur?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>').join("");
+}
+function route(){
+  let v=location.hash.slice(1);
+  if(v&&!$("v-"+v))v="";
+  if(v&&!tileAvailable(v))v="";
+  const inView=!!v;
+  $("home").hidden=inView;$("viewbar").hidden=!inView;
+  document.querySelectorAll(".view").forEach(el=>el.hidden=el.dataset.view!==v);
+  buildViewbar();
+  if(inView){window.scrollTo(0,0);if(v==="staus"&&MAP)setTimeout(()=>MAP.invalidateSize(),60);}
+}
+window.addEventListener("hashchange",route);
+let EDITING=false,SORT=null;
+document.querySelectorAll("#tiles .tile").forEach(t=>{
+  const ctl=document.createElement("span");ctl.className="ctl";
+  ctl.innerHTML='<button type="button" data-mv="-1" aria-label="nach vorne">◀</button><button type="button" data-mv="1" aria-label="nach hinten">▶</button>';
+  t.appendChild(ctl);
+  ctl.querySelectorAll("button").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();
+    const list=[...$("tiles").children].filter(x=>!x.hidden);const i=list.indexOf(t),j=i+Number(b.dataset.mv);
+    if(j<0||j>=list.length)return;if(Number(b.dataset.mv)<0)list[j].before(t);else list[j].after(t);saveTileOrder();}));
+  const go=()=>{if(EDITING)return;location.hash=t.dataset.view;};
+  t.addEventListener("click",go);t.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+});
+$("arrange").addEventListener("click",()=>{
+  EDITING=!EDITING;$("tiles").classList.toggle("editing",EDITING);
+  $("arrange").textContent=EDITING?"Fertig":"Anordnen";$("arrange-hint").hidden=!EDITING;$("arrange-reset").hidden=!EDITING;
+  if(window.Sortable&&!SORT)SORT=Sortable.create($("tiles"),{animation:160,delay:180,delayOnTouchOnly:true,filter:"button",preventOnFilter:false,onEnd:saveTileOrder});
+  if(SORT)SORT.option("disabled",!EDITING);
+  if(!EDITING)saveTileOrder();
+});
+$("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});
+applyTileOrder();route();
 applyPlaceUi();renderSources();tick();setInterval(tick,15000);
 
 refreshAll(true);
