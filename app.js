@@ -217,7 +217,11 @@ function applyPlaceUi(){
   $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
   $("k-ein").hidden=C.key!=="datteln";
-  $("k-bahn").dataset.view=(C.isDus||C.key==="datteln")?"bahn":"oepnv";
+  $("k-bahn").dataset.view="bahn";
+  {const fav=C.isDus||C.key==="datteln";GROUPS.mobil[0][1]=fav?"Bahn RE ⇄ D":"Bahn-Verbindung";
+    $("bahn").querySelector("h2").textContent=fav?"Bahn-Verbindungen":"Bahn-Verbindung suchen";
+    $("trip-from").value="";$("trip-to").value="";$("trip-from").placeholder=fav?"z. B. Düsseldorf-Heerdt":"Startbahnhof oder Adresse";$("trip-to").placeholder="Zielbahnhof oder Adresse";
+    if(!fav)setKpi("k-bahn","Suche<small> Bahn</small>","Verbindung suchen · Abfahrten vor Ort","info");}
   $("app-title").textContent="Lagebild "+C.town;
   if(typeof route==="function")route();
   document.title="Lagebild "+C.town;
@@ -633,7 +637,6 @@ function composeTile(id,group,main,cls){
 const TRIP_KEYS={dus:["re-dus","dus-re"],datteln:["re-dus","dus-re"]};
 async function loadTrips(){
   const keys=TRIP_KEYS[C.key]||[];const box=$("trips");
-  $("trip-from").placeholder=C.isDus?"z. B. Düsseldorf-Heerdt":C.town;
   if(!keys.length){box.innerHTML="";box.hidden=true;return;}
   box.hidden=false;
   try{const d=await getData("trips.json");const list=(d.data||[]).filter(t=>keys.includes(t.key));
@@ -659,10 +662,10 @@ async function loadTrips(){
     setStatus("trips",true,"Stand "+dataAge(d));
   }catch(e){setStatus("trips",false,errText(e));box.innerHTML=stateBox("Verbindungen nicht verfügbar – "+errText(e)+".",link("https://www.bahn.de/","bahn.de"));}
 }
-function tripQuery(){const f=$("trip-from").value.trim()||(C.isDus?"Düsseldorf Hbf":C.town),t=$("trip-to").value.trim();return {f,t};}
-$("trip-form").addEventListener("submit",e=>{e.preventDefault();const {f,t}=tripQuery();if(!t){$("trip-to").focus();return;}
+function tripQuery(){const f=$("trip-from").value.trim(),t=$("trip-to").value.trim();return {f,t};}
+$("trip-form").addEventListener("submit",e=>{e.preventDefault();const {f,t}=tripQuery();if(!f){$("trip-from").focus();return;}if(!t){$("trip-to").focus();return;}
   window.open("https://www.bahn.de/buchung/fahrplan/suche#sts=true&so="+encodeURIComponent(f)+"&zo="+encodeURIComponent(t)+"&kl=2&r=13:16:KLASSENLOS:1&hd="+encodeURIComponent(new Date().toISOString().slice(0,19)),"_blank","noopener");});
-$("trip-gm").addEventListener("click",()=>{const {f,t}=tripQuery();if(!t){$("trip-to").focus();return;}
+$("trip-gm").addEventListener("click",()=>{const {f,t}=tripQuery();if(!f){$("trip-from").focus();return;}if(!t){$("trip-to").focus();return;}
   window.open("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(f)+"&destination="+encodeURIComponent(t)+"&travelmode=transit","_blank","noopener");});
 
 async function loadBlaulicht(){
@@ -887,7 +890,7 @@ async function loadEFA(){
     const rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now).slice(0,14);
     if(!rows.length){$("efa").innerHTML=stateBox("Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
     {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^Düsseldorf,?\s*/,""));
-      if($("k-bahn").dataset.view==="oepnv")composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
+      if(!(C.isDus||C.key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
     if(false){const x=rows[0];setKpi("k-oepnv",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>",esc(d.data.stop.replace(/^Düsseldorf,?\s*/,""))+" → "+esc(x.dir),"info");}
     $("efa").innerHTML='<div class="muted small">'+esc(d.data.stop)+' · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
     setStatus("efa",true,"Stand "+dataAge(d));
@@ -1051,7 +1054,7 @@ const GROUPS={verkehr:[["staus","Autobahn & Staus"],["stadtverkehr","Stadtverkeh
 function tileAvailable(v){
   if(["stadtverkehr","parken","bezirke"].includes(v))return C.isDus;
   if(v==="einsaetze")return C.key==="datteln";
-  if(v==="bahn")return C.isDus||C.key==="datteln";
+  if(v==="bahn")return true;
   return !!$("v-"+v);
 }
 const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].some(([x])=>x===v));
