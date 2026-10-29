@@ -102,7 +102,7 @@ function distKm(a,b,c,d){const R=6371,r=Math.PI/180;const x=(c-a)*r,y=(d-b)*r;
 const fact=(v,l)=>'<div class="fact"><b>'+v+'</b><span>'+l+'</span></div>';
 const stateBox=(msg,links)=>'<div class="state">'+esc(msg)+(links?' '+links:'')+'</div>';
 const link=(href,txt)=>'<a href="'+esc(href)+'" target="_blank" rel="noopener">'+esc(txt)+' ↗</a>';
-function setKpi(id,val,note,cls){const el=$(id);if(!el)return;el.className="kpi "+(cls?"s-"+cls:"s-info");
+function setKpi(id,val,note,cls){const el=$(id);if(!el)return;["s-ok","s-warn","s-bad","s-crit","s-info"].forEach(c=>el.classList.remove(c));el.classList.add(cls?"s-"+cls:"s-info");
   el.querySelector(".val").innerHTML=val;el.querySelector(".note").textContent=note||" ";}
 
 function wmo(c){
