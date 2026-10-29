@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lagebild Düsseldorf</title>
+<meta name="description" content="Persönliches Lagebild für Düsseldorf aus offenen Schnittstellen">
+<meta name="theme-color" content="#0b6e8a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lagebild">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Leitstand-Raster – Kopfzeile mit Bereichswahl, Sprungleiste, Lage-Leiste, darunter Fachkacheln im Auto-Grid */
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --panel-2:#f6f8f9; --fg:#14212b; --muted:#5b6a75; --line:#d6dde2;
+  --accent:#0b6e8a; --accent-soft:#d9eef4; --head:#14212b; --head-fg:#ffffff;
+  --ok:#2f8f4e; --warn:#c98a00; --bad:#c2402b; --crit:#7d1f6b;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1519; --panel:#152027; --panel-2:#1a2730; --fg:#e4ecf0; --muted:#93a4ae; --line:#2a3a44;
+  --accent:#4fb6d3; --accent-soft:#163846; --head:#0a1014; --head-fg:#e4ecf0; --ok:#5cc07a; --warn:#e3b13c; --bad:#ef6f5a; --crit:#d77cc3; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1519; --panel:#152027; --panel-2:#1a2730; --fg:#e4ecf0; --muted:#93a4ae; --line:#2a3a44;
+  --accent:#4fb6d3; --accent-soft:#163846; --head:#0a1014; --head-fg:#e4ecf0; --ok:#5cc07a; --warn:#e3b13c; --bad:#ef6f5a; --crit:#d77cc3; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head)}
+.pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1400px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
+h1{font-size:26px;font-weight:700;letter-spacing:.01em}
+h2{font-size:15px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+a{color:var(--accent)}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-size:12px}
+.small{font-size:13px}
+/* Kopf */
+header.top{background:var(--head);color:var(--head-fg);padding-top:max(12px,env(safe-area-inset-top,0px));padding-bottom:12px}
+header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px}
+.brand{display:flex;flex-direction:column;gap:1px;min-width:0}
+.brand .sub{font-size:13px;opacity:.75}
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+select,button,input{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-height:38px}
+header select,header button{background:transparent;color:var(--head-fg);border-color:rgba(255,255,255,.35)}
+header select option{color:#14212b}
+button{cursor:pointer;font-weight:600}
+button:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.clock{font-family:var(--f-display);font-size:24px;font-weight:600}
+nav.jump{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+nav.jump .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+nav.jump .wrap::-webkit-scrollbar{display:none}
+nav.jump a{flex:none;text-decoration:none;color:var(--fg);font-weight:600;font-size:14px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel)}
+nav.jump a:hover{border-color:var(--accent);color:var(--accent)}
+main{padding-block:16px 40px}
+main .wrap{display:flex;flex-direction:column;gap:16px}
+section[id]{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 64px)}
+.sec-title{display:flex;align-items:baseline;gap:10px;margin-top:8px;border-bottom:2px solid var(--fg);padding-bottom:6px}
+.sec-title h2{color:var(--fg);font-size:17px}
+/* Lage-Leiste */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 13px;display:flex;flex-direction:column;gap:3px;border-top:4px solid var(--line);min-width:0}
+.kpi .lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.kpi .val{font-family:var(--f-display);font-size:32px;font-weight:700;line-height:1.05;overflow-wrap:anywhere}
+.kpi .val small{font-size:16px;font-weight:600;color:var(--muted)}
+.kpi .note{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.s-ok{border-top-color:var(--ok)} .s-warn{border-top-color:var(--warn)} .s-bad{border-top-color:var(--bad)} .s-crit{border-top-color:var(--crit)} .s-info{border-top-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card.wide{grid-column:1/-1}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:6px 10px;flex-wrap:wrap}
+.card-head .src{font-size:12.5px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;flex:none}
+.p-ok i{background:var(--ok)} .p-warn i{background:var(--warn)} .p-bad i{background:var(--bad)} .p-crit i{background:var(--crit)}
+.state{font-size:14px;color:var(--muted);padding:10px;border:1px dashed var(--line);border-radius:6px}
+.state.good{border-style:solid;border-color:var(--ok)}
+.row{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center}
+.big{font-family:var(--f-display);font-size:50px;font-weight:700;line-height:1}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:8px 16px}
+.fact{display:flex;flex-direction:column;min-width:0}
+.fact b{font-family:var(--f-display);font-size:19px;font-weight:600;overflow-wrap:anywhere}
+.fact span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sublbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:2px}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right}
+td.wrap-txt{white-space:normal;min-width:180px}
+tr.sel td{background:var(--accent-soft)}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--panel-2)}
+.wicon{width:26px;height:26px;vertical-align:middle;color:var(--accent)}
+.wicon.lg{width:58px;height:58px}
+.alerts{display:flex;flex-direction:column;gap:8px}
+.alert{border-left:5px solid var(--warn);background:var(--panel-2);padding:10px 12px;border-radius:0 6px 6px 0}
+.alert.sev-bad{border-left-color:var(--bad)} .alert.sev-crit{border-left-color:var(--crit)} .alert.sev-info{border-left-color:var(--accent)}
+.alert h3{font-size:17px;font-weight:600}
+.alert p{margin:4px 0 0;font-size:14px}
+.alert .meta{font-size:12.5px;color:var(--muted);margin-top:4px}
+details summary{cursor:pointer;color:var(--accent);font-size:13.5px}
+.list{display:flex;flex-direction:column}
+.li{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;padding:9px 0;border-bottom:1px solid var(--line);align-items:start}
+.li:last-child{border-bottom:0}
+.li .t{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.li .d{grid-column:2/-1;font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
+.li .r{text-align:right;font-weight:600;white-space:nowrap}
+.tag{font-family:var(--f-display);font-weight:700;font-size:15px;background:var(--fg);color:var(--panel);border-radius:4px;padding:1px 7px;align-self:start;white-space:nowrap}
+.tag.ab{background:#1f4e9c;color:#fff}
+.tag.alt{background:var(--accent);color:var(--panel)}
+.cams{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.cam{display:flex;flex-direction:column;gap:3px;text-decoration:none;color:var(--fg);font-size:12.5px}
+.cam img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;background:var(--panel-2);border:1px solid var(--line)}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{fill:var(--muted);font:11px var(--f-body)}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.aq-scale{display:flex;gap:2px;margin-top:4px}
+.aq-scale span{flex:1;height:6px;border-radius:2px;opacity:.35}
+.aq-scale span.on{opacity:1;outline:2px solid var(--fg);outline-offset:1px}
+.pollen{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.pol{display:flex;justify-content:space-between;gap:8px;padding:5px 9px;border-radius:6px;background:var(--panel-2);font-size:13.5px}
+.lvl{display:inline-flex;gap:2px;align-items:center}
+.lvl b{width:7px;height:12px;border-radius:2px;background:var(--line)}
+.lvl b.on{background:var(--warn)} .lvl.hi b.on{background:var(--bad)}
+.news a{font-weight:600;text-decoration:none;color:var(--fg)}
+.news a:hover{color:var(--accent)}
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.field .hint{font-size:12.5px;color:var(--muted)}
+.inline{display:flex;gap:6px}
+.inline input{flex:1;min-width:0}
+footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media (max-width:520px){h1{font-size:22px}.big{font-size:42px}.kpi .val{font-size:26px}.clock{font-size:20px}}
+</style>
+</head>
+<body>
+<header class="top pad">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Lagebild Düsseldorf</h1>
+      <div class="sub" id="sub">Offene Daten für Düsseldorf</div>
+    </div>
+    <div class="ctrl">
+      <label for="bezirk" class="sr-only" style="position:absolute;left:-9999px">Bereich</label>
+      <select id="bezirk" aria-label="Bereich wählen"></select>
+      <button id="refresh" type="button">Aktualisieren</button>
+      <div class="clock" id="clock">--:--</div>
+    </div>
+  </div>
+</header>
+
+<nav class="jump pad" aria-label="Bereiche">
+  <div class="wrap">
+    <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#luft">Luft</a><a href="#bezirke">Bezirke</a><a href="#rhein">Rhein</a>
+    <a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken">Parken</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
+  </div>
+</nav>
+
+<main class="pad">
+<div class="wrap">
+
+<section id="lage" aria-label="Lage auf einen Blick">
+  <div class="strip">
+    <div class="kpi s-info" id="k-temp"><div class="lbl">Temperatur</div><div class="val">–</div><div class="note">wird geladen</div></div>
+    <div class="kpi s-info" id="k-wx"><div class="lbl">Wetterlage</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div class="kpi s-info" id="k-wind"><div class="lbl">Wind / Böen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div class="kpi s-info" id="k-aq"><div class="lbl">Luftqualität</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div class="kpi s-info" id="k-rhein"><div class="lbl">Rheinpegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div class="kpi s-info" id="k-warn"><div class="lbl">Amtliche Warnungen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div class="kpi s-info" id="k-traffic"><div class="lbl">Autobahn 20 km</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div class="kpi s-info" id="k-strom"><div class="lbl">Strom jetzt</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+  </div>
+</section>
+
+<section class="card wide">
+  <div class="card-head"><h2>Warnungen für Düsseldorf</h2><span class="src">DWD-Unwetter · NINA (MoWaS, KATWARN, BIWAPP, Hochwasser, Polizei)</span></div>
+  <div class="alerts" id="alerts"><div class="state">Warnungen werden geladen …</div></div>
+</section>
+
+<section id="wetter"><div class="sec-title"><h2>Wetter</h2><span class="muted small" id="wx-place"></span></div></section>
+<div class="grid">
+  <section class="card">
+    <div class="card-head"><h2>Wetter jetzt</h2><span class="src">Open-Meteo · DWD-Station</span></div>
+    <div id="wx-now"><div class="state">Wetterdaten werden geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Nächste 24 Stunden</h2>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Temperatur</span><span><i style="background:var(--accent);opacity:.3"></i>Regenrisiko</span></div></div>
+    <div id="wx-24"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card wide">
+    <div class="card-head"><h2>7-Tage-Vorhersage</h2></div>
+    <div class="tbl-wrap" id="wx-7"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+
+<section id="luft"><div class="sec-title"><h2>Luft &amp; Pollen</h2></div></section>
+<div class="grid">
+  <section class="card">
+    <div class="card-head"><h2>Luftqualität (Modell)</h2><span class="src">Copernicus CAMS · EAQI</span></div>
+    <div id="air"><div class="state">Luftdaten werden geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Messstationen</h2><span class="src">Umweltbundesamt / LANUV</span></div>
+    <div id="uba"><div class="state">Messwerte werden geladen …</div></div>
+  </section>
+  <section class="card wide">
+    <div class="card-head"><h2>Pollenflug</h2><span class="src">DWD-Gefahrenindex Rhein.-Westf. Tiefland</span></div>
+    <div id="pollen"><div class="state">Pollendaten werden geladen …</div></div>
+  </section>
+</div>
+
+<section id="bezirke" class="card wide">
+  <div class="card-head"><h2>Stadtbezirke im Vergleich</h2><span class="src">Zeile antippen, um den Bereich zu wechseln</span></div>
+  <div class="tbl-wrap" id="districts"><div class="state">wird geladen …</div></div>
+</section>
+
+<section id="rhein"><div class="sec-title"><h2>Rhein &amp; Grundwasser</h2></div></section>
+<div class="grid">
+  <section class="card">
+    <div class="card-head"><h2>Pegel Düsseldorf</h2><span class="src">WSV PEGELONLINE · Rhein-km 744,2</span></div>
+    <div id="pegel"><div class="state">Pegeldaten werden geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Grundwasser-Messstellen</h2><span class="src">Umweltamt Düsseldorf · Open Data</span></div>
+    <div id="gw"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+
+<section id="verkehr"><div class="sec-title"><h2>Verkehr</h2><span class="muted small">A3 · A44 · A46 · A52 · A57 · A59, Umkreis 20 km</span></div></section>
+<div class="grid">
+  <section class="card">
+    <div class="card-head"><h2>Meldungen &amp; Sperrungen</h2><span class="src">Autobahn GmbH</span></div>
+    <div id="traffic"><div class="state">Verkehrsmeldungen werden geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Baustellen</h2><span class="src">Autobahn GmbH</span></div>
+    <div id="roadworks"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card wide">
+    <div class="card-head"><h2>Webcams</h2><span class="src">Autobahn GmbH · Bild antippen für Live-Ansicht</span></div>
+    <div id="webcams"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Tankstellen in der Nähe</h2><span class="src">Tankerkönig (MTS-K)</span></div>
+    <div id="fuel"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>E-Laden an der Autobahn</h2><span class="src">Autobahn GmbH</span></div>
+    <div id="charging"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+
+<section id="oepnv"><div class="sec-title"><h2>ÖPNV &amp; Rad</h2></div></section>
+<div class="grid">
+  <section class="card">
+    <div class="card-head"><h2 id="efa-title">Abfahrten</h2><span class="src">VRR-Fahrplanauskunft (EFA) · Rheinbahn u. a.</span></div>
+    <div id="efa"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Düsseldorf Hbf · Bahn</h2><span class="src">db.transport.rest</span></div>
+    <div id="dep"><div class="state">Abfahrten werden geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Leihräder in der Nähe</h2><span class="src">nextbike</span></div>
+    <div id="bike"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+
+<section id="parken"><div class="sec-title"><h2>Parken</h2><span class="muted small">Standorte aus Open Data Düsseldorf, sortiert nach Nähe zum gewählten Bezirk</span></div></section>
+<div class="grid">
+  <section class="card">
+    <div class="card-head"><h2>Parkhäuser</h2><a class="src" href="https://vtmanager.duesseldorf.de/info/?parkquartier#main" target="_blank" rel="noopener">Live-Belegung öffnen ↗</a></div>
+    <div id="park-ph"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Park + Ride</h2></div>
+    <div id="park-pr"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Behindertenparkplätze</h2></div>
+    <div id="park-bh"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+
+<section id="alltag"><div class="sec-title"><h2>Alltag</h2></div></section>
+<div class="grid">
+  <section class="card">
+    <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src">Feiertage · Schulferien NRW</span></div>
+    <div id="cal"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Strompreis &amp; Ökostrom</h2><span class="src">Energy-Charts (Fraunhofer ISE)</span></div>
+    <div id="strom"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Nachrichten NRW</h2><span class="src">tagesschau / WDR</span></div>
+    <div id="news" class="news"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+
+<section id="quellen" class="card wide">
+  <div class="card-head"><h2>Schnittstellen &amp; Status</h2><span class="src">alle frei nutzbar; Tankerkönig mit kostenlosem Schlüssel</span></div>
+  <div class="tbl-wrap" id="sources"></div>
+</section>
+
+<section id="einstellungen" class="card wide">
+  <div class="card-head"><h2>Einstellungen</h2><span class="src">werden nur auf diesem Gerät gespeichert</span></div>
+  <div class="settings">
+    <div class="field">
+      <label for="stop">Haltestelle für Abfahrten</label>
+      <div class="inline"><input id="stop" type="text" autocomplete="off" placeholder="z. B. Düsseldorf Heinrich-Heine-Allee"><button type="button" id="stop-save">Übernehmen</button></div>
+      <span class="hint">Name wie in der VRR-Auskunft, mit „Düsseldorf“ davor.</span>
+    </div>
+    <div class="field">
+      <label for="tk">Tankerkönig-API-Schlüssel</label>
+      <div class="inline"><input id="tk" type="text" autocomplete="off" spellcheck="false" placeholder="00000000-0000-0000-0000-000000000000"><button type="button" id="tk-save">Speichern</button></div>
+      <span class="hint">Kostenlos unter <a href="https://creativecommons.tankerkoenig.de/" target="_blank" rel="noopener">creativecommons.tankerkoenig.de</a> (nur E-Mail nötig).</span>
+    </div>
+    <div class="field">
+      <label for="theme">Darstellung</label>
+      <select id="theme"><option value="">wie System</option><option value="light">hell</option><option value="dark">dunkel</option></select>
+      <span class="hint">Auf iPhone/iPad: Teilen → „Zum Home-Bildschirm“ für den App-Modus.</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span id="updated">Noch nicht aktualisiert</span>
+  <span>Lagebild Düsseldorf · © Thomas Hußmann · Daten: DWD, BBK, WSV, UBA, Autobahn GmbH, VRR, DB, Copernicus, Fraunhofer ISE, Stadt Düsseldorf u. a.</span>
+</footer>
+</div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
