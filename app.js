@@ -762,8 +762,9 @@ const WEBCAM_LINKS={
     {t:"Landtag NRW · Rheinknie",img:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix4.jpg",u:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix4.jpg"},
     {t:"Lausward · Blick Richtung Neuss",img:"https://www.swd-ag.de/webcam/blickvonderlausward2.jpg",u:"https://www.swd-ag.de/webcam/blickvonderlausward2.jpg"},
     {t:"Lausward · Blick zur Arena",img:"https://www.swd-ag.de/webcam/blickvonderlausward3.jpg",u:"https://www.swd-ag.de/webcam/blickvonderlausward3.jpg"},
-    {t:"Burgplatz / Altstadt (Livestream)",u:"https://balticlivecam.com/cameras/germany/dusseldorf/burgplatz"},
-    {t:"Rheinufer (Livestream)",u:"https://balticlivecam.com/cameras/germany/dusseldorf/rhine-river-embankment"},
+    {t:"Stadt Düsseldorf · Burgplatz",u:"https://www.duesseldorf.de/webcams/burgplatz-1"},
+    {t:"Stadt Düsseldorf · Rheinufer",u:"https://www.duesseldorf.de/webcams/rheinufer-1"},
+    {t:"Stadt Düsseldorf · alle Webcams",u:"https://www.duesseldorf.de/webcams"},
     {t:"Alle Düsseldorfer Webcams",u:"https://mygermancity.com/duesseldorf-webcams"}],
   datteln:[
     {t:"Haltern am See · Marktplatz (ca. 15 km)",u:"https://www.windfinder.com/webcams/datteln"},
