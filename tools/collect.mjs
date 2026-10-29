@@ -292,7 +292,8 @@ async function irisFern(from, to) {
 }
 
 // ---------- Fernzug + Umstieg (z. B. ICE bis Gelsenkirchen, weiter mit RE) ----------
-const HUBS = ["Gelsenkirchen Hbf", "Wanne-Eickel Hbf", "Essen Hbf", "Oberhausen Hbf", "Duisburg Hbf", "Dortmund Hbf"];
+const HUBS = ["Gelsenkirchen Hbf", "Essen Hbf", "Oberhausen Hbf", "Duisburg Hbf", "Dortmund Hbf"];
+const isTrain = l => /^(ICE|IC|EC|ECE|RE|RB|S|RRX|NX|FLX|NJ|SEV)\s?\d*/i.test(l.line) || /zug|bahn/i.test(l.name);
 const evaCache = {}, planCache = {};
 async function evaOf(n) { return evaCache[n] || (evaCache[n] = await irisEva(n)); }
 async function planOf(n, hours) { const k = n + hours.join(","); return planCache[k] || (planCache[k] = await irisHours(await evaOf(n), hours)); }
@@ -318,19 +319,18 @@ async function fernCombos(from, to) {
     const path = (x.dpPath || "").split("|"); const hub = HUBS.find(h => path.includes(h)); if (!hub) continue;
     const H = await planOf(hub, [0, 1, 2, 3, 4]); const y = Object.values(H).find(z => z.trip === x.trip && z.arT); if (!y) continue;
     const t = new Date(new Date(irisTime(y.arCt || y.arT)).getTime() + 4 * 6e4);
-    const legs = await efaLegs(hub, to, t, "dep"); if (!legs[0]) continue;
+    let legs = []; try { legs = (await efaLegs(hub, to, t, "dep")).filter(l => l.every(isTrain)); } catch {} if (!legs[0]) continue;
     const rest = legs[0], f = fernLeg(x, y, from, hub);
     out.push({ fern: true, trainsOnly: true, dep: f.dep, depEst: f.depEst, arr: rest[rest.length - 1].arr, arrEst: rest[rest.length - 1].arrEst, changes: rest.length, legs: [f, ...rest] });
     if (out.length >= 8) break;
   }
   // Richtung 2: Nahverkehr bis Umstiegsbahnhof, dann Fernzug zum Ziel
   if (!out.length) for (const hub of HUBS) {
-    const H = await planOf(hub, [0, 1, 2, 3]);
-    const T = await planOf(to, [0, 1, 2, 3, 4, 5]);
+    let H, T; try { H = await planOf(hub, [0, 1, 2, 3]); T = await planOf(to, [0, 1, 2, 3, 4, 5]); } catch { continue; }
     for (const x of Object.values(H).filter(x => isFern(x) && x.dpT && (x.dpPath || "").split("|").some(s => s.startsWith(toBase)))) {
       const y = Object.values(T).find(z => z.trip === x.trip && z.arT); if (!y) continue;
       const by = new Date(new Date(irisTime(x.dpCt || x.dpT)).getTime() - 5 * 6e4); if (by < Date.now()) continue;
-      const legs = await efaLegs(from, hub, by, "arr"); const pre = legs.filter(l => new Date(l[l.length - 1].arrEst || l[l.length - 1].arr) <= by).pop(); if (!pre) continue;
+      let legs = []; try { legs = (await efaLegs(from, hub, by, "arr")).filter(l => l.every(isTrain)); } catch {} const pre = legs.filter(l => new Date(l[l.length - 1].arrEst || l[l.length - 1].arr) <= by).pop(); if (!pre) continue;
       const f = fernLeg(x, y, hub, to);
       out.push({ fern: true, trainsOnly: true, dep: pre[0].dep, depEst: pre[0].depEst, arr: f.arr, arrEst: f.arrEst, changes: pre.length, legs: [...pre, f] });
       if (out.length >= 8) break;
