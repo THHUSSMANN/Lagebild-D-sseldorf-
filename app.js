@@ -869,6 +869,12 @@ let pending=false,lastRun=0;
 function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"});
   $("sub").textContent=new Date().toLocaleDateString("de-DE",{...TZ,weekday:"long",day:"numeric",month:"long",year:"numeric"})+" · KW "+isoWeek(new Date());}
 $("refresh").addEventListener("click",()=>refreshAll(true));
+// Kacheln der Lage-Leiste springen zum passenden Bereich
+const KPI_TARGET={"k-temp":"wetter","k-wx":"wetter","k-wind":"wetter","k-aq":"luft","k-rhein":"rhein","k-warn":"warnungen","k-traffic":"staus","k-strom":"strom-sec"};
+Object.entries(KPI_TARGET).forEach(([id,target])=>{const el=$(id);if(!el)return;
+  el.dataset.go=target;el.setAttribute("role","link");el.tabIndex=0;el.setAttribute("aria-label",el.querySelector(".lbl").textContent+" – zum Bereich springen");
+  const go=()=>{const t=$(target);if(t)t.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});};
+  el.addEventListener("click",go);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});});
 applyPlaceUi();renderSources();tick();setInterval(tick,15000);
 if(C.isDus&&(PARK.ph||PARK.pr||PARK.bh))renderParking();
 refreshAll(true);

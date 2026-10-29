@@ -73,6 +73,10 @@ section[id]{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 64px)}
 /* Lage-Leiste */
 .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 13px;display:flex;flex-direction:column;gap:3px;border-top:4px solid var(--line);min-width:0}
+.kpi[data-go]{cursor:pointer;transition:border-color .15s,transform .15s}
+.kpi[data-go]:hover{border-color:var(--accent)}
+.kpi[data-go]:active{transform:scale(.98)}
+.kpi[data-go] .lbl::after{content:" ›";color:var(--accent)}
 .kpi .lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
 .kpi .val{font-family:var(--f-display);font-size:32px;font-weight:700;line-height:1.05;overflow-wrap:anywhere}
 .kpi .val small{font-size:16px;font-weight:600;color:var(--muted)}
@@ -210,7 +214,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </div>
 </section>
 
-<section class="card wide">
+<section class="card wide" id="warnungen">
   <div class="card-head"><h2 id="warn-title">Warnungen für Düsseldorf</h2><span class="src">NINA-Warn-App (MoWaS, KATWARN, BIWAPP, Hochwasser, Polizei) · DWD-Unwetter</span></div>
   <div class="alerts" id="alerts"><div class="state">Warnungen werden geladen …</div></div>
 </section>
