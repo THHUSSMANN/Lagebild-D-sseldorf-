@@ -651,11 +651,10 @@ async function loadTrips(){
       const js=(t.journeys||[]).filter(j=>new Date(j.depEst||j.dep).getTime()>=now);
       const head='<div class="sublbl" style="margin-top:6px">'+esc(t.from)+' → '+esc(t.to)+'</div>';
       if(t.error||!js.length)return head+'<div class="state">'+(t.error?"Nicht verfügbar – "+esc(t.error):"Keine weiteren Fahrten im abgerufenen Zeitraum.")+'</div>';
-      return head+'<div class="list">'+js.map(j=>{const dur=j.arr&&j.dep?Math.round((new Date(j.arrEst||j.arr)-new Date(j.depEst||j.dep))/6e4):null;
+      return head+'<div class="tbl-wrap"><table><thead><tr><th>Ab</th><th>An</th><th class="num">Dauer</th><th>Züge</th></tr></thead><tbody>'+js.map(j=>{const dur=j.arr&&j.dep?Math.round((new Date(j.arrEst||j.arr)-new Date(j.depEst||j.dep))/6e4):null;
         const ride=j.legs.filter(l=>!l.walk);const cancelled=ride.some(l=>l.cancelled);
-        return '<div class="li"><span class="tag">'+t2(j.dep)+'</span><div class="t">'+t2(j.dep)+del(j.dep,j.depEst)+' → '+t2(j.arr)+del(j.arr,j.arrEst)+(cancelled?' <span class="pill p-bad"><i></i>Ausfall</span>':'')+'</div>'+
-          '<div class="r muted small">'+(dur!=null?Math.floor(dur/60)+":"+String(dur%60).padStart(2,"0")+" h":"")+' · '+j.changes+' Umst.</div>'+
-          '<div class="d">'+ride.map(l=>'<b>'+esc(l.line)+'</b>'+(l.plat?" (Gl. "+esc(l.plat)+")":"")+' bis '+esc(l.to)).join(" › ")+'</div></div>';}).join("")+'</div>';}).join("")+
+        return '<tr><td><b>'+t2(j.dep)+'</b>'+del(j.dep,j.depEst)+(ride[0]&&ride[0].plat?'<br><span class="muted small">Gl. '+esc(ride[0].plat)+'</span>':'')+'</td><td>'+t2(j.arr)+del(j.arr,j.arrEst)+'</td><td class="num">'+(dur!=null?Math.floor(dur/60)+":"+String(dur%60).padStart(2,"0"):"")+'<br><span class="muted small">'+j.changes+' Umst.</span></td>'+
+          '<td class="wrap-txt">'+(cancelled?'<span class="pill p-bad"><i></i>Ausfall</span> ':'')+ride.map(l=>'<span class="tag" style="font-size:13px">'+esc(l.line)+'</span>'+(ride.length>1&&l!==ride[ride.length-1]?' <span class="muted small">'+esc(l.to)+'</span>':'')).join(' › ')+'</td></tr>';}).join("")+'</tbody></table></div>';}).join("")+
       '<div class="muted small">Echtzeit abgerufen '+dataAge(d)+'</div>';
     setStatus("trips",true,"Stand "+dataAge(d));
   }catch(e){setStatus("trips",false,errText(e));box.innerHTML=stateBox("Verbindungen nicht verfügbar – "+errText(e)+".",link("https://www.bahn.de/","bahn.de"));}
