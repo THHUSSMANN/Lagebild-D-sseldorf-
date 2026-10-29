@@ -600,6 +600,18 @@ async function loadBlaulicht(){
   }catch(e){setStatus("blaulicht",false,errText(e));$("bl").innerHTML=stateBox("Meldungen nicht verfügbar – "+errText(e)+".",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal"));}
 }
 
+// ================= Webcam-Seiten je Ort =================
+const WEBCAM_LINKS={
+  dus:[["Burgplatz / Altstadt","https://balticlivecam.com/cameras/germany/dusseldorf/burgplatz"],["Rheinufer","https://balticlivecam.com/cameras/germany/dusseldorf/rhine-river-embankment"],["Blick vom ARAG-Tower","https://tourispo.de/sehenswuerdigkeit/rheinuferpromenade-duesseldorf/webcam/ausblick-arag-tower-duesseldorf.htm"],["Rheinuferpromenade (Übersicht)","https://tourispo.de/webcams/sehenswuerdigkeit/rheinuferpromenade-duesseldorf.html"],["Alle Düsseldorfer Webcams","https://mygermancity.com/duesseldorf-webcams"]],
+  datteln:[["Wetter-Webcams Datteln und Umgebung","https://www.windfinder.com/webcams/datteln"],["Dortmund Hafen","https://www.skylinewebcams.com/webcam/deutschland/north-rhine-westphalia/dortmund/hafen.html"]],
+  alpen:[["Rhein bei Rees","https://www.webcamtaxi.com/en/germany/north-rhine-westphalia/rhine-river-rees-cam.html"],["Rees: Rhein (weitere Kamera)","https://worldcams.tv/germany/rees/rhein-river"]],
+  salzhausen:[]
+};
+function renderWebcamLinks(){
+  const list=WEBCAM_LINKS[C.key]||[];const box=$("webcam-links");
+  $("cam-title").textContent="Webcams "+C.town;
+  box.innerHTML=list.length?'<div class="sublbl">Webcam-Seiten</div><div class="row" style="gap:8px;margin-bottom:10px">'+list.map(([t,u])=>'<a class="pill" style="text-decoration:none;color:var(--fg);padding:6px 12px" href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(t)+' ↗</a>').join("")+'</div>':"";
+}
 // ================= Öffentliche Webcams (Windy) =================
 async function loadWindy(){
   const box=$("webcams-public");
@@ -924,6 +936,7 @@ async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
   const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEFA(),loadDep(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
   if(C.isDus)tasks.push(loadVT(),loadGarages());
+  renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
     tasks.push(loadUBA(),loadPollen(),loadHol());
