@@ -695,7 +695,7 @@ $("trip-gm").addEventListener("click",()=>{const {f,t}=tripQuery();if(!f){$("tri
   window.open("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(f)+"&destination="+encodeURIComponent(t)+"&travelmode=transit","_blank","noopener");});
 
 async function loadBlaulicht(){
-  $("bl-title").textContent="Polizei & Feuerwehr "+C.town;
+  $("bl-title").textContent="Pressemitteilungen Polizei & Feuerwehr "+C.town;
   if(!FAVKEYS.includes(C.key)){$("bl").innerHTML=stateBox("Meldungen sind für Düsseldorf und die Favoriten hinterlegt. Für "+C.town+":",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal "+C.town));return;}
   try{const d=await getData("blaulicht-"+C.key+".json");const list=d.data||[];
     if(!list.length){$("bl").innerHTML='<div class="state good">Keine aktuellen Meldungen.</div>';setStatus("blaulicht",true);return;}
