@@ -419,5 +419,6 @@ async function pushAlarms() {
   return "ok";
 }
 try { results["push"] = await pushAlarms(); } catch (e) { results["push"] = "Fehler: " + e.message; }
+console.log("::notice::Push-Ergebnis: " + results["push"] + " (Thema " + (process.env.NTFY_TOPIC ? "gesetzt" : "fehlt") + ")");
 await write("status.json", results);
 console.log(JSON.stringify(results, null, 1));
