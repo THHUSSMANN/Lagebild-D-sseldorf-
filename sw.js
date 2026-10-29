@@ -14,7 +14,7 @@ self.addEventListener("fetch", e => {
   if (e.request.method !== "GET" || url.origin !== location.origin || url.pathname.includes("/data/")) return; // Schnittstellen und Live-Daten nicht anfassen
   // Netz zuerst, damit Aktualisierungen sofort ankommen; ohne Netz die gespeicherte Hülle
   e.respondWith(
-    fetch(e.request).then(r => {
+    fetch(e.request, { cache: "no-store" }).then(r => {
       const copy = r.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy));
       return r;
