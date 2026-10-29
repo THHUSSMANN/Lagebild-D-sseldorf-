@@ -129,6 +129,10 @@ let sel=String(load("sel")||"dus-1");
 let STOPS=load("stops")||{};
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
+const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
+let ROUTES_TXT=load("routes")??ROUTES_DEFAULT;
+function parseRoutes(t){return String(t||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^A?\s*(\d{1,3})\s*(?:Richtung|Ri\.|→|->|>|nach)?\s*(.+)$/i);return m?{ab:"A"+m[1],dir:m[2].trim()}:null;}).filter(Boolean);}
+let ROUTES=parseRoutes(ROUTES_TXT);
 let WX=null,AQ=null,HOL=null,SCHOOL=null,PARK=load("park")||{},BIKE=null,OBS=null;
 const theme=load("theme")||"";if(theme)document.documentElement.setAttribute("data-theme",theme);
 
@@ -175,7 +179,7 @@ function clearPlaceViews(){
   ["wx-now","wx-24","wx-7","air","uba","pollen","pegel","stau-list","traffic","roadworks","webcams","charging","efa","dep","bike","fuel","news","cal","alerts"]
     .forEach(id=>{const el=$(id);if(el)el.innerHTML='<div class="state">wird geladen …</div>';});
   $("stau-sum").innerHTML="";
-  ["k-temp","k-wx","k-wind","k-aq","k-rhein","k-warn","k-traffic"].forEach(id=>setKpi(id,"–","wird geladen"));
+  $("prio").innerHTML="";["k-temp","k-wx","k-wind","k-aq","k-rhein","k-warn","k-traffic"].forEach(id=>setKpi(id,"–","wird geladen"));
 }
 function applyPlaceUi(){
   document.querySelectorAll("[data-dus]").forEach(el=>el.hidden=!C.isDus);
@@ -195,6 +199,9 @@ function applyPlaceUi(){
 $("tk").value=TK;$("theme").value=theme;
 $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!v||!C.efaDefault)return;STOPS[C.key]=v;store("stops",STOPS);loadEFA();});
 $("stop").addEventListener("keydown",e=>{if(e.key==="Enter")$("stop-save").click();});
+$("routes").value=ROUTES_TXT;
+$("routes-save").addEventListener("click",()=>{ROUTES_TXT=$("routes").value.trim();store("routes",ROUTES_TXT);ROUTES=parseRoutes(ROUTES_TXT);loadAutobahn();});
+$("routes").addEventListener("keydown",e=>{if(e.key==="Enter")$("routes-save").click();});
 $("tk-save").addEventListener("click",()=>{TK=$("tk").value.trim();store("tk",TK);loadFuel();});
 $("theme").addEventListener("change",e=>{const v=e.target.value;store("theme",v);
   if(v)document.documentElement.setAttribute("data-theme",v);else document.documentElement.removeAttribute("data-theme");});
@@ -572,23 +579,58 @@ function popupHtml(i,extra){
   return '<b>'+esc(i.ab)+' · '+esc(i.title||"")+'</b><br>'+esc(i.subtitle||"")+(extra?'<br>'+extra:'')+
     ((i.description||[]).filter(Boolean).length?'<br><span style="color:#5b6a75">'+esc((i.description||[]).filter(Boolean).slice(0,4).join(" · "))+'</span>':'');
 }
+const PRIO_RADIUS_KM=60;
+const escRe=x=>String(x).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+function routeHit(w,r){
+  if(w.ab!==r.ab)return false;
+  const t=[w.title,w.subtitle,(w.description||[])[0]].filter(Boolean).join(" | ");
+  return new RegExp("(→|->|>|Richtung|Ri\\.|nach|in Fahrtrichtung)[^|→>]{0,40}?"+escRe(r.dir),"i").test(t);
+}
+function renderPrio(rawW,rawC,okRoads){
+  const box=$("prio");
+  if(!ROUTES.length){box.innerHTML="";return;}
+  const cards=ROUTES.map(r=>{
+    if(!okRoads.has(r.ab))return '<div class="route unk"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv muted">keine Daten</span></div>';
+    const cl=rawC.filter(c=>routeHit(c,r));
+    const ws=rawW.filter(w=>routeHit(w,r)).map(w=>({...w,jam:jamInfo(w)}));
+    const jams=ws.filter(w=>w.jam).sort((a,b)=>(b.jam.delay||0)-(a.jam.delay||0));
+    const blocked=cl.length?cl[0]:ws.find(w=>w.isBlocked==="true"||w.isBlocked===true);
+    let cls="ok",val="freie Fahrt",sub="im Umkreis von "+PRIO_RADIUS_KM+" km um "+C.town;
+    if(blocked){cls="crit";val="Sperrung";sub=(blocked.subtitle||blocked.title||"")+" · "+fmt(blocked.km)+" km entfernt";}
+    else if(jams.length){const j=jams[0];const st=jams.some(x=>x.jam.kind==="stau");cls=st&&(j.jam.delay||0)>=15?"bad":"warn";
+      val=(st?"Stau":"stockend")+(j.jam.delay!=null?" · +"+j.jam.delay+" min":"")+(j.jam.len?" · "+fmt(j.jam.len,1)+" km":"")+(jams.length>1?" ("+jams.length+" Meldungen)":"");
+      sub=(j.subtitle||j.title||"")+" · "+fmt(j.km)+" km entfernt";}
+    else if(ws.length){cls="warn";val="Behinderung";sub=(ws[0].subtitle||ws[0].title||"")+" · "+fmt(ws[0].km)+" km entfernt";}
+    return '<div class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span><span class="rs">'+esc(sub)+'</span></div>';});
+  box.innerHTML='<div class="sublbl">Meine Strecken</div><div class="prio">'+cards.join("")+'</div>';
+}
 async function loadAutobahn(){
-  const roads=C.ab;
-  if(!roads.length){
+  const roads=C.ab,prioOnly=[...new Set(ROUTES.map(r=>r.ab))].filter(a=>!roads.includes(a));
+  if(!roads.length&&!ROUTES.length){
     const msg='<div class="state">Für '+esc(C.town)+' sind noch keine Autobahnen hinterlegt. <a href="#einstellungen">Unter Einstellungen → Meine Orte eintragen</a>, z. B. „A1, A43“.</div>';
-    ["stau-list","traffic","roadworks","webcams","charging"].forEach(id=>$(id).innerHTML=msg);$("stau-sum").innerHTML="";setKpi("k-traffic","–","keine Autobahnen gewählt","info");
+    ["stau-list","traffic","roadworks","webcams","charging"].forEach(id=>$(id).innerHTML=msg);$("stau-sum").innerHTML="";$("prio").innerHTML="";setKpi("k-traffic","–","keine Autobahnen gewählt","info");
     if(ensureMap())MAPLAYER.clearLayers();return;}
   const svcs=["warning","closure","roadworks","webcam","electric_charging_station"];
-  const got={};svcs.forEach(s=>got[s]=[]);let ok=0,total=0;const cLat=C.center.lat,cLon=C.center.lon,keyAtStart=C.key;
-  await Promise.all(roads.flatMap(ab=>svcs.map(async svc=>{
+  const got={};svcs.forEach(s=>got[s]=[]);const rawW=[],rawC=[],okRoads=new Set();let ok=0,total=0;const cLat=C.center.lat,cLon=C.center.lon,keyAtStart=C.key;
+  const jobs=[...roads.flatMap(ab=>svcs.map(svc=>[ab,svc,true])),...prioOnly.flatMap(ab=>["warning","closure"].map(svc=>[ab,svc,false]))];
+  await Promise.all(jobs.map(async([ab,svc,local])=>{
     total++;
-    try{const d=await getJSON("https://verkehr.autobahn.de/o/autobahn/"+encodeURIComponent(ab)+"/services/"+svc,20000);ok++;
+    try{const d=await getJSON("https://verkehr.autobahn.de/o/autobahn/"+encodeURIComponent(ab)+"/services/"+svc,20000);ok++;okRoads.add(ab);
       const lim=(svc==="warning"||svc==="closure")?JAM_RADIUS_KM:RADIUS_KM;
-      (d[svc]||[]).forEach(w=>{const c=w.coordinate||{};const km=distKm(cLat,cLon,parseFloat(c.lat),parseFloat(c.long));
-        if(isFinite(km)&&km<=lim)got[svc].push({...w,ab,km,lat:parseFloat(c.lat),lon:parseFloat(c.long)});});
+      (d[svc]||[]).forEach(w=>{const c=w.coordinate||{};const km=distKm(cLat,cLon,parseFloat(c.lat),parseFloat(c.long));if(!isFinite(km))return;
+        const item={...w,ab,km,lat:parseFloat(c.lat),lon:parseFloat(c.long)};
+        if(svc==="warning"&&km<=PRIO_RADIUS_KM)rawW.push(item);
+        if(svc==="closure"&&km<=PRIO_RADIUS_KM)rawC.push(item);
+        if(local&&km<=lim)got[svc].push(item);});
     }catch(e){}
-  })));
+  }));
   if(keyAtStart!==C.key)return; // Ort inzwischen gewechselt
+  renderPrio(rawW,rawC,okRoads);
+  if(!roads.length){
+    const msg='<div class="state">Für '+esc(C.town)+' sind keine weiteren Autobahnen hinterlegt. <a href="#einstellungen">Unter Einstellungen → Meine Orte eintragen</a>.</div>';
+    ["stau-list","traffic","roadworks","webcams","charging"].forEach(id=>$(id).innerHTML=msg);$("stau-sum").innerHTML="";
+    const bad=ROUTES.length&&$("prio").querySelector(".route.bad,.route.crit");setKpi("k-traffic",bad?"!":"–",bad?"Störung auf Meinen Strecken":"Meine Strecken frei",bad?"bad":"ok");
+    if(ensureMap())MAPLAYER.clearLayers();setStatus("ab",ok>0,ok?"":"nicht erreichbar");return;}
   if(!ok){setStatus("ab",false,"nicht erreichbar oder vom Browser blockiert (CORS)");
     const fb=stateBox("Die Autobahn-Schnittstelle antwortet nicht.",link("https://www.autobahn.de/","autobahn.de"));
     ["stau-list","traffic","roadworks","webcams","charging"].forEach(id=>$(id).innerHTML=fb);$("stau-sum").innerHTML="";setKpi("k-traffic","?","nicht geladen","warn");return;}
@@ -597,8 +639,9 @@ async function loadAutobahn(){
   const desc=w=>(w.description||[]).filter(Boolean).slice(0,3).join(" · ");
   const isClosed=m=>m._c||m.isBlocked==="true"||m.isBlocked===true;
   const warnings=uniq(got.warning);
-  const jams=warnings.map(w=>({...w,jam:jamInfo(w)})).filter(w=>w.jam)
-    .sort((a,b)=>(b.jam.kind==="stau")-(a.jam.kind==="stau")||(b.jam.delay||0)-(a.jam.delay||0)||a.km-b.km);
+  const prioIdx=w=>{const i=ROUTES.findIndex(r=>routeHit(w,r));return i<0?99:i;};
+  const jams=warnings.map(w=>({...w,jam:jamInfo(w),pr:prioIdx(w)})).filter(w=>w.jam)
+    .sort((a,b)=>a.pr-b.pr||(b.jam.kind==="stau")-(a.jam.kind==="stau")||(b.jam.delay||0)-(a.jam.delay||0)||a.km-b.km);
   const closuresAll=uniq([...got.closure.map(x=>({...x,_c:1})),...warnings.filter(w=>w.isBlocked==="true"||w.isBlocked===true)]);
   const maxDelay=jams.reduce((m,j)=>Math.max(m,j.jam.delay||0),0);
   const totLen=jams.reduce((s,j)=>s+(j.jam.len||0),0);
@@ -609,7 +652,7 @@ async function loadAutobahn(){
   $("stau-sum").innerHTML=fact(String(nStau),"Staus")+fact(String(jams.length-nStau),"stockender Verkehr")+fact(totLen?fmt(totLen,1)+" km":"–","Staulänge gesamt")+fact(maxDelay?"+"+maxDelay+" min":"–","größte Verzögerung")+fact(String(closuresAll.length),"Sperrungen")+fact(String(others),"weitere Behinderungen");
   $("stau-list").innerHTML=jams.length?'<div>'+jams.map(j=>{const J=j.jam;
       const det=[J.len?fmt(J.len,1)+" km":"",J.speed!=null?"Ø "+J.speed+" km/h":"",fmt(j.km)+" km entfernt"].filter(Boolean).join(" · ");
-      return '<div class="jam"><span class="tag ab">'+esc(j.ab)+'</span><div class="t">'+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
+      return '<div class="jam"><span class="tag ab">'+esc(j.ab)+'</span><div class="t">'+(j.pr<99?'<span class="pill" style="margin-right:6px">Meine Strecke</span>':'')+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
         '<div class="delay'+(J.delay!=null&&J.delay<15?" mid":"")+'">'+(J.delay!=null?"+"+J.delay+" min":"")+'<small>'+(J.delay!=null?"Verzögerung":"")+'</small></div>'+
         '<div class="d">'+esc(j.subtitle||"")+(det?" · "+esc(det):"")+(desc(j)?'<br>'+esc(desc(j)):"")+'</div></div>';}).join("")+'</div>'
     :'<div class="state good">Derzeit keine Staus auf '+esc(roads.join(", "))+' im Umkreis von '+JAM_RADIUS_KM+' km.</div>';
@@ -737,6 +780,7 @@ async function loadHol(){
   renderCal();
 }
 function renderCal(){
+  $("cal-src").textContent="Feiertage · Schulferien "+(STATE_NAME[C.state]||"");
   const w=WX&&WX[C.wxIdx];let html="";const sn=STATE_NAME[C.state]||"";
   if(w){const d=w.daily;const len=d.daylight_duration[0];
     html+='<div class="facts">'+fact(hhmm(d.sunrise[0]*1000),"Sonnenaufgang")+fact(hhmm(d.sunset[0]*1000),"Sonnenuntergang")+fact(Math.floor(len/3600)+" h "+Math.round(len%3600/60)+" min","Tageslicht")+fact(String(isoWeek(new Date())),"Kalenderwoche")+'</div>';}
@@ -790,7 +834,8 @@ async function loadNews(){
   try{const d=await getJSON("https://www.tagesschau.de/api2u/news/?regions="+reg);
     const n=(d.news||[]).filter(x=>x.title);
     if(!n.length)throw new Error("keine Meldungen");
-    $("news").innerHTML='<div class="sublbl">'+esc(STATE_NAME[C.state]||"")+'</div><div class="list">'+n.slice(0,8).map(x=>'<div class="li" style="grid-template-columns:1fr auto"><a class="t" href="'+esc(safeUrl(x.shareURL||x.detailsweb))+'" target="_blank" rel="noopener">'+esc(x.title)+'</a><span class="r muted small">'+(x.date?hhmm(x.date):"")+'</span>'+
+    $("news-title").textContent="Nachrichten "+(STATE_NAME[C.state]||"");
+    $("news").innerHTML='<div class="list">'+n.slice(0,8).map(x=>'<div class="li" style="grid-template-columns:1fr auto"><a class="t" href="'+esc(safeUrl(x.shareURL||x.detailsweb))+'" target="_blank" rel="noopener">'+esc(x.title)+'</a><span class="r muted small">'+(x.date?hhmm(x.date):"")+'</span>'+
       (x.firstSentence?'<div class="d" style="grid-column:1/-1">'+esc(x.firstSentence)+'</div>':'')+'</div>').join("")+'</div>';
     setStatus("news",true);
   }catch(e){setStatus("news",false,errText(e));$("news").innerHTML=stateBox("Nachrichten nicht verfügbar – "+errText(e)+".",link("https://www.tagesschau.de/inland/regional/","tagesschau regional"));}

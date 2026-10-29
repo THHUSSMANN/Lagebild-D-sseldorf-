@@ -151,6 +151,12 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 :root[data-theme="dark"] .map .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
 .leaflet-popup-content{margin:10px 12px;line-height:1.4}
 .leaflet-popup-content b{font-family:var(--f-display);font-size:15px}
+.prio{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px}
+.route{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;background:var(--panel-2);border-radius:8px;padding:10px 12px;border-left:5px solid var(--ok)}
+.route.warn{border-left-color:var(--warn)} .route.bad{border-left-color:var(--bad)} .route.crit{border-left-color:var(--crit)} .route.unk{border-left-color:var(--line)}
+.route .rt{font-family:var(--f-display);font-weight:700;font-size:17px}
+.route .rs{grid-column:1/-1;font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
+.route .rv{grid-column:1/-1;font-weight:600}
 .stau-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .stau-sum .fact{background:var(--panel-2);border-radius:6px;padding:8px 10px}
 .jam{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -183,8 +189,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <nav class="jump pad" aria-label="Bereiche">
   <div class="wrap">
-    <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#luft">Luft</a><a href="#bezirke" data-dus>Bezirke</a><a href="#rhein">Gewässer</a>
-    <a href="#staus">Staus</a><a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken" data-dus>Parken</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
+    <a href="#lage">Lage</a><a href="#alltag">Kalender &amp; News</a><a href="#wetter">Wetter</a><a href="#luft">Luft</a><a href="#bezirke" data-dus>Bezirke</a><a href="#rhein">Gewässer</a>
+    <a href="#staus">Staus</a><a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken" data-dus>Parken</a><a href="#strom-sec">Energie</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
   </div>
 </nav>
 
@@ -208,6 +214,17 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="card-head"><h2 id="warn-title">Warnungen für Düsseldorf</h2><span class="src">NINA-Warn-App (MoWaS, KATWARN, BIWAPP, Hochwasser, Polizei) · DWD-Unwetter</span></div>
   <div class="alerts" id="alerts"><div class="state">Warnungen werden geladen …</div></div>
 </section>
+
+<div class="grid" id="alltag">
+  <section class="card">
+    <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src" id="cal-src">Feiertage · Schulferien NRW</span></div>
+    <div id="cal"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2 id="news-title">Nachrichten NRW</h2><span class="src">tagesschau</span></div>
+    <div id="news" class="news"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
 
 <section id="wetter"><div class="sec-title"><h2>Wetter</h2><span class="muted small" id="wx-place"></span></div></section>
 <div class="grid">
@@ -263,6 +280,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <div class="grid">
   <section class="card wide" id="staus">
     <div class="card-head"><h2 id="stau-title">Staus &amp; Behinderungen rund um Düsseldorf</h2><span class="src">Autobahn GmbH · Karte © OpenStreetMap-Mitwirkende</span></div>
+    <div id="prio"></div>
     <div class="stau-sum" id="stau-sum"></div>
     <div id="stau-map" class="map" role="img" aria-label="Karte der Staus, Sperrungen und Baustellen rund um Düsseldorf"></div>
     <div class="legend"><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockender Verkehr</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
@@ -322,19 +340,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </section>
 </div>
 
-<section id="alltag"><div class="sec-title"><h2>Alltag</h2></div></section>
+<section id="strom-sec"><div class="sec-title"><h2>Energie</h2></div></section>
 <div class="grid">
-  <section class="card">
-    <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src">Feiertage · Schulferien NRW</span></div>
-    <div id="cal"><div class="state">wird geladen …</div></div>
-  </section>
   <section class="card">
     <div class="card-head"><h2>Strompreis &amp; Ökostrom</h2><span class="src">Energy-Charts (Fraunhofer ISE)</span></div>
     <div id="strom"><div class="state">wird geladen …</div></div>
-  </section>
-  <section class="card">
-    <div class="card-head"><h2>Nachrichten NRW</h2><span class="src">tagesschau / WDR</span></div>
-    <div id="news" class="news"><div class="state">wird geladen …</div></div>
   </section>
 </div>
 
@@ -360,6 +370,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
       <label for="stop" id="stop-lbl">Haltestelle für Abfahrten</label>
       <div class="inline"><input id="stop" type="text" autocomplete="off" placeholder="z. B. Düsseldorf Heinrich-Heine-Allee"><button type="button" id="stop-save">Übernehmen</button></div>
       <span class="hint">Gilt für den gerade gewählten Ort. Name wie in der VRR-Auskunft, z. B. „Alpen Bahnhof“.</span>
+    </div>
+    <div class="field">
+      <label for="routes">Meine Strecken (Priorität)</label>
+      <div class="inline"><input id="routes" type="text" autocomplete="off" placeholder="A52 Essen; A40 Duisburg"><button type="button" id="routes-save">Speichern</button></div>
+      <span class="hint">Autobahn und Fahrtrichtung, getrennt mit Semikolon. Diese Strecken stehen bei den Staus immer oben.</span>
     </div>
     <div class="field">
       <label for="tk">Tankerkönig-API-Schlüssel</label>
