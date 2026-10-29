@@ -1,6 +1,6 @@
 // Lagebild Düsseldorf – Offline-Hülle. Die App-Dateien werden zwischengespeichert,
 // Live-Daten der Schnittstellen dagegen nie (sie laufen immer direkt über das Netz).
-const CACHE = "lagebild-v7";
+const CACHE = "lagebild-v8";
 const SHELL = ["./", "index.html", "app.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -11,7 +11,7 @@ self.addEventListener("activate", e => {
 });
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
-  if (e.request.method !== "GET" || url.origin !== location.origin) return; // Schnittstellen nicht anfassen
+  if (e.request.method !== "GET" || url.origin !== location.origin || url.pathname.includes("/data/")) return; // Schnittstellen und Live-Daten nicht anfassen
   // Netz zuerst, damit Aktualisierungen sofort ankommen; ohne Netz die gespeicherte Hülle
   e.respondWith(
     fetch(e.request).then(r => {

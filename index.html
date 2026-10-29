@@ -54,6 +54,8 @@ header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:
 .brand .sub{font-size:13px;opacity:.75}
 .ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 select,button,input{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-height:38px}
+header .hbtn{display:inline-flex;align-items:center;min-height:38px;padding:7px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.35);color:var(--head-fg);text-decoration:none;font-weight:600}
+header .hbtn:hover{border-color:var(--accent)}
 header select,header button{background:transparent;color:var(--head-fg);border-color:rgba(255,255,255,.35)}
 header select option{color:#14212b}
 button{cursor:pointer;font-weight:600}
@@ -185,6 +187,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div class="ctrl">
       <label for="bezirk" class="sr-only" style="position:absolute;left:-9999px">Bereich</label>
       <select id="bezirk" aria-label="Bereich wählen"></select>
+      <a class="hbtn" href="https://dus.eventcal.io" target="_blank" rel="noopener">EventCal ↗</a>
       <button id="refresh" type="button">Aktualisieren</button>
       <div class="clock" id="clock">--:--</div>
     </div>
@@ -193,8 +196,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <nav class="jump pad" aria-label="Bereiche">
   <div class="wrap">
-    <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#staus">Verkehrslage</a><a href="#luft">Luft</a><a href="#bezirke" data-dus>Bezirke</a><a href="#rhein">Gewässer</a>
-    <a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken" data-dus>Parken</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
+    <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#staus">Verkehrslage</a><a href="#stadtverkehr" data-dus>Stadtverkehr</a><a href="#blaulicht">Polizei &amp; Feuerwehr</a><a href="#luft">Luft</a><a href="#bezirke" data-dus>Bezirke</a><a href="#rhein">Gewässer</a>
+    <a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken" data-dus>Parken &amp; Service</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
   </div>
 </nav>
 
@@ -242,8 +245,22 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div id="prio"></div>
   <div class="stau-sum" id="stau-sum"></div>
   <div id="stau-map" class="map" role="img" aria-label="Karte der Staus, Sperrungen und Baustellen rund um Düsseldorf"></div>
-  <div class="legend"><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockender Verkehr</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
+  <div class="legend"><span data-dus><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf (Verkehrsfluss)</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockender Verkehr</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
   <div id="stau-list"><div class="state">Staus werden geladen …</div></div>
+</section>
+<section class="card wide" id="stadtverkehr" data-dus>
+  <div class="card-head"><h2>Stadtverkehr Düsseldorf</h2><span class="src">Verkehrszentrale der Landeshauptstadt (live)</span></div>
+  <div class="stau-sum" id="vt-sum"></div>
+  <div class="grid" style="gap:12px">
+    <div><div class="sublbl">Aktuelle Sperrungen &amp; Meldungen</div><div id="vt-now"><div class="state">wird geladen …</div></div></div>
+    <div><div class="sublbl">Verkehrsrelevante Veranstaltungen</div><div id="vt-events"><div class="state">wird geladen …</div></div>
+      <div class="sublbl" style="margin-top:12px">Demnächst (7 Tage)</div><div id="vt-next"><div class="state">wird geladen …</div></div></div>
+  </div>
+</section>
+
+<section class="card wide" id="blaulicht">
+  <div class="card-head"><h2 id="bl-title">Polizei &amp; Feuerwehr</h2><span class="src">Presseportal Blaulicht (offizielle Meldungen)</span></div>
+  <div id="bl"><div class="state">wird geladen …</div></div>
 </section>
 
 <section id="luft"><div class="sec-title"><h2>Luft &amp; Pollen</h2></div></section>
@@ -267,15 +284,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="tbl-wrap" id="districts"><div class="state">wird geladen …</div></div>
 </section>
 
-<section id="rhein"><div class="sec-title"><h2 id="rhein-sec">Rhein &amp; Grundwasser</h2></div></section>
+<section id="rhein"><div class="sec-title"><h2 id="rhein-sec">Rhein</h2></div></section>
 <div class="grid">
   <section class="card">
     <div class="card-head"><h2 id="pegel-title">Pegel Düsseldorf</h2><span class="src" id="pegel-src">WSV PEGELONLINE · Rhein-km 744,2</span></div>
     <div id="pegel"><div class="state">Pegeldaten werden geladen …</div></div>
-  </section>
-  <section class="card" data-dus>
-    <div class="card-head"><h2>Grundwasser-Messstellen</h2><span class="src">Umweltamt Düsseldorf · Open Data</span></div>
-    <div id="gw"><div class="state">wird geladen …</div></div>
   </section>
 </div>
 
@@ -290,7 +303,9 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div id="roadworks"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card wide">
-    <div class="card-head"><h2>Webcams</h2><span class="src">Autobahn GmbH · Bild antippen für Live-Ansicht</span></div>
+    <div class="card-head"><h2 id="cam-title">Webcams</h2><span class="src">Autobahn GmbH · Windy-Webcams · Bild antippen für Live-Ansicht</span></div>
+    <div id="webcams-public"></div>
+    <div class="sublbl">Autobahn</div>
     <div id="webcams"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card">
@@ -319,7 +334,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </section>
 </div>
 
-<section id="parken" data-dus><div class="sec-title"><h2>Parken</h2><span class="muted small">Standorte aus Open Data Düsseldorf, sortiert nach Nähe zum gewählten Bezirk</span></div></section>
+<section id="parken" data-dus><div class="sec-title"><h2>Parken</h2><span class="muted small">Parkhäuser live aus der Verkehrszentrale, übrige Standorte aus Open Data Düsseldorf, nach Nähe sortiert</span></div></section>
 <div class="grid" data-dus>
   <section class="card">
     <div class="card-head"><h2>Parkhäuser</h2><a class="src" href="https://vtmanager.duesseldorf.de/info/?parkquartier#main" target="_blank" rel="noopener">Live-Belegung öffnen ↗</a></div>
@@ -332,6 +347,15 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <section class="card">
     <div class="card-head"><h2>Behindertenparkplätze</h2></div>
     <div id="park-bh"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card wide">
+    <div class="card-head"><h2>Notfall &amp; Service in der Nähe</h2><span class="src">Open Data Düsseldorf</span></div>
+    <div class="grid" style="gap:12px">
+      <div><div class="sublbl">Defibrillatoren (AED)</div><div id="svc-aed"><div class="state">wird geladen …</div></div></div>
+      <div><div class="sublbl">Öffentliche Toiletten</div><div id="svc-wc"><div class="state">wird geladen …</div></div></div>
+      <div><div class="sublbl">Radstationen</div><div id="svc-rad"><div class="state">wird geladen …</div></div></div>
+      <div><div class="sublbl">Stationäre Verkehrsüberwachung</div><div id="svc-blitz"><div class="state">wird geladen …</div></div></div>
+    </div>
   </section>
 </div>
 
@@ -383,6 +407,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
       <label for="tk">Tankerkönig-API-Schlüssel</label>
       <div class="inline"><input id="tk" type="text" autocomplete="off" spellcheck="false" placeholder="00000000-0000-0000-0000-000000000000"><button type="button" id="tk-save">Speichern</button></div>
       <span class="hint">Kostenlos unter <a href="https://creativecommons.tankerkoenig.de/" target="_blank" rel="noopener">creativecommons.tankerkoenig.de</a> (nur E-Mail nötig).</span>
+    </div>
+    <div class="field">
+      <label for="windy">Windy-Webcam-Schlüssel (optional)</label>
+      <div class="inline"><input id="windy" type="text" autocomplete="off" spellcheck="false" placeholder="API-Schlüssel"><button type="button" id="windy-save">Speichern</button></div>
+      <span class="hint">Für öffentliche Webcams neben den Autobahnkameras. Kostenlos unter <a href="https://api.windy.com/keys" target="_blank" rel="noopener">api.windy.com</a> (Webcams API).</span>
     </div>
     <div class="field">
       <label for="theme">Darstellung</label>

@@ -35,24 +35,27 @@ const POLLEN_REGION={SH:/Schleswig/,HH:/Schleswig/,MV:/Mecklenburg/,NI:/Niedersa
 const RADIUS_KM=20,JAM_RADIUS_KM=30;
 
 const SRC={
-  nina:{name:"NINA-Warn-App",prov:"BBK – Bevölkerungsschutz",url:"https://nina.api.bund.dev/",ep:"warnung.bund.de/api31"},
+  nina:{name:"NINA-Warn-App",prov:"BBK – Bevölkerungsschutz",url:"https://nina.api.bund.dev/",ep:"warnung.bund.de/api31 (über Datensammler)"},
   dwd:{name:"Unwetterwarnungen",prov:"Bright Sky (DWD Open Data)",url:"https://brightsky.dev/docs/",ep:"api.brightsky.dev/alerts"},
   wx:{name:"Wetter & Vorhersage",prov:"Open-Meteo (u. a. DWD ICON)",url:"https://open-meteo.com/en/docs",ep:"api.open-meteo.com/v1/forecast"},
   dwdobs:{name:"Messwerte DWD-Station",prov:"Bright Sky (DWD Open Data)",url:"https://brightsky.dev/docs/",ep:"api.brightsky.dev/current_weather"},
   aq:{name:"Luftqualität (Modell)",prov:"Open-Meteo / Copernicus CAMS",url:"https://open-meteo.com/en/docs/air-quality-api",ep:"air-quality-api.open-meteo.com"},
-  uba:{name:"Luftmessstationen",prov:"Umweltbundesamt",url:"https://luftdaten.umweltbundesamt.de/api/air-data/v3/doc",ep:"luftdaten.umweltbundesamt.de/api/air-data/v3"},
-  pollen:{name:"Pollenflug",prov:"Deutscher Wetterdienst",url:"https://opendata.dwd.de/climate_environment/health/alerts/",ep:"opendata.dwd.de/…/s31fg.json"},
+  uba:{name:"Luftmessstationen",prov:"Umweltbundesamt",url:"https://luftdaten.umweltbundesamt.de/api/air-data/v3/doc",ep:"luftdaten.umweltbundesamt.de (über Datensammler)"},
+  pollen:{name:"Pollenflug",prov:"Deutscher Wetterdienst",url:"https://opendata.dwd.de/climate_environment/health/alerts/",ep:"opendata.dwd.de (über Datensammler)"},
   pegel:{name:"Wasserstand",prov:"WSV – PEGELONLINE",url:"https://pegelonline.wsv.de/webservice/dokuRestapi",ep:"pegelonline.wsv.de/webservices/rest-api/v2"},
   ab:{name:"Autobahn: Staus, Sperrungen, Baustellen, Webcams, E-Laden",prov:"Autobahn GmbH des Bundes",url:"https://autobahn.api.bund.dev/",ep:"verkehr.autobahn.de/o/autobahn"},
   fuel:{name:"Spritpreise",prov:"Tankerkönig (MTS-K)",url:"https://creativecommons.tankerkoenig.de/",ep:"creativecommons.tankerkoenig.de/json/list.php"},
-  efa:{name:"Abfahrten Nahverkehr (VRR)",prov:"VRR – EFA",url:"https://www.vrr.de/de/fahrplan/",ep:"efa.vrr.de/standard/XML_DM_REQUEST"},
-  db:{name:"Abfahrten Bahn & Bus",prov:"db.transport.rest (DB-Daten)",url:"https://v6.db.transport.rest/",ep:"v6.db.transport.rest"},
+  efa:{name:"Abfahrten Nahverkehr (VRR)",prov:"VRR – EFA",url:"https://www.vrr.de/de/fahrplan/",ep:"efa.vrr.de (über Datensammler)"},
+  db:{name:"Abfahrten Bahn & Bus",prov:"db.transport.rest (DB-Daten)",url:"https://v6.db.transport.rest/",ep:"v6.db.transport.rest (über Datensammler)"},
   bike:{name:"Leihräder",prov:"nextbike",url:"https://www.nextbike.de/",ep:"maps.nextbike.net/maps/nextbike-live.json"},
-  gw:{name:"Grundwasser Düsseldorf",prov:"Open Data Düsseldorf",url:"https://opendata.duesseldorf.de/",ep:"opendata.duesseldorf.de/api/3"},
-  park:{name:"Parken Düsseldorf",prov:"Open Data Düsseldorf",url:"https://opendata.duesseldorf.de/",ep:"opendata.duesseldorf.de/api/3"},
+  vt:{name:"Stadtverkehr & Parkhäuser live",prov:"Verkehrszentrale Düsseldorf",url:"https://vtmanager.duesseldorf.de/info/",ep:"vtmanager.duesseldorf.de/geoserverwfs"},
+  blaulicht:{name:"Polizei & Feuerwehr",prov:"Presseportal Blaulicht",url:"https://www.presseportal.de/blaulicht/",ep:"presseportal.de/rss (über Datensammler)"},
+  park:{name:"P+R, Behindertenparkplätze, AED, WC, Radstationen",prov:"Open Data Düsseldorf",url:"https://opendata.duesseldorf.de/",ep:"opendata.duesseldorf.de (über Datensammler)"},
+  windy:{name:"Öffentliche Webcams",prov:"Windy Webcams API",url:"https://api.windy.com/webcams",ep:"api.windy.com/webcams/api/v3"},
+  sammler:{name:"Datensammler (alle 10 Minuten)",prov:"GitHub Actions",url:"https://github.com/THHUSSMANN/Lagebild-D-sseldorf-/actions",ep:"data/*.json"},
   hol:{name:"Feiertage",prov:"Nager.Date",url:"https://date.nager.at/Api",ep:"date.nager.at/api/v3"},
   school:{name:"Schulferien",prov:"OpenHolidays API",url:"https://www.openholidaysapi.org/",ep:"openholidaysapi.org/SchoolHolidays"},
-  strom:{name:"Strompreis & Ökostrom-Ampel",prov:"Energy-Charts (Fraunhofer ISE)",url:"https://api.energy-charts.info/",ep:"api.energy-charts.info"},
+  strom:{name:"Strompreis & Ökostrom-Ampel",prov:"Energy-Charts (Fraunhofer ISE)",url:"https://api.energy-charts.info/",ep:"api.energy-charts.info (über Datensammler)"},
   news:{name:"Regionale Nachrichten",prov:"tagesschau",url:"https://tagesschau.api.bund.dev/",ep:"tagesschau.de/api2u/news"},
   geo:{name:"Ortssuche",prov:"Open-Meteo Geocoding",url:"https://open-meteo.com/en/docs/geocoding-api",ep:"geocoding-api.open-meteo.com/v1/search"}
 };
@@ -85,6 +88,13 @@ function errText(e){
   if(/JSON/i.test(m))return "unerwartetes Datenformat";
   return m;
 }
+const FAVKEYS=["dus","datteln","alpen","salzhausen"];
+async function getData(name){
+  const d=await getJSON("data/"+name+"?t="+Math.floor(Date.now()/60000),15000);
+  if(!d||!("data" in d))throw new Error("Datei leer");
+  return d;
+}
+const dataAge=d=>{const m=Math.round((Date.now()-new Date(d.generated))/6e4);return m<1?"gerade eben":m<60?"vor "+m+" min":"vor "+Math.round(m/60)+" h";};
 function setStatus(k,ok,msg){status[k]={ok,msg:msg||"",at:new Date()};renderSources();}
 function distKm(a,b,c,d){const R=6371,r=Math.PI/180;const x=(c-a)*r,y=(d-b)*r;
   const h=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
@@ -134,6 +144,7 @@ let sel=String(load("sel")||"dus-1");
 let STOPS=load("stops")||{};
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
+let WINDY=load("windy")||"";
 const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
 let ROUTES_TXT=load("routes")??ROUTES_DEFAULT;
 function parseRoutes(t){return String(t||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^A?\s*(\d{1,3})\s*(?:Richtung|Ri\.|→|->|>|nach)?\s*(.+)$/i);return m?{ab:"A"+m[1],dir:m[2].trim()}:null;}).filter(Boolean);}
@@ -187,7 +198,7 @@ function choose(v,scroll){
   if(scroll)window.scrollTo({top:0,behavior:"smooth"});
 }
 function clearPlaceViews(){
-  ["wx-now","wx-24","wx-7","air","uba","pollen","pegel","stau-list","traffic","roadworks","webcams","charging","efa","dep","bike","fuel","news","cal","alerts"]
+  ["bl","webcams-public","wx-now","wx-24","wx-7","air","uba","pollen","pegel","stau-list","traffic","roadworks","webcams","charging","efa","dep","bike","fuel","news","cal","alerts"]
     .forEach(id=>{const el=$(id);if(el)el.innerHTML='<div class="state">wird geladen …</div>';});
   $("stau-sum").innerHTML="";
   $("prio").innerHTML="";["k-temp","k-wx","k-wind","k-aq","k-rhein","k-warn","k-traffic"].forEach(id=>setKpi(id,"–","wird geladen"));
@@ -207,7 +218,8 @@ function applyPlaceUi(){
 }
 
 // ================= Einstellungen & Ortssuche =================
-$("tk").value=TK;$("theme").value=theme;
+$("tk").value=TK;$("windy").value=WINDY;
+$("windy-save").addEventListener("click",()=>{WINDY=$("windy").value.trim();store("windy",WINDY);loadWindy();});$("theme").value=theme;
 $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!v||!C.efaDefault)return;STOPS[C.key]=v;store("stops",STOPS);loadEFA();});
 $("stop").addEventListener("keydown",e=>{if(e.key==="Enter")$("stop-save").click();});
 $("routes").value=ROUTES_TXT;
@@ -334,38 +346,19 @@ function renderAir(){
 }
 const UBA_IDX=[["sehr gut","ok"],["gut","ok"],["mäßig","warn"],["schlecht","bad"],["sehr schlecht","crit"]];
 async function loadUBA(){
-  const base="https://luftdaten.umweltbundesamt.de/api/air-data/v3";
-  try{
-    let all=load("uba_all");
-    if(!all||!all.length||!("lat" in all[0])){
-      const d=await getJSON(base+"/stations/json?lang=de",25000);
-      const ix=d.indices||[];const I=n=>ix.indexOf(n);
-      const iId=Math.max(0,I("station id")),iCode=I("station code"),iName=I("station name"),iCity=I("station city"),iTo=I("station active to"),iLat=I("station latitude"),iLon=I("station longitude");
-      all=Object.values(d.data||{}).filter(a=>Array.isArray(a)&&(iTo<0||!a[iTo])).map(a=>({id:a[iId],code:a[iCode>=0?iCode:1],name:a[iName>=0?iName:2],city:a[iCity>=0?iCity:3],lat:parseFloat(a[iLat>=0?iLat:8]),lon:parseFloat(a[iLon>=0?iLon:7])}))
-        .filter(s=>isFinite(s.lat)&&isFinite(s.lon));
-      store("uba_all",all);
-    }
-    const st=all.map(s=>({...s,km:distKm(C.center.lat,C.center.lon,s.lat,s.lon)})).filter(s=>s.km<=(C.isDus?12:30)).sort((a,b)=>a.km-b.km).slice(0,4);
-    if(!st.length)throw new Error("keine Messstation im Umkreis von 30 km");
-    const today=isoDay(),yest=isoDay(new Date(Date.now()-864e5));
-    const res=await Promise.all(st.map(s=>getJSON(base+"/airquality/json?date_from="+yest+"&time_from=1&date_to="+today+"&time_to=24&station="+s.id+"&lang=de").then(d=>({s,d})).catch(()=>({s,d:null}))));
-    const rows=[];
-    res.forEach(({s,d})=>{if(!d||!d.data)return;const per=d.data[s.id]||d.data[String(s.id)]||Object.values(d.data)[0];if(!per)return;
-      const keys=Object.keys(per).sort();const k=keys[keys.length-1];if(!k)return;const v=per[k];
-      const comps={};v.slice(3).forEach(c=>{if(Array.isArray(c))comps[c[0]]={val:c[1],idx:c[2]};});
-      rows.push({name:s.name,km:s.km,code:s.code,time:k,idx:v[1],comps});});
-    if(!rows.length)throw new Error("keine aktuellen Messwerte");
+  if(!FAVKEYS.includes(C.key)){$("uba").innerHTML=stateBox("Messstationen sind für Düsseldorf und die drei Favoriten hinterlegt. Für "+C.town+":",link("https://www.umweltbundesamt.de/daten/luft/luftdaten/luftqualitaet","UBA-Luftqualität"));setStatus("uba",true,"nur Favoriten");return;}
+  try{const d=await getData("uba-"+C.key+".json");const rows=d.data||[];
     let r='<table><thead><tr><th>Station</th><th>Index</th><th class="num">NO₂</th><th class="num">PM10</th><th class="num">PM2,5</th><th class="num">O₃</th><th>Stand</th></tr></thead><tbody>';
     rows.forEach(x=>{const ii=UBA_IDX[x.idx]||["–",""];const cv=id=>x.comps[id]?fmt(x.comps[id].val):"–";
       r+='<tr><td><b>'+esc(x.name)+'</b><br><span class="muted small">'+fmt(x.km,1)+' km · '+esc(x.code)+'</span></td><td><span class="pill p-'+ii[1]+'"><i></i>'+ii[0]+'</span></td><td class="num">'+cv(5)+'</td><td class="num">'+cv(1)+'</td><td class="num">'+cv(9)+'</td><td class="num">'+cv(3)+'</td><td class="muted">'+esc(String(x.time).slice(11,16))+'</td></tr>';});
-    $("uba").innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">Nächstgelegene Stationen, Stundenmittel in µg/m³, vorläufige Werte.</div>';
-    setStatus("uba",true);
+    $("uba").innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">Nächstgelegene Stationen, Stundenmittel in µg/m³, vorläufige Werte · abgerufen '+dataAge(d)+'</div>';
+    setStatus("uba",true,"Stand "+dataAge(d));
   }catch(e){setStatus("uba",false,errText(e));$("uba").innerHTML=stateBox("Messwerte nicht verfügbar – "+errText(e)+".",link("https://www.umweltbundesamt.de/daten/luft/luftdaten/luftqualitaet","UBA-Luftqualität"));}
 }
 const POLLEN_ORDER=["Hasel","Erle","Esche","Birke","Graeser","Roggen","Beifuss","Ambrosia"];
 const POLLEN_DE={Graeser:"Gräser",Beifuss:"Beifuß"};
 async function loadPollen(){
-  try{const d=await getJSON("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json");
+  try{const d=(await getData("pollen.json")).data;
     const rr=POLLEN_REGION[C.state]||/Nordrhein/;
     const inState=(d.content||[]).filter(c=>rr.test(c.region_name));
     const reg=(C.pollen&&inState.find(c=>C.pollen.test(c.partregion_name||"")))||inState[0];
@@ -418,10 +411,12 @@ async function loadAlerts(){
   const pD=getJSON("https://api.brightsky.dev/alerts?lat="+C.center.lat+"&lon="+C.center.lon+"&tz=Europe/Berlin").then(d=>{okD=true;
     (d.alerts||[]).forEach(a=>out.push({src:"DWD",title:a.headline_de||a.event_de,text:a.description_de,instr:a.instruction_de,sev:a.severity,from:a.onset,to:a.expires}));
     setStatus("dwd",true);}).catch(e=>setStatus("dwd",false,errText(e)));
-  const pN=(C.ars?getJSON("https://warnung.bund.de/api31/dashboard/"+C.ars+".json"):ninaByArea()).then(d=>{okN=true;
-    (d||[]).forEach(a=>{const p=a.payload&&a.payload.data||{};if(String(p.provider).toUpperCase()==="DWD")return;
-      out.push({src:"NINA · "+(p.provider||"BBK"),title:(a.i18nTitle&&a.i18nTitle.de)||p.headline,sev:p.severity,from:a.sent,id:a.id,nina:true});});
-    setStatus("nina",true,C.ars?"":"Abgleich über Warngebiete");}).catch(e=>setStatus("nina",false,errText(e)));
+  const fav=FAVKEYS.includes(C.key);
+  const pN=getData(fav?"nina-"+C.key+".json":"nina-all.json").then(d=>{okN=true;
+    let list=d.data||[];
+    if(!fav)list=list.filter(w=>w.geo&&pointIn(w.geo,C.lat,C.lon));
+    list.forEach(a=>out.push({src:"NINA · "+(a.provider||"BBK"),title:a.headline||a.title,text:a.text,instr:a.instr,area:a.area,sev:a.severity,from:a.sent,id:a.id,nina:true}));
+    setStatus("nina",true,"Stand "+dataAge(d)+(fav?"":" · Abgleich über Warngebiete")+(d.stale?" · veraltet":""));}).catch(e=>setStatus("nina",false,errText(e)));
   await Promise.all([pD,pN]);
   const order={extreme:4,severe:3,moderate:2,minor:1};
   out.sort((a,b)=>(b.nina?1:0)-(a.nina?1:0)||(order[String(b.sev).toLowerCase()]||0)-(order[String(a.sev).toLowerCase()]||0));
@@ -433,7 +428,7 @@ async function loadAlerts(){
   const sevDe={extreme:"extrem",severe:"Unwetter / schwer",moderate:"markant",minor:"Hinweis"};
   box.innerHTML=(okN?'':'<div class="state">NINA nicht erreichbar – nur DWD-Warnungen. '+link("https://warnung.bund.de/meldungen","NINA öffnen")+'</div>')+
     out.map(a=>'<div class="alert sev-'+sc(a.sev)+'"><h3>'+(a.nina?'<span class="pill" style="margin-right:6px">NINA</span>':'')+esc(a.title)+'</h3>'+
-    (a.text?'<p>'+esc(a.text)+'</p>':'')+(a.instr?'<details><summary>Handlungsempfehlung</summary><p>'+esc(a.instr)+'</p></details>':'')+
+    (a.area?'<div class="meta">Gebiet: '+esc(a.area)+'</div>':'')+(a.text?'<p>'+esc(a.text)+'</p>':'')+(a.instr?'<details><summary>Handlungsempfehlung</summary><p>'+esc(a.instr)+'</p></details>':'')+
     (a.id?'<div class="meta">'+link("https://warnung.bund.de/meldungen/"+encodeURIComponent(a.id),"Meldung mit Handlungsempfehlungen öffnen")+'</div>':'')+
     '<div class="meta">'+esc(a.src)+(a.sev?' · '+esc(sevDe[String(a.sev).toLowerCase()]||a.sev):'')+(a.from?' · ab '+dateTime(a.from):'')+(a.to?' bis '+dateTime(a.to):'')+'</div></div>').join("");
   const top=sc(out[0].sev);setKpi("k-warn",String(out.length),(nN?nN+" × NINA · ":"")+out[0].title,top==="info"?"warn":top);
@@ -514,42 +509,110 @@ function normalizePlaces(j){
   }).filter(p=>isFinite(p.lat)&&isFinite(p.lon));
 }
 async function loadParking(){
-  const jobs=[["ph","Parkhäuser Düsseldorf"],["pr","Park and Ride Anlagen Düsseldorf"],["bh","Behindertenparkplätze Düsseldorf"]];
-  let anyOk=false,err="";
-  await Promise.all(jobs.map(async([k,q])=>{
-    try{const {url}=await oddResource(q);const j=await getJSON(url,20000);PARK[k]=normalizePlaces(j);anyOk=true;}catch(e){err=errText(e);}
-  }));
-  if(anyOk){store("park",PARK);setStatus("park",true,err?"teilweise":"");}else setStatus("park",false,err);
+  const parts=[["pr","odd-pr.json"],["bh","odd-bh.json"],["aed","odd-aed.json"],["wc","odd-wc.json"],["rad","odd-rad.json"],["blitz","odd-blitz.json"]];
+  let ok=0;
+  await Promise.all(parts.map(async([k,f])=>{try{PARK[k]=(await getData(f)).data;ok++;}catch(e){}}));
+  setStatus("park",ok>0,ok?(ok<parts.length?"teilweise":""):"Daten fehlen");
   renderParking();
 }
 function renderParking(){
   if(!C.isDus)return;
-  const box=(id,list,label)=>{
-    if(!list||!list.length){$(id).innerHTML=stateBox(label+" nicht verfügbar"+(status.park&&!status.park.ok?" – "+status.park.msg:"")+".",link("https://opendata.duesseldorf.de/","Open Data Düsseldorf"));return;}
-    const s=list.map(p=>({...p,km:distKm(C.lat,C.lon,p.lat,p.lon)})).sort((x,y)=>x.km-y.km).slice(0,6);
-    $(id).innerHTML='<div class="list">'+s.map(p=>'<div class="li"><span class="tag alt">'+fmt(p.km,1)+' km</span><div class="t">'+esc(p.name||p.addr||"Standort")+'</div>'+
-      '<div class="r">'+(p.anz!=null&&p.anz!==""?esc(p.anz)+" Pl.":"")+'</div><div class="d">'+esc([p.addr,p.ort].filter(Boolean).join(", "))+(p.note?" · "+esc(p.note):"")+
-      ' · <a href="https://maps.apple.com/?daddr='+p.lat+','+p.lon+'" target="_blank" rel="noopener">Route</a></div></div>').join("")+'</div>'+
-      '<div class="muted small">'+list.length+' Standorte insgesamt · nächste zu '+esc(C.short)+'</div>';
+  const near=(list,n,max)=>(list||[]).map(p=>({...p,km:distKm(C.lat,C.lon,p.lat,p.lon)})).filter(p=>!max||p.km<=max).sort((x,y)=>x.km-y.km).slice(0,n);
+  const route=p=>' · <a href="https://maps.apple.com/?daddr='+p.lat+','+p.lon+'" target="_blank" rel="noopener">Route</a>';
+  const box=(id,list,label,n,max)=>{
+    if(!list){$(id).innerHTML=stateBox(label+" nicht verfügbar.");return;}
+    const s=near(list,n||5,max);
+    if(!s.length){$(id).innerHTML=stateBox("Keine Einträge in der Nähe.");return;}
+    $(id).innerHTML='<div class="list">'+s.map(p=>'<div class="li"><span class="tag alt">'+fmt(p.km,1)+' km</span><div class="t">'+esc(p.name||p.addr||label)+'</div><div class="r"></div><div class="d">'+esc([p.name?p.addr:"",p.info].filter(Boolean).join(" · "))+route(p)+'</div></div>').join("")+'</div>';
   };
-  box("park-ph",PARK.ph,"Parkhäuser");box("park-pr",PARK.pr,"P+R-Anlagen");box("park-bh",PARK.bh,"Behindertenparkplätze");
+  box("park-pr",PARK.pr,"P+R-Anlagen",6);box("park-bh",PARK.bh,"Behindertenparkplätze",6);
+  box("svc-aed",PARK.aed,"Defibrillator",4);box("svc-wc",PARK.wc,"Toilette",4);box("svc-rad",PARK.rad,"Radstation",3);box("svc-blitz",PARK.blitz,"Messstelle",4,5);
+  renderGarages();
 }
-async function loadGW(){
+// Parkhäuser live (Verkehrszentrale)
+let GARAGES=null;
+async function loadGarages(){
+  try{const d=await getJSON(VT+"vtinfo:Parkhaeuser",20000);GARAGES=(d.features||[]).map(f=>({...f.properties,lon:f.geometry&&f.geometry.coordinates[0],lat:f.geometry&&f.geometry.coordinates[1]}));setStatus("vt",true);}
+  catch(e){GARAGES=null;setStatus("vt",false,errText(e));}
+  renderGarages();
+}
+function renderGarages(){
+  if(!C.isDus)return;
+  if(!GARAGES){$("park-ph").innerHTML=stateBox("Parkhaus-Belegung nicht verfügbar.",link("https://vtmanager.duesseldorf.de/info/?parkquartier#main","Verkehrszentrale"));return;}
+  const s=GARAGES.map(p=>({...p,km:distKm(C.lat,C.lon,p.lat,p.lon)})).sort((a,b)=>a.km-b.km).slice(0,8);
+  const tr=t=>t>0?"↑":t<0?"↓":"";
+  $("park-ph").innerHTML='<div class="list">'+s.map(p=>{const max=p.kurzparkermax,used=p.kurzparkerbelegt,free=(max!=null&&used!=null)?Math.max(0,max-used):null;
+    const q=max&&used!=null?used/max:null;const cls=q==null||p.status!==1?"":q>=.95?"bad":q>=.8?"warn":"ok";
+    return '<div class="li"><span class="tag alt">'+fmt(p.km,1)+' km</span><div class="t">'+esc(p.bezeichnung||p.name)+'</div>'+
+      '<div class="r">'+(free!=null&&p.status===1?'<span class="pill p-'+cls+'"><i></i>'+fmt(free)+' frei '+tr(p.tendenz)+'</span>':'<span class="muted small">keine Belegung</span>')+'</div>'+
+      '<div class="d">'+esc(p.vti_anschrift||"")+(max?" · "+fmt(max)+" Plätze":"")+(p.durchfahrtshoehe?" · Höhe "+fmt(p.durchfahrtshoehe,2)+" m":"")+' · <a href="https://maps.apple.com/?daddr='+p.lat+','+p.lon+'" target="_blank" rel="noopener">Route</a></div></div>';}).join("")+'</div>';
+}
+
+// ================= Stadtverkehr Düsseldorf (Verkehrszentrale) =================
+const VT="https://vtmanager.duesseldorf.de/geoserverwfs?service=WFS&version=1.1.0&request=GetFeature&outputFormat=application/json&srsName=EPSG:4326&typeName=";
+async function loadVT(){
+  if(!C.isDus)return;
   try{
-    const {url}=await oddResource("Grundwassermessstellen Düsseldorf",/online|pegel|statist/i);
-    const j=await getJSON(url,20000);
-    let arr=Array.isArray(j)?j:(j.data||j.results||j.features||Object.values(j).find(Array.isArray)||[]);
-    arr=arr.map(x=>x&&x.properties?x.properties:x);
-    if(!arr.length)throw new Error("keine Einträge");
-    const k=(o,re)=>{const kk=Object.keys(o).find(z=>re.test(z));return kk?o[kk]:undefined;};
-    const rows=arr.map(o=>({nr:k(o,/brunnen|bnr|nummer/i),ort:k(o,/standort|strasse|straße/i),teil:k(o,/stadtteil/i),ws:k(o,/wasserstand/i),temp:k(o,/temp/i),last:k(o,/max_mess|letzte|datum/i)}));
-    const latest=rows.map(r=>r.last).filter(Boolean).sort().pop();
-    let r='<table><thead><tr><th>Brunnen</th><th>Standort</th><th class="num">Ø Wasserstand</th><th class="num">Ø Temp.</th><th>letzte Messung</th></tr></thead><tbody>';
-    rows.slice(0,30).forEach(x=>{r+='<tr><td><b>'+esc(x.nr)+'</b></td><td>'+esc(x.ort||x.teil||"")+'</td><td class="num">'+(x.ws!=null?fmt(x.ws,2):"–")+'</td><td class="num">'+(x.temp!=null?fmt(x.temp,1)+" °C":"–")+'</td><td class="muted">'+esc(x.last?String(x.last).slice(0,16):"")+'</td></tr>';});
-    $("gw").innerHTML='<div class="facts">'+fact(String(rows.length),"Online-Messstellen")+fact(latest?esc(String(latest).slice(0,10)):"–","jüngster Messwert")+'</div><div class="tbl-wrap">'+r+'</tbody></table></div>';
-    setStatus("gw",true);
-  }catch(e){setStatus("gw",false,errText(e));$("gw").innerHTML=stateBox("Grundwasserdaten nicht verfügbar – "+errText(e)+".",link("https://opendata.duesseldorf.de/dataset/grundwassermessstellen-d%C3%BCsseldorf","Datensatz öffnen"));}
+    const [sp,me,ve]=await Promise.all(["vtinfo:Sperrungen","vtinfo:Meldungen","vtinfo:Veranstaltungen"].map(t=>getJSON(VT+t,20000)));
+    const now=Date.now(),wk=now+7*864e5;
+    const norm=(f,kind)=>{const p=f.properties||{};return {id:p.messageid||p.fid,kind,name:p.name||"",short:p.textshort||"",text:p.textlong||"",addr:p.address||"",from:p.startevent,to:p.endevent,geo:f.geometry};};
+    const dedupe=list=>{const m=new Map();list.forEach(x=>{const k=x.id+"|"+x.name;const o=m.get(k);
+      // bei wiederkehrenden Zeitfenstern das nächste/aktuelle behalten
+      if(!o||(new Date(x.to)>=now&&(new Date(x.from)<new Date(o.from)||new Date(o.to)<now)))m.set(k,x);});return [...m.values()];};
+    const all=dedupe([...(sp.features||[]).map(f=>norm(f,"Sperrung")),...(me.features||[]).map(f=>norm(f,"Meldung"))]);
+    const active=all.filter(x=>new Date(x.from)<=now&&new Date(x.to)>=now).sort((a,b)=>(a.kind==="Sperrung"?0:1)-(b.kind==="Sperrung"?0:1)||new Date(b.from)-new Date(a.from));
+    const soon=all.filter(x=>new Date(x.from)>now&&new Date(x.from)<=wk).sort((a,b)=>new Date(a.from)-new Date(b.from));
+    const ev=dedupe((ve.features||[]).map(f=>norm(f,"Veranstaltung"))).filter(x=>new Date(x.to)>=now).sort((a,b)=>new Date(a.from)-new Date(b.from));
+    VTGEO={active,ev};
+    const range=x=>dateTime(x.from)+" – "+(isoDay(new Date(x.from))===isoDay(new Date(x.to))?hhmm(x.to):dateTime(x.to));
+    const item=(x,badge)=>'<div class="li"><span class="tag '+(x.kind==="Sperrung"?"ab":"alt")+'">'+esc(badge||x.kind)+'</span><div class="t">'+esc(x.short||x.name)+'</div><div class="r"></div>'+
+      '<div class="d">'+esc(range(x))+(x.text?'<details><summary>Details</summary>'+esc(x.text)+'</details>':'')+'</div></div>';
+    const nSp=active.filter(x=>x.kind==="Sperrung").length;
+    $("vt-sum").innerHTML=fact(String(nSp),"Sperrungen aktiv")+fact(String(active.length-nSp),"Meldungen / Baustellen")+fact(String(ev.length),"Veranstaltungen angekündigt")+fact(String(soon.length),"neu in 7 Tagen");
+    $("vt-now").innerHTML=active.length?'<div class="list">'+active.slice(0,15).map(x=>item(x)).join("")+'</div>'+(active.length>15?'<div class="muted small">+ '+(active.length-15)+' weitere</div>':''):'<div class="state good">Keine aktiven Sperrungen.</div>';
+    $("vt-events").innerHTML=ev.length?'<div class="list">'+ev.slice(0,8).map(x=>item(x,"Event")).join("")+'</div>':'<div class="state good">Keine angekündigten Veranstaltungen.</div>';
+    $("vt-next").innerHTML=soon.length?'<div class="list">'+soon.slice(0,8).map(x=>item(x)).join("")+'</div>':'<div class="state good">Nichts Neues angekündigt.</div>';
+    setStatus("vt",true);drawVTOnMap();
+  }catch(e){setStatus("vt",false,errText(e));["vt-now","vt-events","vt-next"].forEach(id=>$(id).innerHTML=stateBox("Nicht verfügbar – "+errText(e)+".",link("https://vtmanager.duesseldorf.de/info/","Verkehrszentrale")));}
 }
+let VTGEO=null,VTLAYER=null;
+function drawVTOnMap(){
+  if(!MAP||typeof L==="undefined")return;
+  if(VTLAYER){VTLAYER.remove();VTLAYER=null;}
+  if(!C.isDus||!VTGEO)return;
+  VTLAYER=L.layerGroup().addTo(MAP);
+  VTGEO.active.filter(x=>x.kind==="Sperrung"&&x.geo).forEach(x=>L.geoJSON(x.geo,{style:{color:"#7d1f6b",weight:5,opacity:.85,dashArray:"6 4"}}).bindPopup("<b>Sperrung</b><br>"+esc(x.short||x.name)).addTo(VTLAYER));
+  VTGEO.ev.filter(x=>x.geo).forEach(x=>L.geoJSON(x.geo,{style:{color:"#0b6e8a",weight:5,opacity:.8}}).bindPopup("<b>Veranstaltung</b><br>"+esc(x.short||x.name)+"<br>"+dateTime(x.from)).addTo(VTLAYER));
+}
+
+// ================= Polizei & Feuerwehr =================
+async function loadBlaulicht(){
+  $("bl-title").textContent="Polizei & Feuerwehr "+C.town;
+  if(!FAVKEYS.includes(C.key)){$("bl").innerHTML=stateBox("Meldungen sind für Düsseldorf und die Favoriten hinterlegt. Für "+C.town+":",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal "+C.town));return;}
+  try{const d=await getData("blaulicht-"+C.key+".json");const list=d.data||[];
+    if(!list.length){$("bl").innerHTML='<div class="state good">Keine aktuellen Meldungen.</div>';setStatus("blaulicht",true);return;}
+    const tag=s=>/feuerwehr|^fw/i.test(s)?["FW","bad"]:/polizei|^pol/i.test(s)?["POL","ab"]:["INFO","alt"];
+    $("bl").innerHTML='<div class="list">'+list.slice(0,12).map(x=>{const t=tag(x.source+" "+x.title);
+      return '<div class="li"><span class="tag '+(t[1]==="bad"?"":t[1])+'" style="'+(t[1]==="bad"?"background:var(--bad);color:#fff":"")+'">'+t[0]+'</span><a class="t" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener" style="color:var(--fg);text-decoration:none">'+esc(x.title.replace(/^(POL|FW)[-\w ]*:\s*/,""))+'</a>'+
+        '<span class="r muted small">'+dateTime(x.date)+'</span><div class="d">'+esc(x.source)+' · '+esc(x.text.slice(0,220))+'</div></div>';}).join("")+'</div>'+
+      '<div class="muted small">Offizielle Pressemeldungen · abgerufen '+dataAge(d)+' · '+link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.isDus?"Düsseldorf":C.town),"alle Meldungen")+'</div>';
+    setStatus("blaulicht",true,"Stand "+dataAge(d));
+  }catch(e){setStatus("blaulicht",false,errText(e));$("bl").innerHTML=stateBox("Meldungen nicht verfügbar – "+errText(e)+".",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal"));}
+}
+
+// ================= Öffentliche Webcams (Windy) =================
+async function loadWindy(){
+  const box=$("webcams-public");
+  if(!WINDY){box.innerHTML='<div class="muted small" style="margin-bottom:6px">Weitere öffentliche Webcams (Stadt, Rhein, Umgebung) nach Eintrag eines kostenlosen Windy-Schlüssels unter <a href="#einstellungen">Einstellungen</a>.</div>';setStatus("windy",false,"Schlüssel fehlt");return;}
+  try{const r=await fetch("https://api.windy.com/webcams/api/v3/webcams?nearby="+C.center.lat+","+C.center.lon+","+(C.isDus?15:25)+"&include=images,urls,location&limit=12&lang=de",{headers:{"x-windy-api-key":WINDY}});
+    if(!r.ok)throw new Error("HTTP "+r.status);const d=await r.json();const cams=d.webcams||[];
+    box.innerHTML=cams.length?'<div class="sublbl">Öffentliche Webcams</div><div class="cams" style="margin-bottom:10px">'+cams.map(c=>{const img=c.images&&(c.images.current&&(c.images.current.preview||c.images.current.thumbnail));const url=c.urls&&(c.urls.detail||c.urls.provider);
+      return '<a class="cam" href="'+esc(safeUrl(url))+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(c.title)+'" src="'+esc(safeUrl(img))+'"><span>'+esc(c.title)+'</span></a>';}).join("")+'</div>':'<div class="muted small">Keine öffentlichen Webcams im Umkreis gefunden.</div>';
+    setStatus("windy",true);
+  }catch(e){setStatus("windy",false,errText(e));box.innerHTML=stateBox("Öffentliche Webcams nicht verfügbar – "+errText(e)+".");}
+}
+async function loadSammler(){try{const d=await getData("status.json");const bad=Object.entries(d.data||{}).filter(([k,v])=>v!=="ok");setStatus("sammler",!bad.length||bad.length<5,"Lauf "+dataAge(d)+(bad.length?" · "+bad.length+" Quelle(n) mit Fehler":""));}catch(e){setStatus("sammler",false,"noch keine Daten – GitHub Pages auf „GitHub Actions“ umstellen");}}
+
 
 // ================= Autobahn: Staus & Behinderungen =================
 let MAP=null,MAPLAYER=null,MAPRING=null,MAPCENTER=null;
@@ -580,10 +643,13 @@ function ensureMap(){
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(MAP);
     MAPLAYER=L.layerGroup().addTo(MAP);
   }
+  if(C.isDus&&!MAP._los){
+    MAP._los=L.tileLayer.wms("https://vtmanager.duesseldorf.de/geovtinfo/wms",{layers:"vtinfo:LOS",format:"image/png",transparent:true,tiled:true,opacity:.85,attribution:"Verkehrslage © Landeshauptstadt Düsseldorf"}).addTo(MAP);
+  }else if(!C.isDus&&MAP._los){MAP._los.remove();MAP._los=null;}
   if(MAPRING)MAPRING.remove();if(MAPCENTER)MAPCENTER.remove();
   MAPRING=L.circle([C.center.lat,C.center.lon],{radius:JAM_RADIUS_KM*1000,color:"#8a9aa5",weight:1,dashArray:"4 6",fill:false,interactive:false}).addTo(MAP);
   MAPCENTER=L.circleMarker([C.center.lat,C.center.lon],{radius:5,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(C.town).addTo(MAP);
-  MAP.setView([C.center.lat,C.center.lon],10);
+  MAP.setView([C.center.lat,C.center.lon],C.isDus?11:10);
   return MAP;
 }
 function popupHtml(i,extra){
@@ -678,7 +744,7 @@ async function loadAutobahn(){
       const lines=geomLines(j);
       if(lines.length)lines.forEach(ll=>{L.polyline(ll,{color:"#fff",weight:10,opacity:.8,interactive:false}).addTo(MAPLAYER);L.polyline(ll,{color:col,weight:6,opacity:1}).bindPopup(popupHtml(j,extra)).addTo(MAPLAYER);});
       else if(isFinite(j.lat))L.circleMarker([j.lat,j.lon],{radius:8,color:"#fff",weight:2,fillColor:col,fillOpacity:1}).bindPopup(popupHtml(j,extra)).addTo(MAPLAYER);});
-    setTimeout(()=>MAP.invalidateSize(),50);
+    drawVTOnMap();setTimeout(()=>MAP.invalidateSize(),50);
   }else{$("stau-map").innerHTML='<div class="state" style="margin:12px">Kartenbibliothek nicht geladen – die Liste darunter ist vollständig.</div>';}
   const jamIds=new Set(jams.map(j=>j.ab+"|"+j.title+"|"+j.subtitle+"|"+(j.identifier||"")));
   const msgs=uniq([...got.closure.map(x=>({...x,_c:1})),...warnings]).filter(m=>!jamIds.has(m.ab+"|"+m.title+"|"+m.subtitle+"|"+(m.identifier||"")))
@@ -718,16 +784,13 @@ async function loadEFA(){
   if(!C.efaDefault){setStatus("efa",true,"nicht im VRR-Gebiet");return;}
   const stop=STOPS[C.key]||C.efaDefault;
   $("efa-title").textContent="Abfahrten "+stop.replace(/^Düsseldorf[, ]*/,"");
-  const url="https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=any&name_dm="+encodeURIComponent(stop)+
-    "&mode=direct&useRealtime=1&limit=14&itdDateTimeDepArr=dep&useAllStops=1";
-  try{const d=await getJSON(url,20000);
-    const ev=d.stopEvents||[];
-    const locName=(d.locations&&d.locations[0]&&(d.locations[0].disassembledName||d.locations[0].name))||stop;
-    if(!ev.length){$("efa").innerHTML=stateBox("Keine Abfahrten gefunden. Ist die Haltestelle „"+stop+"“ eindeutig? Unter Einstellungen anpassen.");setStatus("efa",true,"keine Treffer");return;}
-    $("efa").innerHTML='<div class="muted small">'+esc(locName)+'</div><div class="tbl-wrap">'+depTable(ev.map(e=>{const t=e.transportation||{};
-      return {planned:e.departureTimePlanned,est:e.departureTimeEstimated,line:t.disassembledName||t.number||t.name||"",dir:t.destination&&t.destination.name||"",
-        plat:e.location&&e.location.properties&&(e.location.properties.platform||e.location.properties.platformName)||"",cancelled:(e.realtimeStatus||[]).includes("TRIP_CANCELLED")||e.isCancelled};}))+'</div>';
-    setStatus("efa",true);
+  if(stop!==C.efaDefault||!FAVKEYS.includes(C.key)){
+    $("efa").innerHTML=stateBox("Für „"+stop+"“ sind noch keine Abfahrten hinterlegt – sag Claude Bescheid, dann wird die Haltestelle im Datensammler ergänzt.",link("https://www.vrr.de/de/fahrplanauskunft/","VRR-Auskunft"));return;}
+  try{const d=await getData("efa-"+C.key+".json");const now=Date.now()-60e3;
+    const rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now).slice(0,14);
+    if(!rows.length){$("efa").innerHTML=stateBox("Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
+    $("efa").innerHTML='<div class="muted small">'+esc(d.data.stop)+' · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
+    setStatus("efa",true,"Stand "+dataAge(d));
   }catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link("https://www.vrr.de/de/fahrplanauskunft/","VRR-Auskunft"));}
 }
 function depTable(rows){
@@ -738,20 +801,13 @@ function depTable(rows){
   return r+'</tbody></table>';
 }
 async function loadDep(){
-  try{
-    let stopId="8000085",stopName="Düsseldorf Hbf",dist=null;
-    if(!C.isDus){
-      const near=await getJSON("https://v6.db.transport.rest/locations/nearby?latitude="+C.lat+"&longitude="+C.lon+"&results=6&distance=3000&stops=true&poi=false&language=de",15000);
-      const s=(near||[]).find(x=>x.type==="stop"||x.type==="station");
-      if(!s)throw new Error("keine Haltestelle im Umkreis von 3 km");
-      stopId=s.id;stopName=s.name;dist=s.distance;
-    }
-    $("dep-title").textContent=stopName+(C.isDus?" · Bahn":" · Bahn & Bus");
-    const d=await getJSON("https://v6.db.transport.rest/stops/"+encodeURIComponent(stopId)+"/departures?duration=60&results=12&language=de"+(C.isDus?"&bus=false&tram=false&subway=false":""),15000);
-    const deps=(d.departures||d||[]);
-    if(!deps.length){$("dep").innerHTML=stateBox("Keine Abfahrten in der nächsten Stunde.");setStatus("db",true);return;}
-    $("dep").innerHTML=(dist!=null?'<div class="muted small">nächste Haltestelle, '+fmt(dist)+' m entfernt</div>':'')+'<div class="tbl-wrap">'+depTable(deps.map(x=>({planned:x.plannedWhen||x.when,delay:x.delay!=null?Math.round(x.delay/60):null,line:x.line&&x.line.name,dir:x.direction,plat:x.platform||x.plannedPlatform,cancelled:x.cancelled})))+'</div>';
-    setStatus("db",true);
+  if(!FAVKEYS.includes(C.key)){$("dep").innerHTML=stateBox("Bahn-Abfahrten sind für Düsseldorf und die Favoriten hinterlegt.",link("https://www.bahn.de/","bahn.de"));return;}
+  try{const d=await getData("db-"+C.key+".json");const now=Date.now()-60e3;
+    $("dep-title").textContent=d.data.stop+(C.isDus?" · Bahn":" · Bahn & Bus");
+    const rows=(d.data.rows||[]).filter(x=>new Date(x.planned).getTime()+((x.delay||0)*6e4)>=now).slice(0,12);
+    if(!rows.length){$("dep").innerHTML=stateBox("Keine weiteren Abfahrten im abgerufenen Zeitraum.");setStatus("db",true);return;}
+    $("dep").innerHTML='<div class="muted small">'+(d.data.dist!=null?"nächste Haltestelle, "+fmt(d.data.dist)+" m entfernt · ":"")+'Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
+    setStatus("db",true,"Stand "+dataAge(d));
   }catch(e){setStatus("db",false,errText(e));$("dep").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link("https://www.bahn.de/","bahn.de"));}
 }
 async function loadBike(){
@@ -810,7 +866,7 @@ function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.get
 async function loadStrom(){
   try{
     const day=isoDay(),tom=isoDay(new Date(Date.now()+864e5));
-    const [pr,sig]=await Promise.all([getJSON("https://api.energy-charts.info/price?bzn=DE-LU&start="+day+"&end="+tom),getJSON("https://api.energy-charts.info/signal?country=de").catch(()=>null)]);
+    const sd=(await getData("strom.json")).data;const pr=sd.price||{},sig=sd.signal;void tom;
     const ts=pr.unix_seconds||[],pv=pr.price||[];const now=Date.now()/1000;
     let ci=-1;ts.forEach((t,i)=>{if(t<=now)ci=i;});const cur=ci>=0?pv[ci]:null;
     let share=null,signal=null;
@@ -865,11 +921,12 @@ function renderSources(){
 let busy=false,lastSlow=0,slowKey="";
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
-  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadEFA(),loadDep(),loadBike(),loadFuel(),loadStrom(),loadNews()];
+  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEFA(),loadDep(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
+  if(C.isDus)tasks.push(loadVT(),loadGarages());
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
     tasks.push(loadUBA(),loadPollen(),loadHol());
-    if(C.isDus)tasks.push(loadParking(),loadGW());
+    tasks.push(loadWindy());if(C.isDus)tasks.push(loadParking());
   }
   await Promise.allSettled(tasks);
   $("updated").textContent=C.name+" · zuletzt aktualisiert "+new Date().toLocaleString("de-DE",{...TZ,dateStyle:"medium",timeStyle:"short"})+" · Staus alle 3, Rest alle 10 Minuten";
@@ -887,7 +944,7 @@ Object.entries(KPI_TARGET).forEach(([id,target])=>{const el=$(id);if(!el)return;
   const go=()=>{const t=$(target);if(t)t.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});};
   el.addEventListener("click",go);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});});
 applyPlaceUi();renderSources();tick();setInterval(tick,15000);
-if(C.isDus&&(PARK.ph||PARK.pr||PARK.bh))renderParking();
+
 refreshAll(true);
 setInterval(()=>{if(!document.hidden)refreshAll(false);},10*60*1000);
 setInterval(()=>{if(!document.hidden&&!busy)loadAutobahn();},3*60*1000);

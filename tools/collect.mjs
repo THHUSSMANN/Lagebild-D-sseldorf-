@@ -1,0 +1,190 @@
+// Lagebild Düsseldorf – Datensammler (© Thomas Hußmann)
+// Läuft alle 10 Minuten als GitHub Action und holt Quellen ab, die der Browser
+// wegen fehlender CORS-Freigabe nicht direkt abrufen darf. Ergebnis: data/*.json
+import fs from "node:fs/promises";
+import path from "node:path";
+
+const OUT = process.argv[2] || "data";
+const LIVE = "https://thhussmann.github.io/Lagebild-D-sseldorf-/data/";
+const UA = { "User-Agent": "Lagebild-Duesseldorf/1.0 (privates Dashboard; github.com/THHUSSMANN)" };
+
+const PLACES = {
+  dus: { name: "Düsseldorf", lat: 51.2254, lon: 6.7763, ars: "051110000000", uR: 12,
+    feeds: [["Polizei & Feuerwehr Düsseldorf", "https://www.presseportal.de/rss/polizei/r/D%C3%BCsseldorf.rss2"]],
+    efa: "Düsseldorf Heinrich-Heine-Allee", db: "8000085" },
+  datteln: { name: "Datteln", lat: 51.6539, lon: 7.3417, ars: "055620000000", uR: 30,
+    feeds: [["Feuerwehr Datteln", "https://www.presseportal.de/rss/dienststelle_130639.rss2"], ["Blaulicht Datteln", "https://www.presseportal.de/rss/polizei/r/Datteln.rss2"]],
+    efa: "Datteln Busbahnhof" },
+  alpen: { name: "Alpen-Menzelen", lat: 51.6449, lon: 6.5634, ars: "051700000000", uR: 30,
+    feeds: [["Blaulicht Alpen", "https://www.presseportal.de/rss/polizei/r/Alpen.rss2"]],
+    efa: "Alpen Bahnhof" },
+  salzhausen: { name: "Salzhausen", lat: 53.2236, lon: 10.1653, ars: "033530000000", uR: 30,
+    feeds: [["Blaulicht Salzhausen", "https://www.presseportal.de/rss/polizei/r/Salzhausen.rss2"]] }
+};
+
+const results = {};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function get(url, { type = "json", ms = 25000 } = {}) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(url, { headers: UA, signal: ctl.signal });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return type === "text" ? await r.text() : JSON.parse(await r.text());
+  } finally { clearTimeout(t); }
+}
+async function write(name, data) {
+  await fs.writeFile(path.join(OUT, name), JSON.stringify({ generated: new Date().toISOString(), data }));
+}
+// Bei Fehlern den zuletzt veröffentlichten Stand behalten
+async function job(name, fn) {
+  try { const d = await fn(); await write(name, d); results[name] = "ok"; }
+  catch (e) {
+    results[name] = "Fehler: " + (e.message || e);
+    try { const prev = await get(LIVE + name, { ms: 15000 }); prev.stale = true; await fs.writeFile(path.join(OUT, name), JSON.stringify(prev)); }
+    catch { /* nichts vorhanden */ }
+  }
+}
+const distKm = (a, b, c, d) => { const R = 6371, r = Math.PI / 180, x = (c - a) * r, y = (d - b) * r;
+  const h = Math.sin(x / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+const decode = s => String(s || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n)).replace(/&amp;/g, "&");
+const strip = s => decode(s).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+const round = g => JSON.parse(JSON.stringify(g, (k, v) => typeof v === "number" ? Math.round(v * 1000) / 1000 : v));
+
+// ---------- Presseportal (Polizei & Feuerwehr) ----------
+function parseRss(xml, label) {
+  return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
+    const it = m[1]; const tag = n => (it.match(new RegExp("<" + n + "[^>]*>([\\s\\S]*?)</" + n + ">")) || [])[1] || "";
+    const enc = tag("content:encoded"); const src = (decode(enc).match(/<b>([^<]+)<\/b>/) || [])[1] || label;
+    return { title: strip(tag("title")), text: strip(tag("description")).slice(0, 400), link: strip(tag("link")), date: new Date(strip(tag("pubDate"))).toISOString(), source: src };
+  });
+}
+async function blaulicht(key, p) {
+  const all = [];
+  for (const [label, url] of p.feeds) { all.push(...parseRss(await get(url, { type: "text" }), label)); await sleep(300); }
+  const seen = new Set();
+  return all.filter(x => !seen.has(x.link) && seen.add(x.link)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 25);
+}
+
+// ---------- NINA ----------
+async function ninaDetail(id) {
+  try { const d = await get("https://warnung.bund.de/api31/warnings/" + encodeURIComponent(id) + ".json", { ms: 15000 });
+    const info = (d.info || []).find(i => /^de/i.test(i.language || "")) || (d.info || [])[0] || {};
+    return { headline: info.headline, text: strip(info.description || "").slice(0, 1200), instr: strip(info.instruction || "").slice(0, 800), event: info.event, area: (info.area || []).map(a => a.areaDesc).join(", ").slice(0, 300) };
+  } catch { return {}; }
+}
+async function ninaDashboard(p) {
+  const list = await get("https://warnung.bund.de/api31/dashboard/" + p.ars + ".json");
+  const out = [];
+  for (const a of list || []) {
+    const d = a.payload && a.payload.data || {};
+    if (String(d.provider).toUpperCase() === "DWD") continue; // DWD kommt im Browser direkt
+    out.push({ id: a.id, provider: d.provider, severity: d.severity, type: d.msgType, sent: a.sent, title: (a.i18nTitle && a.i18nTitle.de) || d.headline, ...(await ninaDetail(a.id)) });
+  }
+  return out;
+}
+async function ninaAll() {
+  const provs = ["mowas", "katwarn", "biwapp", "lhp", "police"]; const out = [];
+  for (const p of provs) {
+    let list = []; try { list = await get("https://warnung.bund.de/api31/" + p + "/mapData.json"); } catch { continue; }
+    for (const w of (list || []).slice(0, 40)) {
+      let geo = null; try { geo = round(await get("https://warnung.bund.de/api31/warnings/" + encodeURIComponent(w.id) + ".geojson", { ms: 15000 })); } catch {}
+      out.push({ id: w.id, provider: p.toUpperCase(), severity: w.severity, sent: w.startDate, title: w.i18nTitle && w.i18nTitle.de, geo });
+    }
+  }
+  return out;
+}
+
+// ---------- Umweltbundesamt ----------
+let UBA_ST = null;
+async function ubaStations() {
+  if (UBA_ST) return UBA_ST;
+  const d = await get("https://luftdaten.umweltbundesamt.de/api/air-data/v3/stations/json?lang=de", { ms: 40000 });
+  const ix = d.indices || []; const I = n => ix.indexOf(n);
+  const iId = Math.max(0, I("station id")), iCode = I("station code"), iName = I("station name"), iTo = I("station active to"), iLat = I("station latitude"), iLon = I("station longitude");
+  UBA_ST = Object.values(d.data || {}).filter(a => Array.isArray(a) && (iTo < 0 || !a[iTo]))
+    .map(a => ({ id: a[iId], code: a[iCode], name: a[iName], lat: parseFloat(a[iLat]), lon: parseFloat(a[iLon]) })).filter(s => isFinite(s.lat) && isFinite(s.lon));
+  return UBA_ST;
+}
+async function uba(p) {
+  const st = (await ubaStations()).map(s => ({ ...s, km: distKm(p.lat, p.lon, s.lat, s.lon) })).filter(s => s.km <= p.uR).sort((a, b) => a.km - b.km).slice(0, 4);
+  const day = d => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+  const rows = [];
+  for (const s of st) {
+    try {
+      const d = await get("https://luftdaten.umweltbundesamt.de/api/air-data/v3/airquality/json?date_from=" + day(new Date(Date.now() - 864e5)) + "&time_from=1&date_to=" + day(new Date()) + "&time_to=24&station=" + s.id + "&lang=de");
+      const per = d.data && (d.data[s.id] || Object.values(d.data)[0]); if (!per) continue;
+      const k = Object.keys(per).sort().pop(); const v = per[k]; const comps = {};
+      v.slice(3).forEach(c => { if (Array.isArray(c)) comps[c[0]] = { val: c[1], idx: c[2] }; });
+      rows.push({ name: s.name, code: s.code, km: Math.round(s.km * 10) / 10, time: k, idx: v[1], comps });
+    } catch {}
+  }
+  if (!rows.length) throw new Error("keine Messwerte");
+  return rows;
+}
+
+// ---------- ÖPNV ----------
+async function efa(stop) {
+  const d = await get("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=any&name_dm=" + encodeURIComponent(stop) + "&mode=direct&useRealtime=1&limit=30&itdDateTimeDepArr=dep&useAllStops=1");
+  const loc = d.locations && d.locations[0] && (d.locations[0].disassembledName || d.locations[0].name) || stop;
+  return { stop: loc, rows: (d.stopEvents || []).map(e => { const t = e.transportation || {};
+    return { planned: e.departureTimePlanned, est: e.departureTimeEstimated, line: t.disassembledName || t.number || t.name || "", dir: t.destination && t.destination.name || "",
+      plat: e.location && e.location.properties && (e.location.properties.platform || e.location.properties.platformName) || "", cancelled: (e.realtimeStatus || []).includes("TRIP_CANCELLED") }; }) };
+}
+async function dbDeps(p) {
+  let id = p.db, name = "Düsseldorf Hbf", dist = null;
+  if (!id) {
+    const near = await get("https://v6.db.transport.rest/locations/nearby?latitude=" + p.lat + "&longitude=" + p.lon + "&results=6&distance=3000&stops=true&poi=false&language=de");
+    const s = (near || []).find(x => x.type === "stop" || x.type === "station"); if (!s) throw new Error("keine Haltestelle");
+    id = s.id; name = s.name; dist = s.distance;
+  }
+  const d = await get("https://v6.db.transport.rest/stops/" + encodeURIComponent(id) + "/departures?duration=120&results=30&language=de" + (p.db ? "&bus=false&tram=false&subway=false" : ""));
+  return { stop: name, dist, rows: (d.departures || d || []).map(x => ({ planned: x.plannedWhen || x.when, delay: x.delay != null ? Math.round(x.delay / 60) : null, line: x.line && x.line.name, dir: x.direction, plat: x.platform || x.plannedPlatform, cancelled: !!x.cancelled })) };
+}
+
+// ---------- Open Data Düsseldorf (Standorte) ----------
+const ODD = {
+  pr: "https://opendata.duesseldorf.de/sites/default/files/Park_and_Ride_WGS84_EPSG4326.geojson",
+  bh: "https://maps.duesseldorf.de/services/verkehr/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=verkehr:behindertenparkplatz&outputFormat=application/json&srsName=epsg:4326&count=2000",
+  aed: "https://opendata.duesseldorf.de/sites/default/files/Herzsicher%20in%20D%C3%BCsseldorf_WGS84_0.geojson",
+  wc: "https://opendata.duesseldorf.de/sites/default/files/Standorte%20%C3%B6ffentlicher%20Toiletten%20D%C3%BCsseldorf%202017_0.geojson",
+  rad: "https://opendata.duesseldorf.de/sites/default/files/Radstationen_2.geojson",
+  blitz: "https://opendata.duesseldorf.de/sites/default/files/Verkehrsueberwachung_2026.geojson"
+};
+function places(j) {
+  const arr = Array.isArray(j) ? j : (j.features || []);
+  return arr.map(f => {
+    const p = f.properties || f; let lon, lat;
+    const g = f.geometry; if (g && g.type === "Point") [lon, lat] = g.coordinates; else if (g && g.coordinates) { const c = JSON.stringify(g.coordinates).match(/-?\d+\.\d+,-?\d+\.\d+/); if (c) [lon, lat] = c[0].split(",").map(Number); }
+    if (lat > 90) return null; // keine WGS84-Koordinaten
+    if (lat && lon && lon > lat) [lat, lon] = [lon, lat];
+    const pick = re => { const k = Object.keys(p).find(k => re.test(k)); return k ? p[k] : ""; };
+    const name = pick(/^(name|bezeichnung|titel|standort|einrichtung|ort_name)$/i) || pick(/name|bezeich|standort/i);
+    const addr = [pick(/stra(ss|ß)e|adresse|anschrift|zufahrt/i), pick(/hausn/i)].filter(Boolean).join(" ");
+    const info = [pick(/zeit|oeffn|öffn|verf(ü|ue)gbar/i), pick(/anzahl|pl(ae|ä)tze|stellpl/i) ? pick(/anzahl|pl(ae|ä)tze|stellpl/i) + " Plätze" : ""].filter(Boolean).join(" · ");
+    return lat && lon ? { name: String(name || ""), addr: String(addr || "").trim(), info: String(info || ""), lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5 } : null;
+  }).filter(Boolean);
+}
+
+// ---------- Ablauf ----------
+await fs.mkdir(OUT, { recursive: true });
+const tasks = [];
+for (const [k, p] of Object.entries(PLACES)) {
+  tasks.push(job("blaulicht-" + k + ".json", () => blaulicht(k, p)));
+  tasks.push(job("nina-" + k + ".json", () => ninaDashboard(p)));
+  tasks.push(job("uba-" + k + ".json", () => uba(p)));
+  if (p.efa) tasks.push(job("efa-" + k + ".json", () => efa(p.efa)));
+  tasks.push(job("db-" + k + ".json", () => dbDeps(p)));
+}
+tasks.push(job("nina-all.json", ninaAll));
+tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));
+tasks.push(job("strom.json", async () => {
+  const day = d => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+  const price = await get("https://api.energy-charts.info/price?bzn=DE-LU&start=" + day(new Date()) + "&end=" + day(new Date(Date.now() + 864e5)));
+  let signal = null; try { signal = await get("https://api.energy-charts.info/signal?country=de"); } catch {}
+  return { price, signal };
+}));
+for (const [k, url] of Object.entries(ODD)) tasks.push(job("odd-" + k + ".json", async () => places(await get(url, { ms: 40000 }))));
+await Promise.all(tasks);
+await write("status.json", results);
+console.log(JSON.stringify(results, null, 1));
