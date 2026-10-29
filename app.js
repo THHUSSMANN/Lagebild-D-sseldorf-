@@ -193,6 +193,14 @@ function buildSelect(){
   selEl.value=sel;if(selEl.value!==sel){sel="dus-heerdt";selEl.value=sel;}
 }
 buildSelect();
+// Schnellwahl der Lieblingsstädte im Kopf
+function buildFavs(){
+  const dusSub=C.isDus?(C.short||""):"Heerdt";
+  const items=[["dus","Düsseldorf",dusSub],...FAVS.map(f=>[f.key,f.name,""])];
+  $("favs").innerHTML=items.map(([k,n,sub])=>'<button type="button" class="fav'+(C.key===k?" on":"")+'" data-fav="'+k+'">'+esc(n)+(sub?' <small>'+esc(sub)+'</small>':'')+'</button>').join("");
+}
+$("favs").addEventListener("click",e=>{const b=e.target.closest("[data-fav]");if(!b)return;const k=b.dataset.fav;
+  if(k==="dus"){if(!C.isDus)choose("dus-heerdt");}else if(C.key!==k)choose("p-"+k);});
 selEl.addEventListener("change",()=>{
   if(selEl.value==="__add"){selEl.value=sel;location.hash="einstellungen";setTimeout(()=>$("place-q").focus(),300);return;}
   choose(selEl.value);
@@ -212,6 +220,7 @@ function clearPlaceViews(){
   $("prio").innerHTML="";["k-temp","k-wx","k-wind","k-aq","k-rhein","k-warn","k-traffic"].forEach(id=>setKpi(id,"–","wird geladen"));
 }
 function applyPlaceUi(){
+  buildFavs();
   ROUTES_TXT=routesFor(C.key);ROUTES=parseRoutes(ROUTES_TXT);$("routes").value=ROUTES_TXT;
   $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);

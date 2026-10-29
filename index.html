@@ -57,6 +57,13 @@ header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:
 select,button,input{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-height:38px}
 header .hbtn{display:inline-flex;align-items:center;min-height:38px;padding:7px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.35);color:var(--head-fg);text-decoration:none;font-weight:600}
 header .hbtn:hover{border-color:var(--accent)}
+header .favs{flex-basis:100%;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+header .favs::-webkit-scrollbar{display:none}
+header .fav{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:6px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.06);color:var(--head-fg);font:600 15px var(--f-display);letter-spacing:.02em;cursor:pointer;white-space:nowrap}
+header .fav small{font:500 12px var(--f-body);opacity:.75}
+header .fav:hover{border-color:var(--accent)}
+header .fav.on{background:var(--accent);border-color:var(--accent);color:#06222e}
+header .fav.on small{opacity:.85}
 header select,header button{background:transparent;color:var(--head-fg);border-color:rgba(255,255,255,.35)}
 header select option{color:#14212b}
 button{cursor:pointer;font-weight:600}
@@ -268,6 +275,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
       <button id="refresh" type="button">Aktualisieren</button>
       <div class="clock" id="clock">--:--</div>
     </div>
+    <nav class="favs" id="favs" aria-label="Meine Städte"></nav>
   </div>
 </header>
 
@@ -566,6 +574,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=30"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>
