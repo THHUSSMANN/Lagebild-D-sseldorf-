@@ -363,7 +363,7 @@ tasks.push(job("radio.json", async () => {
   const ok = async u => { const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 8000);
     try { const r = await fetch(u, { headers: UA, signal: ctl.signal }); const ct = r.headers.get("content-type") || ""; ctl.abort(); return r.ok && /audio|mpeg|aac|ogg|octet/i.test(ct) ? u : null; } catch { return null; } finally { clearTimeout(t); } };
   const out = {};
-  for (const [k, name, known, q, home] of ST) {
+  for (let [k, name, known, q, home] of ST) {
     let url = null;
     if (home) { try { const h = await get(home, { type: "text" }); const found = [...new Set([...h.matchAll(/https?:\/\/[^"'\s<>]+?(?:\.mp3|\.aac|\/mp3[^"'\s<>]*|streamonkey[^"'\s<>]*|addradio[^"'\s<>]*|\/stream[^"'\s<>]*)/gi)].map(m => m[0].replace(/\\\//g, "/")))].slice(0, 12); console.log("::notice::Radio " + k + " Kandidaten Webseite: " + found.join(" ")); known = [...found.filter(x => /^https:/.test(x)), ...known]; } catch (e) { console.log("::notice::Radio " + k + " Webseite: " + e.message); } }
     for (const u of known) if ((url = await ok(u))) break;
