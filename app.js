@@ -56,7 +56,7 @@ const SRC={
   sammler:{name:"Datensammler (alle 10 Minuten)",prov:"GitHub Actions",url:"https://github.com/THHUSSMANN/Lagebild-D-sseldorf-/actions",ep:"data/*.json"},
   hol:{name:"Feiertage",prov:"Nager.Date",url:"https://date.nager.at/Api",ep:"date.nager.at/api/v3"},
   school:{name:"Schulferien",prov:"OpenHolidays API",url:"https://www.openholidaysapi.org/",ep:"openholidaysapi.org/SchoolHolidays"},
-  strom:{name:"Strompreis & Ökostrom-Ampel",prov:"Energy-Charts (Fraunhofer ISE)",url:"https://api.energy-charts.info/",ep:"api.energy-charts.info (über Datensammler)"},
+  boerse:{name:"Börse: Indizes, Devisen, Rohstoffe",prov:"Yahoo Finance (verzögert)",url:"https://finance.yahoo.com/",ep:"query1.finance.yahoo.com (über Datensammler)"},
   news:{name:"Regionale Nachrichten",prov:"tagesschau",url:"https://tagesschau.api.bund.dev/",ep:"tagesschau.de/api2u/news"},
   geo:{name:"Ortssuche",prov:"Open-Meteo Geocoding",url:"https://open-meteo.com/en/docs/geocoding-api",ep:"geocoding-api.open-meteo.com/v1/search"}
 };
@@ -217,7 +217,7 @@ function applyPlaceUi(){
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
   $("k-ein").hidden=C.key!=="datteln";
   $("k-bahn").dataset.view="bahn";
-  {const fav=C.isDus||C.key==="datteln";GROUPS.mobil[0][1]=fav?"Bahn RE ⇄ D":"Bahn-Verbindung";
+  {const fav=C.isDus||C.key==="datteln";GROUPS.mobil[0][1]="Deutsche Bahn";GROUPS.mobil[1][1]=C.isDus?"Rheinbahn":"Nahverkehr";
     $("bahn").querySelector("h2").textContent=fav?"Bahn-Verbindungen":"Bahn-Verbindung suchen";
     $("trip-from").value="";$("trip-to").value="";$("trip-from").placeholder=fav?"z. B. Düsseldorf-Heerdt":"Startbahnhof oder Adresse";$("trip-to").placeholder="Zielbahnhof oder Adresse";
     if(!fav)setKpi("k-bahn","Suche<small> Bahn</small>","Verbindung suchen · Abfahrten vor Ort","info");}
@@ -775,8 +775,9 @@ function routeHit(w,r){
   // „aus Richtung X“ ist die Gegenrichtung und zählt nicht
   return new RegExp("(→|->|>|(?<!aus )Richtung|(?<!aus )Ri\\.|nach|in Fahrtrichtung)[^|→>()]{0,40}?"+escRe(r.dir),"i").test(t.replace(/\(?aus Richtung [^)|]*\)?/gi,""));
 }
+let ROUTE_ITEMS=[],AB_SETS={},AB_SEL=null;
 function renderPrio(rawW,rawC,okRoads){
-  const box=$("prio");
+  const box=$("prio");ROUTE_ITEMS=[];
   if(!ROUTES.length){box.innerHTML="";return;}
   const cards=ROUTES.map(r=>{
     if(!okRoads.has(r.ab))return '<div class="route unk"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv muted">keine Daten</span></div>';
@@ -790,9 +791,40 @@ function renderPrio(rawW,rawC,okRoads){
       val=(st?"Stau":"stockend")+(j.jam.delay!=null?" · +"+j.jam.delay+" min":"")+(j.jam.len?" · "+fmt(j.jam.len,1)+" km":"")+(jams.length>1?" ("+jams.length+" Meldungen)":"");
       sub=(j.subtitle||j.title||"")+" · "+fmt(j.km)+" km entfernt";}
     else if(ws.length){cls="warn";val="Behinderung";sub=(ws[0].subtitle||ws[0].title||"")+" · "+fmt(ws[0].km)+" km entfernt";}
-    return '<div class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span><span class="rs">'+esc(sub)+'</span></div>';});
+    ROUTE_ITEMS[ROUTES.indexOf(r)]=[...cl.map(c=>({...c,_c:1})),...ws];
+    return '<div role="button" tabindex="0" data-route="'+ROUTES.indexOf(r)+'" class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span><span class="rs">'+esc(sub)+'</span></div>';});
   box.innerHTML='<div class="sublbl">Meine Strecken</div><div class="prio">'+cards.join("")+'</div>';
 }
+// Detailliste hinter Kennzahlen und „Meine Strecken“
+function abItem(i){
+  const J=i.jam||jamInfo(i);const closed=i._c||i.isBlocked==="true"||i.isBlocked===true;
+  const lines=(i.description||[]).map(x=>String(x).trim()).filter(Boolean);
+  const pill=closed?'<span class="pill p-bad"><i></i>Sperrung</span>':J?(J.kind==="stau"?'<span class="pill p-bad"><i></i>Stau</span>':'<span class="pill p-warn"><i></i>stockend</span>'):'<span class="pill p-warn"><i></i>Behinderung</span>';
+  const facts=[J&&J.delay!=null?"<b>+"+J.delay+" min</b>":"",J&&J.len?fmt(J.len,1)+" km lang":"",J&&J.speed!=null?"Ø "+J.speed+" km/h":"",fmt(i.km)+" km von "+esc(C.town)].filter(Boolean).join(" · ");
+  return '<details class="abd"><summary><span class="tag ab">'+esc(i.ab)+'</span><span class="abd-t">'+pill+' '+esc(i.title||"")+'</span><span class="abd-s">'+esc(i.subtitle||"")+'</span><span class="abd-f">'+facts+'</span></summary>'+
+    '<div class="abd-b">'+(lines.length?lines.map(esc).join("<br>"):'<span class="muted">Keine weiteren Angaben der Autobahn GmbH.</span>')+
+    (isFinite(i.lat)?'<div style="margin-top:8px"><button type="button" class="btn sm" data-goto="'+i.lat+','+i.lon+'">Auf der Karte zeigen</button> <a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=map&center='+i.lat+','+i.lon+'&zoom=14&layer=traffic">Google Maps ↗</a></div>':'')+'</div></details>';}
+function showAbDetail(k){
+  const box=$("stau-detail");if(!box)return;
+  let set=null;
+  if(/^r\d+$/.test(k)){const r=ROUTES[+k.slice(1)];const l=(ROUTE_ITEMS[+k.slice(1)]||[]).sort((a,b)=>a.km-b.km);set={t:"Meine Strecke: "+r.ab+" Richtung "+r.dir,l};}
+  else set=AB_SETS[k];
+  if(!set){box.hidden=true;return;}
+  box.hidden=false;
+  box.innerHTML='<div class="abd-head"><h3>'+esc(set.t)+' <span class="muted small">('+set.l.length+')</span></h3><button type="button" class="btn sm" data-close="1">Schließen ✕</button></div>'+
+    (set.l.length?'<div class="muted small" style="margin-bottom:6px">Eintrag antippen für alle Angaben (Abschnitt, Dauer, Umleitung).</div>'+set.l.map(abItem).join(""):'<div class="state good">Keine Meldungen auf dieser Strecke im Umkreis von '+PRIO_RADIUS_KM+' km.</div>');
+  document.querySelectorAll("#stau-sum .fbtn,#prio .route").forEach(b=>b.classList.toggle("on",(b.dataset.f||("r"+b.dataset.route))===k));
+}
+function selectAb(k){AB_SEL=AB_SEL===k?null:k;if(!AB_SEL){$("stau-detail").hidden=true;document.querySelectorAll("#stau-sum .fbtn,#prio .route").forEach(b=>b.classList.remove("on"));return;}
+  showAbDetail(AB_SEL);setTimeout(()=>$("stau-detail").scrollIntoView({behavior:"smooth",block:"start"}),30);}
+document.addEventListener("click",e=>{
+  const f=e.target.closest("#stau-sum .fbtn");if(f){selectAb(f.dataset.f);return;}
+  const r=e.target.closest("#prio .route[data-route]");if(r){selectAb("r"+r.dataset.route);return;}
+  if(e.target.closest("#stau-detail [data-close]")){selectAb(AB_SEL);return;}
+  const g=e.target.closest("#stau-detail [data-goto]");if(g&&MAP){const [la,lo]=g.dataset.goto.split(",").map(Number);$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([la,lo],13);
+    MAPLAYER.eachLayer(l=>{const ll=l.getLatLng&&l.getLatLng();if(ll&&Math.abs(ll.lat-la)<1e-6&&Math.abs(ll.lng-lo)<1e-6&&l.openPopup)l.openPopup();});}
+});
+document.addEventListener("keydown",e=>{const r=e.target.closest&&e.target.closest("#prio .route[data-route]");if(r&&(e.key==="Enter"||e.key===" ")){e.preventDefault();selectAb("r"+r.dataset.route);}});
 async function loadAutobahn(){
   const roads=C.ab,prioOnly=[...new Set(ROUTES.map(r=>r.ab))].filter(a=>!roads.includes(a));
   if(!roads.length&&!ROUTES.length){
@@ -840,7 +872,17 @@ async function loadAutobahn(){
   composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>",nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");
   if(false)setKpi("k-traffic",String(jams.length),jams.length?(maxDelay?"bis +"+maxDelay+" min":"")+(totLen?" · "+fmt(totLen,1)+" km":"")+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""):"freie Fahrt"+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""),
     nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");
-  $("stau-sum").innerHTML=fact(String(nStau),"Staus")+fact(String(jams.length-nStau),"stockender Verkehr")+fact(totLen?fmt(totLen,1)+" km":"–","Staulänge gesamt")+fact(maxDelay?"+"+maxDelay+" min":"–","größte Verzögerung")+fact(String(closuresAll.length),"Sperrungen")+fact(String(others),"weitere Behinderungen");
+  const otherList=warnings.filter(w=>!jamInfo(w)&&!isClosed(w)).sort((a,b)=>a.km-b.km);
+  AB_SETS={
+    stau:{t:"Staus",l:jams.filter(j=>j.jam.kind==="stau")},
+    stockend:{t:"Stockender Verkehr",l:jams.filter(j=>j.jam.kind!=="stau")},
+    len:{t:"Staus mit Längenangabe (längste zuerst)",l:jams.filter(j=>j.jam.len).sort((a,b)=>b.jam.len-a.jam.len)},
+    delay:{t:"Verzögerungen (größte zuerst)",l:jams.filter(j=>j.jam.delay!=null).sort((a,b)=>b.jam.delay-a.jam.delay)},
+    sperr:{t:"Sperrungen (nächste zuerst)",l:[...closuresAll].sort((a,b)=>a.km-b.km)},
+    other:{t:"Weitere Behinderungen",l:otherList}};
+  const fb=(k,v,l)=>'<button type="button" class="fact fbtn'+(AB_SEL===k?" on":"")+'" data-f="'+k+'"'+(AB_SETS[k].l.length?"":" disabled")+'><b>'+v+'</b><span>'+l+'</span></button>';
+  $("stau-sum").innerHTML=fb("stau",String(nStau),"Staus")+fb("stockend",String(jams.length-nStau),"stockender Verkehr")+fb("len",totLen?fmt(totLen,1)+" km":"–","Staulänge gesamt")+fb("delay",maxDelay?"+"+maxDelay+" min":"–","größte Verzögerung")+fb("sperr",String(closuresAll.length),"Sperrungen")+fb("other",String(otherList.length),"weitere Behinderungen");
+  if(AB_SEL&&!/^r\d/.test(AB_SEL))showAbDetail(AB_SEL);else if(AB_SEL)showAbDetail(AB_SEL);
   $("stau-list").innerHTML=jams.length?'<div>'+jams.map(j=>{const J=j.jam;
       const det=[J.len?fmt(J.len,1)+" km":"",J.speed!=null?"Ø "+J.speed+" km/h":"",fmt(j.km)+" km entfernt"].filter(Boolean).join(" · ");
       return '<div class="jam"><span class="tag ab">'+esc(j.ab)+'</span><div class="t">'+(j.pr<99?'<span class="pill" style="margin-right:6px">Meine Strecke</span>':'')+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
@@ -987,37 +1029,26 @@ function renderCal(){
 }
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7);}
 
-// ================= Strom =================
-async function loadStrom(){
+// ================= Börse =================
+async function loadBoerse(){
   try{
-    const day=isoDay(),tom=isoDay(new Date(Date.now()+864e5));
-    const sd=(await getData("strom.json")).data;const pr=sd.price||{},sig=sd.signal;void tom;
-    const ts=pr.unix_seconds||[],pv=pr.price||[];const now=Date.now()/1000;
-    let ci=-1;ts.forEach((t,i)=>{if(t<=now)ci=i;});const cur=ci>=0?pv[ci]:null;
-    let share=null,signal=null;
-    if(sig&&sig.unix_seconds){let si=-1;sig.unix_seconds.forEach((t,i)=>{if(t<=now)si=i;});if(si>=0){share=sig.share&&sig.share[si];signal=sig.signal&&sig.signal[si];}}
-    const sigTxt={"-1":["Netzengpass","bad"],"0":["wenig Ökostrom","bad"],"1":["mittel","warn"],"2":["viel Ökostrom","ok"]}[String(signal)]||["–",""];
-    if(false)setKpi("k-strom",fmt(cur!=null?cur/10:null,1)+"<small> ct/kWh</small>",share!=null?"Ökostrom "+fmt(share)+" % · "+sigTxt[0]:"Börsenpreis Day-Ahead",sigTxt[1]||"info");
-    const pts=[];ts.forEach((t,i)=>{if(isoDay(new Date(t*1000))===day&&pv[i]!=null)pts.push([t,pv[i]/10]);});
-    let chart="";
-    if(pts.length>2){
-      const W=640,H=170,pl=40,pr2=8,pt=12,pb=24,iw=W-pl-pr2,ih=H-pt-pb;
-      let mn=Math.min(0,...pts.map(p=>p[1])),mx=Math.max(...pts.map(p=>p[1]));if(mx-mn<5)mx=mn+5;
-      const t0=pts[0][0],t1=pts[pts.length-1][0];const x=t=>pl+(t-t0)/(t1-t0||1)*iw,y=v=>pt+ih-(v-mn)/(mx-mn)*ih;
-      chart='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Börsenstrompreis heute">';
-      [mn,(mn+mx)/2,mx].forEach(g=>{chart+='<line x1="'+pl+'" x2="'+(W-pr2)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(y(g)+4)+'" text-anchor="end">'+fmt(g)+'</text>';});
-      if(mn<0)chart+='<line x1="'+pl+'" x2="'+(W-pr2)+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="var(--muted)" stroke-dasharray="3 3"/>';
-      let d="";pts.forEach((p,i)=>{d+=(i?"H"+x(p[0]).toFixed(1)+"V":"M"+x(p[0]).toFixed(1)+" ")+y(p[1]).toFixed(1);});d+="H"+(W-pr2);
-      chart+='<path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="2"/>';
-      if(now>=t0&&now<=t1+3600)chart+='<line x1="'+x(Math.min(now,t1))+'" x2="'+x(Math.min(now,t1))+'" y1="'+pt+'" y2="'+(pt+ih)+'" stroke="var(--warn)" stroke-width="1.5"/>';
-      [0,6,12,18].forEach(hh=>{const tt=pts.find(p=>new Date(p[0]*1000).toLocaleTimeString("de-DE",{...TZ,hour:"2-digit"})===String(hh).padStart(2,"0"));if(tt)chart+='<text x="'+x(tt[0])+'" y="'+(H-6)+'" text-anchor="middle">'+String(hh).padStart(2,"0")+':00</text>';});
-      chart+='</svg>';
-      const minP=pts.reduce((a,b)=>b[1]<a[1]?b:a),maxP=pts.reduce((a,b)=>b[1]>a[1]?b:a);
-      chart+='<div class="facts">'+fact(fmt(minP[1],1)+" ct","günstigste Stunde "+hhmm(minP[0]*1000))+fact(fmt(maxP[1],1)+" ct","teuerste Stunde "+hhmm(maxP[0]*1000))+(share!=null?fact(fmt(share)+" %","Ökostromanteil jetzt"):"")+'</div>';
-    }
-    $("strom").innerHTML='<div class="row"><div><div class="big">'+fmt(cur!=null?cur/10:null,1)+'<span style="font-size:20px"> ct/kWh</span></div><div class="muted">Börsenpreis jetzt (ohne Steuern und Netzentgelte)</div></div>'+(signal!=null?'<span class="pill p-'+sigTxt[1]+'"><i></i>'+sigTxt[0]+'</span>':'')+'</div>'+chart;
-    setStatus("strom",true);
-  }catch(e){setStatus("strom",false,errText(e));$("strom").innerHTML=stateBox("Strompreis nicht verfügbar – "+errText(e)+".",link("https://www.energy-charts.info/","Energy-Charts"));}
+    const d=await getData("boerse.json");const q=(d.data&&d.data.quotes)||[];if(!q.length)throw new Error("keine Kurse");
+    const spark=(pts,up)=>{if(!pts||pts.length<2)return"";const mn=Math.min(...pts),mx=Math.max(...pts),W=200,H=34;
+      const xy=pts.map((v,i)=>(i/(pts.length-1)*W).toFixed(1)+","+(mx===mn?H/2:(H-2-(v-mn)/(mx-mn)*(H-4))).toFixed(1)).join(" ");
+      return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true"><polyline points="'+xy+'" fill="none" stroke="'+(up?"var(--ok)":"var(--bad)")+'" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>';};
+    const dax=q.find(x=>x.sym==="^GDAXI");
+    const berlin=new Date(new Date().toLocaleString("en-US",{timeZone:"Europe/Berlin"}));const wd=berlin.getDay(),mm=berlin.getHours()*60+berlin.getMinutes();
+    const xetra=wd>0&&wd<6&&mm>=540&&mm<1050;
+    $("boerse").innerHTML='<div class="row" style="margin-bottom:8px"><div class="muted small">Xetra '+(xetra?'<b style="color:var(--ok)">geöffnet</b> (9:00–17:30)':'<b>geschlossen</b> – Werte vom letzten Handel')+' · Kurse mit ca. 15 Min. Verzögerung</div></div>'+
+      '<div class="mk">'+q.map(x=>{const ch=x.prev?(x.price-x.prev)/x.prev*100:null;const up=ch==null||ch>=0;
+        const dig=x.price>=1000?0:x.price>=10?2:4;
+        return '<a class="mk-i '+(ch==null?"":up?"up":"dn")+'" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://finance.yahoo.com/quote/'+encodeURIComponent(x.sym)+'"><div class="mk-n">'+esc(x.name)+'</div>'+
+          '<div class="row" style="align-items:baseline"><span class="mk-v">'+x.price.toLocaleString("de-DE",{minimumFractionDigits:dig,maximumFractionDigits:dig})+'</span>'+
+          (ch!=null?'<span class="mk-c">'+(up?"▲ +":"▼ ")+ch.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+' %</span>':'')+'</div>'+
+          '<div class="muted small">'+(x.m1!=null?'1 Monat: '+(x.m1>=0?"+":"")+x.m1.toLocaleString("de-DE",{maximumFractionDigits:1})+' %':'')+(x.time?' · Stand '+hhmm(x.time*1000):'')+'</div>'+spark(x.pts,up)+'</a>';}).join("")+'</div>'+
+      '<div class="muted small" style="margin-top:6px">Tagesveränderung gegenüber dem letzten Schlusskurs. Antippen öffnet Details. Keine Anlageberatung. Abgerufen '+dataAge(d)+'</div>';
+    setStatus("boerse",true);
+  }catch(e){setStatus("boerse",false,errText(e));$("boerse").innerHTML=stateBox("Börsendaten nicht verfügbar – "+errText(e)+".",link("https://www.boerse-frankfurt.de/","Börse Frankfurt"));}
 }
 
 // ================= Nachrichten =================
@@ -1047,7 +1078,7 @@ function renderSources(){
 let busy=false,lastSlow=0,slowKey="";
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
-  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
+  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
   if(C.isDus)tasks.push(loadVT(),loadGarages());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
@@ -1066,7 +1097,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={verkehr:[["staus","Autobahn & Staus"],["stadtverkehr","Stadtverkehr"],["verkehr","Baustellen, Webcams, Tanken"],["parken","Parken & Service"]],mobil:[["bahn","Bahn RE ⇄ D"],["oepnv","Rheinbahn & Bus"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Autobahn & Staus"],["stadtverkehr","Stadtverkehr"],["verkehr","Baustellen, Webcams, Tanken"],["parken","Parken & Service"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   if(["stadtverkehr","parken","bezirke"].includes(v))return C.isDus;
   if(v==="einsaetze")return C.key==="datteln";
@@ -1096,7 +1127,8 @@ function route(){
   document.querySelectorAll(".view").forEach(el=>el.hidden=el.dataset.view!==v);
   buildViewbar();
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
-    el.innerHTML=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x)).map(([x,l])=>'<a href="#'+x+'" class="'+(x===v?"on":"")+'">'+esc(l)+'</a>').join("");});
+    const tabs=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x));el.hidden=tabs.length<2;
+    el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===v?"on":"")+'">'+esc(l)+'</a>').join("");});
   if(inView){window.scrollTo(0,0);if(v==="staus"&&MAP)setTimeout(()=>MAP.invalidateSize(),60);}
 }
 window.addEventListener("hashchange",route);
@@ -1114,7 +1146,7 @@ document.querySelectorAll("#tiles .tile").forEach(t=>{
 $("arrange").addEventListener("click",()=>{
   EDITING=!EDITING;$("tiles").classList.toggle("editing",EDITING);
   $("arrange").textContent=EDITING?"Fertig":"Anordnen";$("arrange-hint").hidden=!EDITING;$("arrange-reset").hidden=!EDITING;
-  if(window.Sortable&&!SORT)SORT=Sortable.create($("tiles"),{animation:160,delay:180,delayOnTouchOnly:true,filter:"button",preventOnFilter:false,onEnd:saveTileOrder});
+  if(window.Sortable&&!SORT)SORT=Sortable.create($("tiles"),{animation:150,forceFallback:true,fallbackOnBody:true,fallbackTolerance:4,delay:0,filter:".ctl button",preventOnFilter:false,ghostClass:"tile-ghost",chosenClass:"tile-chosen",dragClass:"tile-drag",onStart:()=>$("tiles").classList.add("dragging"),onEnd:()=>{$("tiles").classList.remove("dragging");saveTileOrder();}});
   if(SORT)SORT.option("disabled",!EDITING);
   if(!EDITING)saveTileOrder();
 });

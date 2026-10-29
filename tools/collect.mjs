@@ -24,10 +24,10 @@ const PLACES = {
 
 const results = {};
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function get(url, { type = "json", ms = 25000 } = {}) {
+async function get(url, { type = "json", ms = 25000, headers = {} } = {}) {
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
   try {
-    const r = await fetch(url, { headers: UA, signal: ctl.signal });
+    const r = await fetch(url, { headers: { ...UA, ...headers }, signal: ctl.signal });
     if (!r.ok) throw new Error("HTTP " + r.status);
     return type === "text" ? await r.text() : JSON.parse(await r.text());
   } finally { clearTimeout(t); }
@@ -353,11 +353,21 @@ tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
 tasks.push(job("trips.json", trips));
 tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));
-tasks.push(job("strom.json", async () => {
-  const day = d => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
-  const price = await get("https://api.energy-charts.info/price?bzn=DE-LU&start=" + day(new Date()) + "&end=" + day(new Date(Date.now() + 864e5)));
-  let signal = null; try { signal = await get("https://api.energy-charts.info/signal?country=de"); } catch {}
-  return { price, signal };
+tasks.push(job("boerse.json", async () => {
+  const SYMS = [["^GDAXI", "DAX"], ["^MDAXI", "MDAX"], ["^TECDAX", "TecDAX"], ["^STOXX50E", "Euro Stoxx 50"], ["^GSPC", "S&P 500"], ["^IXIC", "Nasdaq"], ["^N225", "Nikkei 225"], ["EURUSD=X", "Euro in US-Dollar"], ["GC=F", "Gold (USD je Unze)"], ["BZ=F", "Öl Brent (USD je Barrel)"], ["BTC-EUR", "Bitcoin (EUR)"]];
+  const y = async (sym, q) => { let last; for (const h of ["query1", "query2"]) { try { return await get("https://" + h + ".finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(sym) + "?" + q, { headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15" } }); } catch (e) { last = e; } } throw last; };
+  const quotes = (await Promise.all(SYMS.map(async ([sym, name]) => {
+    try {
+      const day = (await y(sym, "range=1d&interval=5m")).chart.result[0];
+      const m = day.meta; const pts = (day.indicators.quote[0].close || []).filter(v => v != null);
+      let m1 = null; try { const mo = (await y(sym, "range=1mo&interval=1d")).chart.result[0]; const c = (mo.indicators.quote[0].close || []).filter(v => v != null); if (c.length) m1 = (m.regularMarketPrice - c[0]) / c[0] * 100; } catch {}
+      const step = Math.max(1, Math.floor(pts.length / 60));
+      return { sym, name, price: m.regularMarketPrice, prev: m.chartPreviousClose ?? m.previousClose ?? null, time: m.regularMarketTime, cur: m.currency, m1, pts: pts.filter((_, i) => i % step === 0) };
+    } catch (e) { console.log("::notice::Börse " + sym + " fehlgeschlagen: " + e.message); return null; }
+  }))).filter(Boolean);
+  console.log("::notice::Börse: " + quotes.length + " Kurse, DAX " + (quotes[0] && quotes[0].price));
+  if (!quotes.length) throw new Error("keine Kurse");
+  return { quotes };
 }));
 for (const [k, url] of Object.entries(ODD)) tasks.push(job("odd-" + k + ".json", async () => places(await get(url, { ms: 40000 }))));
 await Promise.all(tasks);
