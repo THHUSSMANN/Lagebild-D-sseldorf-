@@ -207,6 +207,7 @@ function applyPlaceUi(){
   document.querySelectorAll("[data-dus]").forEach(el=>el.hidden=!C.isDus);
   document.title="Lagebild "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
+  $("gmaps").href="https://www.google.com/maps/@"+C.center.lat+","+C.center.lon+","+(C.isDus?12:11)+"z/data=!5m1!1e1";
   $("stau-title").textContent="Staus & Behinderungen rund um "+C.town;
   $("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
   $("rhein-sec").textContent=C.isDus?"Rhein & Grundwasser":"Gewässer";
