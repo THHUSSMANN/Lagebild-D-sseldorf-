@@ -35,6 +35,7 @@
   --bg:#0e1519; --panel:#152027; --panel-2:#1a2730; --fg:#e4ecf0; --muted:#93a4ae; --line:#2a3a44;
   --accent:#4fb6d3; --accent-soft:#163846; --head:#0a1014; --head-fg:#e4ecf0; --ok:#5cc07a; --warn:#e3b13c; --bad:#ef6f5a; --crit:#d77cc3; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head)}
@@ -493,6 +494,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>
