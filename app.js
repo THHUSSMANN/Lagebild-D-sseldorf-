@@ -905,6 +905,12 @@ function renderCal(){
   if(SCHOOL&&SCHOOL.length){const cur=SCHOOL.find(s=>s.start<=today&&s.end>=today);const next=SCHOOL.filter(s=>s.start>today).slice(0,3);
     html+='<div><div class="sublbl">Schulferien '+esc(sn)+'</div>'+(cur?'<div class="state good">Jetzt: '+esc(cur.name)+' bis '+dateShort(nd(cur.end))+'</div>':'')+
       '<div class="list">'+next.map(s=>'<div class="li"><span class="tag alt">'+nd(s.start).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+'</span><div class="t">'+esc(s.name)+'</div><div class="r muted small">'+rel(days(s.start))+'</div><div class="d">bis '+dateShort(nd(s.end))+'</div></div>').join("")+'</div></div>';}
+  {let v="–",n="",cls="info";
+    const cur=SCHOOL&&SCHOOL.find(x=>x.start<=today&&x.end>=today);
+    const hol=HOL&&HOL.find(h=>h.date>=today);
+    if(cur){v=esc(cur.name);n="bis "+dateShort(nd(cur.end))+" · "+(STATE_NAME[C.state]||"");cls="ok";}
+    else if(hol){v=nd(hol.date).toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})+"<small> "+esc(hol.localName)+"</small>";n=rel(days(hol.date))+" · "+(STATE_NAME[C.state]||"");}
+    setKpi("k-strom",v,n,cls);}
   $("cal").innerHTML=html||stateBox("wird geladen …");
 }
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7);}
@@ -919,7 +925,7 @@ async function loadStrom(){
     let share=null,signal=null;
     if(sig&&sig.unix_seconds){let si=-1;sig.unix_seconds.forEach((t,i)=>{if(t<=now)si=i;});if(si>=0){share=sig.share&&sig.share[si];signal=sig.signal&&sig.signal[si];}}
     const sigTxt={"-1":["Netzengpass","bad"],"0":["wenig Ökostrom","bad"],"1":["mittel","warn"],"2":["viel Ökostrom","ok"]}[String(signal)]||["–",""];
-    setKpi("k-strom",fmt(cur!=null?cur/10:null,1)+"<small> ct/kWh</small>",share!=null?"Ökostrom "+fmt(share)+" % · "+sigTxt[0]:"Börsenpreis Day-Ahead",sigTxt[1]||"info");
+    if(false)setKpi("k-strom",fmt(cur!=null?cur/10:null,1)+"<small> ct/kWh</small>",share!=null?"Ökostrom "+fmt(share)+" % · "+sigTxt[0]:"Börsenpreis Day-Ahead",sigTxt[1]||"info");
     const pts=[];ts.forEach((t,i)=>{if(isoDay(new Date(t*1000))===day&&pv[i]!=null)pts.push([t,pv[i]/10]);});
     let chart="";
     if(pts.length>2){
