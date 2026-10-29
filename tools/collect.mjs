@@ -347,7 +347,7 @@ for (const [k, p] of Object.entries(PLACES)) {
   tasks.push(job("blaulicht-" + k + ".json", () => blaulicht(k, p)));
   tasks.push(job("nina-" + k + ".json", () => ninaDashboard(p)));
   tasks.push(job("uba-" + k + ".json", () => uba(p)));
-  if (p.efa) tasks.push(job("efa-" + k + ".json", async () => { const r = await efa(p.efa); console.log("::notice::Abfahrten " + k + ": " + r.stop + " – " + r.rows.length + " Fahrten, z. B. " + r.rows.slice(0, 3).map(x => x.line + " " + x.dir).join(" | ")); return r; }));
+  if (p.efa) tasks.push(job("efa-" + k + ".json", async () => { const r = await efa(p.efa); return r; }));
 }
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
@@ -365,15 +365,16 @@ tasks.push(job("radio.json", async () => {
   const out = {};
   for (let [k, name, known, q, home] of ST) {
     let url = null;
-    if (home) { try { const h = await get(home, { type: "text" }); const found = [...new Set([...h.matchAll(/https?:\/\/[^"'\s<>]+?(?:\.mp3|\.aac|\/mp3[^"'\s<>]*|streamonkey[^"'\s<>]*|addradio[^"'\s<>]*|\/stream[^"'\s<>]*)/gi)].map(m => m[0].replace(/\\\//g, "/")))].slice(0, 12); console.log("::notice::Radio " + k + " Kandidaten Webseite: " + found.join(" ")); known = [...found.filter(x => /^https:/.test(x)), ...known]; } catch (e) { console.log("::notice::Radio " + k + " Webseite: " + e.message); } }
+    if (home) { try { const h = await get(home, { type: "text" }); const found = [...new Set([...h.matchAll(/https?:\/\/[^"'\s<>]+?(?:\.mp3|\.aac|\/mp3[^"'\s<>]*|streamonkey[^"'\s<>]*|addradio[^"'\s<>]*|\/stream[^"'\s<>]*)/gi)].map(m => m[0].replace(/\\\//g, "/")))].slice(0, 12); known = [...found.filter(x => /^https:/.test(x)), ...known]; } catch (e) { console.log("::notice::Radio " + k + " Webseite: " + e.message); } }
     for (const u of known) if ((url = await ok(u))) break;
     if (!url) { try {
-      const l = [...await get("https://de1.api.radio-browser.info/json/stations/search?name=" + encodeURIComponent(q) + "&hidebroken=true&order=votes&reverse=true&limit=15"), ...(k === "antenne" ? await get("https://de1.api.radio-browser.info/json/stations/search?name=" + encodeURIComponent("Antenne Düsseldorf") + "&limit=15") : [])]; console.log("::notice::Radio " + k + " radio-browser: " + l.map(x => x.name + " " + x.url_resolved).slice(0, 5).join(" | "));
+      const l = [...await get("https://de1.api.radio-browser.info/json/stations/search?name=" + encodeURIComponent(q) + "&hidebroken=true&order=votes&reverse=true&limit=15"), ...(k === "antenne" ? await get("https://de1.api.radio-browser.info/json/stations/search?name=" + encodeURIComponent("Antenne Düsseldorf") + "&limit=15") : [])];
       for (const x of l.filter(x => x.lastcheckok === 1 && /^https:/.test(x.url_resolved))) if ((url = await ok(x.url_resolved))) break;
     } catch (e) { console.log("::notice::Radio-Suche " + k + ": " + e.message); } }
     out[k] = { name, url };
-    console.log("::notice::Radio " + name + ": " + (url || "kein Stream gefunden"));
+    
   }
+  console.log("::notice::Radio: " + Object.values(out).map(x => x.name + (x.url ? " ok" : " fehlt")).join(", "));
   return out;
 }));
 tasks.push(job("boerse.json", async () => {
