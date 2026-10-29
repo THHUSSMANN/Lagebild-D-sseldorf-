@@ -281,6 +281,8 @@ async function irisFern(from, to) {
   const [ea, eb] = [await irisEva(from), await irisEva(to)];
   const A = await irisHours(ea, [0, 1, 2, 3]), B = await irisHours(eb, [0, 1, 2, 3, 4, 5]);
   const byTrip = {}; for (const x of Object.values(B)) byTrip[x.trip] = x;
+  { const v = Object.values(A), f = v.filter(x => /^(ICE|IC|EC|ECE)$/.test(x.cat || ""));
+    console.log("::notice::IRIS " + from + " (" + ea + "): " + v.length + " Halte, " + f.length + " Fernzüge, Beispiel: " + f.slice(0, 3).map(x => x.cat + x.num + " " + (x.dpT || "") + " " + (x.dpPath || "").split("|").slice(0, 4).join("/")).join(" || ")); }
   const toName = to.replace(/ Hbf$/, "");
   return Object.values(A).filter(x => /^(ICE|IC|EC|ECE|NJ|FLX)$/.test(x.cat || "") && x.dpT && (x.dpPath || "").split("|").some(s => s.startsWith(toName)))
     .map(x => { const y = byTrip[x.trip] || {}; const line = x.cat + " " + x.num;
