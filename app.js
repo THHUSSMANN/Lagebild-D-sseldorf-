@@ -661,7 +661,8 @@ const escRe=x=>String(x).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 function routeHit(w,r){
   if(w.ab!==r.ab)return false;
   const t=[w.title,w.subtitle,(w.description||[])[0]].filter(Boolean).join(" | ");
-  return new RegExp("(→|->|>|Richtung|Ri\\.|nach|in Fahrtrichtung)[^|→>]{0,40}?"+escRe(r.dir),"i").test(t);
+  // „aus Richtung X“ ist die Gegenrichtung und zählt nicht
+  return new RegExp("(→|->|>|(?<!aus )Richtung|(?<!aus )Ri\\.|nach|in Fahrtrichtung)[^|→>()]{0,40}?"+escRe(r.dir),"i").test(t.replace(/\(?aus Richtung [^)|]*\)?/gi,""));
 }
 function renderPrio(rawW,rawC,okRoads){
   const box=$("prio");

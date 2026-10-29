@@ -125,7 +125,12 @@ async function uba(p) {
 
 // ---------- ÖPNV ----------
 async function efa(stop) {
-  const d = await get("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=any&name_dm=" + encodeURIComponent(stop) + "&mode=direct&useRealtime=1&limit=30&itdDateTimeDepArr=dep&useAllStops=1");
+  // Erst die Haltestelle eindeutig bestimmen, dann die Abfahrten zur Haltestellen-ID abrufen
+  const sf = await get("https://efa.vrr.de/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf=" + encodeURIComponent(stop));
+  const best = (sf.locations || []).filter(l => l.type === "stop").sort((a, b) => (b.isBest ? 1 : 0) - (a.isBest ? 1 : 0))[0];
+  if (!best) throw new Error("Haltestelle nicht gefunden: " + stop);
+  const d = await get("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=stop&name_dm=" + encodeURIComponent(best.id) + "&mode=direct&useRealtime=1&limit=40&itdDateTimeDepArr=dep&useAllStops=1");
+  d.locations = d.locations && d.locations.length ? d.locations : [best];
   const loc = d.locations && d.locations[0] && (d.locations[0].disassembledName || d.locations[0].name) || stop;
   return { stop: loc, rows: (d.stopEvents || []).map(e => { const t = e.transportation || {};
     return { planned: e.departureTimePlanned, est: e.departureTimeEstimated, line: t.disassembledName || t.number || t.name || "", dir: t.destination && t.destination.name || "",
