@@ -730,19 +730,37 @@ async function loadBlaulicht(){
 }
 
 // ================= Webcam-Seiten je Ort =================
+// Webcams: img = direktes Kamerabild (nur https), sonst Link zur Webcam-Seite
 const WEBCAM_LINKS={
-  dus:[["Burgplatz / Altstadt","https://balticlivecam.com/cameras/germany/dusseldorf/burgplatz"],["Rheinufer","https://balticlivecam.com/cameras/germany/dusseldorf/rhine-river-embankment"],["Blick vom ARAG-Tower","https://tourispo.de/sehenswuerdigkeit/rheinuferpromenade-duesseldorf/webcam/ausblick-arag-tower-duesseldorf.htm"],["Rheinuferpromenade (Übersicht)","https://tourispo.de/webcams/sehenswuerdigkeit/rheinuferpromenade-duesseldorf.html"],["Alle Düsseldorfer Webcams","https://mygermancity.com/duesseldorf-webcams"]],
-  datteln:[["Wetter-Webcams Datteln und Umgebung","https://www.windfinder.com/webcams/datteln"],["Dortmund Hafen","https://www.skylinewebcams.com/webcam/deutschland/north-rhine-westphalia/dortmund/hafen.html"]],
-  alpen:[["Rhein bei Rees","https://www.webcamtaxi.com/en/germany/north-rhine-westphalia/rhine-river-rees-cam.html"],["Rees: Rhein (weitere Kamera)","https://worldcams.tv/germany/rees/rhein-river"]],
-  salzhausen:[["Webcams Lüneburger Heide (Karte)","https://www.tourispo.de/webcams-ausflugsziele/lueneburger-heide"],["Webcams Niedersachsen","https://www.feratel.com/en/webcams/germany/lower-saxony"],["Wetter-Webcams Umgebung","https://www.windfinder.com/webcams/embsen_lower_saxony_germany"]]
+  dus:[
+    {t:"Blick vom ARAG-Tower",img:"https://www.arag.de/images/webcam/tower00006.jpg",u:"https://www.arag.de/images/webcam/tower00006.jpg"},
+    {t:"Landtag NRW · Rheinufer",img:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix1.jpg",u:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix1.jpg"},
+    {t:"Landtag NRW · Rheinknie",img:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix4.jpg",u:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix4.jpg"},
+    {t:"Lausward · Blick Richtung Neuss",img:"https://www.swd-ag.de/webcam/blickvonderlausward2.jpg",u:"https://www.swd-ag.de/webcam/blickvonderlausward2.jpg"},
+    {t:"Lausward · Blick zur Arena",img:"https://www.swd-ag.de/webcam/blickvonderlausward3.jpg",u:"https://www.swd-ag.de/webcam/blickvonderlausward3.jpg"},
+    {t:"Burgplatz / Altstadt (Livestream)",u:"https://balticlivecam.com/cameras/germany/dusseldorf/burgplatz"},
+    {t:"Rheinufer (Livestream)",u:"https://balticlivecam.com/cameras/germany/dusseldorf/rhine-river-embankment"},
+    {t:"Alle Düsseldorfer Webcams",u:"https://mygermancity.com/duesseldorf-webcams"}],
+  datteln:[
+    {t:"Haltern am See · Marktplatz (ca. 15 km)",u:"https://www.windfinder.com/webcams/datteln"},
+    {t:"Dortmund · Hansaplatz (ca. 18 km)",u:"https://www.windfinder.com/webcams/datteln"},
+    {t:"Dortmund · Phoenixsee (ca. 22 km)",u:"https://www.windfinder.com/webcams/datteln"}],
+  alpen:[
+    {t:"Rhein bei Rees · Promenade (ca. 20 km)",u:"https://www.webcamtaxi.com/en/germany/north-rhine-westphalia/rhine-river-rees-cam.html"}],
+  salzhausen:[
+    {t:"Webcams Lüneburger Heide (Karte)",u:"https://www.tourispo.de/webcams-ausflugsziele/lueneburger-heide"},
+    {t:"Embsen / Lüneburg (ca. 20 km)",u:"https://www.windfinder.com/webcams/embsen_lower_saxony_germany"}]
 };
-const CAM_N={links:0,pub:0,ab:0};
-function camTile(){const n=CAM_N.pub+CAM_N.ab;setKpi("k-cam",n?String(n)+"<small> Kameras</small>":String(CAM_N.links)+"<small> Seiten</small>",(n?"mit Vorschaubild":"Webcam-Seiten")+" · "+C.town,"info");}
+const CAM_N={links:0,img:0,pub:0,ab:0};
+function camTile(){const n=CAM_N.img+CAM_N.pub+CAM_N.ab;setKpi("k-cam",n?String(n)+"<small> Livebilder</small>":String(CAM_N.links)+"<small> Links</small>",n?"Kamerabilder "+C.town:CAM_N.links?"Webcams in der Umgebung":"keine Webcams hinterlegt","info");}
 function renderWebcamLinks(){
   const list=WEBCAM_LINKS[C.key]||[];const box=$("webcam-links");
   $("cam-title").textContent="Webcams "+C.town;
-  CAM_N.links=list.length;camTile();
-  box.innerHTML=list.length?'<div class="sublbl">Webcam-Seiten</div><div class="row" style="gap:8px;margin-bottom:10px">'+list.map(([t,u])=>'<a class="pill" style="text-decoration:none;color:var(--fg);padding:6px 12px" href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(t)+' ↗</a>').join("")+'</div>':"";
+  const imgs=list.filter(x=>x.img),links=list.filter(x=>!x.img);const ts=Math.floor(Date.now()/300000);
+  box.innerHTML=(imgs.length?'<div class="sublbl">Kamerabilder (aktualisieren sich alle paar Minuten)</div><div class="cams cams-l" style="margin-bottom:10px">'+imgs.map(x=>'<a class="cam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(x.t)+'" src="'+esc(x.img)+'?t='+ts+'" onerror="this.closest(\'.cam\').classList.add(\'off\')"><span>'+esc(x.t)+'</span></a>').join("")+'</div>':'')+
+    (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="list" style="margin-bottom:10px">'+links.map(x=>'<a class="li" style="text-decoration:none;color:inherit" href="'+esc(x.u)+'" target="_blank" rel="noopener"><span class="tag">Cam</span><div class="t">'+esc(x.t)+'</div><div class="r muted small">öffnen ↗</div></a>').join("")+'</div>':'')||
+    '<div class="state">Für '+esc(C.town)+' sind keine Webcams hinterlegt.</div>';
+  CAM_N.links=imgs.length+links.length;CAM_N.img=imgs.length;camTile();
 }
 // ================= Öffentliche Webcams (Windy) =================
 async function loadWindy(){

@@ -199,6 +199,9 @@ details summary{cursor:pointer;color:var(--accent);font-size:13.5px}
 .tag.alt{background:var(--accent);color:var(--panel)}
 .cams{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .cam{display:flex;flex-direction:column;gap:3px;text-decoration:none;color:var(--fg);font-size:12.5px}
+.cams-l{grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr))}
+.cam.off img{opacity:.25}
+.cam.off span::after{content:" · derzeit offline"}
 .cam img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;background:var(--panel-2);border:1px solid var(--line)}
 svg.chart{width:100%;height:auto;display:block}
 svg.chart text{fill:var(--muted);font:11px var(--f-body)}
@@ -614,6 +617,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=37"></script>
+<script src="app.js?v=38"></script>
 </body>
 </html>
