@@ -228,7 +228,7 @@ async function trips() {
       });
       let fern = [];
       try { fern = await irisFern(from, to); } catch (e) { console.log("::warning::IRIS " + key + ": " + (e.message || e)); }
-      try { fern.push(...await fernCombos(from, to)); } catch (e) { console.log("::warning::Fern+Umstieg " + key + ": " + (e.message || e)); }
+      try { const fc = await fernCombos(from, to); console.log("::notice::Fern-Kandidaten " + key + ": " + fc.map(j => j.dep.slice(11, 16) + "→" + (j.arr || "").slice(11, 16) + " " + j.legs.map(l => l.line).join(">")).join(" | ")); fern.push(...fc); } catch (e) { console.log("::warning::Fern+Umstieg " + key + ": " + (e.message || e)); }
       const dur = j => (new Date(j.arrEst || j.arr) - new Date(j.depEst || j.dep)) / 6e4;
       const best = Math.min(...journeys.filter(j => j.arr && j.dep).map(dur), 999);
       journeys.push(...fern.filter(j => j.arr && j.dep && dur(j) <= best + 25));
