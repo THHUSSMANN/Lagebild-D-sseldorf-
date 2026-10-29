@@ -208,13 +208,13 @@ async function trips() {
     try {
       const a = await stopId(from), b = await stopId(to);
       // Nur Züge (Fern-, Regionalverkehr, S-Bahn): Busse, U-/Straßenbahn usw. ausgeschlossen.
-      // Zwei Abfragen (jetzt und in 2 Stunden), damit alle Züge der nächsten Stunden enthalten sind.
+      // Vier Abfragen (jetzt bis in 3 Stunden), damit alle Züge der nächsten Stunden enthalten sind.
       const excl = "&excludedMeans=checkbox" + [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 19].map(n => "&exclMOT_" + n + "=1").join("");
       const at = d => { const p = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d).reduce((o, x) => (o[x.type] = x.value, o), {});
         return "&itdDate=" + p.year + p.month + p.day + "&itdTime=" + p.hour + p.minute; };
       const base = "https://efa.vrr.de/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin=" + encodeURIComponent(a.id) + "&type_destination=any&name_destination=" + encodeURIComponent(b.id) + "&itdTripDateTimeDepArr=dep&calcNumberOfTrips=10&useRealtime=1" + excl;
       const raw = [];
-      for (const t of [new Date(), new Date(Date.now() + 2 * 3600e3)]) { try { const d = await get(base + at(t), { ms: 30000 }); raw.push(...(d.journeys || [])); } catch (e) { if (!raw.length) throw e; } }
+      for (const t of [0, 1, 2, 3].map(h => new Date(Date.now() + h * 3600e3))) { try { const d = await get(base + at(t), { ms: 30000 }); raw.push(...(d.journeys || [])); } catch (e) { if (!raw.length) throw e; } }
       const seen = new Set();
       const journeys = raw.map(j => {
         const legs = (j.legs || []).map(l => { const t = l.transportation || {}, pc = t.product && t.product.class;
