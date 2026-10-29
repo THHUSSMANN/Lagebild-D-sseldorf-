@@ -19,7 +19,6 @@ const BEZIRKE=[
 ];
 // Einzelne Stadtteile zusätzlich zu den Bezirken
 const STADTTEILE=[
-  {key:"heerdt",name:"Heerdt",detail:"Stadtteil im Bezirk 4 · Handweiser, Heerdter Sandberg, Belsenplatz",lat:51.2296,lon:6.7086,bezirk:4}
 ];
 const DUS={lat:51.2254,lon:6.7763,ars:"051110000000",ab:["A3","A44","A46","A52","A57","A59","A524","A535"],efa:"Düsseldorf Nikolaus-Knopp-Platz"};
 // Favoriten (Regionalschlüssel = Kreisebene für die NINA-Warn-App)
@@ -134,11 +133,12 @@ function bft(kmh){const t=[1,6,12,20,29,39,50,62,75,89,103,118];let b=0;while(b<
 
 // ================= Zustand =================
 let CUSTOM=load("custom")||[];
-let sel=String(load("sel")||"dus-heerdt");
-if(!load("def_heerdt")){if(sel==="dus-1")sel="dus-heerdt";store("def_heerdt",1);store("sel",sel);}
+let sel=String(load("sel")||"dus-4");
+if(sel==="dus-heerdt"){sel="dus-4";store("sel",sel);}
+if(!load("def_heerdt")){if(sel==="dus-1")sel="dus-4";store("def_heerdt",1);store("sel",sel);}
 // Direktaufruf z. B. für Kurzbefehle: ?ort=duesseldorf | dus-3 | datteln | alpen | salzhausen | <Name eines eigenen Orts>
 (function(){try{const q=new URLSearchParams(location.search).get("ort");if(!q)return;const v=q.trim().toLowerCase();
-  if(/^(dus|duesseldorf|düsseldorf)$/.test(v))sel="dus-heerdt";
+  if(/^(dus|duesseldorf|düsseldorf|heerdt|dus-heerdt|oberkassel)$/.test(v))sel="dus-4";
   else if(v==="mitte")sel="dus-1";
   else if(/^dus-([1-9]|10)$/.test(v))sel=v;
   else if(STADTTEILE.some(t=>t.key===v||"dus-"+t.key===v))sel="dus-"+v.replace(/^dus-/,"");
@@ -153,7 +153,7 @@ const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
 // Strecken je Ort; die bisherige Liste gilt für Düsseldorf
 if(load("routes")!=null&&load("routes_dus")==null)store("routes_dus",load("routes"));
 const routesFor=k=>load("routes_"+k)??(k==="dus"?ROUTES_DEFAULT:"");
-let ROUTES_TXT=routesFor(String(load("sel")||"dus-heerdt").startsWith("dus-")?"dus":String(load("sel")).replace(/^p-/,""));
+let ROUTES_TXT=routesFor(String(load("sel")||"dus-4").startsWith("dus-")?"dus":String(load("sel")).replace(/^p-/,""));
 function parseRoutes(t){return String(t||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^A?\s*(\d{1,3})\s*(?:Richtung|Ri\.|→|->|>|nach)?\s*(.+)$/i);return m?{ab:"A"+m[1],dir:m[2].trim()}:null;}).filter(Boolean);}
 let ROUTES=parseRoutes(ROUTES_TXT);
 let WX=null,AQ=null,HOL=null,SCHOOL=null,PARK=load("park")||{},BIKE=null,OBS=null;
@@ -190,17 +190,17 @@ function buildSelect(){
   allPlaces().forEach(p=>{const o=document.createElement("option");o.value="p-"+p.key;o.textContent=p.name;g2.appendChild(o);});
   const add=document.createElement("option");add.value="__add";add.textContent="+ Ort hinzufügen …";g2.appendChild(add);
   selEl.appendChild(g2);
-  selEl.value=sel;if(selEl.value!==sel){sel="dus-heerdt";selEl.value=sel;}
+  selEl.value=sel;if(selEl.value!==sel){sel="dus-4";selEl.value=sel;}
 }
 buildSelect();
 // Schnellwahl der Lieblingsstädte im Kopf
 function buildFavs(){
-  const dusSub=C.isDus?(C.short||""):"Heerdt";
+  const dusSub=C.isDus?(C.short||""):"Oberkassel / Heerdt";
   const items=[["dus","Düsseldorf",dusSub],...FAVS.map(f=>[f.key,f.name,""])];
   $("favs").innerHTML=items.map(([k,n,sub])=>'<button type="button" class="fav'+(C.key===k?" on":"")+'" data-fav="'+k+'">'+esc(n)+(sub?' <small>'+esc(sub)+'</small>':'')+'</button>').join("");
 }
 $("favs").addEventListener("click",e=>{const b=e.target.closest("[data-fav]");if(!b)return;const k=b.dataset.fav;
-  if(k==="dus"){if(!C.isDus)choose("dus-heerdt");}else if(C.key!==k)choose("p-"+k);});
+  if(k==="dus"){if(!C.isDus)choose("dus-4");}else if(C.key!==k)choose("p-"+k);});
 selEl.addEventListener("change",()=>{
   if(selEl.value==="__add"){selEl.value=sel;location.hash="einstellungen";setTimeout(()=>$("place-q").focus(),300);return;}
   choose(selEl.value);
@@ -283,7 +283,7 @@ function renderMine(){
   box.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
     if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Wirklich entfernen?";setTimeout(()=>{b.dataset.armed="";b.textContent="Entfernen";},4000);return;}
     const k=b.dataset.del;CUSTOM=CUSTOM.filter(p=>p.key!==k);delete ABSEL[k];store("custom",CUSTOM);store("absel",ABSEL);
-    buildSelect();if(sel==="p-"+k)choose("dus-heerdt");else renderMine();}));
+    buildSelect();if(sel==="p-"+k)choose("dus-4");else renderMine();}));
   box.querySelectorAll("[data-ab]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.ab;
     const v=($("ab-"+k).value||"").toUpperCase().split(/[\s,;]+/).map(x=>x.replace(/^(\d)/,"A$1")).filter(x=>/^A\d{1,3}$/.test(x));
     ABSEL[k]=[...new Set(v)];store("absel",ABSEL);if(C.key===k){C=ctx();applyPlaceUi();loadAutobahn();}else renderMine();}));
