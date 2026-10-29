@@ -49,6 +49,7 @@ const SRC={
   db:{name:"Abfahrten Bahn & Bus",prov:"db.transport.rest (DB-Daten)",url:"https://v6.db.transport.rest/",ep:"v6.db.transport.rest (über Datensammler)"},
   bike:{name:"Leihräder",prov:"nextbike",url:"https://www.nextbike.de/",ep:"maps.nextbike.net/maps/nextbike-live.json"},
   vt:{name:"Stadtverkehr & Parkhäuser live",prov:"Verkehrszentrale Düsseldorf",url:"https://vtmanager.duesseldorf.de/info/",ep:"vtmanager.duesseldorf.de/geoserverwfs"},
+  einsaetze:{name:"Feuerwehreinsätze Kreis Recklinghausen",prov:"Kreisleitstelle Recklinghausen",url:"https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp",ep:"kreis-re.de (über Datensammler)"},
   blaulicht:{name:"Polizei & Feuerwehr",prov:"Presseportal Blaulicht",url:"https://www.presseportal.de/blaulicht/",ep:"presseportal.de/rss (über Datensammler)"},
   park:{name:"P+R, Behindertenparkplätze, AED, WC, Radstationen",prov:"Open Data Düsseldorf",url:"https://opendata.duesseldorf.de/",ep:"opendata.duesseldorf.de (über Datensammler)"},
   windy:{name:"Öffentliche Webcams",prov:"Windy Webcams API",url:"https://api.windy.com/webcams",ep:"api.windy.com/webcams/api/v3"},
@@ -148,7 +149,10 @@ let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
 let WINDY=load("windy")||"";
 const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
-let ROUTES_TXT=load("routes")??ROUTES_DEFAULT;
+// Strecken je Ort; die bisherige Liste gilt für Düsseldorf
+if(load("routes")!=null&&load("routes_dus")==null)store("routes_dus",load("routes"));
+const routesFor=k=>load("routes_"+k)??(k==="dus"?ROUTES_DEFAULT:"");
+let ROUTES_TXT=routesFor(String(load("sel")||"dus-heerdt").startsWith("dus-")?"dus":String(load("sel")).replace(/^p-/,""));
 function parseRoutes(t){return String(t||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^A?\s*(\d{1,3})\s*(?:Richtung|Ri\.|→|->|>|nach)?\s*(.+)$/i);return m?{ab:"A"+m[1],dir:m[2].trim()}:null;}).filter(Boolean);}
 let ROUTES=parseRoutes(ROUTES_TXT);
 let WX=null,AQ=null,HOL=null,SCHOOL=null,PARK=load("park")||{},BIKE=null,OBS=null;
@@ -206,6 +210,8 @@ function clearPlaceViews(){
   $("prio").innerHTML="";["k-temp","k-wx","k-wind","k-aq","k-rhein","k-warn","k-traffic"].forEach(id=>setKpi(id,"–","wird geladen"));
 }
 function applyPlaceUi(){
+  ROUTES_TXT=routesFor(C.key);ROUTES=parseRoutes(ROUTES_TXT);$("routes").value=ROUTES_TXT;
+  $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
   document.querySelectorAll("[data-dus]").forEach(el=>el.hidden=!C.isDus);
   document.title="Lagebild "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
@@ -225,8 +231,7 @@ $("tk").value=TK;$("windy").value=WINDY;
 $("windy-save").addEventListener("click",()=>{WINDY=$("windy").value.trim();store("windy",WINDY);loadWindy();});$("theme").value=theme;
 $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!v||!C.efaDefault)return;STOPS[C.key]=v;store("stops",STOPS);loadEFA();});
 $("stop").addEventListener("keydown",e=>{if(e.key==="Enter")$("stop-save").click();});
-$("routes").value=ROUTES_TXT;
-$("routes-save").addEventListener("click",()=>{ROUTES_TXT=$("routes").value.trim();store("routes",ROUTES_TXT);ROUTES=parseRoutes(ROUTES_TXT);loadAutobahn();});
+$("routes-save").addEventListener("click",()=>{ROUTES_TXT=$("routes").value.trim();store("routes_"+C.key,ROUTES_TXT);ROUTES=parseRoutes(ROUTES_TXT);loadAutobahn();});
 $("routes").addEventListener("keydown",e=>{if(e.key==="Enter")$("routes-save").click();});
 $("tk-save").addEventListener("click",()=>{TK=$("tk").value.trim();store("tk",TK);loadFuel();});
 $("theme").addEventListener("change",e=>{const v=e.target.value;store("theme",v);
@@ -591,6 +596,19 @@ function drawVTOnMap(){
 }
 
 // ================= Polizei & Feuerwehr =================
+async function loadEinsaetze(){
+  const card=$("einsaetze-card");card.hidden=C.key!=="datteln";if(card.hidden)return;
+  try{const d=await getData("einsaetze-kreis-re.json");const all=d.data.rows||[];
+    const here=all.filter(x=>/datteln/i.test(x.ort)),other=all.filter(x=>!/datteln/i.test(x.ort));
+    const tbl=(rows)=>'<div class="tbl-wrap"><table><thead><tr><th>Zeit</th><th>Ort</th><th>Straße</th><th>Einsatzstichwort</th></tr></thead><tbody>'+rows.map(x=>'<tr><td><b>'+esc(x.time.slice(0,5))+'</b> <span class="muted small">'+esc(x.date.slice(0,6))+'</span></td><td>'+esc(x.ort)+'</td><td class="wrap-txt">'+esc(x.strasse)+'</td><td class="wrap-txt">'+(x.laufend?'<span class="pill p-bad"><i></i>läuft</span> ':'')+'<b>'+esc(x.stichwort)+'</b></td></tr>').join("")+'</tbody></table></div>';
+    const running=here.filter(x=>x.laufend).length;
+    $("einsaetze").innerHTML='<div class="facts">'+fact(String(here.length),"Einsätze Datteln")+fact(String(running),"laufend in Datteln")+fact(String(all.length),"Einsätze im Kreis")+fact(esc(d.data.updated||"–"),"Stand Leitstelle")+'</div>'+
+      '<div class="sublbl">Datteln</div>'+(here.length?tbl(here):'<div class="state good">Keine Einsätze in Datteln im angezeigten Zeitraum.</div>')+
+      '<details style="margin-top:8px"><summary>Übrige Einsätze im Kreis Recklinghausen ('+other.length+')</summary>'+tbl(other)+'</details>'+
+      '<div class="muted small">Kreisleitstelle Recklinghausen, ohne Rettungsdienst-Einsätze · abgerufen '+dataAge(d)+' · '+link("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp","Originalliste")+'</div>';
+    setStatus("einsaetze",true,"Stand "+dataAge(d));
+  }catch(e){setStatus("einsaetze",false,errText(e));$("einsaetze").innerHTML=stateBox("Einsatzliste nicht verfügbar – "+errText(e)+".",link("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp","Originalliste"));}
+}
 async function loadBlaulicht(){
   $("bl-title").textContent="Polizei & Feuerwehr "+C.town;
   if(!FAVKEYS.includes(C.key)){$("bl").innerHTML=stateBox("Meldungen sind für Düsseldorf und die Favoriten hinterlegt. Für "+C.town+":",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal "+C.town));return;}
@@ -939,7 +957,7 @@ function renderSources(){
 let busy=false,lastSlow=0,slowKey="";
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
-  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEFA(),loadDep(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
+  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadEFA(),loadDep(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
   if(C.isDus)tasks.push(loadVT(),loadGarages());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){

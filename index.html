@@ -259,6 +259,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </div>
 </section>
 
+<section class="card wide" id="einsaetze-card" hidden>
+  <div class="card-head"><h2>Feuerwehreinsätze Datteln</h2><span class="src">Kreisleitstelle Recklinghausen · alle 10 Minuten</span></div>
+  <div id="einsaetze"><div class="state">wird geladen …</div></div>
+</section>
+
 <section class="card wide" id="blaulicht">
   <div class="card-head"><h2 id="bl-title">Polizei &amp; Feuerwehr</h2><span class="src">Presseportal Blaulicht (offizielle Meldungen)</span></div>
   <div id="bl"><div class="state">wird geladen …</div></div>
@@ -401,9 +406,9 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
       <span class="hint">Gilt für den gerade gewählten Ort. Name wie in der VRR-Auskunft, z. B. „Alpen Bahnhof“.</span>
     </div>
     <div class="field">
-      <label for="routes">Meine Strecken (Priorität)</label>
+      <label for="routes" id="routes-lbl">Meine Strecken (Priorität)</label>
       <div class="inline"><input id="routes" type="text" autocomplete="off" placeholder="A52 Essen; A40 Duisburg"><button type="button" id="routes-save">Speichern</button></div>
-      <span class="hint">Autobahn und Fahrtrichtung, getrennt mit Semikolon. Diese Strecken stehen bei den Staus immer oben.</span>
+      <span class="hint">Gilt für den gerade gewählten Ort. Autobahn und Fahrtrichtung, getrennt mit Semikolon, z. B. „A43 Münster; A2 Oberhausen“.</span>
     </div>
     <div class="field">
       <label for="tk">Tankerkönig-API-Schlüssel</label>

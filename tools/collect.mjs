@@ -168,6 +168,21 @@ function places(j) {
   }).filter(Boolean);
 }
 
+// ---------- Feuerwehreinsätze Kreis Recklinghausen ----------
+async function kreisRe() {
+  const r = await fetch("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp", { headers: UA });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  let html = new TextDecoder("utf-8").decode(buf);
+  if (/charset=(iso-8859-1|windows-1252)/i.test(r.headers.get("content-type") || "") || /<meta[^>]+charset=["']?(iso-8859-1|windows-1252)/i.test(html) || html.includes("\uFFFD")) html = new TextDecoder("windows-1252").decode(buf);
+  const cell = c => strip(c).replace(/\s+/g, " ").trim();
+  const rows = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(c => cell(c[1]))).filter(c => c.length >= 4 && /\d{2}:\d{2}:\d{2}/.test(c[0]))
+    .map(c => { const [t, d] = c[0].split(/\s+/); return { time: t, date: d || "", ort: c[1], strasse: c[2], stichwort: c[3], laufend: /^ja/i.test(c[4] || "") }; });
+  if (!rows.length) throw new Error("keine Einsätze in der Tabelle gefunden");
+  const updated = (strip(html).match(/Letzte Aktualisierung:?\s*([\d.: ]{10,20})/i) || [])[1] || "";
+  return { updated: updated.trim(), rows };
+}
+
 // ---------- Ablauf ----------
 await fs.mkdir(OUT, { recursive: true });
 const tasks = [];
@@ -186,6 +201,7 @@ for (const [k, p] of Object.entries(PLACES)) {
   }));
 }
 tasks.push(job("nina-all.json", ninaAll));
+tasks.push(job("einsaetze-kreis-re.json", kreisRe));
 tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));
 tasks.push(job("strom.json", async () => {
   const day = d => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
