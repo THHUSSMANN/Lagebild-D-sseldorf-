@@ -1033,7 +1033,7 @@ function renderCal(){
   {let v="–",n="",cls="info";
     const cur=SCHOOL&&SCHOOL.find(x=>x.start<=today&&x.end>=today);
     const hol=HOL&&HOL.find(h=>h.date>=today);
-    if(cur){v=esc(cur.name);n="bis "+dateShort(nd(cur.end))+" · "+(STATE_NAME[C.state]||"");cls="ok";}
+    if(cur){v='<span class="vt">'+esc(cur.name).replace(/^(Herbst|Oster|Sommer|Winter|Pfingst|Weihnachts)(ferien)/i,"$1&shy;$2")+'</span>';n="bis "+dateShort(nd(cur.end))+" · "+(STATE_NAME[C.state]||"");cls="ok";}
     else if(hol){v=nd(hol.date).toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})+"<small> "+esc(hol.localName)+"</small>";n=rel(days(hol.date))+" · "+(STATE_NAME[C.state]||"");}
     setKpi("k-strom",v,n,cls);}
   $("cal").innerHTML=html||stateBox("wird geladen …");
