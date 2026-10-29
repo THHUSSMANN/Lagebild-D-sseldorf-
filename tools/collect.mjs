@@ -221,7 +221,7 @@ async function trips() {
           return { line: t.disassembledName || t.number || t.name || "", name: t.name || "", walk: pc === 99 || pc === 100 || /fu(ß|ss)weg/i.test(t.name || ""), dir: t.destination && t.destination.name || "",
             from: stopName(l.origin), to: stopName(l.destination),
             dep: l.origin && l.origin.departureTimePlanned, depEst: l.origin && l.origin.departureTimeEstimated, arr: l.destination && l.destination.arrivalTimePlanned, arrEst: l.destination && l.destination.arrivalTimeEstimated,
-            plat: l.origin && l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "", cancelled: (l.realtimeStatus || []).includes("TRIP_CANCELLED") }; });
+            plat: l.origin && l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "", arrPlat: l.destination && l.destination.properties && (l.destination.properties.platformName || l.destination.properties.platform) || "", dir: t.destination && t.destination.name || "", cancelled: (l.realtimeStatus || []).includes("TRIP_CANCELLED") }; });
         const ride = legs.filter(x => !x.walk);
         const rideLegs = ride;
         return { trainsOnly: rideLegs.every(l => /^(ICE|IC|EC|ECE|RE|RB|S|RRX|NX|FLX|NJ|TGV|THA)\s?\d*/i.test(l.line) || /zug|bahn/i.test(l.name)), dep: (ride[0] || legs[0] || {}).dep, depEst: (ride[0] || legs[0] || {}).depEst, arr: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arr, arrEst: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arrEst, changes: Math.max(0, ride.length - 1), legs };
@@ -264,7 +264,7 @@ function irisStops(xml) {
     const tl = (body.match(/<tl ([^>]*)\/?>/) || [])[1] || "";
     const at = (str, k) => (str.match(new RegExp(k + '="([^"]*)"')) || [])[1];
     const dp = (body.match(/<dp ([^>]*)\/?>/) || [])[1] || "", ar = (body.match(/<ar ([^>]*)\/?>/) || [])[1] || "";
-    out[id] = { id, trip, cat: at(tl, "c"), num: at(tl, "n"), dpT: at(dp, "pt"), dpCt: at(dp, "ct"), dpPp: at(dp, "pp"), dpPath: at(dp, "ppth"), dpCs: at(dp, "cs"), arT: at(ar, "pt"), arCt: at(ar, "ct"), arCs: at(ar, "cs") };
+    out[id] = { id, trip, cat: at(tl, "c"), num: at(tl, "n"), dpT: at(dp, "pt"), dpCt: at(dp, "ct"), dpPp: at(dp, "pp"), dpPath: at(dp, "ppth"), dpCs: at(dp, "cs"), arT: at(ar, "pt"), arCt: at(ar, "ct"), arCs: at(ar, "cs"), arPp: at(ar, "pp") };
   }
   return out;
 }
@@ -276,7 +276,7 @@ async function irisHours(eva, hours) {
   }
   try { // Echtzeit-Änderungen
     const ch = irisStops(await get(IRIS + "fchg/" + eva, { type: "text" }));
-    for (const [id, c] of Object.entries(ch)) if (all[id]) { const a = all[id]; a.dpCt = c.dpCt || a.dpCt; a.arCt = c.arCt || a.arCt; a.dpCs = c.dpCs || a.dpCs; a.arCs = c.arCs || a.arCs; a.dpPp = c.dpPp || a.dpPp; }
+    for (const [id, c] of Object.entries(ch)) if (all[id]) { const a = all[id]; a.dpCt = c.dpCt || a.dpCt; a.arCt = c.arCt || a.arCt; a.dpCs = c.dpCs || a.dpCs; a.arCs = c.arCs || a.arCs; a.dpPp = c.dpPp || a.dpPp; a.arPp = c.arPp || a.arPp; }
   } catch {}
   return all;
 }
@@ -288,7 +288,7 @@ async function irisFern(from, to) {
   return Object.values(A).filter(x => /^(ICE|IC|EC|ECE|NJ|FLX)$/.test(x.cat || "") && x.dpT && (x.dpPath || "").split("|").some(s => s.startsWith(toName)))
     .map(x => { const y = byTrip[x.trip] || {}; const line = x.cat + " " + x.num;
       return { fern: true, trainsOnly: true, dep: irisTime(x.dpT), depEst: irisTime(x.dpCt || x.dpT), arr: irisTime(y.arT), arrEst: irisTime(y.arCt || y.arT), changes: 0,
-        legs: [{ line, name: line, walk: false, from, to, dep: irisTime(x.dpT), depEst: irisTime(x.dpCt || x.dpT), arr: irisTime(y.arT), arrEst: irisTime(y.arCt || y.arT), plat: x.dpPp || "", cancelled: x.dpCs === "c" }] }; });
+        legs: [{ line, name: line, walk: false, from, to, dep: irisTime(x.dpT), depEst: irisTime(x.dpCt || x.dpT), arr: irisTime(y.arT), arrEst: irisTime(y.arCt || y.arT), plat: x.dpPp || "", arrPlat: y.arPp || "", dir: (x.dpPath || "").split("|").pop() || "", cancelled: x.dpCs === "c" }] }; });
 }
 
 // ---------- Fernzug + Umstieg (z. B. ICE bis Gelsenkirchen, weiter mit RE) ----------
@@ -306,13 +306,13 @@ async function efaLegs(from, to, when, mode) {
   const js = (d.journeys || []).map(j => (j.legs || []).map(l => { const t = l.transportation || {}, pc = t.product && t.product.class;
     return { line: t.disassembledName || t.number || t.name || "", name: t.name || "", walk: pc === 99 || pc === 100 || /fu(ß|ss)weg/i.test(t.name || ""), from: stopName(l.origin), to: stopName(l.destination),
       dep: l.origin && l.origin.departureTimePlanned, depEst: l.origin && l.origin.departureTimeEstimated, arr: l.destination && l.destination.arrivalTimePlanned, arrEst: l.destination && l.destination.arrivalTimeEstimated,
-      plat: l.origin && l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "", cancelled: (l.realtimeStatus || []).includes("TRIP_CANCELLED") }; }).filter(l => !l.walk));
+      plat: l.origin && l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "", arrPlat: l.destination && l.destination.properties && (l.destination.properties.platformName || l.destination.properties.platform) || "", dir: t.destination && t.destination.name || "", cancelled: (l.realtimeStatus || []).includes("TRIP_CANCELLED") }; }).filter(l => !l.walk));
   return js.filter(x => x.length);
 }
 async function fernCombos(from, to) {
   const out = [], toBase = to.replace(/ Hbf$/, ""), fromBase = from.replace(/ Hbf$/, "");
   const isFern = x => /^(ICE|IC|EC|ECE)$/.test(x.cat || "");
-  const fernLeg = (x, y, a, b) => ({ line: x.cat + " " + x.num, name: x.cat, walk: false, from: a, to: b, dep: irisTime(x.dpT), depEst: irisTime(x.dpCt || x.dpT), arr: irisTime(y.arT), arrEst: irisTime(y.arCt || y.arT), plat: x.dpPp || "", cancelled: x.dpCs === "c" || y.arCs === "c" });
+  const fernLeg = (x, y, a, b) => ({ line: x.cat + " " + x.num, name: x.cat, walk: false, from: a, to: b, dep: irisTime(x.dpT), depEst: irisTime(x.dpCt || x.dpT), arr: irisTime(y.arT), arrEst: irisTime(y.arCt || y.arT), plat: x.dpPp || "", arrPlat: y.arPp || "", dir: (x.dpPath || "").split("|").pop() || "", cancelled: x.dpCs === "c" || y.arCs === "c" });
   // Richtung 1: Fernzug ab Start bis Umstiegsbahnhof, dann Nahverkehr zum Ziel
   const A = await planOf(from, [0, 1, 2, 3]);
   for (const x of Object.values(A).filter(x => isFern(x) && x.dpT)) {

@@ -653,11 +653,27 @@ async function loadTrips(){
       const js=(t.journeys||[]).filter(j=>new Date(j.depEst||j.dep).getTime()>=now);
       const head='<div class="sublbl" style="margin-top:6px">'+esc(t.from)+' → '+esc(t.to)+'</div>';
       if(t.error||!js.length)return head+'<div class="state">'+(t.error?"Nicht verfügbar – "+esc(t.error):"Keine weiteren Fahrten im abgerufenen Zeitraum.")+'</div>';
-      return head+'<div class="tbl-wrap"><table><thead><tr><th>Ab</th><th>An</th><th class="num">Dauer</th><th>Züge</th></tr></thead><tbody>'+js.map(j=>{const dur=j.arr&&j.dep?Math.round((new Date(j.arrEst||j.arr)-new Date(j.depEst||j.dep))/6e4):null;
+      return head+'<div class="trips">'+js.map(j=>{
+        const est=(p,e)=>e||p;const mins=(a,b)=>Math.round((new Date(b)-new Date(a))/6e4);
+        const dur=j.arr&&j.dep?mins(est(j.dep,j.depEst),est(j.arr,j.arrEst)):null;
         const ride=j.legs.filter(l=>!l.walk);const cancelled=ride.some(l=>l.cancelled);
-        return '<tr><td><b>'+t2(j.dep)+'</b>'+del(j.dep,j.depEst)+(ride[0]&&ride[0].plat?'<br><span class="muted small">Gl. '+esc(ride[0].plat)+'</span>':'')+'</td><td>'+t2(j.arr)+del(j.arr,j.arrEst)+'</td><td class="num">'+(dur!=null?Math.floor(dur/60)+":"+String(dur%60).padStart(2,"0"):"")+'<br><span class="muted small">'+j.changes+' Umst.</span></td>'+
-          '<td class="wrap-txt">'+(cancelled?'<span class="pill p-bad"><i></i>Ausfall</span> ':'')+ride.map(l=>'<span class="tag" style="font-size:13px">'+esc(l.line)+'</span>'+(ride.length>1&&l!==ride[ride.length-1]?' <span class="muted small">'+esc(l.to)+'</span>':'')).join(' › ')+'</td></tr>';}).join("")+'</tbody></table></div>';}).join("")+
-      '<div class="muted small">Echtzeit abgerufen '+dataAge(d)+'</div>';
+        // Umstiege prüfen: Zeit zwischen Ankunft und nächster Abfahrt (mit Echtzeit)
+        const transfers=ride.slice(1).map((l,i)=>{const prev=ride[i];const m=mins(est(prev.arr,prev.arrEst),est(l.dep,l.depEst));return {at:l.from,m,fromPl:prev.arrPlat,toPl:l.plat,risk:m<2||prev.cancelled||l.cancelled};});
+        const risk=transfers.some(t=>t.risk);
+        const plat=p=>p?'<span class="pl">Gl. '+esc(p)+'</span>':'';
+        const tm=(p,e)=>'<b>'+t2(p)+'</b>'+del(p,e);
+        const summary='<summary><span class="tt">'+tm(j.dep,j.depEst)+' → '+tm(j.arr,j.arrEst)+'</span>'+
+          '<span class="muted small">'+(dur!=null?Math.floor(dur/60)+":"+String(dur%60).padStart(2,"0")+" h":"")+' · '+j.changes+' Umst.'+(ride[0]&&ride[0].plat?' · ab Gl. '+esc(ride[0].plat):'')+'</span>'+
+          (cancelled?'<span class="pill p-bad"><i></i>Ausfall</span>':risk?'<span class="pill p-warn"><i></i>Anschluss gefährdet</span>':'')+
+          '<span class="lines">'+ride.map(l=>'<span class="tag" style="font-size:13px">'+esc(l.line)+'</span>').join(' › ')+'</span></summary>';
+        const steps=ride.map((l,i)=>{
+          const tr=i>0?transfers[i-1]:null;
+          return (tr?'<div class="xfer'+(tr.risk?" bad":"")+'">Umstieg in <b>'+esc(tr.at)+'</b> · '+(tr.m>=0?tr.m+" min":"Anschluss verpasst")+(tr.fromPl||tr.toPl?' · von Gl. '+esc(tr.fromPl||"?")+' zu Gl. '+esc(tr.toPl||"?"):'')+(tr.risk?' · <b>knapp – bitte im DB Navigator prüfen</b>':'')+'</div>':'')+
+            '<div class="leg'+(l.cancelled?" cx":"")+'"><div class="lg-head"><span class="tag">'+esc(l.line)+'</span>'+(l.dir?' <span class="muted small">Richtung '+esc(l.dir)+'</span>':'')+(l.cancelled?' <span class="pill p-bad"><i></i>fällt aus</span>':'')+'</div>'+
+            '<div class="lg-row"><span>'+tm(l.dep,l.depEst)+'</span><span>'+esc(l.from)+'</span>'+plat(l.plat)+'</div>'+
+            '<div class="lg-row"><span>'+tm(l.arr,l.arrEst)+'</span><span>'+esc(l.to)+'</span>'+plat(l.arrPlat)+'</div></div>';}).join("");
+        return '<details class="trip'+(cancelled?" cx":risk?" warn":"")+'">'+summary+'<div class="trip-body">'+steps+'</div></details>';}).join("")+'</div>';}).join("")+
+      '<div class="muted small">Antippen für Reiseverlauf mit Gleisen und Umstiegen · Echtzeit abgerufen '+dataAge(d)+'</div>';
     setStatus("trips",true,"Stand "+dataAge(d));
   }catch(e){setStatus("trips",false,errText(e));box.innerHTML=stateBox("Verbindungen nicht verfügbar – "+errText(e)+".",link("https://www.bahn.de/","bahn.de"));}
 }
