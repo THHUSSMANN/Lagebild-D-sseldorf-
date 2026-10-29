@@ -206,6 +206,7 @@ function choose(v,scroll){
   if(scroll)window.scrollTo({top:0,behavior:"smooth"});
 }
 function clearPlaceViews(){
+  TILE_PARTS.traffic={};TILE_PARTS.mobil={};
   ["bl","webcams-public","wx-now","wx-24","wx-7","air","uba","pollen","pegel","stau-list","traffic","roadworks","webcams","charging","efa","dep","bike","fuel","news","cal","alerts"]
     .forEach(id=>{const el=$(id);if(el)el.innerHTML='<div class="state">wird geladen …</div>';});
   $("stau-sum").innerHTML="";
@@ -216,7 +217,7 @@ function applyPlaceUi(){
   $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
   $("k-ein").hidden=C.key!=="datteln";
-  $("k-bahn").hidden=!(C.isDus||C.key==="datteln");
+  $("k-bahn").dataset.view=(C.isDus||C.key==="datteln")?"bahn":"oepnv";
   $("app-title").textContent="Lagebild "+C.town;
   if(typeof route==="function")route();
   document.title="Lagebild "+C.town;
@@ -557,7 +558,7 @@ function renderGarages(){
   if(!C.isDus)return;
   if(!GARAGES){$("park-ph").innerHTML=stateBox("Parkhaus-Belegung nicht verfügbar.",link("https://vtmanager.duesseldorf.de/info/?parkquartier#main","Verkehrszentrale"));return;}
   const s=GARAGES.map(p=>({...p,km:distKm(C.lat,C.lon,p.lat,p.lon)})).sort((a,b)=>a.km-b.km).slice(0,8);
-  {const g=s.find(p=>p.status===1&&p.kurzparkermax&&p.kurzparkerbelegt!=null);if(g)setKpi("k-park",fmt(Math.max(0,g.kurzparkermax-g.kurzparkerbelegt))+"<small> frei</small>",(g.bezeichnung||g.name)+" · "+fmt(g.km,1)+" km",(g.kurzparkerbelegt/g.kurzparkermax)>=.95?"bad":"ok");}
+  {const g=s.find(p=>p.status===1&&p.kurzparkermax&&p.kurzparkerbelegt!=null);if(g){TILE_PARTS.traffic.park=fmt(Math.max(0,g.kurzparkermax-g.kurzparkerbelegt))+" frei im Parkhaus "+(g.bezeichnung||g.name);composeTile("k-traffic","traffic");}if(false)setKpi("k-park",fmt(Math.max(0,g.kurzparkermax-g.kurzparkerbelegt))+"<small> frei</small>",(g.bezeichnung||g.name)+" · "+fmt(g.km,1)+" km",(g.kurzparkerbelegt/g.kurzparkermax)>=.95?"bad":"ok");}
   const tr=t=>t>0?"↑":t<0?"↓":"";
   $("park-ph").innerHTML='<div class="list">'+s.map(p=>{const max=p.kurzparkermax,used=p.kurzparkerbelegt,free=(max!=null&&used!=null)?Math.max(0,max-used):null;
     const q=max&&used!=null?used/max:null;const cls=q==null||p.status!==1?"":q>=.95?"bad":q>=.8?"warn":"ok";
@@ -586,7 +587,8 @@ async function loadVT(){
     const item=(x,badge)=>'<div class="li"><span class="tag '+(x.kind==="Sperrung"?"ab":"alt")+'">'+esc(badge||x.kind)+'</span><div class="t">'+esc(x.short||x.name)+'</div><div class="r"></div>'+
       '<div class="d">'+esc(range(x))+(x.text?'<details><summary>Details</summary>'+esc(x.text)+'</details>':'')+'</div></div>';
     const nSp=active.filter(x=>x.kind==="Sperrung").length;
-    setKpi("k-vt",String(nSp)+"<small> Sperrungen</small>",ev.length?ev.length+" Veranstaltung(en) angekündigt":"keine Veranstaltungen",nSp>30?"warn":"info");
+    TILE_PARTS.traffic.vt=nSp+" Sperrungen in der Stadt";composeTile("k-traffic","traffic");
+    if(false)setKpi("k-vt",String(nSp)+"<small> Sperrungen</small>",ev.length?ev.length+" Veranstaltung(en) angekündigt":"keine Veranstaltungen",nSp>30?"warn":"info");
     $("vt-sum").innerHTML=fact(String(nSp),"Sperrungen aktiv")+fact(String(active.length-nSp),"Meldungen / Baustellen")+fact(String(ev.length),"Veranstaltungen angekündigt")+fact(String(soon.length),"neu in 7 Tagen");
     $("vt-now").innerHTML=active.length?'<div class="list">'+active.slice(0,15).map(x=>item(x)).join("")+'</div>'+(active.length>15?'<div class="muted small">+ '+(active.length-15)+' weitere</div>':''):'<div class="state good">Keine aktiven Sperrungen.</div>';
     $("vt-events").innerHTML=ev.length?'<div class="list">'+ev.slice(0,8).map(x=>item(x,"Event")).join("")+'</div>':'<div class="state good">Keine angekündigten Veranstaltungen.</div>';
@@ -619,6 +621,14 @@ async function loadEinsaetze(){
     setStatus("einsaetze",true,"Stand "+dataAge(d));
   }catch(e){setStatus("einsaetze",false,errText(e));$("einsaetze").innerHTML=stateBox("Einsatzliste nicht verfügbar – "+errText(e)+".",link("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp","Originalliste"));}
 }
+// Zusammengefasste Kacheln: Teilinformationen sammeln
+const TILE_PARTS={traffic:{},mobil:{}};
+function composeTile(id,group,main,cls){
+  const parts=TILE_PARTS[group];const el=$(id);if(!el)return;
+  if(main)parts._main=main;if(cls)parts._cls=cls;
+  const notes=Object.entries(parts).filter(([k])=>!k.startsWith("_")).map(([,v])=>v).filter(Boolean);
+  setKpi(id,parts._main||"–",notes.join(" · "),parts._cls||"info");
+}
 // ================= Bahn-Verbindungen =================
 const TRIP_KEYS={dus:["re-dus","dus-re"],datteln:["re-dus","dus-re"]};
 async function loadTrips(){
@@ -633,8 +643,10 @@ async function loadTrips(){
     {const first=k=>{const t=list.find(x=>x.key===k);const j=t&&(t.journeys||[]).find(j=>new Date(j.depEst||j.dep).getTime()>=now);return j;};
       const k1=C.isDus?"dus-re":"re-dus",j=first(k1);
       if(j){const m=j.depEst&&j.dep?Math.round((new Date(j.depEst)-new Date(j.dep))/6e4):0;
-        setKpi("k-bahn",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",(C.isDus?"nach Recklinghausen":"nach Düsseldorf")+" · an "+hhmm(j.arrEst||j.arr)+" · "+j.changes+" Umst.",m>=10?"warn":"info");}
-      else setKpi("k-bahn","–","keine Fahrt im abgerufenen Zeitraum","info");}
+        TILE_PARTS.mobil.bahn=(C.isDus?"Bahn nach Recklinghausen":"Bahn nach Düsseldorf")+" an "+hhmm(j.arrEst||j.arr);
+        composeTile("k-bahn","mobil",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",m>=10?"warn":"info");
+        if(false)setKpi("k-bahn",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",(C.isDus?"nach Recklinghausen":"nach Düsseldorf")+" · an "+hhmm(j.arrEst||j.arr)+" · "+j.changes+" Umst.",m>=10?"warn":"info");}
+      else{TILE_PARTS.mobil.bahn="keine Bahn im abgerufenen Zeitraum";composeTile("k-bahn","mobil");}}
     box.innerHTML=list.map(t=>{
       const js=(t.journeys||[]).filter(j=>new Date(j.depEst||j.dep).getTime()>=now);
       const head='<div class="sublbl" style="margin-top:6px">'+esc(t.from)+' → '+esc(t.to)+'</div>';
@@ -807,7 +819,9 @@ async function loadAutobahn(){
   const totLen=jams.reduce((s,j)=>s+(j.jam.len||0),0);
   const nStau=jams.filter(j=>j.jam.kind==="stau").length;
   const others=warnings.filter(w=>!w.jam&&!jamInfo(w)).length;
-  setKpi("k-traffic",String(jams.length),jams.length?(maxDelay?"bis +"+maxDelay+" min":"")+(totLen?" · "+fmt(totLen,1)+" km":"")+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""):"freie Fahrt"+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""),
+  TILE_PARTS.traffic.ab=(jams.length?jams.length+" Staus/stockend":"Autobahn frei")+(maxDelay?" bis +"+maxDelay+" min":"");
+  composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>",nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");
+  if(false)setKpi("k-traffic",String(jams.length),jams.length?(maxDelay?"bis +"+maxDelay+" min":"")+(totLen?" · "+fmt(totLen,1)+" km":"")+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""):"freie Fahrt"+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""),
     nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");
   $("stau-sum").innerHTML=fact(String(nStau),"Staus")+fact(String(jams.length-nStau),"stockender Verkehr")+fact(totLen?fmt(totLen,1)+" km":"–","Staulänge gesamt")+fact(maxDelay?"+"+maxDelay+" min":"–","größte Verzögerung")+fact(String(closuresAll.length),"Sperrungen")+fact(String(others),"weitere Behinderungen");
   $("stau-list").innerHTML=jams.length?'<div>'+jams.map(j=>{const J=j.jam;
@@ -873,7 +887,9 @@ async function loadEFA(){
   try{const d=await getData("efa-"+C.key+".json");const now=Date.now()-60e3;
     const rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now).slice(0,14);
     if(!rows.length){$("efa").innerHTML=stateBox("Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
-    {const x=rows[0];setKpi("k-oepnv",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>",esc(d.data.stop.replace(/^Düsseldorf,?\s*/,""))+" → "+esc(x.dir),"info");}
+    {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^Düsseldorf,?\s*/,""));
+      if($("k-bahn").dataset.view==="oepnv")composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
+    if(false){const x=rows[0];setKpi("k-oepnv",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>",esc(d.data.stop.replace(/^Düsseldorf,?\s*/,""))+" → "+esc(x.dir),"info");}
     $("efa").innerHTML='<div class="muted small">'+esc(d.data.stop)+' · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
     setStatus("efa",true,"Stand "+dataAge(d));
   }catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link("https://www.vrr.de/de/fahrplanauskunft/","VRR-Auskunft"));}
@@ -1032,7 +1048,14 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-function tileAvailable(v){const t=document.querySelector('#tiles .tile[data-view="'+v+'"]');return t&&!t.hidden;}
+const GROUPS={verkehr:[["staus","Autobahn & Staus"],["stadtverkehr","Stadtverkehr"],["verkehr","Baustellen, Webcams, Tanken"],["parken","Parken & Service"]],mobil:[["bahn","Bahn RE ⇄ D"],["oepnv","Rheinbahn & Bus"]]};
+function tileAvailable(v){
+  if(["stadtverkehr","parken","bezirke"].includes(v))return C.isDus;
+  if(v==="einsaetze")return C.key==="datteln";
+  if(v==="bahn")return C.isDus||C.key==="datteln";
+  return !!$("v-"+v);
+}
+const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].some(([x])=>x===v));
 function applyTileOrder(){
   let order=load("tile_order")||TILE_DEFAULT;const box=$("tiles");
   if(!load("ord_bahn")){order=order.filter(v=>v!=="bahn");const i=order.indexOf("oepnv");order.splice(i<0?order.length:i,0,"bahn");store("ord_bahn",1);if(load("tile_order"))store("tile_order",order);}
@@ -1042,7 +1065,8 @@ function applyTileOrder(){
 function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view));buildViewbar();}
 function buildViewbar(){
   const cur=location.hash.slice(1);
-  $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>'<a href="#'+t.dataset.view+'" class="'+(t.dataset.view===cur?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>').join("");
+  const g=groupOf(cur);
+  $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 function route(){
   let v=location.hash.slice(1);
@@ -1052,6 +1076,8 @@ function route(){
   $("home").hidden=inView;$("viewbar").hidden=!inView;
   document.querySelectorAll(".view").forEach(el=>el.hidden=el.dataset.view!==v);
   buildViewbar();
+  document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
+    el.innerHTML=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x)).map(([x,l])=>'<a href="#'+x+'" class="'+(x===v?"on":"")+'">'+esc(l)+'</a>').join("");});
   if(inView){window.scrollTo(0,0);if(v==="staus"&&MAP)setTimeout(()=>MAP.invalidateSize(),60);}
 }
 window.addEventListener("hashchange",route);

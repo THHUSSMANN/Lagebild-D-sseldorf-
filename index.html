@@ -91,6 +91,9 @@ section[id]{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 64px)}
 .view{display:flex;flex-direction:column;gap:16px}
 .view-title{font-family:var(--f-display);font-size:24px;font-weight:700;margin:4px 0 0}
 nav.jump a.back{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap}
+.subtabs a{text-decoration:none;color:var(--fg);font-weight:600;font-size:14px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
+.subtabs a.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
 nav.jump a.on{border-color:var(--accent);color:var(--accent)}
 /* Lage-Leiste */
 .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
@@ -229,17 +232,13 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="tiles" id="tiles">
     <div role="button" tabindex="0" class="kpi tile" data-view="warnungen" id="k-warn"><div class="lbl">Warnungen</div><div class="val">–</div><div class="note">NINA &amp; DWD</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="wetter" id="k-temp"><div class="lbl">Wetter</div><div class="val">–</div><div class="note">wird geladen</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="staus" id="k-traffic"><div class="lbl">Verkehrslage</div><div class="val">–</div><div class="note">Staus &amp; Meine Strecken</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="stadtverkehr" id="k-vt" data-dus><div class="lbl">Stadtverkehr</div><div class="val">–</div><div class="note">Sperrungen &amp; Veranstaltungen</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="staus" id="k-traffic"><div class="lbl">Verkehr</div><div class="val">–</div><div class="note">Autobahn, Stadt, Parken</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einsaetze" id="k-ein" hidden><div class="lbl">Feuerwehreinsätze</div><div class="val">–</div><div class="note">Kreisleitstelle</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="blaulicht" id="k-bl"><div class="lbl">Polizei &amp; Feuerwehr</div><div class="val">–</div><div class="note">Pressemeldungen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="luft" id="k-aq"><div class="lbl">Luft &amp; Pollen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="bezirke" id="k-bez" data-dus><div class="lbl">Stadtbezirke</div><div class="val">–</div><div class="note">Wetter je Bezirk</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="rhein" id="k-rhein"><div class="lbl" id="k-rhein-lbl">Pegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="verkehr" id="k-verk"><div class="lbl">Verkehr im Detail</div><div class="val">–</div><div class="note">Baustellen, Webcams, Tanken</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="bahn" id="k-bahn"><div class="lbl">Bahn RE ⇄ D</div><div class="val">–</div><div class="note">Recklinghausen Hbf ⇄ Düsseldorf Hbf</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="oepnv" id="k-oepnv"><div class="lbl">ÖPNV &amp; Rad</div><div class="val">–</div><div class="note">Abfahrten</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="parken" id="k-park" data-dus><div class="lbl">Parken &amp; Service</div><div class="val">–</div><div class="note">freie Plätze in der Nähe</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="bahn" id="k-bahn"><div class="lbl">Bus &amp; Bahn</div><div class="val">–</div><div class="note">Abfahrten &amp; Verbindungen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="alltag" id="k-strom"><div class="lbl">Kalender &amp; Nachrichten</div><div class="val">–</div><div class="note">Feiertage, Ferien, Strompreis</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="quellen" id="k-src"><div class="lbl">Schnittstellen</div><div class="val">–</div><div class="note">Status der Quellen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einstellungen" id="k-set"><div class="lbl">Einstellungen</div><div class="val" style="font-size:22px">Orte &amp; mehr</div><div class="note">Haltestelle, Strecken, Schlüssel</div></div>
@@ -273,6 +272,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 
 <div class="view" id="v-staus" data-view="staus" hidden>
+<div class="subtabs" data-for="staus"></div>
 <section id="verkehrslage"><div class="sec-title"><h2>Verkehrslage</h2></div></section>
 <section class="card wide" id="staus">
   <div class="card-head"><h2 id="stau-title">Staus &amp; Behinderungen rund um Düsseldorf</h2><span class="src">Autobahn GmbH · Karte © OpenStreetMap-Mitwirkende</span><a class="pill" id="gmaps" style="text-decoration:none;color:var(--fg);padding:6px 12px" href="https://www.google.com/maps/@51.2254,6.7763,12z/data=!5m1!1e1" target="_blank" rel="noopener">Verkehr in Google Maps ↗</a></div>
@@ -285,6 +285,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 
 <div class="view" id="v-stadtverkehr" data-view="stadtverkehr" data-dus hidden>
+<div class="subtabs" data-for="stadtverkehr"></div>
 <section class="card wide" id="stadtverkehr" data-dus>
   <div class="card-head"><h2>Stadtverkehr Düsseldorf</h2><span class="src">Verkehrszentrale der Landeshauptstadt (live)</span></div>
   <div class="stau-sum" id="vt-sum"></div>
@@ -346,6 +347,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 
 <div class="view" id="v-verkehr" data-view="verkehr" hidden>
+<div class="subtabs" data-for="verkehr"></div>
 <section id="verkehr"><div class="sec-title"><h2>Verkehr im Detail</h2><span class="muted small" id="ab-list">A3 · A44 · A46 · A52 · A57 · A59 · A524 · A535 · Umkreis 30 km</span></div></section>
 <div class="grid">
   <section class="card">
@@ -375,6 +377,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 
 <div class="view" id="v-bahn" data-view="bahn" hidden>
+<div class="subtabs" data-for="bahn"></div>
 <section id="bahn"><div class="sec-title"><h2>Bahn-Verbindungen</h2></div></section>
   <section class="card" id="trips-card">
     <div class="card-head"><h2>Bahn-Verbindungen</h2><span class="src">VRR-Fahrplanauskunft mit DB-Fernverkehr · Echtzeit</span></div>
@@ -388,6 +391,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 
 <div class="view" id="v-oepnv" data-view="oepnv" hidden>
+<div class="subtabs" data-for="oepnv"></div>
 <section id="oepnv"><div class="sec-title"><h2>ÖPNV &amp; Rad</h2></div></section>
 <div class="grid">
   <section class="card" id="efa-card">
@@ -406,6 +410,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 
 <div class="view" id="v-parken" data-view="parken" data-dus hidden>
+<div class="subtabs" data-for="parken"></div>
 <section id="parken" data-dus><div class="sec-title"><h2>Parken</h2><span class="muted small">Parkhäuser live aus der Verkehrszentrale, übrige Standorte aus Open Data Düsseldorf, nach Nähe sortiert</span></div></section>
 <div class="grid" data-dus>
   <section class="card">
@@ -508,6 +513,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
