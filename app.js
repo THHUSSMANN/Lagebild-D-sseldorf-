@@ -715,11 +715,14 @@ const WEBCAM_LINKS={
   dus:[["Burgplatz / Altstadt","https://balticlivecam.com/cameras/germany/dusseldorf/burgplatz"],["Rheinufer","https://balticlivecam.com/cameras/germany/dusseldorf/rhine-river-embankment"],["Blick vom ARAG-Tower","https://tourispo.de/sehenswuerdigkeit/rheinuferpromenade-duesseldorf/webcam/ausblick-arag-tower-duesseldorf.htm"],["Rheinuferpromenade (Übersicht)","https://tourispo.de/webcams/sehenswuerdigkeit/rheinuferpromenade-duesseldorf.html"],["Alle Düsseldorfer Webcams","https://mygermancity.com/duesseldorf-webcams"]],
   datteln:[["Wetter-Webcams Datteln und Umgebung","https://www.windfinder.com/webcams/datteln"],["Dortmund Hafen","https://www.skylinewebcams.com/webcam/deutschland/north-rhine-westphalia/dortmund/hafen.html"]],
   alpen:[["Rhein bei Rees","https://www.webcamtaxi.com/en/germany/north-rhine-westphalia/rhine-river-rees-cam.html"],["Rees: Rhein (weitere Kamera)","https://worldcams.tv/germany/rees/rhein-river"]],
-  salzhausen:[]
+  salzhausen:[["Webcams Lüneburger Heide (Karte)","https://www.tourispo.de/webcams-ausflugsziele/lueneburger-heide"],["Webcams Niedersachsen","https://www.feratel.com/en/webcams/germany/lower-saxony"],["Wetter-Webcams Umgebung","https://www.windfinder.com/webcams/embsen_lower_saxony_germany"]]
 };
+const CAM_N={links:0,pub:0,ab:0};
+function camTile(){const n=CAM_N.pub+CAM_N.ab;setKpi("k-cam",n?String(n)+"<small> Kameras</small>":String(CAM_N.links)+"<small> Seiten</small>",(n?"mit Vorschaubild":"Webcam-Seiten")+" · "+C.town,"info");}
 function renderWebcamLinks(){
   const list=WEBCAM_LINKS[C.key]||[];const box=$("webcam-links");
   $("cam-title").textContent="Webcams "+C.town;
+  CAM_N.links=list.length;camTile();
   box.innerHTML=list.length?'<div class="sublbl">Webcam-Seiten</div><div class="row" style="gap:8px;margin-bottom:10px">'+list.map(([t,u])=>'<a class="pill" style="text-decoration:none;color:var(--fg);padding:6px 12px" href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(t)+' ↗</a>').join("")+'</div>':"";
 }
 // ================= Öffentliche Webcams (Windy) =================
@@ -729,7 +732,7 @@ async function loadWindy(){
   try{const r=await fetch("https://api.windy.com/webcams/api/v3/webcams?nearby="+C.center.lat+","+C.center.lon+","+(C.isDus?15:25)+"&include=images,urls,location&limit=12&lang=de",{headers:{"x-windy-api-key":WINDY}});
     if(!r.ok)throw new Error("HTTP "+r.status);const d=await r.json();const cams=d.webcams||[];
     box.innerHTML=cams.length?'<div class="sublbl">Öffentliche Webcams</div><div class="cams" style="margin-bottom:10px">'+cams.map(c=>{const img=c.images&&(c.images.current&&(c.images.current.preview||c.images.current.thumbnail));const url=c.urls&&(c.urls.detail||c.urls.provider);
-      return '<a class="cam" href="'+esc(safeUrl(url))+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(c.title)+'" src="'+esc(safeUrl(img))+'"><span>'+esc(c.title)+'</span></a>';}).join("")+'</div>':'<div class="muted small">Keine öffentlichen Webcams im Umkreis gefunden.</div>';
+      return '<a class="cam" href="'+esc(safeUrl(url))+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(c.title)+'" src="'+esc(safeUrl(img))+'"><span>'+esc(c.title)+'</span></a>';}).join("")+'</div>':'<div class="muted small">Keine öffentlichen Webcams im Umkreis gefunden.</div>';CAM_N.pub=cams.length;camTile();
     setStatus("windy",true);
   }catch(e){setStatus("windy",false,errText(e));box.innerHTML=stateBox("Öffentliche Webcams nicht verfügbar – "+errText(e)+".");}
 }
@@ -920,11 +923,11 @@ async function loadAutobahn(){
     (isClosed(i)?'<span class="pill p-bad" style="margin-right:6px"><i></i>Sperrung</span>':'')+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
     (msgs.length>15?'<div class="muted small">+ '+(msgs.length-15)+' weitere</div>':''):'<div class="state good">Keine weiteren Behinderungen im Umkreis.</div>';
   const rw=uniq(got.roadworks).sort((a,b)=>a.km-b.km);
-  setKpi("k-verk",String(rw.length)+"<small> Baustellen</small>",uniq(got.webcam).length+" Webcams · "+uniq(got.electric_charging_station).length+" Ladepunkte","info");
+  setKpi("k-verk",String(rw.length)+"<small> Baustellen</small>",uniq(got.electric_charging_station).length+" Ladepunkte","info");
   $("roadworks").innerHTML=rw.length?'<div class="list">'+rw.slice(0,12).map(i=>'<div class="li"><span class="tag ab">'+esc(i.ab)+'</span><div class="t">'+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
     '<div class="muted small">'+rw.length+' Baustellen im Umkreis von '+RADIUS_KM+' km</div>':'<div class="state good">Keine Baustellen im Umkreis.</div>';
-  const cams=uniq(got.webcam).filter(c=>c.imageurl).sort((a,b)=>a.km-b.km).slice(0,12);
-  $("webcams").innerHTML=cams.length?'<div class="cams">'+cams.map(c=>'<a class="cam" href="'+esc(safeUrl(c.linkurl||c.imageurl))+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(c.title)+'" src="'+esc(safeUrl(c.imageurl))+'"><span><b>'+esc(c.ab)+'</b> '+esc(c.subtitle||c.title)+'</span></a>').join("")+'</div>':stateBox("Keine Webcams im Umkreis gefunden.");
+  const cams=uniq(got.webcam).filter(c=>c.imageurl).sort((a,b)=>a.km-b.km).slice(0,12);CAM_N.ab=cams.length;camTile();
+  $("webcams").innerHTML=cams.length?'<div class="cams">'+cams.map(c=>'<a class="cam" href="'+esc(safeUrl(c.linkurl||c.imageurl))+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(c.title)+'" src="'+esc(safeUrl(c.imageurl))+'"><span><b>'+esc(c.ab)+'</b> '+esc(c.subtitle||c.title)+'</span></a>').join("")+'</div>':'<div class="muted small">Die Autobahn GmbH liefert derzeit keine Webcam-Bilder im Umkreis.</div>';
   const ch=uniq(got.electric_charging_station).sort((a,b)=>a.km-b.km);
   $("charging").innerHTML=ch.length?'<div class="list">'+ch.slice(0,8).map(i=>'<div class="li"><span class="tag ab">'+esc(i.ab)+'</span><div class="t">'+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>':stateBox("Keine Ladestationen an Autobahnen im Umkreis.");
 }
@@ -1108,7 +1111,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Autobahn & Staus"],["stadtverkehr","Stadtverkehr"],["verkehr","Baustellen, Webcams, Tanken"],["parken","Parken & Service"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Autobahn & Staus"],["stadtverkehr","Stadtverkehr"],["verkehr","Baustellen, Tanken, E-Laden"],["parken","Parken & Service"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   if(["stadtverkehr","parken","bezirke"].includes(v))return C.isDus;
   if(v==="einsaetze")return C.key==="datteln";

@@ -299,6 +299,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div role="button" tabindex="0" class="kpi tile" data-view="einsaetze" id="k-ein" hidden><div class="lbl">Feuerwehreinsätze</div><div class="val">–</div><div class="note">Kreisleitstelle</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="blaulicht" id="k-bl"><div class="lbl">Pressemitteilungen Polizei &amp; Feuerwehr</div><div class="val">–</div><div class="note">Pressemeldungen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="luft" id="k-aq"><div class="lbl">Luft &amp; Pollen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="webcams" id="k-cam"><div class="lbl">Webcams</div><div class="val">–</div><div class="note">Live-Bilder</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="rhein" id="k-rhein"><div class="lbl" id="k-rhein-lbl">Pegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="alltag" id="k-strom"><div class="lbl">Kalender &amp; Nachrichten</div><div class="val">–</div><div class="note">Feiertage, Ferien, Börse</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="quellen" id="k-src"><div class="lbl">Schnittstellen</div><div class="val">–</div><div class="note">Status der Quellen</div></div>
@@ -402,6 +403,18 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </section>
 </div>
 
+<div class="view" id="v-webcams" data-view="webcams" hidden>
+<div class="grid">
+  <section class="card wide">
+    <div class="card-head"><h2 id="cam-title">Webcams</h2><span class="src">Webcam-Seiten · Windy · Autobahn GmbH · antippen öffnet die Live-Ansicht</span></div>
+    <div id="webcam-links"></div>
+    <div id="webcams-public"></div>
+    <div class="sublbl">Autobahn-Webcams</div>
+    <div id="webcams"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+</div>
+
 <div class="view" id="v-rhein" data-view="rhein" hidden>
 <section id="rhein"><div class="sec-title"><h2 id="rhein-sec">Rhein</h2></div></section>
 <div class="grid">
@@ -423,13 +436,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <section class="card">
     <div class="card-head"><h2>Baustellen</h2><span class="src">Autobahn GmbH</span></div>
     <div id="roadworks"><div class="state">wird geladen …</div></div>
-  </section>
-  <section class="card wide">
-    <div class="card-head"><h2 id="cam-title">Webcams</h2><span class="src">Autobahn GmbH · Windy-Webcams · Bild antippen für Live-Ansicht</span></div>
-    <div id="webcam-links"></div>
-    <div id="webcams-public"></div>
-    <div class="sublbl">Autobahn</div>
-    <div id="webcams"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card">
     <div class="card-head"><h2>Tankstellen in der Nähe</h2><span class="src">Tankerkönig (MTS-K)</span></div>
@@ -575,6 +581,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=34"></script>
+<script src="app.js?v=35"></script>
 </body>
 </html>
