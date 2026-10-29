@@ -188,11 +188,19 @@ const TRIPS = [
   ["dus-re", "Düsseldorf Hbf", "Recklinghausen Hbf"],
   ["re-dus", "Recklinghausen Hbf", "Düsseldorf Hbf"]
 ];
+// Haltestellenname ohne Gleis; „Recklinghausen, Recklinghausen Hbf“ → „Recklinghausen Hbf“
+function stopName(x) {
+  if (!x) return "";
+  let p = x; while (p && p.type && p.type !== "stop" && p.parent) p = p.parent;
+  const n = (p && p.name) || x.name || "";
+  const parts = n.split(", ");
+  return parts.length === 2 && parts[1].startsWith(parts[0]) ? parts[1] : n;
+}
 async function stopId(name) {
   const sf = await get("https://efa.vrr.de/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf=" + encodeURIComponent(name));
   const l = (sf.locations || []).filter(x => x.type === "stop").sort((a, b) => (b.isBest ? 1 : 0) - (a.isBest ? 1 : 0))[0] || (sf.locations || [])[0];
   if (!l) throw new Error("nicht gefunden: " + name);
-  return { id: l.id, name: l.disassembledName || l.name };
+  return { id: l.id, name: stopName(l) };
 }
 async function trips() {
   const out = [];
@@ -203,7 +211,7 @@ async function trips() {
       const journeys = (d.journeys || []).slice(0, 4).map(j => {
         const legs = (j.legs || []).map(l => { const t = l.transportation || {}, pc = t.product && t.product.class;
           return { line: t.disassembledName || t.number || t.name || "", name: t.name || "", walk: pc === 99 || pc === 100 || /fu(ß|ss)weg/i.test(t.name || ""), dir: t.destination && t.destination.name || "",
-            from: l.origin && (l.origin.disassembledName || l.origin.name) || "", to: l.destination && (l.destination.disassembledName || l.destination.name) || "",
+            from: stopName(l.origin), to: stopName(l.destination),
             dep: l.origin && l.origin.departureTimePlanned, depEst: l.origin && l.origin.departureTimeEstimated, arr: l.destination && l.destination.arrivalTimePlanned, arrEst: l.destination && l.destination.arrivalTimeEstimated,
             plat: l.origin && l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "", cancelled: (l.realtimeStatus || []).includes("TRIP_CANCELLED") }; });
         const ride = legs.filter(x => !x.walk);
