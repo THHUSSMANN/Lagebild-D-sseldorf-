@@ -21,7 +21,7 @@ const BEZIRKE=[
 const STADTTEILE=[
   {key:"heerdt",name:"Heerdt",detail:"Stadtteil im Bezirk 4 · Handweiser, Heerdter Sandberg, Belsenplatz",lat:51.2296,lon:6.7086,bezirk:4}
 ];
-const DUS={lat:51.2254,lon:6.7763,ars:"051110000000",ab:["A3","A44","A46","A52","A57","A59","A524","A535"],efa:"Düsseldorf Heinrich-Heine-Allee"};
+const DUS={lat:51.2254,lon:6.7763,ars:"051110000000",ab:["A3","A44","A46","A52","A57","A59","A524","A535"],efa:"Düsseldorf Nikolaus-Knopp-Platz"};
 // Favoriten (Regionalschlüssel = Kreisebene für die NINA-Warn-App)
 const FAVS=[
   {key:"datteln",name:"Datteln",detail:"Kreis Recklinghausen",lat:51.6539,lon:7.3417,state:"NW",ars:"055620000000",ab:["A2","A43","A45","A52"],efa:"Datteln Busbahnhof",pollen:/Tiefland/},
@@ -146,6 +146,7 @@ if(!load("def_heerdt")){if(sel==="dus-1")sel="dus-heerdt";store("def_heerdt",1);
   else{const p=[...FAVS,...CUSTOM].find(x=>x.key===v||x.name.toLowerCase()===v||x.name.toLowerCase().startsWith(v));if(p)sel="p-"+p.key;}
   store("sel",sel);}catch(e){}})();
 let STOPS=load("stops")||{};
+if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
 let WINDY=load("windy")||"";
@@ -1033,7 +1034,9 @@ $("refresh").addEventListener("click",()=>refreshAll(true));
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
 function tileAvailable(v){const t=document.querySelector('#tiles .tile[data-view="'+v+'"]');return t&&!t.hidden;}
 function applyTileOrder(){
-  const order=load("tile_order")||TILE_DEFAULT;const box=$("tiles");
+  let order=load("tile_order")||TILE_DEFAULT;const box=$("tiles");
+  if(!load("ord_bahn")){order=order.filter(v=>v!=="bahn");const i=order.indexOf("oepnv");order.splice(i<0?order.length:i,0,"bahn");store("ord_bahn",1);if(load("tile_order"))store("tile_order",order);}
+  TILE_DEFAULT.forEach((v,i)=>{if(!order.includes(v)){const prev=TILE_DEFAULT[i-1];const j=order.indexOf(prev);order.splice(j<0?order.length:j+1,0,v);}});
   [...order,...TILE_DEFAULT.filter(v=>!order.includes(v))].forEach(v=>{const t=box.querySelector('.tile[data-view="'+v+'"]');if(t)box.appendChild(t);});
 }
 function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view));buildViewbar();}

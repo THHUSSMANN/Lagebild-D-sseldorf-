@@ -11,7 +11,7 @@ const UA = { "User-Agent": "Lagebild-Duesseldorf/1.0 (privates Dashboard; github
 const PLACES = {
   dus: { name: "Düsseldorf", lat: 51.2254, lon: 6.7763, ars: "051110000000", uR: 12,
     feeds: [["Polizei & Feuerwehr Düsseldorf", "https://www.presseportal.de/rss/polizei/r/D%C3%BCsseldorf.rss2"]],
-    efa: "Düsseldorf Heinrich-Heine-Allee", db: "8000085" },
+    efa: "Düsseldorf Nikolaus-Knopp-Platz", db: "8000085" },
   datteln: { name: "Datteln", lat: 51.6539, lon: 7.3417, ars: "055620000000", uR: 30,
     feeds: [["Feuerwehr Datteln", "https://www.presseportal.de/rss/dienststelle_130639.rss2"], ["Blaulicht Datteln", "https://www.presseportal.de/rss/polizei/r/Datteln.rss2"]],
     efa: "Datteln Busbahnhof" },
@@ -231,7 +231,7 @@ for (const [k, p] of Object.entries(PLACES)) {
   tasks.push(job("blaulicht-" + k + ".json", () => blaulicht(k, p)));
   tasks.push(job("nina-" + k + ".json", () => ninaDashboard(p)));
   tasks.push(job("uba-" + k + ".json", () => uba(p)));
-  if (p.efa) tasks.push(job("efa-" + k + ".json", () => efa(p.efa)));
+  if (p.efa) tasks.push(job("efa-" + k + ".json", async () => { const r = await efa(p.efa); console.log("::notice::Abfahrten " + k + ": " + r.stop + " – " + r.rows.length + " Fahrten, z. B. " + r.rows.slice(0, 3).map(x => x.line + " " + x.dir).join(" | ")); return r; }));
   tasks.push(job("db-" + k + ".json", async () => {
     try { return await dbDeps(p); }
     catch (e) {
