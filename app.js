@@ -198,7 +198,7 @@ function setAlarm(n,title){document.body.classList.toggle("alarm",n>0);const b=$
   if(n)b.textContent="⚠ "+(n===1?"1 aktive Warnung":n+" aktive Warnungen")+" für "+C.town+": "+(title||"")+" – antippen";}
 // Radio
 let RADIO=null;
-const RADIO_SITE={wdr2:"https://www.ardsounds.de/livestream/wdr-2",wdr4:"https://www.ardsounds.de/livestream/wdr-4",antenne:"https://www.antenneduesseldorf.de/"};
+const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/"};
 (async()=>{try{RADIO=(await getData("radio.json")).data;}catch(e){}})();
 $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");if(!b)return;const a=$("radio-audio"),k=b.dataset.st;
   const all=document.querySelectorAll("#radio .rbtn");
