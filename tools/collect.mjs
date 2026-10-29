@@ -235,6 +235,23 @@ async function trips() {
   return out;
 }
 
+// ---------- Test: welche EFA-Parameter liefern Fernverkehr? (vorübergehend) ----------
+async function probeFern() {
+  const a = await stopId("Düsseldorf Hbf"), b = await stopId("Recklinghausen Hbf");
+  const base = "https://efa.vrr.de/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin=" + encodeURIComponent(a.id) + "&type_destination=any&name_destination=" + encodeURIComponent(b.id) + "&itdTripDateTimeDepArr=dep&calcNumberOfTrips=10&useRealtime=1";
+  const V = { A: "", B: "&ptOptionsActive=1&itOptionsActive=1", C: "&ptOptionsActive=1&includedMeans=checkbox&inclMOT_0=1&inclMOT_1=1&inclMOT_13=1&inclMOT_14=1&inclMOT_15=1&inclMOT_16=1",
+    D: "&lineRestriction=400&ptOptionsActive=1", E: "&lineRestriction=403&ptOptionsActive=1", F: "&ptOptionsActive=1&trITMOT=100&useProxFootSearch=0&lineRestriction=400&routeType=LEASTTIME&changeSpeed=normal",
+    G: "&ptOptionsActive=1&lineRestriction=401", H: "&ptOptionsActive=1&lineRestriction=402" };
+  const res = {};
+  for (const [k, v] of Object.entries(V)) {
+    try { const d = await get(base + v, { ms: 30000 }); const lines = (d.journeys || []).map(j => (j.legs || []).map(l => { const t = l.transportation || {}; return t.disassembledName || t.number || ""; }).filter(Boolean).join(">"));
+      res[k] = lines.filter(x => /ICE|IC|EC/.test(x)).length + "/" + lines.length + " " + lines.slice(0, 5).join(" | "); }
+    catch (e) { res[k] = "Fehler " + e.message; }
+  }
+  for (const [k, v] of Object.entries(res)) console.log("::notice::Fern-Test " + k + ": " + v);
+  return res;
+}
+
 // ---------- Ablauf ----------
 await fs.mkdir(OUT, { recursive: true });
 const tasks = [];
@@ -255,6 +272,7 @@ for (const [k, p] of Object.entries(PLACES)) {
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
 tasks.push(job("trips.json", trips));
+tasks.push(job("probe.json", probeFern));
 tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));
 tasks.push(job("strom.json", async () => {
   const day = d => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
