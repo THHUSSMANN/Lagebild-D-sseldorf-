@@ -216,6 +216,8 @@ function renderAlarm(){
   document.body.classList.toggle("alarm",list.length>0&&!seen);document.body.classList.toggle("alarm-seen",!!seen);
   const b=$("alarmbar");b.hidden=!list.length;b.classList.toggle("seen",!!seen);
   b.innerHTML=list.length?'<span class="ab-h">⚠ Warnung'+(list.reduce((s,x)=>s+x.n,0)>1?"en":"")+'</span>'+list.map(x=>'<button type="button" class="ab-c" data-sel="'+esc(x.sel)+'"><b>'+esc(x.name)+'</b> '+esc(x.title)+(x.n>1?' <small>(+'+(x.n-1)+' weitere)</small>':'')+' ›</button>').join("")+(seen?'<span class="ab-s">gesehen ✓ – blinkt wieder bei neuer Warnung</span>':'<button type="button" class="ab-ok" data-ack="1">Gesehen ✓</button>'):"";
+  const others=list.filter(x=>x.key!==C.key);
+  if(others.length&&LOCAL_ALARM.n===0)setKpi("k-warn","0<small> hier</small>","⚠ "+others.map(x=>x.name+": "+x.title).join(" · "),"bad");
   document.querySelectorAll("#favs .fav").forEach(f=>f.classList.toggle("alarm-on",!!(FAV_ALARM[f.dataset.fav]&&FAV_ALARM[f.dataset.fav].n)));
 }
 $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){store("alarm_seen",ALARM_SIG);renderAlarm();return;}const c=e.target.closest(".ab-c");if(!c)return;if(c.dataset.sel!==sel)choose(c.dataset.sel);location.hash="warnungen";});
@@ -522,7 +524,7 @@ async function loadRhein(){
     const ts=(st.timeseries||[]).find(t=>t.shortname==="W")||{};const cm=ts.currentMeasurement||{};
     const wt=(st.timeseries||[]).find(t=>t.shortname==="WT");
     const water=(st.water&&st.water.longname)||"";const wName=water.charAt(0)+water.slice(1).toLowerCase();
-    const sName=(st.longname||st.shortname||"").replace(/\b\w+/g,w=>w.charAt(0)+w.slice(1).toLowerCase());
+    const sName=(st.longname||st.shortname||"").replace(/\p{L}+/gu,w=>w.charAt(0)+w.slice(1).toLowerCase());
     $("pegel-title").textContent="Pegel "+sName;
     $("pegel-src").textContent="WSV PEGELONLINE · "+wName+(st.km!=null?" · km "+fmt(st.km,1):"")+(!C.isDus&&st.km!=null?"":"");
     $("k-rhein-lbl").textContent="Pegel "+sName;
