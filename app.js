@@ -195,7 +195,8 @@ function buildSelect(){
 buildSelect();
 // Rot blinkender Hinweis bei aktiven Warnungen – für alle Lieblingsstädte gleichzeitig
 let LOCAL_ALARM={n:0,title:""};const FAV_ALARM={};
-function setAlarm(n,title){LOCAL_ALARM={n,title:title||""};if(FAVKEYS.includes(C.key))FAV_ALARM[C.key]={n,title:title||"",name:C.key==="dus"?"Düsseldorf":C.town};renderAlarm();}
+function setAlarm(n,title,all){LOCAL_ALARM={n,title:title||"",all:all||[]};if(FAVKEYS.includes(C.key))FAV_ALARM[C.key]={n,title:title||"",all:all||[],name:C.key==="dus"?"Düsseldorf":C.town};renderAlarm();}
+let ALARM_SIG="";
 function favPlaces(){return [{key:"dus",name:"Düsseldorf",lat:BEZIRKE[0].lat,lon:BEZIRKE[0].lon,sel:"dus-4"},...FAVS.map(f=>({key:f.key,name:f.name,lat:f.lat,lon:f.lon,sel:"p-"+f.key}))];}
 async function scanFavAlarms(){
   await Promise.all(favPlaces().map(async p=>{
@@ -203,19 +204,21 @@ async function scanFavAlarms(){
     await Promise.all([
       getJSON("https://api.brightsky.dev/alerts?lat="+p.lat+"&lon="+p.lon+"&tz=Europe/Berlin").then(d=>{ok=true;(d.alerts||[]).forEach(a=>titles.push(a.headline_de||a.event_de));}).catch(()=>{}),
       getData("nina-"+p.key+".json").then(d=>{ok=true;(d.data||[]).forEach(a=>titles.unshift(a.headline||a.title));}).catch(()=>{})]);
-    if(ok)FAV_ALARM[p.key]={n:titles.length,title:titles[0]||"",name:p.name};
+    if(ok)FAV_ALARM[p.key]={n:titles.length,title:titles[0]||"",all:titles,name:p.name};
   }));
   renderAlarm();
 }
 function renderAlarm(){
   const list=favPlaces().filter(p=>FAV_ALARM[p.key]&&FAV_ALARM[p.key].n>0).map(p=>({...FAV_ALARM[p.key],key:p.key,sel:p.sel}));
   if(!FAVKEYS.includes(C.key)&&LOCAL_ALARM.n>0)list.unshift({n:LOCAL_ALARM.n,title:LOCAL_ALARM.title,name:C.town,key:C.key,sel:sel});
-  document.body.classList.toggle("alarm",list.length>0);
-  const b=$("alarmbar");b.hidden=!list.length;
-  b.innerHTML=list.length?'<span class="ab-h">⚠ Warnung'+(list.reduce((s,x)=>s+x.n,0)>1?"en":"")+'</span>'+list.map(x=>'<button type="button" class="ab-c" data-sel="'+esc(x.sel)+'"><b>'+esc(x.name)+'</b> '+esc(x.title)+(x.n>1?' <small>(+'+(x.n-1)+' weitere)</small>':'')+' ›</button>').join(""):"";
+  ALARM_SIG=list.map(x=>x.key+":"+(x.all&&x.all.length?x.all:[x.title]).slice().sort().join("|")).sort().join("#");
+  const seen=list.length&&load("alarm_seen")===ALARM_SIG;
+  document.body.classList.toggle("alarm",list.length>0&&!seen);document.body.classList.toggle("alarm-seen",!!seen);
+  const b=$("alarmbar");b.hidden=!list.length;b.classList.toggle("seen",!!seen);
+  b.innerHTML=list.length?'<span class="ab-h">⚠ Warnung'+(list.reduce((s,x)=>s+x.n,0)>1?"en":"")+'</span>'+list.map(x=>'<button type="button" class="ab-c" data-sel="'+esc(x.sel)+'"><b>'+esc(x.name)+'</b> '+esc(x.title)+(x.n>1?' <small>(+'+(x.n-1)+' weitere)</small>':'')+' ›</button>').join("")+(seen?'<span class="ab-s">gesehen ✓ – blinkt wieder bei neuer Warnung</span>':'<button type="button" class="ab-ok" data-ack="1">Gesehen ✓</button>'):"";
   document.querySelectorAll("#favs .fav").forEach(f=>f.classList.toggle("alarm-on",!!(FAV_ALARM[f.dataset.fav]&&FAV_ALARM[f.dataset.fav].n)));
 }
-$("alarmbar").addEventListener("click",e=>{const c=e.target.closest(".ab-c");if(!c)return;if(c.dataset.sel!==sel)choose(c.dataset.sel);location.hash="warnungen";});
+$("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){store("alarm_seen",ALARM_SIG);renderAlarm();return;}const c=e.target.closest(".ab-c");if(!c)return;if(c.dataset.sel!==sel)choose(c.dataset.sel);location.hash="warnungen";});
 // Radio
 let RADIO=null;
 const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/"};
@@ -501,7 +504,7 @@ async function loadAlerts(){
     (a.area?'<div class="meta">Gebiet: '+esc(a.area)+'</div>':'')+(a.text?'<p>'+esc(a.text)+'</p>':'')+(a.instr?'<details><summary>Handlungsempfehlung</summary><p>'+esc(a.instr)+'</p></details>':'')+
     (a.id?'<div class="meta">'+link("https://warnung.bund.de/meldungen/"+encodeURIComponent(a.id),"Meldung mit Handlungsempfehlungen öffnen")+'</div>':'')+
     '<div class="meta">'+esc(a.src)+(a.sev?' · '+esc(sevDe[String(a.sev).toLowerCase()]||a.sev):'')+(a.from?' · ab '+dateTime(a.from):'')+(a.to?' bis '+dateTime(a.to):'')+'</div></div>').join("");
-  setAlarm(out.length,out[0].title);
+  setAlarm(out.length,out[0].title,out.map(a=>a.title));
   const top=sc(out[0].sev);setKpi("k-warn",String(out.length),(nN?nN+" × NINA · ":"")+out[0].title,top==="info"?"warn":top);
 }
 
