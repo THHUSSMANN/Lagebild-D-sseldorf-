@@ -358,16 +358,17 @@ tasks.push(job("radio.json", async () => {
   const ST = [
     ["wdr2", "WDR 2 Rhein und Ruhr", ["https://wdr-wdr2-rheinruhr.icecastssl.wdr.de/wdr/wdr2/rheinruhr/mp3/128/stream.mp3", "https://wdr-wdr2-rheinruhr.icecast.wdr.de/wdr/wdr2/rheinruhr/mp3/128/stream.mp3"], "WDR 2 Rhein und Ruhr"],
     ["wdr4", "WDR 4", ["https://wdr-wdr4-live.icecastssl.wdr.de/wdr/wdr4/live/mp3/128/stream.mp3", "https://wdr-wdr4-live.icecast.wdr.de/wdr/wdr4/live/mp3/128/stream.mp3"], "WDR 4"],
-    ["antenne", "Antenne Düsseldorf", [], "Antenne Düsseldorf"]
+    ["antenne", "Antenne Düsseldorf", ["https://antenneduesseldorf-live.cast.addradio.de/antenneduesseldorf/live/mp3/high", "https://edge.audio.3qsdn.com/antenneduesseldorf", "https://stream.antenneduesseldorf.de/live/mp3-192"], "Antenne Duesseldorf", "https://www.antenneduesseldorf.de/"]
   ];
   const ok = async u => { const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 8000);
-    try { const r = await fetch(u, { headers: UA, signal: ctl.signal }); const ct = r.headers.get("content-type") || ""; ctl.abort(); return r.ok && /audio|mpeg|aac|ogg|octet/i.test(ct) ? (r.url || u) : null; } catch { return null; } finally { clearTimeout(t); } };
+    try { const r = await fetch(u, { headers: UA, signal: ctl.signal }); const ct = r.headers.get("content-type") || ""; ctl.abort(); return r.ok && /audio|mpeg|aac|ogg|octet/i.test(ct) ? u : null; } catch { return null; } finally { clearTimeout(t); } };
   const out = {};
-  for (const [k, name, known, q] of ST) {
+  for (const [k, name, known, q, home] of ST) {
     let url = null;
+    if (home) { try { const h = await get(home, { type: "text" }); const found = [...new Set([...h.matchAll(/https?:\/\/[^"'\s<>]+?(?:\.mp3|\.aac|\/mp3[^"'\s<>]*|streamonkey[^"'\s<>]*|addradio[^"'\s<>]*|\/stream[^"'\s<>]*)/gi)].map(m => m[0].replace(/\\\//g, "/")))].slice(0, 12); console.log("::notice::Radio " + k + " Kandidaten Webseite: " + found.join(" ")); known = [...found.filter(x => /^https:/.test(x)), ...known]; } catch (e) { console.log("::notice::Radio " + k + " Webseite: " + e.message); } }
     for (const u of known) if ((url = await ok(u))) break;
     if (!url) { try {
-      const l = await get("https://de1.api.radio-browser.info/json/stations/search?name=" + encodeURIComponent(q) + "&hidebroken=true&order=votes&reverse=true&limit=15");
+      const l = [...await get("https://de1.api.radio-browser.info/json/stations/search?name=" + encodeURIComponent(q) + "&hidebroken=true&order=votes&reverse=true&limit=15"), ...(k === "antenne" ? await get("https://de1.api.radio-browser.info/json/stations/search?name=" + encodeURIComponent("Antenne Düsseldorf") + "&limit=15") : [])]; console.log("::notice::Radio " + k + " radio-browser: " + l.map(x => x.name + " " + x.url_resolved).slice(0, 5).join(" | "));
       for (const x of l.filter(x => x.lastcheckok === 1 && /^https:/.test(x.url_resolved))) if ((url = await ok(x.url_resolved))) break;
     } catch (e) { console.log("::notice::Radio-Suche " + k + ": " + e.message); } }
     out[k] = { name, url };
