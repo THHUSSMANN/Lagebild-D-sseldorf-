@@ -17,6 +17,10 @@ const BEZIRKE=[
   {id:9,name:"Benrath / Wersten",detail:"Holthausen, Reisholz, Himmelgeist, Itter, Urdenbach",lat:51.1640,lon:6.8700},
   {id:10,name:"Garath / Hellerhof",detail:"Garath, Hellerhof",lat:51.1370,lon:6.9000}
 ];
+// Einzelne Stadtteile zusätzlich zu den Bezirken
+const STADTTEILE=[
+  {key:"heerdt",name:"Heerdt",detail:"Stadtteil im Bezirk 4 · Handweiser, Heerdter Sandberg, Belsenplatz",lat:51.2296,lon:6.7086,bezirk:4}
+];
 const DUS={lat:51.2254,lon:6.7763,ars:"051110000000",ab:["A3","A44","A46","A52","A57","A59","A524","A535"],efa:"Düsseldorf Heinrich-Heine-Allee"};
 // Favoriten (Regionalschlüssel = Kreisebene für die NINA-Warn-App)
 const FAVS=[
@@ -124,6 +128,7 @@ let sel=String(load("sel")||"dus-1");
 (function(){try{const q=new URLSearchParams(location.search).get("ort");if(!q)return;const v=q.trim().toLowerCase();
   if(/^(dus|duesseldorf|düsseldorf|mitte)$/.test(v))sel="dus-1";
   else if(/^dus-([1-9]|10)$/.test(v))sel=v;
+  else if(STADTTEILE.some(t=>t.key===v||"dus-"+t.key===v))sel="dus-"+v.replace(/^dus-/,"");
   else{const p=[...FAVS,...CUSTOM].find(x=>x.key===v||x.name.toLowerCase()===v||x.name.toLowerCase().startsWith(v));if(p)sel="p-"+p.key;}
   store("sel",sel);}catch(e){}})();
 let STOPS=load("stops")||{};
@@ -138,15 +143,20 @@ const theme=load("theme")||"";if(theme)document.documentElement.setAttribute("da
 
 function allPlaces(){return[...FAVS,...CUSTOM];}
 function ctx(){
+  if(sel.startsWith("dus-")&&STADTTEILE.some(t=>"dus-"+t.key===sel)){
+    const i=STADTTEILE.findIndex(t=>"dus-"+t.key===sel),t=STADTTEILE[i];
+    return {key:"dus",isDus:true,bezirk:BEZIRKE[t.bezirk-1],name:"Düsseldorf-"+t.name,town:"Düsseldorf",short:t.name,detail:t.detail,
+      lat:t.lat,lon:t.lon,center:{lat:DUS.lat,lon:DUS.lon},state:"NW",ars:DUS.ars,ab:DUS.ab,efaDefault:DUS.efa,pollen:/Tiefland/,wxIdx:10+i,districtSel:t.bezirk};
+  }
   if(sel.startsWith("dus-")){
     const n=Math.min(10,Math.max(1,parseInt(sel.slice(4),10)||1)),b=BEZIRKE[n-1];
     return {key:"dus",isDus:true,bezirk:b,name:n===1?"Düsseldorf Mitte":"Düsseldorf · "+b.name,town:"Düsseldorf",short:b.name,detail:b.detail,
-      lat:b.lat,lon:b.lon,center:{lat:DUS.lat,lon:DUS.lon},state:"NW",ars:DUS.ars,ab:DUS.ab,efaDefault:DUS.efa,pollen:/Tiefland/,wxIdx:n-1};
+      lat:b.lat,lon:b.lon,center:{lat:DUS.lat,lon:DUS.lon},state:"NW",ars:DUS.ars,ab:DUS.ab,efaDefault:DUS.efa,pollen:/Tiefland/,wxIdx:n-1,districtSel:n};
   }
   const p=allPlaces().find(x=>"p-"+x.key===sel)||FAVS[0];
   const isFav=FAVS.includes(p);
   return {key:p.key,isDus:false,name:p.name,town:p.name,short:p.name,detail:p.detail||"",lat:p.lat,lon:p.lon,center:{lat:p.lat,lon:p.lon},
-    state:p.state||"NW",ars:p.ars||null,ab:isFav?p.ab:(ABSEL[p.key]||[]),efaDefault:p.state==="NW"?(p.efa||p.name+" Bahnhof"):null,pollen:p.pollen||null,wxIdx:10};
+    state:p.state||"NW",ars:p.ars||null,ab:isFav?p.ab:(ABSEL[p.key]||[]),efaDefault:p.state==="NW"?(p.efa||p.name+" Bahnhof"):null,pollen:p.pollen||null,wxIdx:10+STADTTEILE.length};
 }
 let C=ctx();
 
@@ -156,6 +166,7 @@ function buildSelect(){
   selEl.innerHTML="";
   const g1=document.createElement("optgroup");g1.label="Düsseldorf";
   BEZIRKE.forEach(b=>{const o=document.createElement("option");o.value="dus-"+b.id;o.textContent=b.id===1?"Düsseldorf Mitte":"Bezirk "+b.id+" · "+b.name;g1.appendChild(o);});
+  STADTTEILE.forEach(t=>{const o=document.createElement("option");o.value="dus-"+t.key;o.textContent="Stadtteil "+t.name;g1.appendChild(o);});
   selEl.appendChild(g1);
   const g2=document.createElement("optgroup");g2.label="Meine Orte";
   allPlaces().forEach(p=>{const o=document.createElement("option");o.value="p-"+p.key;o.textContent=p.name;g2.appendChild(o);});
@@ -239,7 +250,7 @@ function renderMine(){
 }
 
 // ================= Wetter =================
-function wxCoords(){const pts=BEZIRKE.map(b=>[b.lat,b.lon]);if(!C.isDus)pts.push([C.lat,C.lon]);return pts;}
+function wxCoords(){const pts=[...BEZIRKE,...STADTTEILE].map(b=>[b.lat,b.lon]);if(!C.isDus)pts.push([C.lat,C.lon]);return pts;}
 async function loadWeather(){
   const pts=wxCoords();
   const url="https://api.open-meteo.com/v1/forecast?latitude="+pts.map(p=>p[0]).join(",")+"&longitude="+pts.map(p=>p[1]).join(",")+
@@ -375,7 +386,7 @@ function renderDistricts(){
   if(!C.isDus||!WX)return;
   let r='<table><thead><tr><th>Bezirk</th><th>Wetter</th><th class="num">Temp.</th><th class="num">gefühlt</th><th class="num">Wind / Böen</th><th class="num">Regenrisiko heute</th><th class="num">EAQI</th></tr></thead><tbody>';
   BEZIRKE.forEach((b,i)=>{const w=WX[i];if(!w)return;const c=w.current,[tx,ik]=wmo(c.weather_code);const aq=AQ&&AQ[i]?AQ[i].current.european_aqi:null,q=eaqi(aq);
-    r+='<tr class="click'+("dus-"+b.id===sel?" sel":"")+'" data-id="'+b.id+'" tabindex="0"><td><b>'+b.id+'</b> '+esc(b.name)+'</td><td>'+icon(ik)+' <span class="muted" style="font-size:13px">'+esc(tx)+'</span></td><td class="num"><b>'+fmt(c.temperature_2m,1)+'°</b></td><td class="num">'+fmt(c.apparent_temperature,1)+'°</td><td class="num">'+fmt(c.wind_speed_10m)+' / '+fmt(c.wind_gusts_10m)+'</td><td class="num">'+fmt(w.daily.precipitation_probability_max[0])+' %</td><td class="num">'+(aq==null?"–":'<span class="pill p-'+q.c+'"><i></i>'+fmt(aq)+'</span>')+'</td></tr>';});
+    r+='<tr class="click'+(b.id===C.districtSel?" sel":"")+'" data-id="'+b.id+'" tabindex="0"><td><b>'+b.id+'</b> '+esc(b.name)+'</td><td>'+icon(ik)+' <span class="muted" style="font-size:13px">'+esc(tx)+'</span></td><td class="num"><b>'+fmt(c.temperature_2m,1)+'°</b></td><td class="num">'+fmt(c.apparent_temperature,1)+'°</td><td class="num">'+fmt(c.wind_speed_10m)+' / '+fmt(c.wind_gusts_10m)+'</td><td class="num">'+fmt(w.daily.precipitation_probability_max[0])+' %</td><td class="num">'+(aq==null?"–":'<span class="pill p-'+q.c+'"><i></i>'+fmt(aq)+'</span>')+'</td></tr>';});
   $("districts").innerHTML=r+'</tbody></table>';
   $("districts").querySelectorAll("tr.click").forEach(tr=>{const f=()=>choose("dus-"+tr.dataset.id,true);tr.addEventListener("click",f);tr.addEventListener("keydown",e=>{if(e.key==="Enter")f();});});
 }
@@ -870,7 +881,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
   $("sub").textContent=new Date().toLocaleDateString("de-DE",{...TZ,weekday:"long",day:"numeric",month:"long",year:"numeric"})+" · KW "+isoWeek(new Date());}
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // Kacheln der Lage-Leiste springen zum passenden Bereich
-const KPI_TARGET={"k-temp":"wetter","k-wx":"wetter","k-wind":"wetter","k-aq":"luft","k-rhein":"rhein","k-warn":"warnungen","k-traffic":"staus","k-strom":"strom-sec"};
+const KPI_TARGET={"k-temp":"wetter","k-wx":"wetter","k-wind":"wetter","k-aq":"luft","k-rhein":"rhein","k-warn":"warnungen","k-traffic":"staus","k-strom":"strom"};
 Object.entries(KPI_TARGET).forEach(([id,target])=>{const el=$(id);if(!el)return;
   el.dataset.go=target;el.setAttribute("role","link");el.tabIndex=0;el.setAttribute("aria-label",el.querySelector(".lbl").textContent+" – zum Bereich springen");
   const go=()=>{const t=$(target);if(t)t.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});};

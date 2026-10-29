@@ -193,8 +193,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <nav class="jump pad" aria-label="Bereiche">
   <div class="wrap">
-    <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#staus">Verkehrslage</a><a href="#alltag">Kalender &amp; News</a><a href="#luft">Luft</a><a href="#bezirke" data-dus>Bezirke</a><a href="#rhein">Gewässer</a>
-    <a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken" data-dus>Parken</a><a href="#strom-sec">Energie</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
+    <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#staus">Verkehrslage</a><a href="#luft">Luft</a><a href="#bezirke" data-dus>Bezirke</a><a href="#rhein">Gewässer</a>
+    <a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken" data-dus>Parken</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
   </div>
 </nav>
 
@@ -245,17 +245,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="legend"><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockender Verkehr</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
   <div id="stau-list"><div class="state">Staus werden geladen …</div></div>
 </section>
-
-<div class="grid" id="alltag">
-  <section class="card">
-    <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src" id="cal-src">Feiertage · Schulferien NRW</span></div>
-    <div id="cal"><div class="state">wird geladen …</div></div>
-  </section>
-  <section class="card">
-    <div class="card-head"><h2 id="news-title">Nachrichten NRW</h2><span class="src">tagesschau</span></div>
-    <div id="news" class="news"><div class="state">wird geladen …</div></div>
-  </section>
-</div>
 
 <section id="luft"><div class="sec-title"><h2>Luft &amp; Pollen</h2></div></section>
 <div class="grid">
@@ -346,8 +335,16 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </section>
 </div>
 
-<section id="strom-sec"><div class="sec-title"><h2>Energie</h2></div></section>
+<section id="alltag"><div class="sec-title"><h2>Alltag</h2></div></section>
 <div class="grid">
+  <section class="card">
+    <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src" id="cal-src">Feiertage · Schulferien NRW</span></div>
+    <div id="cal"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2 id="news-title">Nachrichten NRW</h2><span class="src">tagesschau</span></div>
+    <div id="news" class="news"><div class="state">wird geladen …</div></div>
+  </section>
   <section class="card">
     <div class="card-head"><h2>Strompreis &amp; Ökostrom</h2><span class="src">Energy-Charts (Fraunhofer ISE)</span></div>
     <div id="strom"><div class="state">wird geladen …</div></div>

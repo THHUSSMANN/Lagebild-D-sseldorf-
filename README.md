@@ -26,7 +26,7 @@ Läuft komplett im Browser, ohne Server und ohne Anmeldung. © Thomas Hußmann
 
 ## Direktaufruf
 
-`?ort=duesseldorf`, `?ort=dus-3` (Bezirk 3), `?ort=datteln`, `?ort=alpen`, `?ort=salzhausen`
+`?ort=duesseldorf`, `?ort=dus-3` (Bezirk 3), `?ort=heerdt`, `?ort=datteln`, `?ort=alpen`, `?ort=salzhausen`
 
 ## Auf iPhone und iPad
 
