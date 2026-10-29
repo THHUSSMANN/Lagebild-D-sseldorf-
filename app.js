@@ -18,7 +18,7 @@ const BEZIRKE=[
 ];
 const CENTER={lat:51.2254,lon:6.7763};
 const ARS="051110000000";
-const AUTOBAHNEN=["A3","A44","A46","A52","A57","A59"];
+const AUTOBAHNEN=["A3","A44","A46","A52","A57","A59","A524","A535"];
 const RADIUS_KM=20;
 const SRC={
   wx:{name:"Wetter & Vorhersage",prov:"Open-Meteo (u. a. DWD ICON)",url:"https://open-meteo.com/en/docs",ep:"api.open-meteo.com/v1/forecast"},
@@ -401,29 +401,99 @@ async function loadGW(){
 }
 
 // ================= Autobahn =================
+const JAM_RADIUS_KM=30;
+let MAP=null,MAPLAYER=null;
+function jamInfo(w){
+  const txt=[w.title,w.subtitle,...(w.description||[])].filter(Boolean).join(" ");
+  const t=String(w.abnormalTrafficType||"").toUpperCase();
+  let kind=null;
+  if(/STATIONARY/.test(t)||/\bStau\b/i.test(txt))kind="stau";
+  else if(/QUEUING|SLOW/.test(t)||/stockend|zähfl|Verkehrsbehinderung durch hohes/i.test(txt))kind="stockend";
+  if(!kind)return null;
+  let len=null;const m=txt.match(/Länge[^0-9]{0,12}(\d+(?:[,.]\d+)?)\s*km/i)||txt.match(/(\d+(?:[,.]\d+)?)\s*km\s*(?:Stau|stockend|lang)/i)||txt.match(/Stau[^.]{0,60}?(\d+(?:[,.]\d+)?)\s*km/i);
+  if(m)len=parseFloat(m[1].replace(",","."));
+  const delay=w.delayTimeValue!=null&&w.delayTimeValue!==""?parseInt(w.delayTimeValue,10):null;
+  const speed=w.averageSpeed!=null&&w.averageSpeed!==""?parseInt(w.averageSpeed,10):null;
+  return {kind,len,delay:isFinite(delay)?delay:null,speed:isFinite(speed)?speed:null};
+}
+function geomLines(w){
+  const g=w.geometry;if(!g||!g.coordinates)return[];
+  const toLL=a=>a.map(c=>[parseFloat(c[1]),parseFloat(c[0])]).filter(p=>isFinite(p[0])&&isFinite(p[1]));
+  if(g.type==="LineString")return[toLL(g.coordinates)];
+  if(g.type==="MultiLineString")return g.coordinates.map(toLL);
+  return[];
+}
+function ensureMap(){
+  if(MAP||typeof L==="undefined")return MAP;
+  MAP=L.map("stau-map",{zoomControl:true,attributionControl:true,scrollWheelZoom:false}).setView([CENTER.lat,CENTER.lon],10);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(MAP);
+  L.circle([CENTER.lat,CENTER.lon],{radius:JAM_RADIUS_KM*1000,color:"#8a9aa5",weight:1,dashArray:"4 6",fill:false,interactive:false}).addTo(MAP);
+  L.circleMarker([CENTER.lat,CENTER.lon],{radius:5,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip("Düsseldorf Mitte").addTo(MAP);
+  MAPLAYER=L.layerGroup().addTo(MAP);
+  return MAP;
+}
+function popupHtml(i,extra){
+  return '<b>'+esc(i.ab)+' · '+esc(i.title||"")+'</b><br>'+esc(i.subtitle||"")+(extra?'<br>'+extra:'')+
+    ((i.description||[]).filter(Boolean).length?'<br><span style="color:#5b6a75">'+esc((i.description||[]).filter(Boolean).slice(0,4).join(" · "))+'</span>':'');
+}
 async function loadAutobahn(){
   const svcs=["warning","closure","roadworks","webcam","electric_charging_station"];
   const got={};svcs.forEach(s=>got[s]=[]);let ok=0,total=0;
   await Promise.all(AUTOBAHNEN.flatMap(ab=>svcs.map(async svc=>{
     total++;
     try{const d=await getJSON("https://verkehr.autobahn.de/o/autobahn/"+ab+"/services/"+svc,20000);ok++;
+      const lim=(svc==="warning"||svc==="closure")?JAM_RADIUS_KM:RADIUS_KM;
       (d[svc]||[]).forEach(w=>{const c=w.coordinate||{};const km=distKm(CENTER.lat,CENTER.lon,parseFloat(c.lat),parseFloat(c.long));
-        if(isFinite(km)&&km<=RADIUS_KM)got[svc].push({...w,ab,km});});
+        if(isFinite(km)&&km<=lim)got[svc].push({...w,ab,km,lat:parseFloat(c.lat),lon:parseFloat(c.long)});});
     }catch(e){}
   })));
   if(!ok){setStatus("ab",false,"nicht erreichbar oder vom Browser blockiert (CORS)");
     const fb=stateBox("Die Autobahn-Schnittstelle antwortet nicht.",link("https://www.verkehr.nrw/","verkehr.nrw")+" · "+link("https://www.autobahn.de/","autobahn.de"));
-    ["traffic","roadworks","webcams","charging"].forEach(id=>$(id).innerHTML=fb);setKpi("k-traffic","?","nicht geladen","warn");return;}
+    ["stau-list","traffic","roadworks","webcams","charging"].forEach(id=>$(id).innerHTML=fb);$("stau-sum").innerHTML="";setKpi("k-traffic","?","nicht geladen","warn");return;}
   setStatus("ab",true,ok<total?"teilweise geladen ("+ok+"/"+total+")":"");
-  const uniq=list=>{const seen=new Set();return list.filter(i=>{const k=i.ab+"|"+i.title+"|"+i.subtitle;if(seen.has(k))return false;seen.add(k);return true;});};
+  const uniq=list=>{const seen=new Set();return list.filter(i=>{const k=i.ab+"|"+i.title+"|"+i.subtitle+"|"+(i.identifier||"");if(seen.has(k))return false;seen.add(k);return true;});};
   const desc=w=>(w.description||[]).filter(Boolean).slice(0,3).join(" · ");
-  // Meldungen + Sperrungen
-  const msgs=uniq([...got.closure.map(x=>({...x,_c:1})),...got.warning]).sort((a,b)=>(b._c||0)-(a._c||0)||a.km-b.km);
-  const closures=msgs.filter(m=>m._c||m.isBlocked==="true"||m.isBlocked===true).length;
-  setKpi("k-traffic",String(msgs.length),closures?closures+" Sperrung(en)":"keine Sperrungen",closures?"bad":msgs.length?"warn":"ok");
+  const isClosed=m=>m._c||m.isBlocked==="true"||m.isBlocked===true;
+
+  // ---- Staus ----
+  const warnings=uniq(got.warning);
+  const jams=warnings.map(w=>({...w,jam:jamInfo(w)})).filter(w=>w.jam)
+    .sort((a,b)=>(b.jam.kind==="stau")-(a.jam.kind==="stau")||(b.jam.delay||0)-(a.jam.delay||0)||a.km-b.km);
+  const closuresAll=uniq([...got.closure.map(x=>({...x,_c:1})),...warnings.filter(w=>w.isBlocked==="true"||w.isBlocked===true)]);
+  const maxDelay=jams.reduce((m,j)=>Math.max(m,j.jam.delay||0),0);
+  const totLen=jams.reduce((s,j)=>s+(j.jam.len||0),0);
+  const nStau=jams.filter(j=>j.jam.kind==="stau").length;
+  setKpi("k-traffic",String(jams.length),jams.length?(maxDelay?"bis +"+maxDelay+" min · ":"")+(totLen?fmt(totLen,1)+" km":"")+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""):"freie Fahrt"+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""),
+    nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");
+  $("stau-sum").innerHTML=fact(String(nStau),"Staus")+fact(String(jams.length-nStau),"stockender Verkehr")+fact(totLen?fmt(totLen,1)+" km":"–","Staulänge gesamt")+fact(maxDelay?"+"+maxDelay+" min":"–","größte Verzögerung")+fact(String(closuresAll.length),"Sperrungen")+fact(hhmm(Date.now()),"Stand");
+  $("stau-list").innerHTML=jams.length?'<div>'+jams.map(j=>{const J=j.jam;
+      const det=[J.len?fmt(J.len,1)+" km":"",J.speed!=null?"Ø "+J.speed+" km/h":"",fmt(j.km)+" km vom Zentrum"].filter(Boolean).join(" · ");
+      return '<div class="jam"><span class="tag ab">'+esc(j.ab)+'</span><div class="t">'+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
+        '<div class="delay'+(J.delay!=null&&J.delay<15?" mid":"")+'">'+(J.delay!=null?"+"+J.delay+" min":"")+'<small>'+(J.delay!=null?"Verzögerung":"")+'</small></div>'+
+        '<div class="d">'+esc(j.subtitle||"")+(det?" · "+esc(det):"")+(desc(j)?'<br>'+esc(desc(j)):"")+'</div></div>';}).join("")+'</div>'
+    :'<div class="state good">Derzeit keine Staus auf den Autobahnen im Umkreis von '+JAM_RADIUS_KM+' km.</div>';
+
+  // ---- Karte ----
+  if(ensureMap()){
+    MAPLAYER.clearLayers();
+    uniq(got.roadworks).forEach(r=>{if(isFinite(r.lat))L.circleMarker([r.lat,r.lon],{radius:4,color:"#8a9aa5",weight:1,fillColor:"#8a9aa5",fillOpacity:.7}).bindPopup(popupHtml(r,"Baustelle")).addTo(MAPLAYER);});
+    closuresAll.forEach(c=>{const lines=geomLines(c);
+      if(lines.length)lines.forEach(ll=>L.polyline(ll,{color:"#7d1f6b",weight:5,opacity:.9}).bindPopup(popupHtml(c,"<b>Sperrung</b>")).addTo(MAPLAYER));
+      if(isFinite(c.lat))L.circleMarker([c.lat,c.lon],{radius:6,color:"#fff",weight:2,fillColor:"#7d1f6b",fillOpacity:1}).bindPopup(popupHtml(c,"<b>Sperrung</b>")).addTo(MAPLAYER);});
+    jams.forEach(j=>{const col=j.jam.kind==="stau"?"#d62d20":"#f0a020";const extra=[j.jam.delay!=null?"<b>+"+j.jam.delay+" min</b>":"",j.jam.len?fmt(j.jam.len,1)+" km":"",j.jam.speed!=null?"Ø "+j.jam.speed+" km/h":""].filter(Boolean).join(" · ");
+      const lines=geomLines(j);
+      if(lines.length)lines.forEach(ll=>{L.polyline(ll,{color:"#fff",weight:10,opacity:.8,interactive:false}).addTo(MAPLAYER);L.polyline(ll,{color:col,weight:6,opacity:1}).bindPopup(popupHtml(j,extra)).addTo(MAPLAYER);});
+      else if(isFinite(j.lat))L.circleMarker([j.lat,j.lon],{radius:8,color:"#fff",weight:2,fillColor:col,fillOpacity:1}).bindPopup(popupHtml(j,extra)).addTo(MAPLAYER);});
+    setTimeout(()=>MAP.invalidateSize(),50);
+  }else{$("stau-map").innerHTML='<div class="state" style="margin:12px">Kartenbibliothek nicht geladen – die Liste darunter ist vollständig.</div>';}
+
+  // ---- weitere Meldungen (ohne Staus) ----
+  const jamIds=new Set(jams.map(j=>j.ab+"|"+j.title+"|"+j.subtitle+"|"+(j.identifier||"")));
+  const msgs=uniq([...got.closure.map(x=>({...x,_c:1})),...warnings]).filter(m=>m.km<=RADIUS_KM&&!jamIds.has(m.ab+"|"+m.title+"|"+m.subtitle+"|"+(m.identifier||"")))
+    .sort((a,b)=>(isClosed(b)?1:0)-(isClosed(a)?1:0)||a.km-b.km);
   $("traffic").innerHTML=msgs.length?'<div class="list">'+msgs.slice(0,15).map(i=>'<div class="li"><span class="tag ab">'+esc(i.ab)+'</span><div class="t">'+
-    ((i._c||i.isBlocked==="true"||i.isBlocked===true)?'<span class="pill p-bad" style="margin-right:6px"><i></i>Sperrung</span>':'')+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
-    (msgs.length>15?'<div class="muted small">+ '+(msgs.length-15)+' weitere</div>':''):'<div class="state good">Keine Meldungen im Umkreis von '+RADIUS_KM+' km.</div>';
+    (isClosed(i)?'<span class="pill p-bad" style="margin-right:6px"><i></i>Sperrung</span>':'')+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
+    (msgs.length>15?'<div class="muted small">+ '+(msgs.length-15)+' weitere</div>':''):'<div class="state good">Keine weiteren Meldungen im Umkreis von '+RADIUS_KM+' km.</div>';
   // Baustellen
   const rw=uniq(got.roadworks).sort((a,b)=>a.km-b.km);
   $("roadworks").innerHTML=rw.length?'<div class="list">'+rw.slice(0,12).map(i=>'<div class="li"><span class="tag ab">'+esc(i.ab)+'</span><div class="t">'+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
@@ -618,6 +688,8 @@ let lastRun=0;
 async function run(force){lastRun=Date.now();await refreshAll(force);}
 run(true);
 setInterval(()=>{if(!document.hidden)run(false);},10*60*1000);
+// Staus ändern sich schnell: Autobahn-Daten zusätzlich alle 3 Minuten
+setInterval(()=>{if(!document.hidden&&!busy)loadAutobahn();},3*60*1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastRun>5*60*1000)run(false);});
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 })();

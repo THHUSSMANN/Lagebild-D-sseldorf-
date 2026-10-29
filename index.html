@@ -14,6 +14,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
@@ -144,6 +145,21 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .field .hint{font-size:12.5px;color:var(--muted)}
 .inline{display:flex;gap:6px}
 .inline input{flex:1;min-width:0}
+.map{height:min(62vh,460px);min-height:300px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);z-index:0}
+.leaflet-container{font:13px var(--f-body)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .map .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}}
+:root[data-theme="dark"] .map .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
+.leaflet-popup-content{margin:10px 12px;line-height:1.4}
+.leaflet-popup-content b{font-family:var(--f-display);font-size:15px}
+.stau-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.stau-sum .fact{background:var(--panel-2);border-radius:6px;padding:8px 10px}
+.jam{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.jam:last-child{border-bottom:0}
+.jam .t{font-weight:600;overflow-wrap:anywhere}
+.jam .d{grid-column:2/-1;font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
+.jam .delay{font-family:var(--f-display);font-size:20px;font-weight:700;color:var(--bad);white-space:nowrap;text-align:right}
+.jam .delay.mid{color:var(--warn)}
+.jam .delay small{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 @media (max-width:520px){h1{font-size:22px}.big{font-size:42px}.kpi .val{font-size:26px}.clock{font-size:20px}}
@@ -168,7 +184,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <nav class="jump pad" aria-label="Bereiche">
   <div class="wrap">
     <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#luft">Luft</a><a href="#bezirke">Bezirke</a><a href="#rhein">Rhein</a>
-    <a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken">Parken</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
+    <a href="#staus">Staus</a><a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken">Parken</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
   </div>
 </nav>
 
@@ -183,7 +199,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div class="kpi s-info" id="k-aq"><div class="lbl">Luftqualität</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div class="kpi s-info" id="k-rhein"><div class="lbl">Rheinpegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div class="kpi s-info" id="k-warn"><div class="lbl">Amtliche Warnungen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
-    <div class="kpi s-info" id="k-traffic"><div class="lbl">Autobahn 20 km</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div class="kpi s-info" id="k-traffic"><div class="lbl">Staus Autobahn</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div class="kpi s-info" id="k-strom"><div class="lbl">Strom jetzt</div><div class="val">–</div><div class="note">&nbsp;</div></div>
   </div>
 </section>
@@ -243,8 +259,15 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </section>
 </div>
 
-<section id="verkehr"><div class="sec-title"><h2>Verkehr</h2><span class="muted small">A3 · A44 · A46 · A52 · A57 · A59, Umkreis 20 km</span></div></section>
+<section id="verkehr"><div class="sec-title"><h2>Verkehr</h2><span class="muted small">A3 · A44 · A46 · A52 · A57 · A59 · A524 · A535 · Staus im Umkreis von 30 km</span></div></section>
 <div class="grid">
+  <section class="card wide" id="staus">
+    <div class="card-head"><h2>Staus rund um Düsseldorf</h2><span class="src">Autobahn GmbH · Karte © OpenStreetMap-Mitwirkende</span></div>
+    <div class="stau-sum" id="stau-sum"></div>
+    <div id="stau-map" class="map" role="img" aria-label="Karte der Staus, Sperrungen und Baustellen rund um Düsseldorf"></div>
+    <div class="legend"><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockender Verkehr</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
+    <div id="stau-list"><div class="state">Staus werden geladen …</div></div>
+  </section>
   <section class="card">
     <div class="card-head"><h2>Meldungen &amp; Sperrungen</h2><span class="src">Autobahn GmbH</span></div>
     <div id="traffic"><div class="state">Verkehrsmeldungen werden geladen …</div></div>
@@ -347,6 +370,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </footer>
 </div>
 </main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

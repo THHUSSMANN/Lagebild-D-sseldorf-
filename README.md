@@ -15,7 +15,7 @@ Läuft komplett im Browser, ohne Server und ohne Anmeldung. © Thomas Hußmann
 | Pollenflug | DWD-Gefahrenindex |
 | Rheinpegel | WSV – PEGELONLINE |
 | Grundwasser, Parkhäuser, P+R, Behindertenparkplätze | Open Data Düsseldorf |
-| Autobahn-Meldungen, Sperrungen, Baustellen, Webcams, E-Laden | Autobahn GmbH des Bundes |
+| Staus mit Karte, Autobahn-Meldungen, Sperrungen, Baustellen, Webcams, E-Laden | Autobahn GmbH des Bundes |
 | Spritpreise (eigener kostenloser Schlüssel) | Tankerkönig |
 | Abfahrten Nahverkehr | VRR – EFA |
 | Abfahrten Bahn Hbf | db.transport.rest |
