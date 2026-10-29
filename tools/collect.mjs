@@ -226,6 +226,9 @@ async function trips() {
         const rideLegs = ride;
         return { trainsOnly: rideLegs.every(l => /^(ICE|IC|EC|ECE|RE|RB|S|RRX|NX|FLX|NJ|TGV|THA)\s?\d*/i.test(l.line) || /zug|bahn/i.test(l.name)), dep: (ride[0] || legs[0] || {}).dep, depEst: (ride[0] || legs[0] || {}).depEst, arr: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arr, arrEst: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arrEst, changes: Math.max(0, ride.length - 1), legs };
       });
+      let fern = [];
+      try { fern = await irisFern(from, to); } catch (e) { console.log("::warning::IRIS " + key + ": " + (e.message || e)); }
+      journeys.push(...fern);
       const list = journeys.filter(j => j.dep && !seen.has(j.dep + "|" + j.legs.map(l => l.line).join(">")) && seen.add(j.dep + "|" + j.legs.map(l => l.line).join(">")))
         .filter(j => j.trainsOnly).sort((x, y) => new Date(x.dep) - new Date(y.dep));
       out.push({ key, from, to, journeys: list });
@@ -235,21 +238,54 @@ async function trips() {
   return out;
 }
 
-// ---------- Test: welche EFA-Parameter liefern Fernverkehr? (vorübergehend) ----------
-async function probeFern() {
-  const a = await stopId("Düsseldorf Hbf"), b = await stopId("Recklinghausen Hbf");
-  const base = "https://efa.vrr.de/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin=" + encodeURIComponent(a.id) + "&type_destination=any&name_destination=" + encodeURIComponent(b.id) + "&itdTripDateTimeDepArr=dep&calcNumberOfTrips=10&useRealtime=1";
-  const V = { A: "", B: "&ptOptionsActive=1&itOptionsActive=1", C: "&ptOptionsActive=1&includedMeans=checkbox&inclMOT_0=1&inclMOT_1=1&inclMOT_13=1&inclMOT_14=1&inclMOT_15=1&inclMOT_16=1",
-    D: "&lineRestriction=400&ptOptionsActive=1", E: "&lineRestriction=403&ptOptionsActive=1", F: "&ptOptionsActive=1&trITMOT=100&useProxFootSearch=0&lineRestriction=400&routeType=LEASTTIME&changeSpeed=normal",
-    G: "&ptOptionsActive=1&lineRestriction=401", H: "&ptOptionsActive=1&lineRestriction=402" };
-  const res = {};
-  for (const [k, v] of Object.entries(V)) {
-    try { const d = await get(base + v, { ms: 30000 }); const lines = (d.journeys || []).map(j => (j.legs || []).map(l => { const t = l.transportation || {}; return t.disassembledName || t.number || ""; }).filter(Boolean).join(">"));
-      res[k] = lines.filter(x => /ICE|IC|EC/.test(x)).length + "/" + lines.length + " " + lines.slice(0, 5).join(" | "); }
-    catch (e) { res[k] = "Fehler " + e.message; }
+// ---------- DB-Fernverkehr direkt aus dem Bahn-Fahrplansystem (IRIS) ----------
+// Die VRR-Auskunft plant keine ICE/IC/EC. IRIS liefert alle Züge eines Bahnhofs mit Laufweg;
+// daraus nehmen wir die Fernzüge, die ohne Umstieg zum Ziel fahren.
+const IRIS = "https://iris.noncd.db.de/iris-tts/timetable/";
+async function irisEva(name) {
+  const x = await get(IRIS + "station/" + encodeURIComponent(name), { type: "text" });
+  const m = x.match(/<station[^>]*name="([^"]+)"[^>]*eva="(\d+)"/) || x.match(/<station[^>]*eva="(\d+)"[^>]*name="([^"]+)"/);
+  if (!m) throw new Error("IRIS: Bahnhof nicht gefunden: " + name);
+  return /^\d+$/.test(m[2]) ? m[2] : m[1];
+}
+const irisTime = t => t ? new Date(Date.UTC(2000 + +t.slice(0, 2), +t.slice(2, 4) - 1, +t.slice(4, 6), +t.slice(6, 8), +t.slice(8, 10)) - berlinOffset(t) * 6e4).toISOString() : null;
+function berlinOffset(t) { // Minuten Abstand Berlin–UTC zum Zeitpunkt t (yyMMddHHmm)
+  const d = new Date(Date.UTC(2000 + +t.slice(0, 2), +t.slice(2, 4) - 1, +t.slice(4, 6), 12));
+  const s = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Berlin", timeZoneName: "shortOffset" }).formatToParts(d).find(x => x.type === "timeZoneName").value;
+  const m = s.match(/GMT([+-]\d+)/); return m ? +m[1] * 60 : 60;
+}
+function irisStops(xml) {
+  const out = {};
+  for (const m of xml.matchAll(/<s id="([^"]+)"[^>]*>([\s\S]*?)<\/s>/g)) {
+    const id = m[1], body = m[2], trip = id.replace(/-\d+$/, "").replace(/-\d{10}$/, "");
+    const tl = (body.match(/<tl ([^>]*)\/?>/) || [])[1] || "";
+    const at = (str, k) => (str.match(new RegExp(k + '="([^"]*)"')) || [])[1];
+    const dp = (body.match(/<dp ([^>]*)\/?>/) || [])[1] || "", ar = (body.match(/<ar ([^>]*)\/?>/) || [])[1] || "";
+    out[id] = { id, trip, cat: at(tl, "c"), num: at(tl, "n"), dpT: at(dp, "pt"), dpCt: at(dp, "ct"), dpPp: at(dp, "pp"), dpPath: at(dp, "ppth"), dpCs: at(dp, "cs"), arT: at(ar, "pt"), arCt: at(ar, "ct"), arCs: at(ar, "cs") };
   }
-  for (const [k, v] of Object.entries(res)) console.log("::notice::Fern-Test " + k + ": " + v);
-  return res;
+  return out;
+}
+async function irisHours(eva, hours) {
+  const all = {};
+  for (const h of hours) {
+    const p = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", year: "2-digit", month: "2-digit", day: "2-digit", hour: "2-digit", hour12: false }).formatToParts(new Date(Date.now() + h * 3600e3)).reduce((o, x) => (o[x.type] = x.value, o), {});
+    try { Object.assign(all, irisStops(await get(IRIS + "plan/" + eva + "/" + p.year + p.month + p.day + "/" + p.hour, { type: "text" }))); } catch {}
+  }
+  try { // Echtzeit-Änderungen
+    const ch = irisStops(await get(IRIS + "fchg/" + eva, { type: "text" }));
+    for (const [id, c] of Object.entries(ch)) if (all[id]) { const a = all[id]; a.dpCt = c.dpCt || a.dpCt; a.arCt = c.arCt || a.arCt; a.dpCs = c.dpCs || a.dpCs; a.arCs = c.arCs || a.arCs; a.dpPp = c.dpPp || a.dpPp; }
+  } catch {}
+  return all;
+}
+async function irisFern(from, to) {
+  const [ea, eb] = [await irisEva(from), await irisEva(to)];
+  const A = await irisHours(ea, [0, 1, 2, 3]), B = await irisHours(eb, [0, 1, 2, 3, 4, 5]);
+  const byTrip = {}; for (const x of Object.values(B)) byTrip[x.trip] = x;
+  const toName = to.replace(/ Hbf$/, "");
+  return Object.values(A).filter(x => /^(ICE|IC|EC|ECE|NJ|FLX)$/.test(x.cat || "") && x.dpT && (x.dpPath || "").split("|").some(s => s.startsWith(toName)))
+    .map(x => { const y = byTrip[x.trip] || {}; const line = x.cat + " " + x.num;
+      return { fern: true, trainsOnly: true, dep: irisTime(x.dpT), depEst: irisTime(x.dpCt || x.dpT), arr: irisTime(y.arT), arrEst: irisTime(y.arCt || y.arT), changes: 0,
+        legs: [{ line, name: line, walk: false, from, to, dep: irisTime(x.dpT), depEst: irisTime(x.dpCt || x.dpT), arr: irisTime(y.arT), arrEst: irisTime(y.arCt || y.arT), plat: x.dpPp || "", cancelled: x.dpCs === "c" }] }; });
 }
 
 // ---------- Ablauf ----------
@@ -272,7 +308,6 @@ for (const [k, p] of Object.entries(PLACES)) {
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
 tasks.push(job("trips.json", trips));
-tasks.push(job("probe.json", probeFern));
 tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));
 tasks.push(job("strom.json", async () => {
   const day = d => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
