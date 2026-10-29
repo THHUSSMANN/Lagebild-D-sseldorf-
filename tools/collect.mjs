@@ -217,7 +217,7 @@ async function trips() {
         const ride = legs.filter(x => !x.walk);
         return { dep: (ride[0] || legs[0] || {}).dep, depEst: (ride[0] || legs[0] || {}).depEst, arr: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arr, arrEst: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arrEst, changes: Math.max(0, ride.length - 1), legs };
       });
-      out.push({ key, from: a.name, to: b.name, journeys });
+      out.push({ key, from, to, journeys });
       console.log("::notice::Verbindung " + key + ": " + journeys.length + " Fahrten" + (journeys[0] ? " – " + journeys[0].legs.map(l => l.walk ? "Fuß" : l.line).join(" > ") : ""));
     } catch (e) { out.push({ key, from, to, error: String(e.message || e), journeys: [] }); console.log("::warning::Verbindung " + key + ": " + (e.message || e)); }
   }
