@@ -618,11 +618,12 @@ async function loadEinsaetze(){
   }catch(e){setStatus("einsaetze",false,errText(e));$("einsaetze").innerHTML=stateBox("Einsatzliste nicht verfügbar – "+errText(e)+".",link("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp","Originalliste"));}
 }
 // ================= Bahn-Verbindungen =================
-const TRIP_KEYS={dus:["dus-re","re-dus","dus-datteln","dus-alpen"],datteln:["datteln-dus","re-dus","dus-re"],alpen:["alpen-dus"],salzhausen:[]};
+const TRIP_KEYS={dus:["re-dus","dus-re"],datteln:["re-dus","dus-re"]};
 async function loadTrips(){
   const keys=TRIP_KEYS[C.key]||[];const box=$("trips");
   $("trip-from").placeholder=C.isDus?"z. B. Düsseldorf-Heerdt":C.town;
-  if(!keys.length){box.innerHTML='<div class="muted small">Für '+esc(C.town)+' sind keine festen Verbindungen hinterlegt – nutze die Suche darunter.</div>';return;}
+  if(!keys.length){box.innerHTML="";box.hidden=true;return;}
+  box.hidden=false;
   try{const d=await getData("trips.json");const list=(d.data||[]).filter(t=>keys.includes(t.key));
     const t2=x=>x?hhmm(x):"–";
     const del=(p,e)=>{if(!p||!e)return"";const m=Math.round((new Date(e)-new Date(p))/6e4);return m>0?' <span style="color:var(--bad);font-weight:600">+'+m+'</span>':"";};

@@ -185,12 +185,8 @@ async function kreisRe() {
 
 // ---------- Verbindungen (VRR-Fahrplanauskunft, inkl. DB-Fernverkehr) ----------
 const TRIPS = [
-  ["dus-datteln", "Düsseldorf Hbf", "Datteln Busbahnhof"],
-  ["dus-alpen", "Düsseldorf Hbf", "Alpen Bahnhof"],
   ["dus-re", "Düsseldorf Hbf", "Recklinghausen Hbf"],
-  ["re-dus", "Recklinghausen Hbf", "Düsseldorf Hbf"],
-  ["datteln-dus", "Datteln Busbahnhof", "Düsseldorf Hbf"],
-  ["alpen-dus", "Alpen Bahnhof", "Düsseldorf Hbf"]
+  ["re-dus", "Recklinghausen Hbf", "Düsseldorf Hbf"]
 ];
 async function stopId(name) {
   const sf = await get("https://efa.vrr.de/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf=" + encodeURIComponent(name));
