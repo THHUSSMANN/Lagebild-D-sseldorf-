@@ -49,6 +49,7 @@ const SRC={
   db:{name:"Abfahrten Bahn & Bus",prov:"db.transport.rest (DB-Daten)",url:"https://v6.db.transport.rest/",ep:"v6.db.transport.rest (über Datensammler)"},
   bike:{name:"Leihräder",prov:"nextbike",url:"https://www.nextbike.de/",ep:"maps.nextbike.net/maps/nextbike-live.json"},
   vt:{name:"Stadtverkehr & Parkhäuser live",prov:"Verkehrszentrale Düsseldorf",url:"https://vtmanager.duesseldorf.de/info/",ep:"vtmanager.duesseldorf.de/geoserverwfs"},
+  trips:{name:"Bahn-Verbindungen",prov:"VRR – EFA (inkl. DB)",url:"https://www.vrr.de/de/fahrplanauskunft/",ep:"efa.vrr.de XML_TRIP_REQUEST2 (über Datensammler)"},
   einsaetze:{name:"Feuerwehreinsätze Kreis Recklinghausen",prov:"Kreisleitstelle Recklinghausen",url:"https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp",ep:"kreis-re.de (über Datensammler)"},
   blaulicht:{name:"Polizei & Feuerwehr",prov:"Presseportal Blaulicht",url:"https://www.presseportal.de/blaulicht/",ep:"presseportal.de/rss (über Datensammler)"},
   park:{name:"P+R, Behindertenparkplätze, AED, WC, Radstationen",prov:"Open Data Düsseldorf",url:"https://opendata.duesseldorf.de/",ep:"opendata.duesseldorf.de (über Datensammler)"},
@@ -616,6 +617,35 @@ async function loadEinsaetze(){
     setStatus("einsaetze",true,"Stand "+dataAge(d));
   }catch(e){setStatus("einsaetze",false,errText(e));$("einsaetze").innerHTML=stateBox("Einsatzliste nicht verfügbar – "+errText(e)+".",link("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp","Originalliste"));}
 }
+// ================= Bahn-Verbindungen =================
+const TRIP_KEYS={dus:["dus-datteln","dus-alpen","dus-salzhausen"],datteln:["datteln-dus"],alpen:["alpen-dus"],salzhausen:[]};
+async function loadTrips(){
+  const keys=TRIP_KEYS[C.key]||[];const box=$("trips");
+  $("trip-from").placeholder=C.isDus?"z. B. Düsseldorf-Heerdt":C.town;
+  if(!keys.length){box.innerHTML='<div class="muted small">Für '+esc(C.town)+' sind keine festen Verbindungen hinterlegt – nutze die Suche darunter.</div>';return;}
+  try{const d=await getData("trips.json");const list=(d.data||[]).filter(t=>keys.includes(t.key));
+    const t2=x=>x?hhmm(x):"–";
+    const del=(p,e)=>{if(!p||!e)return"";const m=Math.round((new Date(e)-new Date(p))/6e4);return m>0?' <span style="color:var(--bad);font-weight:600">+'+m+'</span>':"";};
+    const now=Date.now()-60e3;
+    box.innerHTML=list.map(t=>{
+      const js=(t.journeys||[]).filter(j=>new Date(j.depEst||j.dep).getTime()>=now);
+      const head='<div class="sublbl" style="margin-top:6px">'+esc(t.from)+' → '+esc(t.to)+'</div>';
+      if(t.error||!js.length)return head+'<div class="state">'+(t.error?"Nicht verfügbar – "+esc(t.error):"Keine weiteren Fahrten im abgerufenen Zeitraum.")+'</div>';
+      return head+'<div class="list">'+js.map(j=>{const dur=j.arr&&j.dep?Math.round((new Date(j.arrEst||j.arr)-new Date(j.depEst||j.dep))/6e4):null;
+        const ride=j.legs.filter(l=>!l.walk);const cancelled=ride.some(l=>l.cancelled);
+        return '<div class="li"><span class="tag">'+t2(j.dep)+'</span><div class="t">'+t2(j.dep)+del(j.dep,j.depEst)+' → '+t2(j.arr)+del(j.arr,j.arrEst)+(cancelled?' <span class="pill p-bad"><i></i>Ausfall</span>':'')+'</div>'+
+          '<div class="r muted small">'+(dur!=null?Math.floor(dur/60)+":"+String(dur%60).padStart(2,"0")+" h":"")+' · '+j.changes+' Umst.</div>'+
+          '<div class="d">'+ride.map(l=>'<b>'+esc(l.line)+'</b>'+(l.plat?" (Gl. "+esc(l.plat)+")":"")+' bis '+esc(l.to)).join(" › ")+'</div></div>';}).join("")+'</div>';}).join("")+
+      '<div class="muted small">Echtzeit abgerufen '+dataAge(d)+'</div>';
+    setStatus("trips",true,"Stand "+dataAge(d));
+  }catch(e){setStatus("trips",false,errText(e));box.innerHTML=stateBox("Verbindungen nicht verfügbar – "+errText(e)+".",link("https://www.bahn.de/","bahn.de"));}
+}
+function tripQuery(){const f=$("trip-from").value.trim()||(C.isDus?"Düsseldorf Hbf":C.town),t=$("trip-to").value.trim();return {f,t};}
+$("trip-form").addEventListener("submit",e=>{e.preventDefault();const {f,t}=tripQuery();if(!t){$("trip-to").focus();return;}
+  window.open("https://www.bahn.de/buchung/fahrplan/suche#sts=true&so="+encodeURIComponent(f)+"&zo="+encodeURIComponent(t)+"&kl=2&r=13:16:KLASSENLOS:1&hd="+encodeURIComponent(new Date().toISOString().slice(0,19)),"_blank","noopener");});
+$("trip-gm").addEventListener("click",()=>{const {f,t}=tripQuery();if(!t){$("trip-to").focus();return;}
+  window.open("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(f)+"&destination="+encodeURIComponent(t)+"&travelmode=transit","_blank","noopener");});
+
 async function loadBlaulicht(){
   $("bl-title").textContent="Polizei & Feuerwehr "+C.town;
   if(!FAVKEYS.includes(C.key)){$("bl").innerHTML=stateBox("Meldungen sind für Düsseldorf und die Favoriten hinterlegt. Für "+C.town+":",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal "+C.town));return;}
@@ -975,7 +1005,7 @@ function renderSources(){
 let busy=false,lastSlow=0,slowKey="";
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
-  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadEFA(),loadDep(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
+  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadDep(),loadBike(),loadFuel(),loadStrom(),loadNews(),loadSammler()];
   if(C.isDus)tasks.push(loadVT(),loadGarages());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){

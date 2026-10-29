@@ -183,6 +183,42 @@ async function kreisRe() {
   return { updated: updated.trim(), rows };
 }
 
+// ---------- Verbindungen (VRR-Fahrplanauskunft, inkl. DB-Fernverkehr) ----------
+const TRIPS = [
+  ["dus-datteln", "Düsseldorf Hbf", "Datteln Busbahnhof"],
+  ["dus-alpen", "Düsseldorf Hbf", "Alpen Bahnhof"],
+  ["dus-salzhausen", "Düsseldorf Hbf", "Salzhausen"],
+  ["datteln-dus", "Datteln Busbahnhof", "Düsseldorf Hbf"],
+  ["alpen-dus", "Alpen Bahnhof", "Düsseldorf Hbf"]
+];
+async function stopId(name) {
+  const sf = await get("https://efa.vrr.de/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf=" + encodeURIComponent(name));
+  const l = (sf.locations || []).filter(x => x.type === "stop").sort((a, b) => (b.isBest ? 1 : 0) - (a.isBest ? 1 : 0))[0] || (sf.locations || [])[0];
+  if (!l) throw new Error("nicht gefunden: " + name);
+  return { id: l.id, name: l.disassembledName || l.name };
+}
+async function trips() {
+  const out = [];
+  for (const [key, from, to] of TRIPS) {
+    try {
+      const a = await stopId(from), b = await stopId(to);
+      const d = await get("https://efa.vrr.de/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin=" + encodeURIComponent(a.id) + "&type_destination=any&name_destination=" + encodeURIComponent(b.id) + "&itdTripDateTimeDepArr=dep&calcNumberOfTrips=4&useRealtime=1", { ms: 30000 });
+      const journeys = (d.journeys || []).slice(0, 4).map(j => {
+        const legs = (j.legs || []).map(l => { const t = l.transportation || {}, pc = t.product && t.product.class;
+          return { line: t.disassembledName || t.number || t.name || "", name: t.name || "", walk: pc === 99 || pc === 100 || /fu(ß|ss)weg/i.test(t.name || ""), dir: t.destination && t.destination.name || "",
+            from: l.origin && (l.origin.disassembledName || l.origin.name) || "", to: l.destination && (l.destination.disassembledName || l.destination.name) || "",
+            dep: l.origin && l.origin.departureTimePlanned, depEst: l.origin && l.origin.departureTimeEstimated, arr: l.destination && l.destination.arrivalTimePlanned, arrEst: l.destination && l.destination.arrivalTimeEstimated,
+            plat: l.origin && l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "", cancelled: (l.realtimeStatus || []).includes("TRIP_CANCELLED") }; });
+        const ride = legs.filter(x => !x.walk);
+        return { dep: (ride[0] || legs[0] || {}).dep, depEst: (ride[0] || legs[0] || {}).depEst, arr: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arr, arrEst: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arrEst, changes: Math.max(0, ride.length - 1), legs };
+      });
+      out.push({ key, from: a.name, to: b.name, journeys });
+      console.log("::notice::Verbindung " + key + ": " + journeys.length + " Fahrten" + (journeys[0] ? " – " + journeys[0].legs.map(l => l.walk ? "Fuß" : l.line).join(" > ") : ""));
+    } catch (e) { out.push({ key, from, to, error: String(e.message || e), journeys: [] }); console.log("::warning::Verbindung " + key + ": " + (e.message || e)); }
+  }
+  return out;
+}
+
 // ---------- Ablauf ----------
 await fs.mkdir(OUT, { recursive: true });
 const tasks = [];
@@ -202,6 +238,7 @@ for (const [k, p] of Object.entries(PLACES)) {
 }
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
+tasks.push(job("trips.json", trips));
 tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));
 tasks.push(job("strom.json", async () => {
   const day = d => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });

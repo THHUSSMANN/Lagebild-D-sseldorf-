@@ -384,6 +384,15 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div class="card-head"><h2 id="dep-title">Düsseldorf Hbf · Bahn</h2><span class="src">DB-Fahrplandaten (db.transport.rest)</span></div>
     <div id="dep"><div class="state">Abfahrten werden geladen …</div></div>
   </section>
+  <section class="card wide" id="trips-card">
+    <div class="card-head"><h2>Bahn-Verbindungen</h2><span class="src">VRR-Fahrplanauskunft mit DB-Fernverkehr · Echtzeit</span></div>
+    <div id="trips"><div class="state">wird geladen …</div></div>
+    <form id="trip-form" class="settings" style="margin-top:6px">
+      <div class="field"><label for="trip-from">Von</label><input id="trip-from" type="text" autocomplete="off" placeholder="z. B. Düsseldorf-Heerdt"></div>
+      <div class="field"><label for="trip-to">Nach</label><input id="trip-to" type="text" autocomplete="off" placeholder="z. B. Köln Hbf"></div>
+      <div class="field"><label>&nbsp;</label><div class="row" style="gap:8px"><button type="submit" id="trip-db">Bei bahn.de suchen</button><button type="button" id="trip-gm">Google Maps</button></div></div>
+    </form>
+  </section>
   <section class="card">
     <div class="card-head"><h2>Leihräder in der Nähe</h2><span class="src">nextbike</span></div>
     <div id="bike"><div class="state">wird geladen …</div></div>
@@ -494,6 +503,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=17"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>
