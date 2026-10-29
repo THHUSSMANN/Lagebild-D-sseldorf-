@@ -1058,7 +1058,8 @@ function tileAvailable(v){
 const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].some(([x])=>x===v));
 function applyTileOrder(){
   let order=load("tile_order")||TILE_DEFAULT;const box=$("tiles");
-  if(!load("ord_bahn")){order=order.filter(v=>v!=="bahn");const i=order.indexOf("oepnv");order.splice(i<0?order.length:i,0,"bahn");store("ord_bahn",1);if(load("tile_order"))store("tile_order",order);}
+  // „Bus & Bahn“ einmalig direkt hinter „Verkehr“ einsortieren
+  if(!load("ord_bahn2")){order=order.filter(v=>v!=="bahn");const i=order.indexOf("staus");order.splice(i<0?order.length:i+1,0,"bahn");store("ord_bahn2",1);if(load("tile_order"))store("tile_order",order);}
   TILE_DEFAULT.forEach((v,i)=>{if(!order.includes(v)){const prev=TILE_DEFAULT[i-1];const j=order.indexOf(prev);order.splice(j<0?order.length:j+1,0,v);}});
   [...order,...TILE_DEFAULT.filter(v=>!order.includes(v))].forEach(v=>{const t=box.querySelector('.tile[data-view="'+v+'"]');if(t)box.appendChild(t);});
 }
