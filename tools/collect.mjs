@@ -143,13 +143,10 @@ async function dbDeps(p) {
 }
 
 // ---------- Open Data Düsseldorf (Standorte) ----------
+// Behindertenparkplätze live über den städtischen WFS; weitere Standortlisten liegen als
+// statische Dateien in static/ (opendata.duesseldorf.de ist von GitHub aus nicht erreichbar)
 const ODD = {
-  pr: "https://opendata.duesseldorf.de/sites/default/files/Park_and_Ride_WGS84_EPSG4326.geojson",
-  bh: "https://maps.duesseldorf.de/services/verkehr/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=verkehr:behindertenparkplatz&outputFormat=application/json&srsName=epsg:4326&count=2000",
-  aed: "https://opendata.duesseldorf.de/sites/default/files/Herzsicher%20in%20D%C3%BCsseldorf_WGS84_0.geojson",
-  wc: "https://opendata.duesseldorf.de/sites/default/files/Standorte%20%C3%B6ffentlicher%20Toiletten%20D%C3%BCsseldorf%202017_0.geojson",
-  rad: "https://opendata.duesseldorf.de/sites/default/files/Radstationen_2.geojson",
-  blitz: "https://opendata.duesseldorf.de/sites/default/files/Verkehrsueberwachung_2026.geojson"
+  bh: "https://maps.duesseldorf.de/services/verkehr/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=verkehr:behindertenparkplatz&outputFormat=application/json&srsName=epsg:4326&count=2000"
 };
 function places(j) {
   const arr = Array.isArray(j) ? j : (j.features || []);
@@ -174,7 +171,14 @@ for (const [k, p] of Object.entries(PLACES)) {
   tasks.push(job("nina-" + k + ".json", () => ninaDashboard(p)));
   tasks.push(job("uba-" + k + ".json", () => uba(p)));
   if (p.efa) tasks.push(job("efa-" + k + ".json", () => efa(p.efa)));
-  tasks.push(job("db-" + k + ".json", () => dbDeps(p)));
+  tasks.push(job("db-" + k + ".json", async () => {
+    try { return await dbDeps(p); }
+    catch (e) {
+      if (k !== "dus") throw e;
+      const r = await efa("Düsseldorf Hbf"); // Ersatz: VRR-Auskunft, nur Züge
+      return { stop: "Düsseldorf Hbf", dist: null, source: "VRR", rows: r.rows.filter(x => /^(ICE|IC|EC|ECE|RE|RB|S|NJ|FLX|RRX)\s?\d/i.test(x.line)).map(x => ({ planned: x.planned, delay: x.est ? Math.round((new Date(x.est) - new Date(x.planned)) / 6e4) : null, line: x.line, dir: x.dir, plat: x.plat, cancelled: x.cancelled })) };
+    }
+  }));
 }
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));

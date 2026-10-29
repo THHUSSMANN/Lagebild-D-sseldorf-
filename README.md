@@ -14,7 +14,10 @@ Läuft komplett im Browser, ohne Server und ohne Anmeldung. © Thomas Hußmann
 | Luftmessstationen | Umweltbundesamt |
 | Pollenflug | DWD-Gefahrenindex |
 | Rheinpegel | WSV – PEGELONLINE |
-| Grundwasser, Parkhäuser, P+R, Behindertenparkplätze | Open Data Düsseldorf |
+| Stadtverkehr live (Verkehrsfluss, Sperrungen, Baustellen, Veranstaltungen), Parkhausbelegung | Verkehrszentrale Düsseldorf (vtmanager) |
+| P+R, Behindertenparkplätze, Defibrillatoren, Toiletten, Radstationen, Verkehrsüberwachung | Open Data Düsseldorf |
+| Polizei & Feuerwehr (Düsseldorf, Feuerwehr Datteln, regional) | Presseportal Blaulicht |
+| Öffentliche Webcams (optional, eigener Schlüssel) | Windy Webcams API |
 | Staus mit Karte, Autobahn-Meldungen, Sperrungen, Baustellen, Webcams, E-Laden | Autobahn GmbH des Bundes |
 | Spritpreise (eigener kostenloser Schlüssel) | Tankerkönig |
 | Abfahrten Nahverkehr | VRR – EFA |
@@ -35,3 +38,7 @@ Adresse in Safari öffnen → Teilen → „Zum Home-Bildschirm“.
 ## Veröffentlichung
 
 GitHub Pages: Settings → Pages → Source „Deploy from a branch“ → Branch `main`, Ordner `/ (root)`.
+
+## Datensammler
+
+`tools/collect.mjs` läuft alle 10 Minuten als GitHub Action (`.github/workflows/lagebild.yml`) und holt Quellen ohne Browser-Freigabe (NINA, Presseportal, UBA, DWD-Pollen, Energy-Charts, VRR, Bahn, Open Data) nach `data/*.json`. Voraussetzung: Settings → Pages → Source „GitHub Actions“.

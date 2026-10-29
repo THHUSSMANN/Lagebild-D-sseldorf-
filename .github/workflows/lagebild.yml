@@ -29,6 +29,7 @@ jobs:
         run: |
           mkdir -p _site
           cp -r index.html app.js sw.js manifest.webmanifest icons README.md .nojekyll _site/
+          mkdir -p _site/data && cp static/*.json _site/data/
       - name: Daten sammeln
         run: node tools/collect.mjs _site/data
       - uses: actions/upload-pages-artifact@v3
