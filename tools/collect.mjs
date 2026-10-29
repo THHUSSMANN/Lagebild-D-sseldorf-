@@ -394,5 +394,30 @@ tasks.push(job("boerse.json", async () => {
 }));
 for (const [k, url] of Object.entries(ODD)) tasks.push(job("odd-" + k + ".json", async () => places(await get(url, { ms: 40000 }))));
 await Promise.all(tasks);
+// ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
+async function pushAlarms() {
+  const topic = process.env.NTFY_TOPIC; if (!topic) return "kein Thema";
+  let prev = null; try { prev = (await get(LIVE + "push-state.json", { ms: 15000 })).data; } catch {}
+  const sent = new Set((prev && prev.sent) || []); const now = [];const fresh = [];
+  for (const [k, p] of Object.entries(PLACES)) {
+    let nina = []; try { nina = JSON.parse(await fs.readFile(path.join(OUT, "nina-" + k + ".json"), "utf8")).data || []; } catch {}
+    for (const a of nina) now.push({ id: "n:" + a.id, k, p, title: a.title || a.headline || "Warnung", text: a.text || "", sev: a.severity, src: "NINA" });
+    try { const d = await get("https://api.brightsky.dev/alerts?lat=" + p.lat + "&lon=" + p.lon + "&tz=Europe/Berlin");
+      for (const a of d.alerts || []) now.push({ id: "d:" + k + ":" + (a.alert_id || a.id) , k, p, title: a.headline_de || a.event_de, text: (a.description_de || "") + (a.expires ? " (bis " + new Date(a.expires).toLocaleString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + " Uhr)" : ""), sev: a.severity, src: "DWD" }); } catch {}
+  }
+  for (const w of now) if (!sent.has(w.id)) fresh.push(w);
+  if (prev) for (const w of fresh.slice(0, 8)) {
+    const sev = String(w.sev || "").toLowerCase();
+    try { await fetch("https://ntfy.sh/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      topic, title: "⚠ " + w.p.name + ": " + w.title, message: (w.text || w.title).slice(0, 600) + "\n– " + w.src,
+      priority: sev === "extreme" ? 5 : sev === "severe" ? 4 : 3, tags: ["warning"],
+      click: "https://thhussmann.github.io/Lagebild-D-sseldorf-/?ort=" + (w.k === "dus" ? "duesseldorf" : w.k) + "#warnungen" }) }); } catch (e) { console.log("::notice::Push fehlgeschlagen: " + e.message); }
+  }
+  else await fetch("https://ntfy.sh/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, title: "Lagebild: Push eingerichtet", message: "Ab jetzt kommt hier eine Nachricht, sobald für Düsseldorf, Datteln, Alpen-Menzelen oder Salzhausen eine neue Warnung erscheint.", tags: ["white_check_mark"], click: "https://thhussmann.github.io/Lagebild-D-sseldorf-/" }) }).catch(() => {});
+  await write("push-state.json", { sent: now.map(w => w.id) });
+  console.log("::notice::Push: " + now.length + " aktive Warnungen, " + (prev ? fresh.length : 0) + " neu gemeldet");
+  return "ok";
+}
+try { results["push"] = await pushAlarms(); } catch (e) { results["push"] = "Fehler: " + e.message; }
 await write("status.json", results);
 console.log(JSON.stringify(results, null, 1));

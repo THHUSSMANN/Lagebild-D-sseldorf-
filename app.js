@@ -193,9 +193,29 @@ function buildSelect(){
   selEl.value=sel;if(selEl.value!==sel){sel="dus-4";selEl.value=sel;}
 }
 buildSelect();
-// Rot blinkender Hinweis bei aktiven Warnungen
-function setAlarm(n,title){document.body.classList.toggle("alarm",n>0);const b=$("alarmbar");b.hidden=!n;
-  if(n)b.textContent="⚠ "+(n===1?"1 aktive Warnung":n+" aktive Warnungen")+" für "+C.town+": "+(title||"")+" – antippen";}
+// Rot blinkender Hinweis bei aktiven Warnungen – für alle Lieblingsstädte gleichzeitig
+let LOCAL_ALARM={n:0,title:""};const FAV_ALARM={};
+function setAlarm(n,title){LOCAL_ALARM={n,title:title||""};if(FAVKEYS.includes(C.key))FAV_ALARM[C.key]={n,title:title||"",name:C.key==="dus"?"Düsseldorf":C.town};renderAlarm();}
+function favPlaces(){return [{key:"dus",name:"Düsseldorf",lat:BEZIRKE[0].lat,lon:BEZIRKE[0].lon,sel:"dus-4"},...FAVS.map(f=>({key:f.key,name:f.name,lat:f.lat,lon:f.lon,sel:"p-"+f.key}))];}
+async function scanFavAlarms(){
+  await Promise.all(favPlaces().map(async p=>{
+    const titles=[];let ok=false;
+    await Promise.all([
+      getJSON("https://api.brightsky.dev/alerts?lat="+p.lat+"&lon="+p.lon+"&tz=Europe/Berlin").then(d=>{ok=true;(d.alerts||[]).forEach(a=>titles.push(a.headline_de||a.event_de));}).catch(()=>{}),
+      getData("nina-"+p.key+".json").then(d=>{ok=true;(d.data||[]).forEach(a=>titles.unshift(a.headline||a.title));}).catch(()=>{})]);
+    if(ok)FAV_ALARM[p.key]={n:titles.length,title:titles[0]||"",name:p.name};
+  }));
+  renderAlarm();
+}
+function renderAlarm(){
+  const list=favPlaces().filter(p=>FAV_ALARM[p.key]&&FAV_ALARM[p.key].n>0).map(p=>({...FAV_ALARM[p.key],key:p.key,sel:p.sel}));
+  if(!FAVKEYS.includes(C.key)&&LOCAL_ALARM.n>0)list.unshift({n:LOCAL_ALARM.n,title:LOCAL_ALARM.title,name:C.town,key:C.key,sel:sel});
+  document.body.classList.toggle("alarm",list.length>0);
+  const b=$("alarmbar");b.hidden=!list.length;
+  b.innerHTML=list.length?'<span class="ab-h">⚠ Warnung'+(list.reduce((s,x)=>s+x.n,0)>1?"en":"")+'</span>'+list.map(x=>'<button type="button" class="ab-c" data-sel="'+esc(x.sel)+'"><b>'+esc(x.name)+'</b> '+esc(x.title)+(x.n>1?' <small>(+'+(x.n-1)+' weitere)</small>':'')+' ›</button>').join(""):"";
+  document.querySelectorAll("#favs .fav").forEach(f=>f.classList.toggle("alarm-on",!!(FAV_ALARM[f.dataset.fav]&&FAV_ALARM[f.dataset.fav].n)));
+}
+$("alarmbar").addEventListener("click",e=>{const c=e.target.closest(".ab-c");if(!c)return;if(c.dataset.sel!==sel)choose(c.dataset.sel);location.hash="warnungen";});
 // Radio
 let RADIO=null;
 const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/"};
@@ -214,6 +234,7 @@ $("radio-audio").addEventListener("error",()=>document.querySelectorAll("#radio 
 function buildFavs(){
   const dusSub=C.isDus?(C.short||""):"Oberkassel / Heerdt";
   const items=[["dus","Düsseldorf",dusSub],...FAVS.map(f=>[f.key,f.name,""])];
+  setTimeout(renderAlarm,0);
   $("favs").innerHTML=items.map(([k,n,sub])=>'<button type="button" class="fav'+(C.key===k?" on":"")+'" data-fav="'+k+'">'+esc(n)+(sub?' <small>'+esc(sub)+'</small>':'')+'</button>').join("");
 }
 $("favs").addEventListener("click",e=>{const b=e.target.closest("[data-fav]");if(!b)return;const k=b.dataset.fav;
@@ -248,10 +269,10 @@ function applyPlaceUi(){
     $("bahn").querySelector("h2").textContent=fav?"Bahn-Verbindungen":"Bahn-Verbindung suchen";
     $("trip-from").value="";$("trip-to").value="";$("trip-from").placeholder=fav?"z. B. Düsseldorf-Heerdt":"Startbahnhof oder Adresse";$("trip-to").placeholder="Zielbahnhof oder Adresse";
     if(!fav)setKpi("k-bahn","Suche<small> Bahn</small>","Verbindung suchen · Abfahrten vor Ort","info");}
-  $("app-title").textContent="Lagebild "+C.town;
+  $("app-title").textContent="Lagebild Thomas Hußmann";
   $("wx-h").innerHTML="Wetter <strong>"+esc(C.name)+"</strong>";
   if(typeof route==="function")route();
-  document.title="Lagebild "+C.town;
+  document.title="Lagebild Thomas Hußmann · "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
   $("gmaps").href="https://www.google.com/maps/@"+C.center.lat+","+C.center.lon+","+(C.isDus?12:11)+"z/data=!5m1!1e1";
   $("stau-title").textContent="Staus & Behinderungen rund um "+C.town;
@@ -1129,7 +1150,7 @@ function renderSources(){
 let busy=false,lastSlow=0,slowKey="";
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
-  const tasks=[loadAlerts(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
+  const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
   if(C.isDus)tasks.push(loadVT(),loadGarages());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Lagebild Düsseldorf</title>
+<title>Lagebild Thomas Hußmann</title>
 <meta name="description" content="Persönliches Lagebild für Düsseldorf aus offenen Schnittstellen">
 <meta name="theme-color" content="#0b6e8a">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -70,7 +70,14 @@ header .rlink:hover{border-color:var(--accent)}
 header .rbtn.on{background:#e8f6fb;color:#06222e;border-color:#e8f6fb}
 header .rbtn.on::before{content:"❚❚ "}
 header .rbtn.load::before{content:"… "}
-.alarmbar{display:block;flex-basis:100%;margin-top:4px;padding:8px 12px;border-radius:8px;background:var(--bad);color:#fff;font-weight:700;text-decoration:none;animation:alarm 1.1s ease-in-out infinite}
+.alarmbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;flex-basis:100%;margin-top:4px;padding:8px 12px;border-radius:8px;background:var(--bad);color:#fff;font-weight:700;animation:alarm 1.1s ease-in-out infinite}
+.alarmbar[hidden]{display:none}
+.alarmbar .ab-h{font-family:var(--f-display);font-size:16px}
+.alarmbar .ab-c{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:5px 12px;font:600 14px var(--f-body);text-align:left;min-height:32px}
+.alarmbar .ab-c small{opacity:.85;font-weight:500}
+header .fav.alarm-on{position:relative;border-color:#ff6b5e}
+header .fav.alarm-on::after{content:"";position:absolute;top:3px;right:5px;width:10px;height:10px;border-radius:50%;background:#ff3b2f;box-shadow:0 0 0 2px var(--head);animation:dot 1.1s ease-in-out infinite}
+@keyframes dot{50%{opacity:.25}}
 @keyframes alarm{0%,100%{background:#b3261e;box-shadow:0 0 0 0 rgba(214,45,32,.7)}50%{background:#e5483d;box-shadow:0 0 0 6px rgba(214,45,32,0)}}
 body.alarm .tile#k-warn{animation:alarmtile 1.1s ease-in-out infinite}
 @keyframes alarmtile{0%,100%{background:var(--panel);border-color:var(--line)}50%{background:color-mix(in srgb,var(--bad) 28%,var(--panel));border-color:var(--bad)}}
@@ -286,7 +293,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <header class="top pad">
   <div class="wrap">
     <div class="brand">
-      <h1 id="app-title">Lagebild Düsseldorf</h1>
+      <h1 id="app-title">Lagebild Thomas Hußmann</h1>
       <div class="sub" id="sub">Offene Daten für Düsseldorf</div>
     </div>
     <div class="ctrl">
@@ -311,7 +318,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
         <a class="rlink" href="https://tunein.com/" target="_blank" rel="noopener">TuneIn ↗</a>
       </div>
     </div>
-    <a href="#warnungen" class="alarmbar" id="alarmbar" hidden></a>
+    <div class="alarmbar" id="alarmbar" role="alert" hidden></div>
     <audio id="radio-audio" preload="none"></audio>
   </div>
 </header>
@@ -611,12 +618,12 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <footer>
   <span id="updated">Noch nicht aktualisiert</span>
-  <span>Lagebild Düsseldorf · © Thomas Hußmann · Daten: DWD, BBK, WSV, UBA, Autobahn GmbH, Rheinbahn, Deutsche Bahn, Copernicus, Fraunhofer ISE, Stadt Düsseldorf u. a.</span>
+  <span>Lagebild Thomas Hußmann · © Thomas Hußmann · Daten: DWD, BBK, WSV, UBA, Autobahn GmbH, Rheinbahn, Deutsche Bahn, Copernicus, Stadt Düsseldorf, Yahoo Finance u. a.</span>
 </footer>
 </div>
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=38"></script>
+<script src="app.js?v=40"></script>
 </body>
 </html>

@@ -31,6 +31,8 @@ jobs:
           cp -r index.html app.js sw.js manifest.webmanifest icons README.md .nojekyll _site/
           mkdir -p _site/data && cp static/*.json _site/data/
       - name: Daten sammeln
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC || 'lagebild-thh-de66cb14565a' }}
         run: node tools/collect.mjs _site/data
       - uses: actions/upload-pages-artifact@v3
         with:
