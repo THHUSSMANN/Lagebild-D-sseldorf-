@@ -183,8 +183,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <nav class="jump pad" aria-label="Bereiche">
   <div class="wrap">
-    <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#luft">Luft</a><a href="#bezirke">Bezirke</a><a href="#rhein">Rhein</a>
-    <a href="#staus">Staus</a><a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken">Parken</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
+    <a href="#lage">Lage</a><a href="#wetter">Wetter</a><a href="#luft">Luft</a><a href="#bezirke" data-dus>Bezirke</a><a href="#rhein">Gewässer</a>
+    <a href="#staus">Staus</a><a href="#verkehr">Verkehr</a><a href="#oepnv">ÖPNV &amp; Rad</a><a href="#parken" data-dus>Parken</a><a href="#alltag">Alltag</a><a href="#quellen">Quellen</a><a href="#einstellungen">Einstellungen</a>
   </div>
 </nav>
 
@@ -197,7 +197,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div class="kpi s-info" id="k-wx"><div class="lbl">Wetterlage</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div class="kpi s-info" id="k-wind"><div class="lbl">Wind / Böen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div class="kpi s-info" id="k-aq"><div class="lbl">Luftqualität</div><div class="val">–</div><div class="note">&nbsp;</div></div>
-    <div class="kpi s-info" id="k-rhein"><div class="lbl">Rheinpegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
+    <div class="kpi s-info" id="k-rhein"><div class="lbl" id="k-rhein-lbl">Rheinpegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div class="kpi s-info" id="k-warn"><div class="lbl">Amtliche Warnungen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div class="kpi s-info" id="k-traffic"><div class="lbl">Staus Autobahn</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div class="kpi s-info" id="k-strom"><div class="lbl">Strom jetzt</div><div class="val">–</div><div class="note">&nbsp;</div></div>
@@ -205,7 +205,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </section>
 
 <section class="card wide">
-  <div class="card-head"><h2>Warnungen für Düsseldorf</h2><span class="src">DWD-Unwetter · NINA (MoWaS, KATWARN, BIWAPP, Hochwasser, Polizei)</span></div>
+  <div class="card-head"><h2 id="warn-title">Warnungen für Düsseldorf</h2><span class="src">NINA-Warn-App (MoWaS, KATWARN, BIWAPP, Hochwasser, Polizei) · DWD-Unwetter</span></div>
   <div class="alerts" id="alerts"><div class="state">Warnungen werden geladen …</div></div>
 </section>
 
@@ -242,27 +242,27 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </section>
 </div>
 
-<section id="bezirke" class="card wide">
+<section id="bezirke" class="card wide" data-dus>
   <div class="card-head"><h2>Stadtbezirke im Vergleich</h2><span class="src">Zeile antippen, um den Bereich zu wechseln</span></div>
   <div class="tbl-wrap" id="districts"><div class="state">wird geladen …</div></div>
 </section>
 
-<section id="rhein"><div class="sec-title"><h2>Rhein &amp; Grundwasser</h2></div></section>
+<section id="rhein"><div class="sec-title"><h2 id="rhein-sec">Rhein &amp; Grundwasser</h2></div></section>
 <div class="grid">
   <section class="card">
-    <div class="card-head"><h2>Pegel Düsseldorf</h2><span class="src">WSV PEGELONLINE · Rhein-km 744,2</span></div>
+    <div class="card-head"><h2 id="pegel-title">Pegel Düsseldorf</h2><span class="src" id="pegel-src">WSV PEGELONLINE · Rhein-km 744,2</span></div>
     <div id="pegel"><div class="state">Pegeldaten werden geladen …</div></div>
   </section>
-  <section class="card">
+  <section class="card" data-dus>
     <div class="card-head"><h2>Grundwasser-Messstellen</h2><span class="src">Umweltamt Düsseldorf · Open Data</span></div>
     <div id="gw"><div class="state">wird geladen …</div></div>
   </section>
 </div>
 
-<section id="verkehr"><div class="sec-title"><h2>Verkehr</h2><span class="muted small">A3 · A44 · A46 · A52 · A57 · A59 · A524 · A535 · Staus im Umkreis von 30 km</span></div></section>
+<section id="verkehr"><div class="sec-title"><h2>Verkehr</h2><span class="muted small" id="ab-list">A3 · A44 · A46 · A52 · A57 · A59 · A524 · A535 · Umkreis 30 km</span></div></section>
 <div class="grid">
   <section class="card wide" id="staus">
-    <div class="card-head"><h2>Staus rund um Düsseldorf</h2><span class="src">Autobahn GmbH · Karte © OpenStreetMap-Mitwirkende</span></div>
+    <div class="card-head"><h2 id="stau-title">Staus &amp; Behinderungen rund um Düsseldorf</h2><span class="src">Autobahn GmbH · Karte © OpenStreetMap-Mitwirkende</span></div>
     <div class="stau-sum" id="stau-sum"></div>
     <div id="stau-map" class="map" role="img" aria-label="Karte der Staus, Sperrungen und Baustellen rund um Düsseldorf"></div>
     <div class="legend"><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockender Verkehr</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
@@ -292,12 +292,12 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <section id="oepnv"><div class="sec-title"><h2>ÖPNV &amp; Rad</h2></div></section>
 <div class="grid">
-  <section class="card">
+  <section class="card" id="efa-card">
     <div class="card-head"><h2 id="efa-title">Abfahrten</h2><span class="src">VRR-Fahrplanauskunft (EFA) · Rheinbahn u. a.</span></div>
     <div id="efa"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card">
-    <div class="card-head"><h2>Düsseldorf Hbf · Bahn</h2><span class="src">db.transport.rest</span></div>
+    <div class="card-head"><h2 id="dep-title">Düsseldorf Hbf · Bahn</h2><span class="src">DB-Fahrplandaten (db.transport.rest)</span></div>
     <div id="dep"><div class="state">Abfahrten werden geladen …</div></div>
   </section>
   <section class="card">
@@ -306,8 +306,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </section>
 </div>
 
-<section id="parken"><div class="sec-title"><h2>Parken</h2><span class="muted small">Standorte aus Open Data Düsseldorf, sortiert nach Nähe zum gewählten Bezirk</span></div></section>
-<div class="grid">
+<section id="parken" data-dus><div class="sec-title"><h2>Parken</h2><span class="muted small">Standorte aus Open Data Düsseldorf, sortiert nach Nähe zum gewählten Bezirk</span></div></section>
+<div class="grid" data-dus>
   <section class="card">
     <div class="card-head"><h2>Parkhäuser</h2><a class="src" href="https://vtmanager.duesseldorf.de/info/?parkquartier#main" target="_blank" rel="noopener">Live-Belegung öffnen ↗</a></div>
     <div id="park-ph"><div class="state">wird geladen …</div></div>
@@ -347,9 +347,19 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="card-head"><h2>Einstellungen</h2><span class="src">werden nur auf diesem Gerät gespeichert</span></div>
   <div class="settings">
     <div class="field">
-      <label for="stop">Haltestelle für Abfahrten</label>
+      <label for="place-q">Ort hinzufügen</label>
+      <div class="inline"><input id="place-q" type="search" autocomplete="off" placeholder="z. B. Kempen, Wesel, Lüneburg"><button type="button" id="place-search">Suchen</button></div>
+      <div id="place-results" class="list"></div>
+      <span class="hint">Gespeicherte Orte erscheinen oben in der Auswahl.</span>
+    </div>
+    <div class="field">
+      <label>Meine Orte</label>
+      <div id="place-mine" class="list"></div>
+    </div>
+    <div class="field">
+      <label for="stop" id="stop-lbl">Haltestelle für Abfahrten</label>
       <div class="inline"><input id="stop" type="text" autocomplete="off" placeholder="z. B. Düsseldorf Heinrich-Heine-Allee"><button type="button" id="stop-save">Übernehmen</button></div>
-      <span class="hint">Name wie in der VRR-Auskunft, mit „Düsseldorf“ davor.</span>
+      <span class="hint">Gilt für den gerade gewählten Ort. Name wie in der VRR-Auskunft, z. B. „Alpen Bahnhof“.</span>
     </div>
     <div class="field">
       <label for="tk">Tankerkönig-API-Schlüssel</label>

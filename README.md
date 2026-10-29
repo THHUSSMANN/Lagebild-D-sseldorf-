@@ -1,6 +1,6 @@
 # Lagebild Düsseldorf
 
-Persönliches Dashboard für Düsseldorf (Mitte und alle zehn Stadtbezirke) aus offenen Schnittstellen.
+Persönliches Dashboard für Düsseldorf (Mitte und alle zehn Stadtbezirke) sowie frei wählbare Orte (Favoriten: Datteln, Alpen-Menzelen, Salzhausen) aus offenen Schnittstellen.
 Läuft komplett im Browser, ohne Server und ohne Anmeldung. © Thomas Hußmann
 
 ## Inhalte und Schnittstellen
@@ -23,6 +23,10 @@ Läuft komplett im Browser, ohne Server und ohne Anmeldung. © Thomas Hußmann
 | Feiertage, Schulferien NRW | Nager.Date, OpenHolidays API |
 | Strompreis, Ökostrom-Ampel | Energy-Charts (Fraunhofer ISE) |
 | Nachrichten NRW | tagesschau |
+
+## Direktaufruf
+
+`?ort=duesseldorf`, `?ort=dus-3` (Bezirk 3), `?ort=datteln`, `?ort=alpen`, `?ort=salzhausen`
 
 ## Auf iPhone und iPad
 
