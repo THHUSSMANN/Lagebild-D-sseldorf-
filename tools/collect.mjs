@@ -187,7 +187,8 @@ async function kreisRe() {
 const TRIPS = [
   ["dus-datteln", "Düsseldorf Hbf", "Datteln Busbahnhof"],
   ["dus-alpen", "Düsseldorf Hbf", "Alpen Bahnhof"],
-  ["dus-salzhausen", "Düsseldorf Hbf", "Salzhausen"],
+  ["dus-re", "Düsseldorf Hbf", "Recklinghausen Hbf"],
+  ["re-dus", "Recklinghausen Hbf", "Düsseldorf Hbf"],
   ["datteln-dus", "Datteln Busbahnhof", "Düsseldorf Hbf"],
   ["alpen-dus", "Alpen Bahnhof", "Düsseldorf Hbf"]
 ];
