@@ -271,7 +271,8 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
   const dayLbl=ts=>{const d=new Date(ts),t=new Date();const dd=Math.round((new Date(d.toDateString())-new Date(t.toDateString()))/864e5);return dd===0?"heute":dd===1?"morgen":d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});};
   function render(){const l=list().filter(a=>a.at>Date.now()-60000).sort((a,b)=>a.at-b.at);save(l);
     $("al-list").innerHTML=l.length?l.map(a=>'<div class="al-it"><div><b>'+hm(a.at)+'</b> <span class="muted small">'+dayLbl(a.at)+(a.push?' · mit Push':'')+'</span><div>'+esc(a.text||"Wecker")+'</div></div><button type="button" data-del="'+a.id+'">Löschen</button></div>').join(""):'<div class="muted small">Kein Wecker gestellt.</div>';
-    $("alarm-btn").textContent="⏰ Wecker"+(l.length?" ("+hm(l[0].at)+")":"");}
+    $("alarm-btn").textContent="⏰ Wecker"+(l.length?" ("+hm(l[0].at)+")":"");
+    $("al-next").innerHTML=l.length?'<div><div class="lbl2">Nächster Wecker</div><div class="big-t">'+hm(l[0].at)+'</div></div><div>'+esc(l[0].text||"Wecker")+'<div class="small" style="opacity:.7">'+dayLbl(l[0].at)+'</div></div>':'<div><div class="lbl2">Jetzt</div><div class="big-t" id="al-now">'+hm(Date.now())+'</div></div><div style="opacity:.8">Kein Wecker gestellt</div>';}
   function unlockAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();}catch(e){}}
   function beep(){if(!AC)return;const t=AC.currentTime;[0,.25,.5].forEach((d,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type="square";o.frequency.value=i===2?1175:880;g.gain.setValueAtTime(.0001,t+d);g.gain.exponentialRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d+.2);o.connect(g).connect(AC.destination);o.start(t+d);o.stop(t+d+.22);});}
   function ring(a){document.querySelectorAll("dialog[open]").forEach(d=>d.close());ringing=a;$("ring-t").textContent=a.text||"Wecker";$("ring-time").textContent=hm(a.at)+" Uhr";$("ring").hidden=false;unlockAudio();beep();clearInterval(beepT);beepT=setInterval(beep,1200);
@@ -1287,9 +1288,10 @@ function route(){
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
     const tabs=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x));el.hidden=tabs.length<2;
     el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===v?"on":"")+'">'+esc(l)+'</a>').join("");});
-  if(inView){window.scrollTo(0,0);if(v==="staus"&&MAP)setTimeout(()=>MAP.invalidateSize(),60);}
+  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&MAP)setTimeout(()=>MAP.invalidateSize(),60);}
 }
 window.addEventListener("hashchange",route);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
 let EDITING=false,SORT=null;
 document.querySelectorAll("#tiles .tile").forEach(t=>{
   const ctl=document.createElement("span");ctl.className="ctl";
