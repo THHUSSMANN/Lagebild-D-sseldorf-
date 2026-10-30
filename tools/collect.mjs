@@ -462,7 +462,9 @@ await job("medien.json", async () => {
       ["NRZ Wesel", ["https://www.nrz.de/lokales/wesel-hamminkeln-schermbeck/feed.rss", "https://www.nrz.de/lokales/wesel-hamminkeln-schermbeck/rss", "https://www.nrz.de/staedte/wesel-hamminkeln-schermbeck/feed.rss", "https://www.nrz.de/rss"]],
       ["Niederrhein Nachrichten", ["https://www.niederrhein-nachrichten.de/feed/", "https://niederrhein-nachrichten.de/feed/", "https://www.nn-online.de/feed/"]],
       ["Radio KW", ["https://www.radiokw.de/nachrichten/lokalnachrichten/index.rss", "https://www.radiokw.de/rss/lokalnachrichten.xml", "https://www.radiokw.de/feed/", "https://www.radiokw.de/rss"]], ["WDR", WDR]],
-    salzhausen: [["NDR", ["https://www.ndr.de/home/index-rss.xml", "https://www.ndr.de/nachrichten/index-rss.xml", "https://www.ndr.de/nachrichten/niedersachsen/index-rss.xml"]], ["Landeszeitung Lüneburg", ["https://www.landeszeitung.de/feed/", "https://www.landeszeitung.de/rss"]]]
+    salzhausen: [["NDR Lüneburger Heide", ["https://www.ndr.de/nachrichten/niedersachsen/lueneburg_heide_unterelbe/index-rss.xml", "https://www.ndr.de/nachrichten/niedersachsen/lueneburg_heide_unterelbe/index~rss2.xml"]], ["NDR Niedersachsen", ["https://www.ndr.de/nachrichten/niedersachsen/index-rss.xml", "https://www.ndr.de/nachrichten/niedersachsen/index~rss2.xml", "https://www.ndr.de/home/index-rss.xml"]],
+      ["Kreiszeitung Wochenblatt", ["https://www.kreiszeitung-wochenblatt.de/feed/", "https://www.kreiszeitung-wochenblatt.de/rss", "https://www.kreiszeitung-wochenblatt.de/winsen/rss"]], ["Winsener Anzeiger", ["https://www.winsener-anzeiger.de/feed/", "https://www.winsener-anzeiger.de/rss"]],
+      ["Hamburger Abendblatt Harburg", ["https://www.abendblatt.de/hamburg/harburg/rss", "https://www.abendblatt.de/region/kreis-harburg/rss"]], ["Landeszeitung Lüneburg", ["https://www.landeszeitung.de/feed/", "https://www.landeszeitung.de/rss"]]]
   };
   const cache = {}; const out = {}; const stat = [];
   for (const [k, list] of Object.entries(F)) {
