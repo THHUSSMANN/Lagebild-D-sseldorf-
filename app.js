@@ -1076,7 +1076,9 @@ async function loadTomTom(){
         else if(isFinite(x.lat))L.circleMarker([x.lat,x.lon],{radius:7,color:"#fff",weight:2,fillColor:col(x),fillOpacity:1}).bindPopup(pop).addTo(MAP._ttinc);});
       applyMapMode();}
     const jams=list.filter(x=>x.cat===6||x.delay>0);
-    TILE_PARTS.traffic.tt=jams.length?jams.length+" Behinderungen auf allen Straßen":"alle Straßen frei";composeTile("k-traffic","traffic");
+    {const mx=jams.length?Math.max(0,...jams.map(x=>x.delay||0)):0,nA=jams.filter(x=>/(^|, )A\d/.test(x.road)).length;
+      TILE_PARTS.traffic.tt=jams.length?(mx?"größte Verzögerung +"+mx+" min · ":"")+nA+" davon auf Autobahnen":"alle Straßen frei";TILE_PARTS.traffic._tt=1;
+      composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>",mx>=20?"bad":jams.length?"warn":"ok");}
     TT={list,jams,CAT};TTF=null;renderTT();fillPlaces();
     setStatus("tomtom",true);
   }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
@@ -1250,8 +1252,8 @@ async function loadAutobahn(){
   const totLen=jams.reduce((s,j)=>s+(j.jam.len||0),0);
   const nStau=jams.filter(j=>j.jam.kind==="stau").length;
   const others=warnings.filter(w=>!w.jam&&!jamInfo(w)).length;
-  TILE_PARTS.traffic.ab=(jams.length?jams.length+" Staus/stockend":"Autobahn frei")+(maxDelay?" bis +"+maxDelay+" min":"");
-  composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>",nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");
+  TILE_PARTS.traffic.ab=TILE_PARTS.traffic._tt?"":(jams.length?jams.length+" Staus/stockend":"Autobahn frei")+(maxDelay?" bis +"+maxDelay+" min":"");
+  if(!TILE_PARTS.traffic._tt)composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>",nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");else composeTile("k-traffic","traffic");
   if(false)setKpi("k-traffic",String(jams.length),jams.length?(maxDelay?"bis +"+maxDelay+" min":"")+(totLen?" · "+fmt(totLen,1)+" km":"")+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""):"freie Fahrt"+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""),
     nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");
   const otherList=warnings.filter(w=>!jamInfo(w)&&!isClosed(w)).sort((a,b)=>a.km-b.km);
