@@ -347,7 +347,7 @@ function clearPlaceViews(){
 }
 function applyPlaceUi(){
   buildFavs();
-  $("gmaps-btn").href="https://www.google.com/maps/@"+C.center.lat+","+C.center.lon+",13z/data=!5m1!1e1";
+  $("gmaps-btn").href=gmapsUrl();
   ROUTES_TXT=routesFor(C.key);ROUTES=parseRoutes(ROUTES_TXT);$("routes").value=ROUTES_TXT;
   $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
@@ -362,7 +362,7 @@ function applyPlaceUi(){
   if(typeof route==="function")route();
   document.title="Lagebild Thomas Hußmann · "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
-  $("gmaps").href="https://www.google.com/maps/@"+C.center.lat+","+C.center.lon+","+(C.isDus?12:11)+"z/data=!5m1!1e1";
+  $("gmaps").href=gmapsUrl();
   $("stau-title").textContent="Verkehrslage rund um "+C.town;
   $("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
   $("rhein-sec").textContent=C.isDus?"Rhein & Grundwasser":"Gewässer";
@@ -979,7 +979,7 @@ function geomLines(w){
 async function loadTomTom(){
   const box=$("tt");try{ensureMap();}catch(e){}
   if(!TTKEY){box.innerHTML='<div class="state">Für Staus auch auf Land- und Stadtstraßen (Echtzeit wie bei Google Maps) unter <a href="#einstellungen">Einstellungen</a> den kostenlosen TomTom-Schlüssel eintragen.</div>';return;}
-  const r=C.isDus?0.16:0.2,la=C.center.lat,lo=C.center.lon,bbox=[lo-r*1.6,la-r,lo+r*1.6,la+r].map(x=>x.toFixed(4)).join(",");
+  const la=C.center.lat,lo=C.center.lon,mb=mapBounds(),bbox=[mb[1],mb[0],mb[3],mb[2]].map(x=>x.toFixed(4)).join(",");
   const fields="{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description},startTime,endTime,from,to,length,delay,roadNumbers}}}";
   try{const res=await fetch("https://api.tomtom.com/traffic/services/5/incidentDetails?key="+encodeURIComponent(TTKEY)+"&bbox="+bbox+"&language=de-DE&timeValidityFilter=present&fields="+encodeURIComponent(fields));
     if(!res.ok)throw new Error(res.status===403?"Traffic-Freigabe für den Schlüssel fehlt noch (bei TomTom „Traffic API“ aktivieren)":res.status===401?"Schlüssel ungültig":"HTTP "+res.status);
@@ -1000,6 +1000,10 @@ async function loadTomTom(){
   }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
 }
 let MAPMODE=load("mapmode")||"tomtom";
+// Fester Kartenausschnitt je Ort: [Süd, West, Nord, Ost]
+const MAP_BOUNDS={dus:[51.15,6.62,51.72,7.45],datteln:[51.15,6.62,51.72,7.45],alpen:[51.17,6.38,51.70,6.86],salzhausen:[53.08,9.92,53.36,10.42]};
+function mapBounds(){const b=MAP_BOUNDS[C.key];if(b)return b;const la=C.center.lat,lo=C.center.lon;return [la-.2,lo-.32,la+.2,lo+.32];}
+function gmapsUrl(){const [s,w,n,e]=mapBounds();const span=Math.max(n-s,(e-w)*0.62);const z=span>0.45?10:span>0.22?11:12;return "https://www.google.com/maps/@"+((s+n)/2).toFixed(4)+","+((w+e)/2).toFixed(4)+","+z+"z/data=!5m1!1e1";}
 function applyMapMode(){
   if(!MAP)return;const tt=MAPMODE==="tomtom"&&!!TTKEY;
   const k=encodeURIComponent(TTKEY||"");
@@ -1025,7 +1029,7 @@ function ensureMap(){
   if(MAPRING)MAPRING.remove();if(MAPCENTER)MAPCENTER.remove();
   MAPRING=L.circle([C.center.lat,C.center.lon],{radius:JAM_RADIUS_KM*1000,color:"#8a9aa5",weight:1,dashArray:"4 6",fill:false,interactive:false}).addTo(MAP);
   MAPCENTER=L.circleMarker([C.center.lat,C.center.lon],{radius:5,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(C.town).addTo(MAP);
-  MAP.setView([C.center.lat,C.center.lon],C.isDus?11:10);
+  {const [s,w,n,e]=mapBounds();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
   return MAP;
 }
 function popupHtml(i,extra){
