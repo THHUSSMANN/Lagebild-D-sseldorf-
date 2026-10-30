@@ -1,6 +1,22 @@
 {
   "_hinweis": "Haltestellen, deren Abfahrten der Datensammler alle 10 Minuten abruft. Die erste ist der Standard des Orts.",
-  "dus": ["Düsseldorf Nikolaus-Knopp-Platz"],
-  "datteln": ["Datteln Busbahnhof", "Datteln Lohstr."],
-  "alpen": ["Alpen Bahnhof"]
+  "dus": [
+    "Düsseldorf Nikolaus-Knopp-Platz"
+  ],
+  "datteln": [
+    "Datteln Busbahnhof",
+    "Datteln Lohstr."
+  ],
+  "alpen": [
+    "Alpen Bahnhof"
+  ],
+  "_fahrten": {
+    "datteln": [
+      [
+        "Datteln Lohstr.",
+        "Datteln Busbahnhof"
+      ]
+    ]
+  },
+  "_hinweis_fahrten": "Direkte Busfahrten von – nach je Ort (ohne Umstieg), z. B. Lohstr. → Busbahnhof."
 }

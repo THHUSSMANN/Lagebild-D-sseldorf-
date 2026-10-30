@@ -1164,7 +1164,7 @@ async function loadEFA(){
   const file=m.file||(stop===C.efaDefault?"efa-"+C.key+".json":null);
   if(!file||!FAVKEYS.includes(C.key)){EFADATA=null;
     $("efa").innerHTML=stateBox("„"+esc(m.name||stop)+"“ wird noch nicht automatisch abgerufen.",(m.id?link("https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(m.id),"Live-Abfahrten öffnen")+" · ":"")+"Claude kann sie fest ergänzen.");return;}
-  try{EFADATA=await getData(file);renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));}
+  try{if(!BUSF)BUSF=await getData("busfahrten.json").then(x=>x.data||[]).catch(()=>[]);EFADATA=await getData(file);renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));}
   catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link(C.isDus?"https://www.rheinbahn.de/":"https://www.vrr.de/",C.isDus?"Rheinbahn":"VRR-Fahrplanauskunft"));}
 }
 function renderEFA(){const d=EFADATA;if(!d)return;const now=Date.now()-60e3;const f=normStop(DIRF[C.key]||"");
@@ -1174,8 +1174,15 @@ function renderEFA(){const d=EFADATA;if(!d)return;const now=Date.now()-60e3;cons
   if(!rows.length){$("efa").innerHTML=stateBox(f?"Keine Abfahrten mit diesem Filter im abgerufenen Zeitraum.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
     if(!(C.isDus||C.key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
-  $("efa").innerHTML='<div class="muted small">'+esc(d.data.stop)+' · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
+  $("efa").innerHTML=busTripsHtml(d.data.stop)+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
 }
+let BUSF=null;
+function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
+  const t=BUSF.filter(x=>x.key===C.key&&(normStop(x.from)===n||normStop(x.fromQ).endsWith(n)||n.endsWith(normStop(x.from))));
+  const now=Date.now()-60e3;
+  return t.map(x=>{const r=x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now).slice(0,5);
+    return '<div class="sublbl">Direkt nach '+esc(x.to.replace(/^Datteln,?\s*/,""))+'</div>'+(r.length?'<div class="list" style="margin-bottom:10px">'+r.map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
+      return '<div class="li"><span class="tag">'+esc(r.line)+'</span><div class="t"><b>'+hhmm(r.dep)+'</b>'+(dm>0?' <span style="color:var(--bad);font-weight:600">+'+dm+'</span>':'')+' → an '+hhmm(r.arrEst||r.arr)+'</div><div class="r muted small">'+(r.plat?'Steig '+esc(r.plat):'')+'</div><div class="d">Richtung '+esc(r.dir)+'</div></div>';}).join("")+'</div>':'<div class="muted small" style="margin-bottom:10px">Keine direkte Fahrt im abgerufenen Zeitraum.</div>');}).join("");}
 function depTable(rows){
   let r='<table><thead><tr><th>Zeit</th><th>Linie</th><th>Richtung</th><th class="num">Gleis/Steig</th><th class="num">+min</th></tr></thead><tbody>';
   rows.forEach(x=>{const del=x.delay!=null?x.delay:(x.planned&&x.est?Math.round((new Date(x.est)-new Date(x.planned))/6e4):null);

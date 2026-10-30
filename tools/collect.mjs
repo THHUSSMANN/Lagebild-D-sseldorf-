@@ -422,6 +422,24 @@ await job("landespegel.json", async () => {
   out.forEach(o => delete o.raw);
   return out;
 });
+// ---------- Direkte Busfahrten (z. B. Datteln Lohstr. → Busbahnhof) ----------
+await job("busfahrten.json", async () => {
+  let cfg = {}; try { cfg = JSON.parse(await fs.readFile(new URL("../config/haltestellen.json", import.meta.url), "utf8"))._fahrten || {}; } catch {}
+  const out = [];
+  for (const [k, pairs] of Object.entries(cfg)) for (const [from, to] of pairs) {
+    try {
+      const a = await stopId(from), b = await stopId(to);
+      const d = await get("https://efa.vrr.de/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin=" + encodeURIComponent(a.id) + "&type_destination=any&name_destination=" + encodeURIComponent(b.id) + "&itdTripDateTimeDepArr=dep&calcNumberOfTrips=8&maxChanges=0&useRealtime=1", { ms: 30000 });
+      const rows = (d.journeys || []).map(j => j.legs.filter(l => l.transportation && l.transportation.product && l.transportation.product.class !== 100 && l.transportation.product.class !== 99)).filter(l => l.length === 1).map(([l]) => ({
+        line: l.transportation.disassembledName || l.transportation.number || "", dir: (l.transportation.destination || {}).name || "",
+        dep: l.origin.departureTimePlanned, depEst: l.origin.departureTimeEstimated, arr: l.destination.arrivalTimePlanned, arrEst: l.destination.arrivalTimeEstimated,
+        plat: l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "" }));
+      out.push({ key: k, from: a.name, to: b.name, fromQ: from, rows });
+      console.log("::notice::Busfahrten " + a.name + " → " + b.name + ": " + rows.map(r => r.line + " " + (r.dep || "").slice(11, 16)).join(", "));
+    } catch (e) { console.log("::notice::Busfahrten " + from + " → " + to + " Fehler: " + e.message); }
+  }
+  return out;
+});
 // ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
 async function pushAlarms() {
   const topic = process.env.NTFY_TOPIC; if (!topic) return "kein Thema";
