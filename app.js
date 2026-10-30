@@ -938,10 +938,17 @@ function renderWebcamLinks(){
     (imgs.length?'<div class="sublbl">Kamerabilder (aktualisieren sich alle paar Minuten)</div><div class="cams cams-l" style="margin-bottom:12px">'+imgs.map(x=>'<a class="cam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(x.t)+'" src="'+esc(x.img)+'?t='+ts+'" onerror="this.closest(\'.cam\').classList.add(\'off\')"><span><b>'+esc(x.t)+'</b></span></a>').join("")+'</div>':'')+
     (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="cams cams-l" style="margin-bottom:10px">'+links.map(x=>'<a class="cam linkcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">📷</span><span class="lc-go">öffnen ↗</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(host(x.u))+'</span></span></a>').join("")+'</div>':'')||
     '<div class="state">Für '+esc(C.town)+' sind keine Webcams hinterlegt.</div>';
-  box.querySelectorAll(".lsbox").forEach(el=>el.addEventListener("click",()=>playLive(el,lives[+el.dataset.i]),{once:true}));
+  box.querySelectorAll(".lsbox").forEach(el=>el.addEventListener("click",()=>openCam({t:lives[+el.dataset.i].t,live:lives[+el.dataset.i].live,u:lives[+el.dataset.i].u})));
+  box.querySelectorAll("a.cam:not(.linkcam)").forEach((a,i)=>a.addEventListener("click",e=>{e.preventDefault();const x=imgs[i];openCam({t:x.t,img:x.img,u:x.u});}));
   CAM_N.links=list.length;CAM_N.img=imgs.length+lives.length;camTile();
 }
-let LSLOAD=null;
+let LSLOAD=null,CAMT=null;
+function openCam(x){const d=$("cam-dlg"),b=$("cam-big");$("cam-big-t").textContent=x.t;$("cam-big-src").href=x.u;b.innerHTML="";clearInterval(CAMT);
+  if(x.img){const im=document.createElement("img");const set=()=>im.src=x.img+"?t="+Date.now();set();im.alt="Webcam "+x.t;b.appendChild(im);CAMT=setInterval(set,60000);}
+  else if(x.live){const el=document.createElement("div");el.id="lsbig"+Date.now();el.className="lsbox";el.style.border="0";el.style.borderRadius="0";b.appendChild(el);playLive(el,x);}
+  d.showModal();}
+document.addEventListener("DOMContentLoaded",()=>{});
+$("cam-dlg").addEventListener("close",()=>{clearInterval(CAMT);$("cam-big").innerHTML="";});
 function playLive(el,x){
   el.classList.add("loading");
   LSLOAD=LSLOAD||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://player.livespotting.com/player/clappr/latest/player.min.js";sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
@@ -1007,15 +1014,28 @@ async function loadTomTom(){
       applyMapMode();}
     const jams=list.filter(x=>x.cat===6||x.delay>0);
     TILE_PARTS.traffic.tt=jams.length?jams.length+" Behinderungen auf allen Straßen":"alle Straßen frei";composeTile("k-traffic","traffic");
-    const magTxt=["","leicht","mäßig","stark","gesperrt"];
-    box.innerHTML='<div class="facts" style="margin-bottom:8px">'+fact(String(jams.length),"Staus / zäh")+fact(String(list.filter(x=>x.cat===1).length),"Unfälle")+fact(String(list.filter(x=>x.cat===8).length),"Sperrungen")+fact(jams.length?"+"+Math.max(0,...jams.map(x=>x.delay||0))+" min":"–","größte Verzögerung")+'</div><div class="muted small" style="margin-bottom:6px">Rund um '+esc(C.town)+', auch Land- und Stadtstraßen · sortiert nach Verzögerung · die 25 wichtigsten</div>'+
-      (list.length?'<div>'+list.slice(0,30).map((x,i)=>(i===0||list[i-1].grp!==x.grp?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=4?"p-bad":x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
-        '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
-        '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",x.grp===1?" · "+fmt(x.home,1)+" km von meiner Adresse":isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+'</div></div>').join("")+'</div>'
-      :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
+    TT={list,jams,CAT};TTF=null;renderTT();
     setStatus("tomtom",true);
   }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
 }
+let TT=null,TTF=null;
+function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");const magTxt=["","leicht","mäßig","stark","gesperrt"];
+  const F={stau:x=>x.cat===6||x.delay>0,unfall:x=>x.cat===1,sperr:x=>x.cat===8,delay:x=>x.delay>0};
+  let l=TTF?list.filter(F[TTF]):list;if(TTF==="delay")l=l.slice().sort((a,b)=>b.delay-a.delay);
+  const fb=(k,v,t,n)=>'<button type="button" class="fact fbtn'+(TTF===k?" on":"")+'" data-ttf="'+k+'"'+(n?"":" disabled")+'><b>'+v+'</b><span>'+t+'</span></button>';
+  const nU=list.filter(F.unfall).length,nS=list.filter(F.sperr).length,mx=jams.length?Math.max(0,...jams.map(x=>x.delay||0)):0;
+  box.innerHTML='<div class="stau-sum" style="margin-bottom:8px">'+fb("stau",String(jams.length),"Staus / zäh",jams.length)+fb("unfall",String(nU),"Unfälle",nU)+fb("sperr",String(nS),"Sperrungen",nS)+fb("delay",mx?"+"+mx+" min":"–","größte Verzögerung",mx)+'</div>'+
+    '<div class="muted small" style="margin-bottom:6px">'+(TTF?'Gefiltert – Kennzahl erneut antippen zeigt wieder alles. ':'Kennzahl antippen filtert die Liste. ')+'Eintrag antippen zeigt ihn in der Karte.</div>'+
+    (l.length?'<div>'+l.slice(0,30).map((x,i)=>(!TTF&&(i===0||l[i-1].grp!==x.grp)?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam ttj" role="button" tabindex="0" data-i="'+list.indexOf(x)+'"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
+      '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
+      '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",x.grp===1?" · "+fmt(x.home,1)+" km von meiner Adresse":isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join("")+'</div>'
+    :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
+}
+document.addEventListener("click",e=>{const f=e.target.closest("#tt [data-ttf]");if(f){TTF=TTF===f.dataset.ttf?null:f.dataset.ttf;renderTT();return;}
+  const j=e.target.closest("#tt .ttj");if(j&&TT&&MAP){const x=TT.list[+j.dataset.i];if(!x||!isFinite(x.lat))return;
+    if(MAPMODE!=="tomtom"&&TTKEY){MAPMODE="tomtom";store("mapmode",MAPMODE);applyMapMode();}
+    $("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([x.lat,x.lon],14);
+    if(MAP._ttinc)MAP._ttinc.eachLayer(l=>{if(l.getPopup&&l.getPopup()&&(l.getLatLng?Math.abs(l.getLatLng().lat-x.lat)<1e-5:l.getLatLngs().flat().some(p=>Math.abs(p.lat-x.lat)<1e-5&&Math.abs(p.lng-x.lon)<1e-5)))l.openPopup([x.lat,x.lon]);});}});
 let MAPMODE=load("mapmode")||"tomtom";
 // Fester Kartenausschnitt je Ort: [Süd, West, Nord, Ost]
 const MAP_BOUNDS={dus:[51.15,6.62,51.72,7.45],datteln:[51.15,6.62,51.72,7.45],alpen:[51.17,6.38,51.70,6.86],salzhausen:[53.08,9.92,53.36,10.42]};
