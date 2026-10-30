@@ -356,8 +356,10 @@ for (const [k, p] of Object.entries(PLACES)) {
       await job(file, async () => { const r = await efa(name); avail.push({ q: name, name: r.stop, file }); return r; });
     }
     await job("stops-" + k + ".json", async () => {
-      const d = await get("https://efa.vrr.de/standard/XML_COORD_REQUEST?outputFormat=rapidJSON&language=de&coord=" + p.lon.toFixed(5) + ":" + p.lat.toFixed(5) + ":WGS84[dd.ddddd]&inclFilter=1&type_1=STOP&radius_1=" + (k === "dus" ? 6000 : 4000) + "&max=600", { ms: 40000 });
-      const all = [...new Map((d.locations || []).map(l => [l.id, { id: l.id, name: stopName(l) || l.name, dist: l.properties && +l.properties.distance || null }])).values()].sort((a, b) => a.name.localeCompare(b.name, "de"));
+      const centers = k === "dus" ? [[6.7763, 51.2254], [6.7086, 51.2296], [6.84, 51.25], [6.80, 51.18], [6.77, 51.29]] : [[p.lon, p.lat]];
+      const locs = [];
+      for (const [lo, la] of centers) { try { const d = await get("https://efa.vrr.de/standard/XML_COORD_REQUEST?outputFormat=rapidJSON&language=de&coord=" + lo.toFixed(5) + ":" + la.toFixed(5) + ":WGS84[dd.ddddd]&inclFilter=1&type_1=STOP&radius_1=" + (k === "dus" ? 4000 : 5000) + "&max=1000", { ms: 40000 }); locs.push(...(d.locations || [])); } catch {} }
+      const all = [...new Map(locs.map(l => [l.id, { id: l.id, name: stopName(l) || l.name, dist: l.properties && +l.properties.distance || null }])).values()].sort((a, b) => a.name.localeCompare(b.name, "de"));
       console.log("::notice::Haltestellen " + k + ": " + all.length + " im Verzeichnis, abgerufen: " + avail.map(a => a.name).join(", "));
       return { available: avail, all };
     });

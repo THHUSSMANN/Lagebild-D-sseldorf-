@@ -368,7 +368,7 @@ function applyPlaceUi(){
   $("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
   $("rhein-sec").textContent=C.isDus?"Rhein & Grundwasser":"Gewässer";
   $("efa-card").hidden=!C.efaDefault;
-  $("stop").value=STOPS[C.key]||C.efaDefault||"";STOPIDX=null;
+  $("stop").value=STOPS[C.key]||C.efaDefault||"";STOPIDX=null;if(C.efaDefault)loadStopIndex();
   $("stop-lbl").textContent="Haltestelle für Abfahrten in "+C.town;
   $("home-lbl").textContent="Meine Adresse in "+C.town;$("home-addr").value=(HOMES[C.key]||{}).q||"";
   $("stop").disabled=!C.efaDefault;
@@ -377,7 +377,7 @@ function applyPlaceUi(){
 
 // ================= Einstellungen & Ortssuche =================
 $("tk").value=TK;$("windy").value=WINDY;
-$("tomtom").value=TTKEY===TTKEY_DEFAULT?"":TTKEY;
+$("tomtom").value=TTKEY;$("tomtom-hint").textContent="✓ TomTom ist aktiv – der Schlüssel ist fest hinterlegt und gilt auf allen Geräten.";
 $("home-save").addEventListener("click",async()=>{const q=$("home-addr").value.trim();const key=C.key;
   if(!q){delete HOMES[key];store("homes",HOMES);$("home-hint").textContent="Adresse entfernt.";loadTomTom();return;}
   $("home-hint").textContent="Adresse wird gesucht …";
@@ -398,7 +398,13 @@ $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!
   const m=stopMatch(v);$("stop-hint").innerHTML=m.file?"Übernommen – Abfahrten werden angezeigt.":m.id?"Diese Haltestelle wird noch nicht automatisch abgerufen. Live-Abfahrten öffnen sich über den Link in der Bus-Ansicht; sag Claude Bescheid, dann wird sie fest ergänzt.":"Haltestelle nicht im Verzeichnis gefunden – bitte aus der Vorschlagsliste wählen.";});
 $("efa-dir").addEventListener("input",()=>{DIRF[C.key]=$("efa-dir").value;store("dirf",DIRF);renderEFA();});
 $("efa-stops").addEventListener("click",e=>{const d=e.target.closest("[data-bdir]");if(d){store("busdir_"+C.key,+d.dataset.bdir);renderEFA();return;}const b=e.target.closest("[data-stop]");if(!b)return;STOPS[C.key]=b.dataset.stop;store("stops",STOPS);$("stop").value=b.dataset.stop;loadEFA();});
-$("stop").addEventListener("keydown",e=>{if(e.key==="Enter")$("stop-save").click();});
+$("stop").addEventListener("keydown",e=>{if(e.key==="Enter"){$("stop-sug").innerHTML="";$("stop-save").click();}});
+$("stop").addEventListener("input",()=>{const q=normStop($("stop").value);const box=$("stop-sug");
+  if(q.length<2||!STOPIDX){box.innerHTML="";return;}
+  const all=[...STOPIDX.available.map(a=>({name:a.name,ok:1})),...STOPIDX.all].filter((x,i,a)=>a.findIndex(y=>normStop(y.name)===normStop(x.name))===i);
+  const hits=all.filter(x=>normStop(x.name).includes(q)).sort((a,b)=>(b.ok||0)-(a.ok||0)||normStop(a.name).indexOf(q)-normStop(b.name).indexOf(q)).slice(0,8);
+  box.innerHTML=hits.map(x=>'<button type="button" data-sug="'+esc(x.name)+'">'+esc(x.name)+(x.ok?' <span class="muted small">· Abfahrten verfügbar</span>':'')+'</button>').join("")||'<div class="muted small" style="padding:6px">Keine Haltestelle gefunden.</div>';});
+$("stop-sug").addEventListener("click",e=>{const b=e.target.closest("[data-sug]");if(!b)return;$("stop").value=b.dataset.sug;$("stop-sug").innerHTML="";$("stop-save").click();});
 $("routes-save").addEventListener("click",()=>{ROUTES_TXT=$("routes").value.trim();store("routes_"+C.key,ROUTES_TXT);ROUTES=parseRoutes(ROUTES_TXT);loadAutobahn();});
 $("routes").addEventListener("keydown",e=>{if(e.key==="Enter")$("routes-save").click();});
 $("tk-save").addEventListener("click",()=>{TK=$("tk").value.trim();store("tk",TK);loadFuel();});
@@ -1263,9 +1269,9 @@ function stopMatch(v){const n=normStop(v);const I=STOPIDX||{available:[],all:[]}
   if(a)return {file:a.file,name:a.name};
   const s=I.all.find(x=>normStop(x.name)===n)||I.all.find(x=>normStop(x.name).includes(n));
   return s?{id:s.id,name:s.name}:{};}
-async function loadStopIndex(){STOPIDX=null;$("stop-list").innerHTML="";if(!C.efaDefault||!FAVKEYS.includes(C.key))return;
+async function loadStopIndex(){STOPIDX=null;if(!C.efaDefault||!FAVKEYS.includes(C.key))return;
   try{STOPIDX=(await getData("stops-"+C.key+".json")).data;
-    $("stop-list").innerHTML=STOPIDX.all.map(x=>'<option value="'+esc(x.name)+'"></option>').join("");}catch(e){STOPIDX={available:[],all:[]};}}
+  }catch(e){STOPIDX={available:[],all:[]};}}
 async function loadEFA(){
   if(!C.efaDefault){setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
