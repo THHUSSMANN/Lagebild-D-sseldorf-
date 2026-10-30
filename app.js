@@ -930,7 +930,7 @@ const WEBCAM_LINKS={
     {t:"Flughafen · Rollweg",hls:"https://stream-5gw.1000eyes.de/cupertino/dus1ba9.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
     {t:"Flughafen · Abfertigung",hls:"https://stream-5gw.1000eyes.de/cupertino/dus5abb.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
     {t:"Stadtwerke · Lausward",off:"liefert derzeit kein Bild",u:"https://www.swd-ag.de/ueber-uns/erzeugung-standorte/webcam/",by:"Stadtwerke Düsseldorf"},
-    {t:"Unterbacher See",off:"liefert derzeit kein Bild",u:"https://unterbachersee.de/webcam/",by:"Unterbacher See"},
+    {t:"Unterbacher See · West",img:"https://unterbachersee.de/wp-content/uploads/webcam-west.jpg",u:"https://unterbachersee.de/webcam/",by:"Unterbacher See · Bild alle paar Minuten neu"},
     {t:"Alle Webcams der Stadt",u:"https://www.duesseldorf.de/webcams"}],
   datteln:[
     {t:"Haltern am See · Marktplatz (ca. 15 km)",u:"https://www.windfinder.com/webcams/datteln"},
