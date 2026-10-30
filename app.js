@@ -1171,7 +1171,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;const now=Date.now()-60e3;cons
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
   if(f)rows=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);
   rows=rows.slice(0,14);
-  if(!rows.length){$("efa").innerHTML=stateBox(f?"Keine Abfahrten mit diesem Filter im abgerufenen Zeitraum.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
+  if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Abfahrten mit diesem Filter im abgerufenen Zeitraum.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
     if(!(C.isDus||C.key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
   $("efa").innerHTML=busTripsHtml(d.data.stop)+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
@@ -1181,7 +1181,7 @@ function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
   const t=BUSF.filter(x=>x.key===C.key&&(normStop(x.from)===n||normStop(x.fromQ).endsWith(n)||n.endsWith(normStop(x.from))));
   const now=Date.now()-60e3;
   return t.map(x=>{const r=x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now).slice(0,5);
-    return '<div class="sublbl">Direkt nach '+esc(x.to.replace(/^Datteln,?\s*/,""))+'</div>'+(r.length?'<div class="list" style="margin-bottom:10px">'+r.map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
+    return '<div class="sublbl">Direkt nach '+esc(x.to.replace(/^Datteln,?\s*/,"").replace(/^Bus Bf$/,"Busbahnhof"))+'</div>'+(r.length?'<div class="list" style="margin-bottom:10px">'+r.map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
       return '<div class="li"><span class="tag">'+esc(r.line)+'</span><div class="t"><b>'+hhmm(r.dep)+'</b>'+(dm>0?' <span style="color:var(--bad);font-weight:600">+'+dm+'</span>':'')+' → an '+hhmm(r.arrEst||r.arr)+'</div><div class="r muted small">'+(r.plat?'Steig '+esc(r.plat):'')+'</div><div class="d">Richtung '+esc(r.dir)+'</div></div>';}).join("")+'</div>':'<div class="muted small" style="margin-bottom:10px">Keine direkte Fahrt im abgerufenen Zeitraum.</div>');}).join("");}
 function depTable(rows){
   let r='<table><thead><tr><th>Zeit</th><th>Linie</th><th>Richtung</th><th class="num">Gleis/Steig</th><th class="num">+min</th></tr></thead><tbody>';
