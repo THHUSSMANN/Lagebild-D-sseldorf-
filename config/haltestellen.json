@@ -4,8 +4,8 @@
     "Düsseldorf Nikolaus-Knopp-Platz"
   ],
   "datteln": [
-    "Datteln Busbahnhof",
-    "Datteln Lohstr."
+    "Datteln Lohstr.",
+    "Datteln Busbahnhof"
   ],
   "alpen": [
     "Alpen Bahnhof"
@@ -15,6 +15,10 @@
       [
         "Datteln Lohstr.",
         "Datteln Busbahnhof"
+      ],
+      [
+        "Datteln Busbahnhof",
+        "Datteln Lohstr."
       ]
     ]
   },
