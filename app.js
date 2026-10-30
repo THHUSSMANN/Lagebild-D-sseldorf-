@@ -42,6 +42,7 @@ const SRC={
   uba:{name:"Luftmessstationen",prov:"Umweltbundesamt",url:"https://luftdaten.umweltbundesamt.de/api/air-data/v3/doc",ep:"luftdaten.umweltbundesamt.de (über Datensammler)"},
   pollen:{name:"Pollenflug",prov:"Deutscher Wetterdienst",url:"https://opendata.dwd.de/climate_environment/health/alerts/",ep:"opendata.dwd.de (über Datensammler)"},
   landespegel:{name:"Landespegel Düssel, Anger, Itter",prov:"LANUK NRW Hochwasserportal",url:"https://hochwasserportal.nrw.de/",ep:"hochwasserportal.nrw.de (über Datensammler)"},
+  tomtom:{name:"Verkehrslage alle Straßen",prov:"TomTom Traffic (eigener kostenloser Schlüssel)",url:"https://developer.tomtom.com/",ep:"api.tomtom.com"},
   pegel:{name:"Wasserstand",prov:"WSV – PEGELONLINE",url:"https://pegelonline.wsv.de/webservice/dokuRestapi",ep:"pegelonline.wsv.de/webservices/rest-api/v2"},
   ab:{name:"Autobahn: Staus, Sperrungen, Baustellen, Webcams, E-Laden",prov:"Autobahn GmbH des Bundes",url:"https://autobahn.api.bund.dev/",ep:"verkehr.autobahn.de/o/autobahn"},
   fuel:{name:"Spritpreise",prov:"Tankerkönig (MTS-K)",url:"https://creativecommons.tankerkoenig.de/",ep:"creativecommons.tankerkoenig.de/json/list.php"},
@@ -149,7 +150,7 @@ let STOPS=load("stops")||{};let DIRF=load("dirf")||{};let STOPIDX=null,EFADATA=n
 if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
-let WINDY=load("windy")||"";
+let WINDY=load("windy")||"";let TTKEY=load("tomtom")||"";
 const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
 // Strecken je Ort; die bisherige Liste gilt für Düsseldorf
 if(load("routes")!=null&&load("routes_dus")==null)store("routes_dus",load("routes"));
@@ -374,6 +375,14 @@ function applyPlaceUi(){
 
 // ================= Einstellungen & Ortssuche =================
 $("tk").value=TK;$("windy").value=WINDY;
+$("tomtom").value=TTKEY;
+$("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim();store("tomtom",TTKEY);
+  if(MAP&&MAP._tt){MAP._tt.forEach(l=>l.remove());MAP._tt=null;}
+  $("tomtom-hint").textContent="Schlüssel wird geprüft …";
+  try{const r=await fetch("https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?point="+C.center.lat+","+C.center.lon+"&key="+encodeURIComponent(TTKEY));
+    $("tomtom-hint").textContent=r.ok?"✓ Schlüssel funktioniert – Verkehrslage ist aktiv.":"Schlüssel wird nicht akzeptiert (Fehler "+r.status+"). Bitte prüfen.";}
+  catch(e){$("tomtom-hint").textContent="Prüfung nicht möglich: "+e.message;}
+  ensureMap();loadTomTom();});
 $("windy-save").addEventListener("click",()=>{WINDY=$("windy").value.trim();store("windy",WINDY);loadWindy();});$("theme").value=theme;
 $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!v||!C.efaDefault)return;STOPS[C.key]=v;store("stops",STOPS);loadEFA();
   const m=stopMatch(v);$("stop-hint").innerHTML=m.file?"Übernommen – Abfahrten werden angezeigt.":m.id?"Diese Haltestelle wird noch nicht automatisch abgerufen. Live-Abfahrten öffnen sich über den Link in der Bus-Ansicht; sag Claude Bescheid, dann wird sie fest ergänzt.":"Haltestelle nicht im Verzeichnis gefunden – bitte aus der Vorschlagsliste wählen.";});
@@ -964,6 +973,30 @@ function geomLines(w){
   if(g.type==="MultiLineString")return g.coordinates.map(toLL);
   return[];
 }
+// ================= TomTom: Verkehrslage auf allen Straßen =================
+async function loadTomTom(){
+  const box=$("tt");
+  if(!TTKEY){box.innerHTML='<div class="state">Für Staus auch auf Land- und Stadtstraßen (Echtzeit wie bei Google Maps) unter <a href="#einstellungen">Einstellungen</a> den kostenlosen TomTom-Schlüssel eintragen.</div>';return;}
+  const r=C.isDus?0.16:0.2,la=C.center.lat,lo=C.center.lon,bbox=[lo-r*1.6,la-r,lo+r*1.6,la+r].map(x=>x.toFixed(4)).join(",");
+  const fields="{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description},startTime,endTime,from,to,length,delay,roadNumbers}}}";
+  try{const res=await fetch("https://api.tomtom.com/traffic/services/5/incidentDetails?key="+encodeURIComponent(TTKEY)+"&bbox="+bbox+"&language=de-DE&timeValidityFilter=present&fields="+encodeURIComponent(fields));
+    if(!res.ok)throw new Error(res.status===403||res.status===401?"Schlüssel ungültig":"HTTP "+res.status);
+    const d=await res.json();
+    const CAT={0:"Unbekannt",1:"Unfall",2:"Nebel",3:"Gefahr",4:"Regen",5:"Glätte",6:"Stau",7:"Fahrstreifen gesperrt",8:"Straße gesperrt",9:"Baustelle",10:"Wind",11:"Überflutung",14:"Liegengebliebenes Fahrzeug"};
+    const list=(d.incidents||[]).map(i=>{const p=i.properties||{};const c=(i.geometry&&i.geometry.coordinates)||[];const pt=Array.isArray(c[0])?c[Math.floor(c.length/2)]:c;
+      return {cat:p.iconCategory,mag:p.magnitudeOfDelay||0,delay:p.delay?Math.round(p.delay/60):null,len:p.length?p.length/1000:null,from:p.from,to:p.to,road:(p.roadNumbers||[]).join(", "),desc:((p.events||[])[0]||{}).description||CAT[p.iconCategory]||"",lat:pt&&pt[1],lon:pt&&pt[0],km:pt?distKm(la,lo,pt[1],pt[0]):99};})
+      .filter(x=>x.cat!==9||x.mag>=2).sort((a,b)=>(b.delay||0)-(a.delay||0)||b.mag-a.mag||a.km-b.km);
+    const jams=list.filter(x=>x.cat===6||x.delay>0);
+    TILE_PARTS.traffic.tt=jams.length?jams.length+" Behinderungen auf allen Straßen":"alle Straßen frei";composeTile("k-traffic","traffic");
+    const magTxt=["","leicht","mäßig","stark","gesperrt"];
+    box.innerHTML='<div class="muted small" style="margin-bottom:6px">'+list.length+' aktuelle Meldungen im Umkreis von '+esc(C.town)+' – auch Land- und Stadtstraßen. Farben in der Karte: Verkehrsfluss in Echtzeit.</div>'+
+      (list.length?'<div>'+list.slice(0,25).map(x=>'<div class="jam"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=4?"p-bad":x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+esc(x.desc)+'</div>'+
+        '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
+        '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+'</div></div>').join("")+'</div>'
+      :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
+    setStatus("tomtom",true);
+  }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
+}
 function ensureMap(){
   if(typeof L==="undefined")return null;
   if(!MAP){
@@ -971,9 +1004,14 @@ function ensureMap(){
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(MAP);
     MAPLAYER=L.layerGroup().addTo(MAP);
   }
-  if(C.isDus&&!MAP._los){
+  if(C.isDus&&!MAP._los&&!TTKEY){
     MAP._los=L.tileLayer.wms("https://vtmanager.duesseldorf.de/geovtinfo/wms",{layers:"vtinfo:LOS",format:"image/png",transparent:true,tiled:true,opacity:.85,attribution:"Verkehrslage © Landeshauptstadt Düsseldorf"}).addTo(MAP);
   }else if(!C.isDus&&MAP._los){MAP._los.remove();MAP._los=null;}
+  if(TTKEY&&!MAP._tt){const k=encodeURIComponent(TTKEY);
+    MAP._tt=[L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?thickness=6&key="+k,{opacity:.85,maxZoom:18,attribution:"Verkehr © TomTom"}).addTo(MAP),
+      L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/incidents/s3/{z}/{x}/{y}.png?key="+k,{maxZoom:18}).addTo(MAP)];
+    if(MAP._los){MAP._los.remove();MAP._los=null;}}
+  document.querySelectorAll(".tt-leg").forEach(e=>e.hidden=!TTKEY);
   if(MAPRING)MAPRING.remove();if(MAPCENTER)MAPCENTER.remove();
   MAPRING=L.circle([C.center.lat,C.center.lon],{radius:JAM_RADIUS_KM*1000,color:"#8a9aa5",weight:1,dashArray:"4 6",fill:false,interactive:false}).addTo(MAP);
   MAPCENTER=L.circleMarker([C.center.lat,C.center.lon],{radius:5,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(C.town).addTo(MAP);
@@ -1332,7 +1370,7 @@ function renderSources(){
 let busy=false,lastSlow=0,slowKey="";
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
-  const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
+  const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
   if(C.isDus)tasks.push(loadVT(),loadGarages());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
@@ -1412,7 +1450,7 @@ applyPlaceUi();renderSources();tick();setInterval(tick,1000);
 
 refreshAll(true);
 setInterval(()=>{if(!document.hidden)refreshAll(false);},10*60*1000);
-setInterval(()=>{if(!document.hidden&&!busy)loadAutobahn();},3*60*1000);
+setInterval(()=>{if(!document.hidden&&!busy){loadAutobahn();loadTomTom();}},3*60*1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastRun>5*60*1000)refreshAll(false);});
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 })();
