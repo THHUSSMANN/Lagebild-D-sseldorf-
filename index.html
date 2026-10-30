@@ -38,6 +38,18 @@
 [hidden]{display:none!important}
 .view{min-height:calc(100vh - 60px);position:relative}
 .view-x{display:flex;width:fit-content;align-self:flex-end;justify-self:end;grid-column:1/-1;align-items:center;gap:6px;min-height:40px;padding:6px 14px;margin:0 0 6px auto;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--fg);text-decoration:none;font:600 15px var(--f-display);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.wlvl{display:block;margin:12px 0 26px}
+.wlvl i,.wlvl b{font-style:normal}
+.wlvl-bar{position:relative;height:14px;border-radius:999px;background:linear-gradient(90deg,#c98a00 0%,#c98a00 var(--mnw),#3a9d5d var(--mnw),#3a9d5d var(--mhw),#d62d20 var(--mhw),#7d1f6b 100%);opacity:.9}
+.wlvl-mk{position:absolute;top:-4px;width:2px;height:22px;background:var(--fg);opacity:.55}
+.wlvl-mk span{position:absolute;top:24px;left:50%;transform:translateX(-50%);font-size:11px;white-space:nowrap;color:var(--muted)}
+.wlvl-cur{position:absolute;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:var(--panel);border:4px solid var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.wlvl-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:22px;opacity:.8}
+.cmp{font-weight:600;margin-top:4px}
+.lp{padding:10px 0;border-bottom:1px solid var(--line)} .lp:last-child{border-bottom:0}
+.lp-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lp-h b{font-family:var(--f-display);font-size:17px}
+.lp-v{font-family:var(--f-display);font-size:22px;font-weight:700;white-space:nowrap}
 .view-x:hover{background:var(--bad);border-color:var(--bad);color:#fff}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
@@ -565,6 +577,10 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div class="card-head"><h2 id="pegel-title">Pegel Düsseldorf</h2><span class="src" id="pegel-src">WSV PEGELONLINE · Rhein-km 744,2</span></div>
     <div id="pegel"><div class="state">Pegeldaten werden geladen …</div></div>
   </section>
+  <section class="card" id="lp-card">
+    <div class="card-head"><h2 id="lp-title">Düssel, Anger &amp; Itter</h2><span class="src">LANUK NRW · Hochwasserportal</span></div>
+    <div id="landespegel"><div class="state">wird geladen …</div></div>
+  </section>
 </div>
 </div>
 
@@ -724,6 +740,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=51"></script>
+<script src="app.js?v=52"></script>
 </body>
 </html>

@@ -41,6 +41,7 @@ const SRC={
   aq:{name:"Luftqualität (Modell)",prov:"Open-Meteo / Copernicus CAMS",url:"https://open-meteo.com/en/docs/air-quality-api",ep:"air-quality-api.open-meteo.com"},
   uba:{name:"Luftmessstationen",prov:"Umweltbundesamt",url:"https://luftdaten.umweltbundesamt.de/api/air-data/v3/doc",ep:"luftdaten.umweltbundesamt.de (über Datensammler)"},
   pollen:{name:"Pollenflug",prov:"Deutscher Wetterdienst",url:"https://opendata.dwd.de/climate_environment/health/alerts/",ep:"opendata.dwd.de (über Datensammler)"},
+  landespegel:{name:"Landespegel Düssel, Anger, Itter",prov:"LANUK NRW Hochwasserportal",url:"https://hochwasserportal.nrw.de/",ep:"hochwasserportal.nrw.de (über Datensammler)"},
   pegel:{name:"Wasserstand",prov:"WSV – PEGELONLINE",url:"https://pegelonline.wsv.de/webservice/dokuRestapi",ep:"pegelonline.wsv.de/webservices/rest-api/v2"},
   ab:{name:"Autobahn: Staus, Sperrungen, Baustellen, Webcams, E-Laden",prov:"Autobahn GmbH des Bundes",url:"https://autobahn.api.bund.dev/",ep:"verkehr.autobahn.de/o/autobahn"},
   fuel:{name:"Spritpreise",prov:"Tankerkönig (MTS-K)",url:"https://creativecommons.tankerkoenig.de/",ep:"creativecommons.tankerkoenig.de/json/list.php"},
@@ -592,6 +593,29 @@ async function loadAlerts(){
 }
 
 // ================= Gewässer =================
+// Vergleichsskala: aktueller Stand zwischen Niedrig- und Hochwasser
+function levelScale(v,m){
+  const pts=[["NNW",m.NNW],["MNW",m.MNW],["MW",m.MW],["MHW",m.MHW],["HSW",m.HSW],["I",m.I],["II",m.II],["III",m.III],["HHW",m.HHW]].filter(([,x])=>x!=null&&isFinite(x));
+  if(!pts.length||v==null)return"";
+  let lo=Math.min(v,...pts.map(p=>p[1])),hi=Math.max(v,...pts.map(p=>p[1]));const pad=(hi-lo)*.06||10;lo-=pad;hi+=pad;
+  const pc=x=>Math.max(0,Math.min(100,(x-lo)/(hi-lo)*100));
+  const mnw=m.MNW!=null?pc(m.MNW):0,mhw=m.MHW!=null?pc(m.MHW):100;
+  return '<div class="wlvl"><div class="wlvl-bar" style="--mnw:'+mnw+'%;--mhw:'+mhw+'%">'+(()=>{let last=-99;return pts.filter(([k])=>k!=="NNW"&&k!=="HHW").sort((a,b)=>a[1]-b[1]).map(([k,x])=>{const q=pc(x);const show=q-last>=8;if(show)last=q;return '<i class="wlvl-mk" style="left:'+q+'%">'+(show?'<span>'+k+'</span>':'')+'</i>';}).join("");})()+
+    '<b class="wlvl-cur" style="left:'+pc(v)+'%" title="aktuell"></b></div></div>';
+}
+function levelText(v,m,u){
+  u=u||"cm";const d=(x)=>Math.round(v-x);
+  let st,cls;
+  if(m.III!=null&&v>=m.III){st="Hochwasser – Informationswert 3 überschritten";cls="crit";}
+  else if(m.II!=null&&v>=m.II){st="Hochwasser – Informationswert 2 überschritten";cls="bad";}
+  else if(m.I!=null&&v>=m.I){st="erhöht – Informationswert 1 überschritten";cls="bad";}
+  else if(m.MHW!=null&&v>=m.MHW){st="Hochwasser (über mittlerem Hochwasser)";cls="bad";}
+  else if(m.MNW!=null&&v<=m.MNW){st="Niedrigwasser (unter mittlerem Niedrigwasser)";cls="warn";}
+  else if(m.MW!=null&&v<m.MW){st="normal, etwas unter Mittelwasser";cls="ok";}
+  else{st="normal, etwas über Mittelwasser";cls="ok";}
+  const cmp=m.MW!=null?(d(m.MW)>=0?d(m.MW)+" "+u+" über":-d(m.MW)+" "+u+" unter")+" Mittelwasser ("+fmt(m.MW)+" "+u+")":"";
+  return {st,cls,cmp};
+}
 async function loadRhein(){
   const P="https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations";
   try{
@@ -610,20 +634,40 @@ async function loadRhein(){
     $("pegel-src").textContent="WSV PEGELONLINE · "+wName+(st.km!=null?" · km "+fmt(st.km,1):"")+(!C.isDus&&st.km!=null?"":"");
     $("k-rhein-lbl").textContent="Pegel "+sName;
     const tr=cm.trend===1?"steigend ↑":cm.trend===-1?"fallend ↓":"gleichbleibend →";
-    const stateDe={low:"Niedrigwasser (unter MNW)",normal:"Mittelwasserbereich",high:"Hochwasser (über MHW)",unknown:"ohne Einstufung"}[cm.stateMnwMhw]||"";
-    const cls=cm.stateMnwMhw==="high"?"bad":cm.stateMnwMhw==="low"?"warn":"ok";
-    setKpi("k-rhein",fmt(cm.value)+"<small> "+esc(ts.unit||"cm")+"</small>",tr+(stateDe?" · "+stateDe:""),cls);
-    let html='<div class="row"><div><div class="big">'+fmt(cm.value)+'<span style="font-size:22px"> '+esc(ts.unit||"cm")+'</span></div><div class="muted">'+esc(wName)+' · '+tr+(cm.timestamp?' · '+hhmm(cm.timestamp)+' Uhr':'')+'</div></div><span class="pill p-'+cls+'"><i></i>'+esc(stateDe||"–")+'</span></div>';
+    const cvRaw=await getJSON(P+"/"+uuid+"/W.json?includeCharacteristicValues=true").then(x=>x.characteristicValues||[]).catch(()=>[]);
+    const M={};cvRaw.forEach(c=>{M[c.shortname]=c.value;});
+    if(C.isDus){M.I=710;M.II=830;}
+    const LT=cm.value!=null?levelText(cm.value,M,ts.unit||"cm"):null;
+    const stateDe=LT&&M.MW!=null?LT.st:({low:"Niedrigwasser (unter MNW)",normal:"Mittelwasserbereich",high:"Hochwasser (über MHW)",unknown:"ohne Einstufung"}[cm.stateMnwMhw]||"");
+    const cls=LT&&M.MW!=null?LT.cls:cm.stateMnwMhw==="high"?"bad":cm.stateMnwMhw==="low"?"warn":"ok";
+    setKpi("k-rhein",fmt(cm.value)+"<small> "+esc(ts.unit||"cm")+"</small>",(LT&&LT.cmp?LT.cmp.replace(/ \(.*\)/,"")+" · ":"")+tr,cls);
+    let html='<div class="row"><div><div class="big">'+fmt(cm.value)+'<span style="font-size:22px"> '+esc(ts.unit||"cm")+'</span></div><div class="muted">'+esc(wName)+' · '+tr+(cm.timestamp?' · '+hhmm(cm.timestamp)+' Uhr':'')+'</div></div><span class="pill p-'+cls+'"><i></i>'+esc(stateDe||"–")+'</span></div>'+(LT&&LT.cmp?'<div class="cmp">'+esc(LT.cmp)+'</div>':'')+levelScale(cm.value,M)+
+      (cvRaw.length?'<div class="muted small">'+["NNW","MNW","MW","MHW","HSW","HHW"].filter(k=>M[k]!=null).map(k=>k+" "+fmt(M[k])).join(" · ")+(C.isDus?" · Hochwassermarke I 710 · II 830":"")+' cm <span title="NNW niedrigster, MNW mittlerer niedrigster, MW Mittel-, MHW mittlerer höchster, HSW höchster Schifffahrtswasserstand, HHW höchster bekannter Wasserstand">ⓘ</span></div>':'');
     if(Array.isArray(hist)&&hist.length>2)html+=spark(hist);
     const vals=Array.isArray(hist)?hist.map(h=>h.value):[];
     html+='<div class="facts">'+(wt&&wt.currentMeasurement?fact(fmt(wt.currentMeasurement.value,1)+" °C","Wassertemperatur"):"")+
       fact(vals.length?fmt(Math.min(...vals))+" – "+fmt(Math.max(...vals)):"–","Spanne 7 Tage")+
       fact(vals.length?(cm.value-vals[0]>0?"+":"")+fmt(cm.value-vals[0]):"–","Änderung 7 Tage")+
       (!C.isDus&&st.km!=null?fact(fmt(distKm(C.lat,C.lon,st.latitude,st.longitude),0)+" km","Entfernung"):"")+'</div>'+
-      (C.isDus?'<div class="muted small">Hochwassermarken Düsseldorf: I = 710 cm, II = 830 cm. Schifffahrt: '+link("https://www.elwis.de/","ELWIS")+'</div>':'<div class="muted small">Nächster Pegel der Bundeswasserstraßen. Landesgewässer: '+link("https://www.hochwasserzentralen.de/","Hochwasserzentralen")+'</div>');
+      (C.isDus?'<div class="muted small">Schifffahrt: '+link("https://www.elwis.de/","ELWIS")+'</div>':'<div class="muted small">Nächster Pegel der Bundeswasserstraßen. Landesgewässer: '+link("https://www.hochwasserzentralen.de/","Hochwasserzentralen")+'</div>');
     $("pegel").innerHTML=html;setStatus("pegel",true);
   }catch(e){setStatus("pegel",false,errText(e));$("pegel").innerHTML=stateBox("Pegel nicht verfügbar – "+errText(e)+".",link("https://www.pegelonline.wsv.de/gast/start","PEGELONLINE"));setKpi("k-rhein","–","kein Pegel","info");}
 }
+async function loadLandespegel(){
+  const card=$("lp-card");card.hidden=!C.isDus;if(!C.isDus)return;
+  try{const d=await getData("landespegel.json");const l=(d.data||[]).filter(x=>x.value!=null).sort((a,b)=>["Düssel","Anger","Itter"].indexOf(a.water)-["Düssel","Anger","Itter"].indexOf(b.water));
+    if(!l.length)throw new Error("keine Messwerte");
+    $("landespegel").innerHTML=l.map(x=>{const M={MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3};const t=levelText(x.value,M,x.unit);
+      return '<div class="lp"><div class="lp-h"><div><b>'+esc(x.water)+'</b> <span class="muted small">Pegel '+esc(x.name.replace(/_\d+$/,""))+'</span></div><span class="lp-v">'+fmt(x.value,x.value<100?1:0)+' <small>'+esc(x.unit)+'</small></span></div>'+
+        '<div class="row" style="gap:6px;margin-top:4px"><span class="pill p-'+t.cls+'"><i></i>'+esc(t.st)+'</span></div>'+(t.cmp?'<div class="cmp small">'+esc(t.cmp)+'</div>':'')+levelScale(x.value,M)+
+        '<div class="muted small">'+[["MNW",x.mnw],["MW",x.mw],["MHW",x.mhw],["Info 1",x.i1],["Info 2",x.i2],["Info 3",x.i3]].filter(([,v])=>v).map(([k,v])=>k+" "+fmt(v)).join(" · ")+' '+esc(x.unit)+(x.time?' · Stand '+hhmm(x.time)+' Uhr':'')+'</div></div>';}).join("")+
+      '<div class="muted small" style="margin-top:6px">Informationswerte 1–3 sind die Hochwasser-Meldestufen des Landes NRW. '+link("https://hochwasserportal.nrw.de/","Hochwasserportal NRW")+'</div>';
+    const worst=l.map(x=>levelText(x.value,{MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3}).cls);
+    setStatus("landespegel",true,"Stand "+dataAge(d));
+    TILE_LP=worst.includes("crit")||worst.includes("bad")?"Düssel/Anger erhöht":"";
+  }catch(e){$("landespegel").innerHTML=stateBox("Landespegel nicht verfügbar – "+errText(e)+".",link("https://hochwasserportal.nrw.de/","Hochwasserportal NRW"));}
+}
+let TILE_LP="";
 function spark(h){
   const W=640,H=110,p=8,pl=40;const v=h.map(x=>x.value),t=h.map(x=>new Date(x.timestamp).getTime());
   let mn=Math.min(...v),mx=Math.max(...v);if(mx-mn<10){mx+=5;mn-=5;}
@@ -1237,7 +1281,7 @@ function renderSources(){
 let busy=false,lastSlow=0,slowKey="";
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
-  const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
+  const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
   if(C.isDus)tasks.push(loadVT(),loadGarages());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
