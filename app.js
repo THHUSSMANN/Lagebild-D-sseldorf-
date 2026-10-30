@@ -892,8 +892,8 @@ const WEBCAM_LINKS={
     {t:"Landtag NRW · Rheinknie",img:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix4.jpg",u:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix4.jpg"},
     {t:"Lausward · Blick Richtung Neuss",img:"https://www.swd-ag.de/webcam/blickvonderlausward2.jpg",u:"https://www.swd-ag.de/webcam/blickvonderlausward2.jpg"},
     {t:"Lausward · Blick zur Arena",img:"https://www.swd-ag.de/webcam/blickvonderlausward3.jpg",u:"https://www.swd-ag.de/webcam/blickvonderlausward3.jpg"},
-    {t:"Stadt Düsseldorf · Burgplatz",u:"https://www.duesseldorf.de/webcams/burgplatz-1"},
-    {t:"Stadt Düsseldorf · Rheinufer",u:"https://www.duesseldorf.de/webcams/rheinufer-1"},
+    {t:"Burgplatz / Altstadt",live:["w5t15erd","fxmwsxp6"],u:"https://www.duesseldorf.de/webcams/burgplatz-1"},
+    {t:"Rheinufer",live:["wx7j7ulr","hvasmdro"],u:"https://www.duesseldorf.de/webcams/rheinufer-1"},
     {t:"Stadt Düsseldorf · alle Webcams",u:"https://www.duesseldorf.de/webcams"},
     {t:"Alle Düsseldorfer Webcams",u:"https://mygermancity.com/duesseldorf-webcams"}],
   datteln:[
@@ -911,11 +911,22 @@ function camTile(){const n=CAM_N.img+CAM_N.pub+CAM_N.ab;setKpi("k-cam",n?String(
 function renderWebcamLinks(){
   const list=WEBCAM_LINKS[C.key]||[];const box=$("webcam-links");
   $("cam-title").textContent="Webcams "+C.town;
-  const imgs=list.filter(x=>x.img),links=list.filter(x=>!x.img);const ts=Math.floor(Date.now()/300000);
-  box.innerHTML=(imgs.length?'<div class="sublbl">Kamerabilder (aktualisieren sich alle paar Minuten)</div><div class="cams cams-l" style="margin-bottom:10px">'+imgs.map(x=>'<a class="cam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(x.t)+'" src="'+esc(x.img)+'?t='+ts+'" onerror="this.closest(\'.cam\').classList.add(\'off\')"><span>'+esc(x.t)+'</span></a>').join("")+'</div>':'')+
-    (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="list" style="margin-bottom:10px">'+links.map(x=>'<a class="li" style="text-decoration:none;color:inherit" href="'+esc(x.u)+'" target="_blank" rel="noopener"><span class="tag">Cam</span><div class="t">'+esc(x.t)+'</div><div class="r muted small">öffnen ↗</div></a>').join("")+'</div>':'')||
+  const lives=list.filter(x=>x.live),imgs=list.filter(x=>x.img),links=list.filter(x=>!x.img&&!x.live);const ts=Math.floor(Date.now()/300000);
+  const host=u=>{try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return"";}};
+  box.innerHTML=(lives.length?'<div class="sublbl">Livestreams der Stadt Düsseldorf – antippen zum Abspielen</div><div class="cams cams-l" style="margin-bottom:12px">'+lives.map((x,i)=>'<div class="cam live"><div class="lsbox" id="ls-'+i+'" data-i="'+i+'" style="background-image:url(https://player.livespotting.com/poster/'+x.live[1]+'.jpg?height=360)"><span class="ls-play">▶</span><span class="ls-badge">LIVE</span></div><span><b>'+esc(x.t)+'</b> · <a href="'+esc(x.u)+'" target="_blank" rel="noopener">duesseldorf.de ↗</a></span></div>').join("")+'</div>':'')+
+    (imgs.length?'<div class="sublbl">Kamerabilder (aktualisieren sich alle paar Minuten)</div><div class="cams cams-l" style="margin-bottom:12px">'+imgs.map(x=>'<a class="cam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(x.t)+'" src="'+esc(x.img)+'?t='+ts+'" onerror="this.closest(\'.cam\').classList.add(\'off\')"><span><b>'+esc(x.t)+'</b></span></a>').join("")+'</div>':'')+
+    (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="cams cams-l" style="margin-bottom:10px">'+links.map(x=>'<a class="cam linkcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">📷</span><span class="lc-go">öffnen ↗</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(host(x.u))+'</span></span></a>').join("")+'</div>':'')||
     '<div class="state">Für '+esc(C.town)+' sind keine Webcams hinterlegt.</div>';
-  CAM_N.links=imgs.length+links.length;CAM_N.img=imgs.length;camTile();
+  box.querySelectorAll(".lsbox").forEach(el=>el.addEventListener("click",()=>playLive(el,lives[+el.dataset.i]),{once:true}));
+  CAM_N.links=list.length;CAM_N.img=imgs.length+lives.length;camTile();
+}
+let LSLOAD=null;
+function playLive(el,x){
+  el.classList.add("loading");
+  LSLOAD=LSLOAD||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://player.livespotting.com/player/clappr/latest/player.min.js";sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
+  LSLOAD.then(()=>{el.innerHTML="";el.style.backgroundImage="none";window.lsplayer.init(el.id,{player_id:x.live[0],livesource_id:x.live[1]});
+    setTimeout(()=>{const p=el.querySelector(".player-poster");if(p)p.click();},400);el.classList.remove("loading");})
+   .catch(()=>{el.classList.remove("loading");window.open(x.u,"_blank","noopener");});
 }
 // ================= Öffentliche Webcams (Windy) =================
 async function loadWindy(){
