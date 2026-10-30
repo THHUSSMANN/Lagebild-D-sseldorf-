@@ -1297,7 +1297,29 @@ async function loadHol(){
     const s=await getJSON("https://openholidaysapi.org/SchoolHolidays?countryIsoCode=DE&subdivisionCode="+code+"&languageIsoCode=DE&validFrom="+from+"&validTo="+to);
     SCHOOL=(s||[]).map(x=>({start:x.startDate,end:x.endDate,name:((x.name||[]).find(n=>n.language==="DE")||(x.name||[])[0]||{}).text||"Ferien"}));setStatus("school",true);}
   catch(e){setStatus("school",false,errText(e));}
-  renderCal();
+  renderCal();loadFerien();
+}
+// Schulferien-Übersicht: NRW immer, dazu das Land des Orts (z. B. Niedersachsen für Salzhausen)
+const FERIEN_CACHE={};
+async function loadFerien(){
+  const y=new Date().getFullYear(),years=[y,y+1,y+2];
+  const states=[...new Set(["NW",C.state])];
+  $("fer-title").textContent="Schulferien "+years[0]+"–"+years[2]+" · "+states.map(s=>STATE_NAME[s]).join(" & ");
+  try{
+    const data=await Promise.all(states.map(async st=>{if(!FERIEN_CACHE[st]){const r=await getJSON("https://openholidaysapi.org/SchoolHolidays?countryIsoCode=DE&subdivisionCode=DE-"+st+"&languageIsoCode=DE&validFrom="+years[0]+"-01-01&validTo="+years[2]+"-12-31");
+      FERIEN_CACHE[st]=(r||[]).map(x=>({start:x.startDate,end:x.endDate,name:(((x.name||[]).find(n=>n.language==="DE")||(x.name||[])[0]||{}).text||"Ferien").trim()}));}return [st,FERIEN_CACHE[st]];}));
+    const today=isoDay();const dm=d=>d.slice(8,10)+"."+d.slice(5,7)+".";
+    const ORDER=["Winterferien","Osterferien","Pfingstferien","Sommerferien","Herbstferien","Weihnachtsferien"];
+    $("ferien").innerHTML='<div class="fer-grid">'+data.map(([st,l])=>{
+      const names=[...new Set(l.map(x=>x.name))].sort((a,b)=>((ORDER.indexOf(a)+99)%105)-((ORDER.indexOf(b)+99)%105));
+      return '<div class="fer"><div class="sublbl">'+esc(STATE_NAME[st])+'</div><div class="tbl-wrap"><table><thead><tr><th>Ferien</th>'+years.map(x=>'<th>'+x+'</th>').join("")+'</tr></thead><tbody>'+
+        names.map(n=>'<tr><td>'+esc(n)+'</td>'+years.map(yr=>{const e=l.filter(x=>x.name===n&&x.start.startsWith(String(yr)));
+          if(!e.length)return '<td class="muted">–</td>';
+          const cls=e.some(x=>x.start<=today&&x.end>=today)?"now":e.every(x=>x.end<today)?"past":"";
+          return '<td class="'+cls+'">'+e.map(x=>x.start===x.end?dm(x.start):dm(x.start)+"–"+dm(x.end)).join("<br>")+'</td>';}).join("")+'</tr>').join("")+'</tbody></table></div></div>';}).join("")+'</div>'+
+      '<div class="muted small" style="margin-top:6px">Grün = laufende Ferien · durchgestrichen = vorbei. Spätere Jahre werden ergänzt, sobald die Länder sie veröffentlicht haben.</div>';
+    setStatus("school",true);
+  }catch(e){$("ferien").innerHTML=stateBox("Ferien nicht verfügbar – "+errText(e)+".",link("https://www.schulferien.org/","schulferien.org"));}
 }
 function renderCal(){
   $("cal-src").textContent="Feiertage · Schulferien "+(STATE_NAME[C.state]||"");

@@ -54,6 +54,13 @@
 .stop-chips button{border-radius:999px;min-height:44px;padding:6px 18px;font:700 16px var(--f-display)}
 .stop-chips button.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
 .efa-filter input{width:100%;min-height:40px;border-radius:10px;padding:6px 12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font-size:15px;margin-bottom:8px;box-sizing:border-box}
+.fer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.fer table{width:100%;border-collapse:collapse;font-size:14px}
+.fer th,.fer td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.fer th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.fer td:first-child{font-weight:600;white-space:normal}
+.fer td.past{color:var(--muted);opacity:.6;text-decoration:line-through}
+.fer td.now{background:color-mix(in srgb,var(--ok) 22%,transparent);font-weight:700;border-radius:6px}
 .view-x:hover{background:var(--bad);border-color:var(--bad);color:#fff}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
@@ -690,6 +697,10 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src" id="cal-src">Feiertage · Schulferien NRW</span></div>
     <div id="cal"><div class="state">wird geladen …</div></div>
   </section>
+  <section class="card wide">
+    <div class="card-head"><h2 id="fer-title">Schulferien bis 2028</h2><span class="src">OpenHolidays API</span></div>
+    <div id="ferien"><div class="state">wird geladen …</div></div>
+  </section>
   <section class="card">
     <div class="card-head"><h2 id="news-title">Nachrichten NRW</h2><span class="src">tagesschau</span></div>
     <div id="news" class="news"><div class="state">wird geladen …</div></div>
@@ -764,6 +775,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=60"></script>
+<script src="app.js?v=61"></script>
 </body>
 </html>
