@@ -987,12 +987,12 @@ async function loadTomTom(){
     const CAT={0:"Unbekannt",1:"Unfall",2:"Nebel",3:"Gefahr",4:"Regen",5:"Glätte",6:"Stau",7:"Fahrstreifen gesperrt",8:"Straße gesperrt",9:"Baustelle",10:"Wind",11:"Überflutung",14:"Liegengebliebenes Fahrzeug"};
     const list=(d.incidents||[]).map(i=>{const p=i.properties||{};const c=(i.geometry&&i.geometry.coordinates)||[];const pt=Array.isArray(c[0])?c[Math.floor(c.length/2)]:c;
       return {cat:p.iconCategory,mag:p.magnitudeOfDelay||0,delay:p.delay?Math.round(p.delay/60):null,len:p.length?p.length/1000:null,from:p.from,to:p.to,road:(p.roadNumbers||[]).join(", "),desc:((p.events||[])[0]||{}).description||CAT[p.iconCategory]||"",lat:pt&&pt[1],lon:pt&&pt[0],km:pt?distKm(la,lo,pt[1],pt[0]):99};})
-      .filter(x=>x.cat!==9||x.mag>=2).sort((a,b)=>(b.delay||0)-(a.delay||0)||b.mag-a.mag||a.km-b.km);
+      .filter(x=>x.delay>0||x.cat===1||x.cat===8||((x.cat===6||x.cat===7)&&x.mag>=2)).sort((a,b)=>(b.delay||0)-(a.delay||0)||b.mag-a.mag||a.km-b.km);
     const jams=list.filter(x=>x.cat===6||x.delay>0);
     TILE_PARTS.traffic.tt=jams.length?jams.length+" Behinderungen auf allen Straßen":"alle Straßen frei";composeTile("k-traffic","traffic");
     const magTxt=["","leicht","mäßig","stark","gesperrt"];
-    box.innerHTML='<div class="muted small" style="margin-bottom:6px">'+list.length+' aktuelle Meldungen im Umkreis von '+esc(C.town)+' – auch Land- und Stadtstraßen. Farben in der Karte: Verkehrsfluss in Echtzeit.</div>'+
-      (list.length?'<div>'+list.slice(0,25).map(x=>'<div class="jam"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=4?"p-bad":x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+esc(x.desc)+'</div>'+
+    box.innerHTML='<div class="muted small" style="margin-bottom:6px">'+list.length+' Behinderungen mit Verzögerung, Unfälle und Sperrungen rund um '+esc(C.town)+' – auch Land- und Stadtstraßen. Baustellen ohne Verzögerung sind ausgeblendet.</div>'+
+      (list.length?'<div>'+list.slice(0,25).map(x=>'<div class="jam"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=4?"p-bad":x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
         '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
         '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+'</div></div>').join("")+'</div>'
       :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
