@@ -408,6 +408,19 @@ await job("landespegel.json", async () => {
   out.forEach(o => delete o.raw);
   return out;
 });
+// ---------- Probe: Haltestellensuche im Browser möglich? ----------
+async function probeStops() {
+  const U = ["https://efa.vrr.de/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf=Datteln%20Lohstr",
+    "https://openservice-test.vrr.de/static03/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&type_sf=any&name_sf=Datteln%20Lohstr",
+    "https://v6.db.transport.rest/locations?query=Datteln%20Lohstra%C3%9Fe&results=5",
+    "https://v5.db.transport.rest/locations?query=Datteln%20Lohstra%C3%9Fe&results=5"];
+  for (const u of U) { try { const r = await fetch(u, { headers: { ...UA, Origin: "https://thhussmann.github.io" } }); const t = await r.text();
+    let names = ""; try { const j = JSON.parse(t); names = (j.locations || j).slice(0, 5).map(x => (x.name || "") + "[" + (x.id || "") + "]" + (x.type || "")).join(" | "); } catch {}
+    console.log("::notice::Stop-Probe " + r.status + " ACAO=" + r.headers.get("access-control-allow-origin") + " " + u.slice(8, 60) + " → " + (names || t.slice(0, 120))); } catch (e) { console.log("::notice::Stop-Probe ERR " + u.slice(8, 60) + " " + e.message); } }
+  try { const s0 = await stopId("Datteln Lohstraße"); const id = s0.id + " " + s0.name; const d = await get("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&mode=direct&type_dm=stop&useRealtime=1&limit=15&name_dm=" + encodeURIComponent(s0.id));
+    console.log("::notice::Lohstraße " + id + ": " + (d.stopEvents || []).slice(0, 8).map(e => e.transportation.number + "→" + (e.transportation.destination || {}).name).join(" | ")); } catch (e) { console.log("::notice::Lohstraße ERR " + e.message); }
+}
+try { await probeStops(); } catch {}
 // ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
 async function pushAlarms() {
   const topic = process.env.NTFY_TOPIC; if (!topic) return "kein Thema";
