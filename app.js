@@ -224,6 +224,83 @@ function renderAlarm(){
   document.querySelectorAll("#favs .fav").forEach(f=>f.classList.toggle("alarm-on",!!(FAV_ALARM[f.dataset.fav]&&FAV_ALARM[f.dataset.fav].n)));
 }
 $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){store("alarm_seen",ALARM_SIG);renderAlarm();return;}const c=e.target.closest(".ab-c");if(!c)return;if(c.dataset.sel!==sel)choose(c.dataset.sel);location.hash="warnungen";});
+// ================= Taschenrechner =================
+(function(){
+  const dlg=$("calc-dlg");let expr="",last=null;
+  const fmtN=n=>{if(!isFinite(n))return"Fehler";const r=Math.round(n*1e10)/1e10;return r.toLocaleString("de-DE",{maximumFractionDigits:10});};
+  // sichere Auswertung ohne eval: + − × ÷ % Klammern, Dezimalkomma
+  function calc(src){
+    const t=[];const str=src.replace(/\s/g,"");let i=0;
+    while(i<str.length){const c=str[i];
+      if(/[0-9,.]/.test(c)){let j=i;while(j<str.length&&/[0-9,.]/.test(str[j]))j++;t.push(parseFloat(str.slice(i,j).replace(/\./g,"").replace(",",".")));i=j;continue;}
+      if("+−×÷()%-*/".includes(c)){t.push({"-":"−","*":"×","/":"÷"}[c]||c);i++;continue;}
+      throw new Error("Zeichen");}
+    let p=0;
+    const peek=()=>t[p],next=()=>t[p++];
+    function prim(){let v;const x=next();
+      if(x==="−")return -prim();if(x==="+")return prim();
+      if(x==="("){v=sum();if(next()!==")")throw new Error(")");}
+      else if(typeof x==="number")v=x;else throw new Error("Syntax");
+      while(peek()==="%"){next();v=v/100;}
+      return v;}
+    function prod(){let v=prim();while(peek()==="×"||peek()==="÷"){const o=next(),r=prim();v=o==="×"?v*r:v/r;}return v;}
+    function sum(){let v=prod();while(peek()==="+"||peek()==="−"){const o=next();let r=prod();
+      // 200 + 10 % → 220
+      if(t[p-1]==="%"&&typeof t[p-2]==="number")r=v*r;
+      v=o==="+"?v+r:v-r;}return v;}
+    const v=sum();if(p<t.length)throw new Error("Syntax");return v;}
+  const show=()=>{$("calc-expr").textContent=expr;let r="";try{r=expr?fmtN(calc(expr)):"0";}catch(e){r=last!=null?$("calc-res").textContent:"0";}$("calc-res").textContent=r;};
+  function key(k){
+    if(k==="C"){expr="";last=null;}
+    else if(k==="⌫")expr=expr.slice(0,-1);
+    else if(k==="="){try{const v=calc(expr);$("calc-hist").textContent=expr+" = "+fmtN(v);expr=fmtN(v).replace(/\./g,"");last=v;}catch(e){$("calc-res").textContent="Fehler";return;}}
+    else expr+=k;
+    show();}
+  $("calc-btn").addEventListener("click",()=>{dlg.showModal();show();});
+  $("calc-keys").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(b)key(b.dataset.k);});
+  $("calc-res").addEventListener("click",()=>{try{navigator.clipboard.writeText($("calc-res").textContent);$("calc-hist").textContent="Ergebnis kopiert";}catch(e){}});
+  dlg.addEventListener("keydown",e=>{const m={"*":"×","/":"÷","-":"−","+":"+",".":",",",":",","Enter":"=","=":"=","Backspace":"⌫","Escape":null,"Delete":"C","c":"C","%":"%","(":"(",")":")"};
+    if(/^[0-9]$/.test(e.key)){e.preventDefault();key(e.key);}else if(e.key in m&&m[e.key]){e.preventDefault();key(m[e.key]);}});
+})();
+// ================= Wecker & Erinnerung =================
+(function(){
+  const NTFY_TOPIC="lagebild-thh-de66cb14565a";
+  const dlg=$("alarm-dlg");let AC=null,beepT=null,ringing=null;
+  const list=()=>load("alarms")||[];const save=l=>store("alarms",l);
+  const hm=ts=>new Date(ts).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+  const dayLbl=ts=>{const d=new Date(ts),t=new Date();const dd=Math.round((new Date(d.toDateString())-new Date(t.toDateString()))/864e5);return dd===0?"heute":dd===1?"morgen":d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});};
+  function render(){const l=list().filter(a=>a.at>Date.now()-60000).sort((a,b)=>a.at-b.at);save(l);
+    $("al-list").innerHTML=l.length?l.map(a=>'<div class="al-it"><div><b>'+hm(a.at)+'</b> <span class="muted small">'+dayLbl(a.at)+(a.push?' · mit Push':'')+'</span><div>'+esc(a.text||"Wecker")+'</div></div><button type="button" data-del="'+a.id+'">Löschen</button></div>').join(""):'<div class="muted small">Kein Wecker gestellt.</div>';
+    $("alarm-btn").textContent="⏰ Wecker"+(l.length?" ("+hm(l[0].at)+")":"");}
+  function unlockAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();}catch(e){}}
+  function beep(){if(!AC)return;const t=AC.currentTime;[0,.25,.5].forEach((d,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type="square";o.frequency.value=i===2?1175:880;g.gain.setValueAtTime(.0001,t+d);g.gain.exponentialRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d+.2);o.connect(g).connect(AC.destination);o.start(t+d);o.stop(t+d+.22);});}
+  function ring(a){document.querySelectorAll("dialog[open]").forEach(d=>d.close());ringing=a;$("ring-t").textContent=a.text||"Wecker";$("ring-time").textContent=hm(a.at)+" Uhr";$("ring").hidden=false;unlockAudio();beep();clearInterval(beepT);beepT=setInterval(beep,1200);
+    try{navigator.vibrate&&navigator.vibrate([400,200,400]);}catch(e){}
+    document.title="⏰ "+(a.text||"Wecker");}
+  function stopRing(){clearInterval(beepT);$("ring").hidden=true;ringing=null;document.title="Lagebild Thomas Hußmann · "+C.town;}
+  setInterval(()=>{if(ringing)return;const now=Date.now();const l=list();const due=l.find(a=>a.at<=now&&!a.done&&now-a.at<10*60000);
+    if(due){due.done=true;save(l);ring(due);render();}},1000);
+  async function add(at,text,push){
+    if(at<=Date.now()+30000){$("al-msg").textContent="Bitte eine Zeit in der Zukunft wählen.";return;}
+    const a={id:String(Date.now()),at,text:text.trim(),push};unlockAudio();
+    if(push){if(at-Date.now()>3*864e5){$("al-msg").textContent="Push geht höchstens 3 Tage im Voraus – nur Wecker im Dashboard gestellt.";a.push=false;}
+      else{try{const r=await fetch("https://ntfy.sh/",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({topic:NTFY_TOPIC,title:"⏰ "+(a.text||"Wecker")+" – "+hm(at)+" Uhr",message:a.text||"Wecker aus dem Lagebild",priority:5,tags:["alarm_clock"],delay:String(Math.floor(at/1000)),click:location.origin+location.pathname})});
+        if(!r.ok)throw new Error("HTTP "+r.status);$("al-msg").textContent="Gestellt für "+hm(at)+" Uhr ("+dayLbl(at)+") – Push-Nachricht ist vorgemerkt.";}
+      catch(e){a.push=false;$("al-msg").textContent="Gestellt – Push konnte nicht vorgemerkt werden ("+e.message+").";}}}
+    else $("al-msg").textContent="Gestellt für "+hm(at)+" Uhr ("+dayLbl(at)+").";
+    const l=list();l.push(a);save(l);render();}
+  $("alarm-btn").addEventListener("click",()=>{const d=new Date(Date.now()+30*60000);$("al-time").value=d.toTimeString().slice(0,5);$("al-date").value=d.toLocaleDateString("sv-SE");$("al-msg").textContent="";render();dlg.showModal();});
+  $("al-quick").addEventListener("click",e=>{const b=e.target.closest("[data-min]");if(!b)return;const m=+b.dataset.min;add(Date.now()+m*60000,$("al-text").value||("Kurzzeitwecker "+b.textContent),$("al-push").checked);});
+  $("al-set").addEventListener("click",()=>{const t=$("al-time").value,d=$("al-date").value;if(!t){$("al-msg").textContent="Bitte eine Uhrzeit wählen.";return;}
+    let at=new Date((d||new Date().toLocaleDateString("sv-SE"))+"T"+t).getTime();if(!d&&at<Date.now())at+=864e5;add(at,$("al-text").value,$("al-push").checked);});
+  $("al-list").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;const a=list().find(x=>x.id===b.dataset.del);save(list().filter(x=>x.id!==b.dataset.del));render();
+    if(a&&a.push)$("al-msg").textContent="Gelöscht. Die bereits vorgemerkte Push-Nachricht kommt trotzdem noch.";});
+  $("ring-stop").addEventListener("click",stopRing);
+  $("ring-snooze").addEventListener("click",()=>{const a=ringing;stopRing();if(a){const l=list();l.push({id:String(Date.now()),at:Date.now()+5*60000,text:a.text,push:false});save(l);render();}});
+  document.querySelectorAll(".tooldlg [data-close]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog").close()));
+  document.querySelectorAll(".tooldlg").forEach(d=>d.addEventListener("click",e=>{if(e.target===d)d.close();}));
+  render();
+})();
 // Radio
 let RADIO=null;
 const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/"};
