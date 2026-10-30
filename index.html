@@ -563,6 +563,10 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div id="stau-detail" hidden></div>
   <div id="stau-list"><div class="state">Staus werden geladen …</div></div>
 </section>
+<section class="card wide">
+  <div class="card-head"><h2>Weitere Autobahn-Meldungen &amp; Sperrungen</h2><span class="src">Autobahn GmbH</span></div>
+  <div id="traffic"><div class="state">Verkehrsmeldungen werden geladen …</div></div>
+</section>
 </div>
 
 <div class="view" id="v-stadtverkehr" data-view="stadtverkehr" data-dus hidden>
@@ -652,12 +656,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <div class="view" id="v-verkehr" data-view="verkehr" hidden>
 <div class="subtabs" data-for="verkehr"></div>
-<section id="verkehr"><div class="sec-title"><h2>Verkehr im Detail</h2><span class="muted small" id="ab-list">A3 · A44 · A46 · A52 · A57 · A59 · A524 · A535 · Umkreis 30 km</span></div></section>
+<section id="verkehr"><div class="sec-title"><h2>Baustellen, Tanken &amp; E-Laden an Autobahnen</h2><span class="muted small" id="ab-list">A3 · A44 · A46 · A52 · A57 · A59 · A524 · A535 · Umkreis 30 km</span></div></section>
 <div class="grid">
-  <section class="card">
-    <div class="card-head"><h2>Meldungen &amp; Sperrungen</h2><span class="src">Autobahn GmbH</span></div>
-    <div id="traffic"><div class="state">Verkehrsmeldungen werden geladen …</div></div>
-  </section>
   <section class="card">
     <div class="card-head"><h2>Baustellen</h2><span class="src">Autobahn GmbH</span></div>
     <div id="roadworks"><div class="state">wird geladen …</div></div>
@@ -819,6 +819,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=80"></script>
+<script src="app.js?v=81"></script>
 </body>
 </html>

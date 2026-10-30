@@ -1496,7 +1496,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Autobahn & Staus"],["stadtverkehr","Stadtverkehr"],["verkehr","Baustellen, Tanken, E-Laden"],["parken","Parken & Service"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Verkehrslage & Sperrungen"],["stadtverkehr","Stadtverkehr Düsseldorf"],["verkehr","Baustellen & Tanken"],["parken","Parken"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   if(["stadtverkehr","parken","bezirke"].includes(v))return C.isDus;
   if(v==="einsaetze")return C.key==="datteln";
