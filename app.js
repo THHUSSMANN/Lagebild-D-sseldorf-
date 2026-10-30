@@ -150,7 +150,8 @@ let STOPS=load("stops")||{};let DIRF=load("dirf")||{};let STOPIDX=null,EFADATA=n
 if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
-let WINDY=load("windy")||"";const TTKEY_DEFAULT="RSDptU00A2TYdT3fwL1oTHnKl6XOEf51";let TTKEY=load("tomtom")||TTKEY_DEFAULT;
+let WINDY=load("windy")||"";let HOMES=load("homes")||{};
+const TTKEY_DEFAULT="RSDptU00A2TYdT3fwL1oTHnKl6XOEf51";let TTKEY=load("tomtom")||TTKEY_DEFAULT;
 const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
 // Strecken je Ort; die bisherige Liste gilt für Düsseldorf
 if(load("routes")!=null&&load("routes_dus")==null)store("routes_dus",load("routes"));
@@ -369,13 +370,22 @@ function applyPlaceUi(){
   $("efa-card").hidden=!C.efaDefault;
   $("stop").value=STOPS[C.key]||C.efaDefault||"";STOPIDX=null;
   $("stop-lbl").textContent="Haltestelle für Abfahrten in "+C.town;
+  $("home-lbl").textContent="Meine Adresse in "+C.town;$("home-addr").value=(HOMES[C.key]||{}).q||"";
   $("stop").disabled=!C.efaDefault;
   renderMine();
 }
 
 // ================= Einstellungen & Ortssuche =================
 $("tk").value=TK;$("windy").value=WINDY;
-$("tomtom").value=TTKEY===TTKEY_DEFAULT?"":TTKEY;$("tomtom").placeholder="fest hinterlegt – nur bei Bedarf eigenen eintragen";
+$("tomtom").value=TTKEY===TTKEY_DEFAULT?"":TTKEY;
+$("home-save").addEventListener("click",async()=>{const q=$("home-addr").value.trim();const key=C.key;
+  if(!q){delete HOMES[key];store("homes",HOMES);$("home-hint").textContent="Adresse entfernt.";loadTomTom();return;}
+  $("home-hint").textContent="Adresse wird gesucht …";
+  try{const r=await getJSON("https://api.tomtom.com/search/2/geocode/"+encodeURIComponent(q)+".json?limit=1&countrySet=DE&language=de-DE&key="+encodeURIComponent(TTKEY));
+    const x=(r.results||[])[0];if(!x)throw new Error("nicht gefunden");
+    HOMES[key]={q,label:x.address.freeformAddress,lat:x.position.lat,lon:x.position.lon};store("homes",HOMES);
+    $("home-hint").textContent="✓ Gefunden: "+x.address.freeformAddress;loadTomTom();}
+  catch(e){$("home-hint").textContent="Adresse nicht gefunden – bitte mit Ort eingeben ("+errText(e)+").";}});$("tomtom").placeholder="fest hinterlegt – nur bei Bedarf eigenen eintragen";
 $("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim()||TTKEY_DEFAULT;store("tomtom",TTKEY===TTKEY_DEFAULT?null:TTKEY);
   
   $("tomtom-hint").textContent="Schlüssel wird geprüft …";
@@ -987,14 +997,15 @@ async function loadTomTom(){
     const CAT={0:"Unbekannt",1:"Unfall",2:"Nebel",3:"Gefahr",4:"Regen",5:"Glätte",6:"Stau",7:"Fahrstreifen gesperrt",8:"Straße gesperrt",9:"Baustelle",10:"Wind",11:"Überflutung",14:"Liegengebliebenes Fahrzeug"};
     const list=(d.incidents||[]).map(i=>{const p=i.properties||{};const c=(i.geometry&&i.geometry.coordinates)||[];const pt=Array.isArray(c[0])?c[Math.floor(c.length/2)]:c;
       return {cat:p.iconCategory,mag:p.magnitudeOfDelay||0,delay:p.delay?Math.round(p.delay/60):null,len:p.length?p.length/1000:null,from:p.from,to:p.to,road:(p.roadNumbers||[]).join(", "),desc:((p.events||[])[0]||{}).description||CAT[p.iconCategory]||"",lat:pt&&pt[1],lon:pt&&pt[0],km:pt?distKm(la,lo,pt[1],pt[0]):99};})
-      .filter(x=>x.delay>0||x.cat===1||x.cat===8||((x.cat===6||x.cat===7)&&x.mag>=2)).sort((a,b)=>(b.delay||0)-(a.delay||0)||b.mag-a.mag||a.km-b.km);
+      .filter(x=>x.delay>0||x.cat===1||x.cat===8||((x.cat===6||x.cat===7)&&x.mag>=2)).map(x=>{const H=HOMES[C.key];x.home=H&&isFinite(x.lat)?distKm(H.lat,H.lon,x.lat,x.lon):null;x.grp=/(^|, )A\d/.test(x.road)?0:x.home!=null&&x.home<=3?1:2;return x;})
+      .sort((a,b)=>a.grp-b.grp||(a.grp===1?a.home-b.home:0)||(b.delay||0)-(a.delay||0)||b.mag-a.mag||a.km-b.km);
     const jams=list.filter(x=>x.cat===6||x.delay>0);
     TILE_PARTS.traffic.tt=jams.length?jams.length+" Behinderungen auf allen Straßen":"alle Straßen frei";composeTile("k-traffic","traffic");
     const magTxt=["","leicht","mäßig","stark","gesperrt"];
     box.innerHTML='<div class="facts" style="margin-bottom:8px">'+fact(String(jams.length),"Staus / zäh")+fact(String(list.filter(x=>x.cat===1).length),"Unfälle")+fact(String(list.filter(x=>x.cat===8).length),"Sperrungen")+fact(jams.length?"+"+Math.max(0,...jams.map(x=>x.delay||0))+" min":"–","größte Verzögerung")+'</div><div class="muted small" style="margin-bottom:6px">Rund um '+esc(C.town)+', auch Land- und Stadtstraßen · sortiert nach Verzögerung · die 25 wichtigsten</div>'+
-      (list.length?'<div>'+list.slice(0,25).map(x=>'<div class="jam"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=4?"p-bad":x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
+      (list.length?'<div>'+list.slice(0,30).map((x,i)=>(i===0||list[i-1].grp!==x.grp?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=4?"p-bad":x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
         '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
-        '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+'</div></div>').join("")+'</div>'
+        '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",x.grp===1?" · "+fmt(x.home,1)+" km von meiner Adresse":isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+'</div></div>').join("")+'</div>'
       :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
     setStatus("tomtom",true);
   }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
@@ -1026,6 +1037,8 @@ function ensureMap(){
   if(typeof L==="undefined")return null;
   if(!MAP){MAP=L.map("stau-map",{scrollWheelZoom:false}).setView([C.center.lat,C.center.lon],10);MAPLAYER=L.layerGroup().addTo(MAP);}
   applyMapMode();
+  if(MAP._home){MAP._home.remove();MAP._home=null;}
+  {const H=HOMES[C.key];if(H)MAP._home=L.marker([H.lat,H.lon],{icon:L.divIcon({className:"homeic",html:"🏠",iconSize:[26,26]})}).bindTooltip("Meine Adresse").addTo(MAP);}
   if(MAPRING)MAPRING.remove();if(MAPCENTER)MAPCENTER.remove();
   MAPRING=L.circle([C.center.lat,C.center.lon],{radius:JAM_RADIUS_KM*1000,color:"#8a9aa5",weight:1,dashArray:"4 6",fill:false,interactive:false}).addTo(MAP);
   MAPCENTER=L.circleMarker([C.center.lat,C.center.lon],{radius:5,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(C.town).addTo(MAP);

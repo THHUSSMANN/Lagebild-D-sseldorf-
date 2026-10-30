@@ -61,6 +61,7 @@
 .fer td:first-child{font-weight:600;white-space:normal}
 .fer td.past{color:var(--muted);opacity:.6;text-decoration:line-through}
 .fer td.now{background:color-mix(in srgb,var(--ok) 22%,transparent);font-weight:700;border-radius:6px}
+.homeic{font-size:22px;line-height:26px;text-align:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 .mapsw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
 .mapsw button,.mapsw a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:700 15px var(--f-display);text-decoration:none;padding:4px 6px;text-align:center}
 .mapsw small{font:500 11.5px var(--f-body);color:var(--muted)}
@@ -757,6 +758,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
       <span class="hint">Kostenlos unter <a href="https://creativecommons.tankerkoenig.de/" target="_blank" rel="noopener">creativecommons.tankerkoenig.de</a> (nur E-Mail nötig).</span>
     </div>
     <div class="field">
+      <label for="home-addr" id="home-lbl">Meine Adresse in diesem Ort</label>
+      <div class="inline"><input id="home-addr" type="text" autocomplete="street-address" placeholder="Straße Hausnummer, Ort"><button type="button" id="home-save">Speichern</button></div>
+      <span class="hint" id="home-hint">Meldungen rund um diese Adresse stehen im Verkehr direkt nach den Autobahnen. Wird nur auf diesem Gerät gespeichert.</span>
+    </div>
+    <div class="field">
       <label for="tomtom">TomTom-Schlüssel (Verkehrslage auf allen Straßen)</label>
       <div class="inline"><input id="tomtom" type="text" autocomplete="off" spellcheck="false" placeholder="API Key von developer.tomtom.com"><button type="button" id="tomtom-save">Speichern</button></div>
       <span class="hint" id="tomtom-hint">Kostenlos, ohne Kreditkarte: <a href="https://developer.tomtom.com/user/me/apps" target="_blank" rel="noopener">developer.tomtom.com → Dashboard → Keys</a>. Der Schlüssel bleibt nur auf diesem Gerät gespeichert.</span>
@@ -783,6 +789,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=68"></script>
+<script src="app.js?v=69"></script>
 </body>
 </html>
