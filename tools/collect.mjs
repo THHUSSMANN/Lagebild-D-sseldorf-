@@ -16,7 +16,7 @@ const PLACES = {
     feeds: [["Feuerwehr Datteln", "https://www.presseportal.de/rss/dienststelle_130639.rss2"], ["Blaulicht Datteln", "https://www.presseportal.de/rss/polizei/r/Datteln.rss2"]],
     efa: "Datteln Busbahnhof" },
   alpen: { name: "Alpen-Menzelen", lat: 51.6449, lon: 6.5634, ars: "051700000000", uR: 30,
-    feeds: [["Blaulicht Alpen", "https://www.presseportal.de/rss/polizei/r/Alpen.rss2"]],
+    feeds: [["Alpen", "https://www.presseportal.de/rss/polizei/r/Alpen.rss2"], ["Xanten", "https://www.presseportal.de/rss/polizei/r/Xanten.rss2"], ["Rheinberg", "https://www.presseportal.de/rss/polizei/r/Rheinberg.rss2"]],
     efa: "Alpen Bahnhof" },
   salzhausen: { name: "Salzhausen", lat: 53.2236, lon: 10.1653, ars: "033530000000", uR: 30,
     feeds: [["Blaulicht Salzhausen", "https://www.presseportal.de/rss/polizei/r/Salzhausen.rss2"]] }
@@ -61,9 +61,9 @@ function parseRss(xml, label) {
 }
 async function blaulicht(key, p) {
   const all = [];
-  for (const [label, url] of p.feeds) { all.push(...parseRss(await get(url, { type: "text" }), label)); await sleep(300); }
+  for (const [label, url] of p.feeds) { try { all.push(...parseRss(await get(url, { type: "text" }), label).map(x => ({ ...x, ort: label }))); } catch (e) { if (p.feeds.length === 1) throw e; } await sleep(300); }
   const seen = new Set();
-  return all.filter(x => !seen.has(x.link) && seen.add(x.link)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 25);
+  return all.filter(x => !seen.has(x.link) && seen.add(x.link)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, p.feeds.length > 2 ? 45 : 25);
 }
 
 // ---------- NINA ----------
@@ -405,9 +405,16 @@ tasks.push(job("boerse.json", async () => {
       return { sym, name, price: m.regularMarketPrice, prev: m.chartPreviousClose ?? m.previousClose ?? null, time: m.regularMarketTime, cur: m.currency, m1, pts: pts.filter((_, i) => i % step === 0) };
     } catch (e) { console.log("::notice::Börse " + sym + " fehlgeschlagen: " + e.message); return null; }
   }))).filter(Boolean);
+  let gold = null;
+  try { const g = (await y("GC=F", "range=1y&interval=1d")).chart.result[0]; const fx = (await y("EURUSD=X", "range=1y&interval=1d")).chart.result[0];
+    const gc = g.indicators.quote[0].close, gt = g.timestamp, fc = fx.indicators.quote[0].close, ft = fx.timestamp;
+    const fxAt = t => { let best = null; for (let i = 0; i < ft.length; i++) { if (ft[i] <= t + 86400 && fc[i] != null) best = fc[i]; } return best; };
+    const pts = gt.map((t, i) => gc[i] != null ? { t, usd: gc[i], eur: fxAt(t) ? gc[i] / fxAt(t) : null } : null).filter(Boolean);
+    gold = { pts: pts.filter((_, i) => i % 2 === 0 || i === pts.length - 1) };
+  } catch (e) { console.log("::notice::Gold-Verlauf: " + e.message); }
   console.log("::notice::Börse: " + quotes.length + " Kurse, DAX " + (quotes[0] && quotes[0].price));
   if (!quotes.length) throw new Error("keine Kurse");
-  return { quotes };
+  return { quotes, gold };
 }));
 for (const [k, url] of Object.entries(ODD)) tasks.push(job("odd-" + k + ".json", async () => places(await get(url, { ms: 40000 }))));
 await Promise.all(tasks);
