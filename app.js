@@ -1247,7 +1247,7 @@ async function refreshAll(force){
   }
   await Promise.allSettled(tasks);
   $("updated").textContent=C.name+" · zuletzt aktualisiert "+new Date().toLocaleString("de-DE",{...TZ,dateStyle:"medium",timeStyle:"short"})+" · Staus alle 3, Rest alle 10 Minuten";
-  btn.disabled=false;btn.textContent="Aktualisieren";busy=false;lastRun=Date.now();
+  btn.disabled=false;btn.textContent="↻ Aktualisieren";busy=false;lastRun=Date.now();
   if(pending){pending=false;refreshAll(true);}
 }
 let pending=false,lastRun=0;
@@ -1282,7 +1282,7 @@ function route(){
   if(v&&!$("v-"+v))v="";
   if(v&&!tileAvailable(v))v="";
   const inView=!!v;
-  $("home").hidden=inView;$("viewbar").hidden=false;document.querySelector("#viewbar .vb-x").hidden=!inView;document.querySelector("#viewbar .back").classList.toggle("home",!inView);document.querySelector("#viewbar .back").textContent=inView?"‹ Übersicht":"Übersicht";
+  $("home").hidden=inView;$("viewbar").hidden=false;document.querySelector("#viewbar .back").classList.toggle("home",!inView);document.querySelector("#viewbar .back").textContent=inView?"‹ Übersicht":"Übersicht";
   document.querySelectorAll(".view").forEach(el=>el.hidden=el.dataset.view!==v);
   buildViewbar();
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
@@ -1291,6 +1291,7 @@ function route(){
   if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&MAP)setTimeout(()=>MAP.invalidateSize(),60);}
 }
 window.addEventListener("hashchange",route);
+document.querySelectorAll(".view").forEach(v=>{const x=document.createElement("a");x.href="#";x.className="view-x";x.setAttribute("aria-label","Schließen, zurück zur Übersicht");x.innerHTML="✕ Schließen";v.prepend(x);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
 let EDITING=false,SORT=null;
 document.querySelectorAll("#tiles .tile").forEach(t=>{
