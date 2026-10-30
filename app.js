@@ -881,8 +881,10 @@ async function loadBlaulicht(){
   if(!FAVKEYS.includes(C.key)){$("bl").innerHTML=stateBox("Meldungen sind für Düsseldorf und die Favoriten hinterlegt. Für "+C.town+":",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal "+C.town));return;}
   try{const d=await getData("blaulicht-"+C.key+".json");const list=d.data||[];
     if(!list.length){$("bl").innerHTML='<div class="state good">Keine aktuellen Meldungen.</div>';setStatus("blaulicht",true);return;}
-    const day=list.filter(x=>Date.now()-new Date(x.date)<864e5).length;
-    setKpi("k-bl",String(day)+"<small> heute</small>",list[0]?list[0].title.replace(/^(POL|FW)[-\w ]*:\s*/,"").slice(0,60):"",day?"warn":"info");
+    const bday=x=>new Date(x).toLocaleDateString("sv-SE",{timeZone:"Europe/Berlin"});const td=bday(Date.now()),yd=bday(Date.now()-864e5);
+    const day=list.filter(x=>bday(x.date)===td).length;
+    const when=x=>{const d=bday(x.date);return (d===td?"heute":d===yd?"gestern":new Date(x.date).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}))+" "+hhmm(x.date);};
+    setKpi("k-bl",String(day)+"<small> heute</small>",list[0]?"Neueste "+when(list[0])+": "+list[0].title.replace(/^(POL|FW)[-\w ]*:\s*/,"").slice(0,60):"",day?"warn":"info");
     const tag=s=>/feuerwehr|^fw/i.test(s)?["FW","bad"]:/polizei|^pol/i.test(s)?["POL","ab"]:["INFO","alt"];
     $("bl").innerHTML='<div class="list">'+list.slice(0,12).map(x=>{const t=tag(x.source+" "+x.title);
       return '<div class="li"><span class="tag '+(t[1]==="bad"?"":t[1])+'" style="'+(t[1]==="bad"?"background:var(--bad);color:#fff":"")+'">'+t[0]+'</span><a class="t" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener" style="color:var(--fg);text-decoration:none">'+esc(x.title.replace(/^(POL|FW)[-\w ]*:\s*/,""))+'</a>'+
