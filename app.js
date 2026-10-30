@@ -820,7 +820,10 @@ function drawVTOnMap(){
 // ================= Polizei & Feuerwehr =================
 async function loadEinsaetze(){
   const card=$("einsaetze-card");card.hidden=C.key!=="datteln";if(card.hidden)return;
-  try{const d=await getData("einsaetze-kreis-re.json");const all=d.data.rows||[];
+  try{const d=await getData("einsaetze-kreis-re.json");
+    // nur die letzten 48 Stunden – laufende Einsätze bleiben immer sichtbar
+    const ts=x=>{const m=String(x.date).match(/(\d{2})\.(\d{2})\.(\d{4})/);return m?new Date(m[3]+"-"+m[2]+"-"+m[1]+"T"+(x.time||"00:00:00")).getTime():Date.now();};
+    const all=(d.data.rows||[]).filter(x=>x.laufend||Date.now()-ts(x)<=48*3600e3);
     const here=all.filter(x=>/datteln/i.test(x.ort)),other=all.filter(x=>!/datteln/i.test(x.ort));
     const tbl=(rows)=>'<div class="ein-list">'+rows.map(x=>'<div class="ein'+(x.laufend?" run":"")+'"><div class="z"><b>'+esc(x.time.slice(0,5))+'</b><div class="muted small">'+esc(x.date.slice(0,6))+'</div></div><div class="s">'+esc(x.stichwort)+'</div>'+
       (x.laufend?'<span class="pill p-bad"><i></i>läuft</span>':'<span class="pill p-ok"><i></i>beendet</span>')+'<div class="o">'+esc(x.ort)+(x.strasse?' · '+esc(x.strasse):'')+'</div></div>').join("")+'</div>';
@@ -829,7 +832,7 @@ async function loadEinsaetze(){
     $("einsaetze").innerHTML='<div class="facts">'+fact(String(here.length),"Einsätze Datteln")+fact(String(running),"laufend in Datteln")+fact(String(all.length),"Einsätze im Kreis")+fact(esc(d.data.updated||"–"),"Stand Leitstelle")+'</div>'+
       '<div class="sublbl">Datteln</div>'+(here.length?tbl(here):'<div class="state good">Keine Einsätze in Datteln im angezeigten Zeitraum.</div>')+
       '<details style="margin-top:8px"><summary>Übrige Einsätze im Kreis Recklinghausen ('+other.length+')</summary>'+tbl(other)+'</details>'+
-      '<div class="muted small">Kreisleitstelle Recklinghausen, ohne Rettungsdienst-Einsätze · abgerufen '+dataAge(d)+' · '+link("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp","Originalliste")+'</div>';
+      '<div class="muted small">Kreisleitstelle Recklinghausen, ohne Rettungsdienst-Einsätze · angezeigt: letzte 48 Stunden, laufende Einsätze immer · abgerufen '+dataAge(d)+' · '+link("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp","Originalliste")+'</div>';
     setStatus("einsaetze",true,"Stand "+dataAge(d));
   }catch(e){setStatus("einsaetze",false,errText(e));$("einsaetze").innerHTML=stateBox("Einsatzliste nicht verfügbar – "+errText(e)+".",link("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp","Originalliste"));}
 }
