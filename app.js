@@ -150,7 +150,7 @@ let STOPS=load("stops")||{};let DIRF=load("dirf")||{};let STOPIDX=null,EFADATA=n
 if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
-let WINDY=load("windy")||"";let TTKEY=load("tomtom")||"";
+let WINDY=load("windy")||"";const TTKEY_DEFAULT="ZxOzAoiyJeFOKJYiLraG5DxMPtaFXBXt";let TTKEY=load("tomtom")||TTKEY_DEFAULT;
 const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
 // Strecken je Ort; die bisherige Liste gilt für Düsseldorf
 if(load("routes")!=null&&load("routes_dus")==null)store("routes_dus",load("routes"));
@@ -375,8 +375,8 @@ function applyPlaceUi(){
 
 // ================= Einstellungen & Ortssuche =================
 $("tk").value=TK;$("windy").value=WINDY;
-$("tomtom").value=TTKEY;
-$("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim();store("tomtom",TTKEY);
+$("tomtom").value=TTKEY===TTKEY_DEFAULT?"":TTKEY;$("tomtom").placeholder="fest hinterlegt – nur bei Bedarf eigenen eintragen";
+$("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim()||TTKEY_DEFAULT;store("tomtom",TTKEY===TTKEY_DEFAULT?null:TTKEY);
   if(MAP&&MAP._tt){MAP._tt.forEach(l=>l.remove());MAP._tt=null;}
   $("tomtom-hint").textContent="Schlüssel wird geprüft …";
   try{const r=await fetch("https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?point="+C.center.lat+","+C.center.lon+"&key="+encodeURIComponent(TTKEY));
@@ -980,7 +980,7 @@ async function loadTomTom(){
   const r=C.isDus?0.16:0.2,la=C.center.lat,lo=C.center.lon,bbox=[lo-r*1.6,la-r,lo+r*1.6,la+r].map(x=>x.toFixed(4)).join(",");
   const fields="{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description},startTime,endTime,from,to,length,delay,roadNumbers}}}";
   try{const res=await fetch("https://api.tomtom.com/traffic/services/5/incidentDetails?key="+encodeURIComponent(TTKEY)+"&bbox="+bbox+"&language=de-DE&timeValidityFilter=present&fields="+encodeURIComponent(fields));
-    if(!res.ok)throw new Error(res.status===403||res.status===401?"Schlüssel ungültig":"HTTP "+res.status);
+    if(!res.ok)throw new Error(res.status===403?"Traffic-Freigabe für den Schlüssel fehlt noch (bei TomTom „Traffic API“ aktivieren)":res.status===401?"Schlüssel ungültig":"HTTP "+res.status);
     const d=await res.json();
     const CAT={0:"Unbekannt",1:"Unfall",2:"Nebel",3:"Gefahr",4:"Regen",5:"Glätte",6:"Stau",7:"Fahrstreifen gesperrt",8:"Straße gesperrt",9:"Baustelle",10:"Wind",11:"Überflutung",14:"Liegengebliebenes Fahrzeug"};
     const list=(d.incidents||[]).map(i=>{const p=i.properties||{};const c=(i.geometry&&i.geometry.coordinates)||[];const pt=Array.isArray(c[0])?c[Math.floor(c.length/2)]:c;
