@@ -908,15 +908,17 @@ async function loadBlaulicht(){
 // Webcams: img = direktes Kamerabild (nur https), sonst Link zur Webcam-Seite
 const WEBCAM_LINKS={
   dus:[
-    {t:"Blick vom ARAG-Tower",img:"https://www.arag.de/images/webcam/tower00006.jpg",u:"https://www.arag.de/images/webcam/tower00006.jpg"},
-    {t:"Landtag NRW · Rheinufer",img:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix1.jpg",u:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix1.jpg"},
-    {t:"Landtag NRW · Rheinknie",img:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix4.jpg",u:"https://www.landtag.nrw.de/web/WWW/webcam/mobotix4.jpg"},
-    {t:"Lausward · Blick Richtung Neuss",img:"https://www.swd-ag.de/webcam/blickvonderlausward2.jpg",u:"https://www.swd-ag.de/webcam/blickvonderlausward2.jpg"},
-    {t:"Lausward · Blick zur Arena",img:"https://www.swd-ag.de/webcam/blickvonderlausward3.jpg",u:"https://www.swd-ag.de/webcam/blickvonderlausward3.jpg"},
-    {t:"Burgplatz / Altstadt",live:["w5t15erd","fxmwsxp6"],u:"https://www.duesseldorf.de/webcams/burgplatz-1"},
-    {t:"Rheinufer",live:["wx7j7ulr","hvasmdro"],u:"https://www.duesseldorf.de/webcams/rheinufer-1"},
-    {t:"Stadt Düsseldorf · alle Webcams",u:"https://www.duesseldorf.de/webcams"},
-    {t:"Alle Düsseldorfer Webcams",u:"https://mygermancity.com/duesseldorf-webcams"}],
+    {t:"Burgplatz / Altstadt",live:["w5t15erd","fxmwsxp6"],u:"https://www.duesseldorf.de/webcams/burgplatz-1",by:"Stadt Düsseldorf"},
+    {t:"Rheinufer",live:["wx7j7ulr","hvasmdro"],u:"https://www.duesseldorf.de/webcams/rheinufer-1",by:"Stadt Düsseldorf"},
+    {t:"Flughafen · Vorfeld",hls:"https://stream-5gw.1000eyes.de/cupertino/dused0c.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
+    {t:"Flughafen · Flugbetrieb",hls:"https://stream-5gw.1000eyes.de/cupertino/dusfcae.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
+    {t:"Flughafen · Terminal",hls:"https://stream-5gw.1000eyes.de/cupertino/dusc926.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
+    {t:"Flughafen · Rollweg",hls:"https://stream-5gw.1000eyes.de/cupertino/dus1ba9.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
+    {t:"Flughafen · Abfertigung",hls:"https://stream-5gw.1000eyes.de/cupertino/dus5abb.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
+    {t:"Marktplatz",off:"von der Stadt eingestellt",u:"https://www.duesseldorf.de/webcams/marktplatz-1",by:"Stadt Düsseldorf"},
+    {t:"Stadtwerke · Lausward",off:"liefert derzeit kein Bild",u:"https://www.swd-ag.de/ueber-uns/erzeugung-standorte/webcam/",by:"Stadtwerke Düsseldorf"},
+    {t:"Unterbacher See",off:"liefert derzeit kein Bild",u:"https://unterbachersee.de/webcam/",by:"Unterbacher See"},
+    {t:"Alle Webcams der Stadt",u:"https://www.duesseldorf.de/webcams"}],
   datteln:[
     {t:"Haltern am See · Marktplatz (ca. 15 km)",u:"https://www.windfinder.com/webcams/datteln"},
     {t:"Dortmund · Hansaplatz (ca. 18 km)",u:"https://www.windfinder.com/webcams/datteln"},
@@ -932,23 +934,30 @@ function camTile(){const n=CAM_N.img+CAM_N.pub+CAM_N.ab;setKpi("k-cam",n?String(
 function renderWebcamLinks(){
   const list=WEBCAM_LINKS[C.key]||[];const box=$("webcam-links");
   $("cam-title").textContent="Webcams "+C.town;
-  const lives=list.filter(x=>x.live),imgs=list.filter(x=>x.img),links=list.filter(x=>!x.img&&!x.live);const ts=Math.floor(Date.now()/300000);
   const host=u=>{try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return"";}};
-  box.innerHTML=(lives.length?'<div class="sublbl">Livestreams der Stadt Düsseldorf – antippen zum Abspielen</div><div class="cams cams-l" style="margin-bottom:12px">'+lives.map((x,i)=>'<div class="cam live"><div class="lsbox" id="ls-'+i+'" data-i="'+i+'" style="background-image:url(https://player.livespotting.com/poster/'+x.live[1]+'.jpg?height=360)"><span class="ls-play">▶</span><span class="ls-badge">LIVE</span></div><span><b>'+esc(x.t)+'</b> · <a href="'+esc(x.u)+'" target="_blank" rel="noopener">duesseldorf.de ↗</a></span></div>').join("")+'</div>':'')+
-    (imgs.length?'<div class="sublbl">Kamerabilder (aktualisieren sich alle paar Minuten)</div><div class="cams cams-l" style="margin-bottom:12px">'+imgs.map(x=>'<a class="cam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(x.t)+'" src="'+esc(x.img)+'?t='+ts+'" onerror="this.closest(\'.cam\').classList.add(\'off\')"><span><b>'+esc(x.t)+'</b></span></a>').join("")+'</div>':'')+
+  const tiles=list.filter(x=>x.live||x.hls||x.img||x.off),links=list.filter(x=>!x.live&&!x.hls&&!x.img&&!x.off);
+  box.innerHTML=(tiles.length?'<div class="sublbl">Live – antippen für Großansicht</div><div class="cams cams-l" style="margin-bottom:12px">'+tiles.map((x,i)=>
+      x.off?'<a class="cam linkcam offcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">⏸</span><span class="lc-go">'+esc(x.off)+'</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></a>'
+      :'<div class="cam live" data-ci="'+i+'"><div class="lsbox"'+(x.live?' style="background-image:url(https://player.livespotting.com/poster/'+x.live[1]+'.jpg?height=360)"':'')+'>'+(x.hls?'<video muted playsinline autoplay data-hls="'+esc(x.hls)+'"></video>':'')+(x.img?'<img src="'+esc(x.img)+'?t='+Date.now()+'" alt="">':'')+(x.live?'<span class="ls-play">▶</span>':'')+'<span class="ls-badge">LIVE</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></div>').join("")+'</div>':'')+
     (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="cams cams-l" style="margin-bottom:10px">'+links.map(x=>'<a class="cam linkcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">📷</span><span class="lc-go">öffnen ↗</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(host(x.u))+'</span></span></a>').join("")+'</div>':'')||
     '<div class="state">Für '+esc(C.town)+' sind keine Webcams hinterlegt.</div>';
-  box.querySelectorAll(".lsbox").forEach(el=>el.addEventListener("click",()=>openCam({t:lives[+el.dataset.i].t,live:lives[+el.dataset.i].live,u:lives[+el.dataset.i].u})));
-  box.querySelectorAll("a.cam:not(.linkcam)").forEach((a,i)=>a.addEventListener("click",e=>{e.preventDefault();const x=imgs[i];openCam({t:x.t,img:x.img,u:x.u});}));
-  CAM_N.links=list.length;CAM_N.img=imgs.length+lives.length;camTile();
+  box.querySelectorAll(".cam.live").forEach(el=>el.addEventListener("click",()=>openCam(tiles[+el.dataset.ci])));
+  box.querySelectorAll("video[data-hls]").forEach(v=>attachHls(v,v.dataset.hls));
+  CAM_N.links=list.length;CAM_N.img=tiles.filter(x=>!x.off).length;camTile();
 }
+let HLSLOAD=null;
+function attachHls(v,url){v.muted=true;v.playsInline=true;
+  if(v.canPlayType("application/vnd.apple.mpegurl")){v.src=url;v.play().catch(()=>{});return;}
+  HLSLOAD=HLSLOAD||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js";sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
+  HLSLOAD.then(()=>{if(window.Hls&&Hls.isSupported()){const h=new Hls({maxBufferLength:10});h.loadSource(url);h.attachMedia(v);v._hls=h;v.play().catch(()=>{});}}).catch(()=>{});}
 let LSLOAD=null,CAMT=null;
 function openCam(x){const d=$("cam-dlg"),b=$("cam-big");$("cam-big-t").textContent=x.t;$("cam-big-src").href=x.u;b.innerHTML="";clearInterval(CAMT);
   if(x.img){const im=document.createElement("img");const set=()=>im.src=x.img+"?t="+Date.now();set();im.alt="Webcam "+x.t;b.appendChild(im);CAMT=setInterval(set,60000);}
+  else if(x.hls){const v=document.createElement("video");v.controls=true;v.style.width="100%";v.style.height="100%";b.appendChild(v);attachHls(v,x.hls);}
   else if(x.live){const el=document.createElement("div");el.id="lsbig"+Date.now();el.className="lsbox";el.style.border="0";el.style.borderRadius="0";b.appendChild(el);playLive(el,x);}
   d.showModal();}
 document.addEventListener("DOMContentLoaded",()=>{});
-$("cam-dlg").addEventListener("close",()=>{clearInterval(CAMT);$("cam-big").innerHTML="";});
+$("cam-dlg").addEventListener("close",()=>{clearInterval(CAMT);$("cam-big").querySelectorAll("video").forEach(v=>{if(v._hls)v._hls.destroy();});$("cam-big").innerHTML="";});
 function playLive(el,x){
   el.classList.add("loading");
   LSLOAD=LSLOAD||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://player.livespotting.com/player/clappr/latest/player.min.js";sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
@@ -1305,7 +1314,8 @@ function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
 function depTable(rows){
   let r='<table><thead><tr><th>Zeit</th><th>Linie</th><th>Richtung</th><th class="num">Gleis/Steig</th><th class="num">+min</th></tr></thead><tbody>';
   rows.forEach(x=>{const del=x.delay!=null?x.delay:(x.planned&&x.est?Math.round((new Date(x.est)-new Date(x.planned))/6e4):null);
-    r+='<tr><td><b>'+(x.planned?hhmm(x.planned):"–")+'</b></td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
+    const hl=C.isDus&&/^U ?75$/i.test(String(x.line).trim())&&/vennhauser/i.test(x.dir||"");
+    r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(x.planned?hhmm(x.planned):"–")+'</b></td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
       (x.cancelled?'<span class="pill p-bad"><i></i>fällt aus</span>':del==null?'<span class="muted">–</span>':del>0?'<span style="color:var(--bad);font-weight:600">+'+del+'</span>':'<span style="color:var(--ok)">0</span>')+'</td></tr>';});
   return r+'</tbody></table>';
 }
