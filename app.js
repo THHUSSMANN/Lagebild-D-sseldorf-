@@ -466,10 +466,38 @@ async function loadObs(){
   catch(e){setStatus("dwdobs",false,errText(e));}
   renderWeather();
 }
+// Kleidungsempfehlung aus Tagesvorhersage (8–20 Uhr)
+function renderWear(w){const box=$("wear");if(!box||!w)return;
+  const h=w.hourly,now=Date.now()/1000;const today=new Date().toLocaleDateString("sv-SE",{timeZone:"Europe/Berlin"});
+  const idx=h.time.map((t,i)=>i).filter(i=>{const d=new Date(h.time[i]*1000);const hh=+d.toLocaleString("de-DE",{timeZone:"Europe/Berlin",hour:"2-digit",hour12:false});return d.toLocaleDateString("sv-SE",{timeZone:"Europe/Berlin"})===today&&hh>=7&&hh<=21&&h.time[i]>=now-3600;});
+  const use=idx.length?idx:h.time.map((t,i)=>i).filter(i=>h.time[i]>=now).slice(0,12);
+  const temps=use.map(i=>h.temperature_2m[i]),pp=use.map(i=>h.precipitation_probability[i]||0),pr=use.map(i=>h.precipitation[i]||0);
+  const tmin=Math.min(...temps),tmax=Math.max(...temps),feel=w.current.apparent_temperature,rain=Math.max(...pp),rainSum=pr.reduce((a,b)=>a+b,0),gust=w.daily.wind_gusts_10m_max[0],uv=w.daily.uv_index_max[0];
+  const codes=use.map(i=>h.weather_code[i]);const snow=codes.some(c=>c>=71&&c<=77||c===85||c===86);
+  const t=Math.min(tmin,feel);const rows=[];
+  if(t<0)rows.push(["🧥","Wintermantel, Mütze, Schal und Handschuhe","Gefühlt "+fmt(feel)+" °C – es friert."]);
+  else if(t<6)rows.push(["🧥","Warme Winterjacke, Schal","Morgens/abends nur "+fmt(tmin)+" °C."]);
+  else if(t<11)rows.push(["🧥","Übergangsjacke oder dicker Pullover","Zwischen "+fmt(tmin)+" und "+fmt(tmax)+" °C."]);
+  else if(t<16)rows.push(["🧶","Leichte Jacke oder Pullover","Zwischen "+fmt(tmin)+" und "+fmt(tmax)+" °C."]);
+  else if(tmax<23)rows.push(["👕","Langarmshirt, Jacke reicht dünn","Bis "+fmt(tmax)+" °C."]);
+  else rows.push(["👕","Leichte, luftige Kleidung","Bis "+fmt(tmax)+" °C."]);
+  if(tmax-tmin>=8)rows.push(["🧅","Zwiebelprinzip","Es wird im Tagesverlauf "+fmt(tmax-tmin)+" Grad wärmer bzw. kälter."]);
+  if(snow)rows.push(["🥾","Feste, rutschfeste Winterschuhe","Schnee oder Schneeregen möglich."]);
+  else if(rain>=60||rainSum>=2)rows.push(["☔","Regenjacke und Schirm, wasserfeste Schuhe","Regenrisiko bis "+fmt(rain)+" %"+(rainSum?" · rund "+fmt(rainSum,1)+" mm":"")+"."]);
+  else if(rain>=30)rows.push(["🌂","Knirps einpacken","Regenrisiko bis "+fmt(rain)+" %."]);
+  if(gust>=50)rows.push(["💨","Windfeste Jacke mit Kapuze – Schirm eher zu Hause lassen","Böen bis "+fmt(gust)+" km/h."]);
+  if(uv>=6)rows.push(["🧢","Sonnenbrille, Kopfbedeckung, Sonnencreme","UV-Index "+fmt(uv)+"."]);
+  else if(uv>=3&&tmax>=18)rows.push(["🕶️","Sonnenbrille mitnehmen","UV-Index "+fmt(uv)+"."]);
+  const no=[];
+  if(tmax<18)no.push("kurze Hosen und Sandalen");if(rain>=50)no.push("Wildleder und Stoffschuhe");if(t<6)no.push("dünne Sneaker");if(tmax>=25)no.push("dicke Jacke");if(gust>=50)no.push("Regenschirm");
+  box.innerHTML='<div class="wear">'+rows.map(r=>'<div class="wear-row"><span class="wear-ic">'+r[0]+'</span><div><b>'+esc(r[1])+'</b><div class="muted small">'+esc(r[2])+'</div></div></div>').join("")+
+    (no.length?'<div class="wear-row"><span class="wear-ic">🚫</span><div><b class="wear-no">Besser nicht: '+esc(no.join(", "))+'</b></div></div>':'')+'</div>';
+  $("wear-src").textContent="heute "+(idx.length?"7–21 Uhr":"nächste Stunden")+" · "+C.town;}
 function renderWeather(){
   $("wx-place").textContent=C.name+(C.detail?" · "+C.detail:"");
   if(!WX||!WX[C.wxIdx]){if(status.wx&&!status.wx.ok)$("wx-now").innerHTML=stateBox("Wetterdaten nicht verfügbar – "+status.wx.msg);return;}
   const w=WX[C.wxIdx],c=w.current,[txt,ic]=wmo(c.weather_code),day=w.daily;
+  try{renderWear(w);}catch(e){}
   setKpi("k-temp",icon(ic)+" "+fmt(c.temperature_2m,1)+"<small> °C</small>",txt+" · Böen "+fmt(c.wind_gusts_10m)+" km/h",bft(c.wind_gusts_10m)>=9?"bad":bft(c.wind_gusts_10m)>=7?"warn":"info");
   setKpi("k-wx",icon(ic)+" <span style='font-size:21px'>"+esc(txt)+"</span>","Regenrisiko heute "+fmt(day.precipitation_probability_max[0])+" %");
   const g=c.wind_gusts_10m,bf=bft(g);

@@ -76,6 +76,11 @@ tr.hl td:first-child{box-shadow:inset 4px 0 0 #e0a800}
 .segsw button{min-height:52px;border-radius:12px;font:700 16px var(--f-display);background:var(--panel);border:1px solid var(--line);color:var(--fg)}
 .segsw button.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
 .news-src{display:inline-block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin-right:6px}
+.wear{display:flex;flex-direction:column;gap:8px}
+.wear-row{display:grid;grid-template-columns:2.2em 1fr;gap:4px 10px;align-items:start}
+.wear-ic{font-size:26px;line-height:1.1;text-align:center}
+.wear-row b{font-family:var(--f-display);font-size:16px}
+.wear-no{color:var(--bad)}
 .mapsw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
 .mapsw button,.mapsw a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:700 15px var(--f-display);text-decoration:none;padding:4px 6px;text-align:center}
 .mapsw small{font:500 11.5px var(--f-body);color:var(--muted)}
@@ -530,6 +535,10 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div id="wx-now"><div class="state">Wetterdaten werden geladen …</div></div>
   </section>
   <section class="card">
+    <div class="card-head"><h2>Was ziehe ich an?</h2><span class="src" id="wear-src">heute tagsüber · aus der Vorhersage</span></div>
+    <div id="wear"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
     <div class="card-head"><h2>Nächste 24 Stunden</h2>
       <div class="legend"><span><i style="background:var(--accent)"></i>Temperatur</span><span><i style="background:var(--accent);opacity:.3"></i>Regenrisiko</span></div></div>
     <div id="wx-24"><div class="state">wird geladen …</div></div>
@@ -823,6 +832,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=87"></script>
+<script src="app.js?v=88"></script>
 </body>
 </html>
