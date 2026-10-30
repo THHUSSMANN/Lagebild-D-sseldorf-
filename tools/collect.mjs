@@ -395,16 +395,19 @@ tasks.push(job("boerse.json", async () => {
 }));
 for (const [k, url] of Object.entries(ODD)) tasks.push(job("odd-" + k + ".json", async () => places(await get(url, { ms: 40000 }))));
 await Promise.all(tasks);
-// ---------- Probe: Landespegel NRW (Düssel, Anger) ----------
-async function probeNrw() {
-  const C = ["https://hochwasserportal.nrw.de/lanuv/data/internet/stations/stations.json", "https://hochwasserportal.nrw.de/data/internet/stations/stations.json", "https://www.hochwasserportal.nrw.de/lanuv/data/internet/stations/stations.json", "https://hochwasserportal.nrw.de/lanuv/data/internet/layers/10/index.json", "https://hochwasserportal.nrw.de/lanuv/data/internet/layers/1/index.json", "https://www.hochwasserzentralen.de/api/v1/pegel?bundesland=NW"];
-  for (const u of C) {
-    try { const r = await fetch(u, { headers: UA }); const t = await r.text(); const hit = t.match(/.{0,200}(D[üu]ssel|Anger)[^"]{0,40}.{0,300}/i);
-      console.log("::notice::NRW-Probe " + r.status + " " + u + " len=" + t.length + " " + (hit ? hit[0].replace(/\s+/g, " ").slice(0, 600) : t.slice(0, 200).replace(/\s+/g, " ")));
-    } catch (e) { console.log("::notice::NRW-Probe ERR " + u + " " + e.message); }
-  }
-}
-try { await probeNrw(); } catch {}
+// ---------- Landespegel NRW (Düssel, Anger) – LANUK Hochwasserportal ----------
+await job("landespegel.json", async () => {
+  const L = await get("https://hochwasserportal.nrw.de/lanuv/data/internet/layers/10/index.json", { ms: 40000 });
+  const arr = Array.isArray(L) ? L : (L.features || L.data || Object.values(L));
+  const pick = arr.filter(x => /^(Düssel|Anger|Angerbach|Schwarzbach|Itter)$/i.test(String(x.WTO_OBJECT || "")));
+  if (pick[0]) console.log("::notice::Landespegel Felder: " + Object.keys(pick[0]).join(","));
+  const out = pick.map(x => ({ name: x.station_name, no: x.station_no, site: x.site_no, water: x.WTO_OBJECT, lat: +x.station_latitude, lon: +x.station_longitude,
+    value: x.ts_value != null ? +x.ts_value : null, time: x.timestamp || x.ts_timestamp || null, unit: x.ts_unitsymbol || "cm", type: x.WEB_STATYPE,
+    mnw: +x.LANUV_MNW || null, mw: +x.LANUV_MW || null, mhw: +x.LANUV_MHW || null, i1: +x.LANUV_Info_1 || null, i2: +x.LANUV_Info_2 || null, i3: +x.LANUV_Info_3 || null, raw: x }));
+  console.log("::notice::Landespegel: " + out.map(o => o.water + " " + o.name + " = " + o.value + " (" + o.time + ") MW " + o.mw).join(" | "));
+  out.forEach(o => delete o.raw);
+  return out;
+});
 // ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
 async function pushAlarms() {
   const topic = process.env.NTFY_TOPIC; if (!topic) return "kein Thema";
