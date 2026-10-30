@@ -53,10 +53,10 @@ const round = g => JSON.parse(JSON.stringify(g, (k, v) => typeof v === "number" 
 
 // ---------- Presseportal (Polizei & Feuerwehr) ----------
 function parseRss(xml, label) {
-  return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
+  return [...xml.matchAll(/<item[^>]*>([\s\S]*?)<\/item>/g)].map(m => {
     const it = m[1]; const tag = n => (it.match(new RegExp("<" + n + "[^>]*>([\\s\\S]*?)</" + n + ">")) || [])[1] || "";
     const enc = tag("content:encoded"); const src = (decode(enc).match(/<b>([^<]+)<\/b>/) || [])[1] || label;
-    return { title: strip(tag("title")), text: strip(tag("description")).slice(0, 400), link: strip(tag("link")), date: new Date(strip(tag("pubDate"))).toISOString(), source: src };
+    return { title: strip(tag("title")), text: strip(tag("description")).slice(0, 400), link: strip(tag("link")), date: (d => isNaN(d) ? new Date().toISOString() : d.toISOString())(new Date(strip(tag("pubDate")) || strip(tag("dc:date")))), source: src };
   });
 }
 async function blaulicht(key, p) {
@@ -447,23 +447,26 @@ await job("busfahrten.json", async () => {
 });
 // ---------- Weitere Medien je Ort ----------
 await job("medien.json", async () => {
+  const WDR = ["https://www1.wdr.de/nachrichten/uebersicht-nachrichten-100.feed", "https://www1.wdr.de/nachrichten/index.feed", "https://www1.wdr.de/uebersicht-100.feed"];
   const F = {
-    dus: [["WDR Rheinland", "https://www1.wdr.de/nachrichten/rheinland/uebersicht-rheinland-100.feed"], ["Rheinische Post Düsseldorf", "https://rp-online.de/nrw/staedte/duesseldorf/feed.rss"], ["WDR NRW", "https://www1.wdr.de/uebersicht-100.feed"]],
-    datteln: [["WDR Ruhrgebiet", "https://www1.wdr.de/nachrichten/ruhrgebiet/uebersicht-ruhrgebiet-100.feed"], ["WDR NRW", "https://www1.wdr.de/uebersicht-100.feed"]],
-    alpen: [["WDR Rheinland", "https://www1.wdr.de/nachrichten/rheinland/uebersicht-rheinland-100.feed"], ["Rheinische Post Kreis Wesel", "https://rp-online.de/nrw/staedte/wesel/feed.rss"], ["WDR NRW", "https://www1.wdr.de/uebersicht-100.feed"]],
-    salzhausen: [["NDR Niedersachsen", "https://www.ndr.de/nachrichten/niedersachsen/index-rss.xml"], ["NDR Lüneburg", "https://www.ndr.de/nachrichten/niedersachsen/lueneburg_heide_unterelbe/index-rss.xml"]]
+    dus: [["Rheinische Post Düsseldorf", "https://rp-online.de/nrw/staedte/duesseldorf/feed.rss"], ["WDR", WDR], ["Westdeutsche Zeitung", ["https://www.wz.de/nrw/duesseldorf/feed.rss", "https://www.wz.de/feed.rss"]]],
+    datteln: [["WDR", WDR], ["Ruhr Nachrichten", ["https://www.ruhrnachrichten.de/feed/", "https://www.ruhrnachrichten.de/rss"]], ["Recklinghäuser Zeitung", ["https://www.recklinghaeuser-zeitung.de/feed/"]]],
+    alpen: [["Rheinische Post Kreis Wesel", "https://rp-online.de/nrw/staedte/wesel/feed.rss"], ["WDR", WDR]],
+    salzhausen: [["NDR", ["https://www.ndr.de/home/index-rss.xml", "https://www.ndr.de/nachrichten/index-rss.xml", "https://www.ndr.de/nachrichten/niedersachsen/index-rss.xml"]], ["Landeszeitung Lüneburg", ["https://www.landeszeitung.de/feed/", "https://www.landeszeitung.de/rss"]]]
   };
   const cache = {}; const out = {}; const stat = [];
   for (const [k, list] of Object.entries(F)) {
     const items = [];
     for (const [label, url] of list) {
-      try { if (!cache[url]) cache[url] = parseRss(await get(url, { type: "text", ms: 20000 }), label).map(x => ({ ...x, source: label })); items.push(...cache[url]); stat.push(label + " " + cache[url].length); }
-      catch (e) { stat.push(label + " Fehler " + e.message); }
+      const urls = Array.isArray(url) ? url : [url]; let got = null, err = "";
+      for (const u of urls) { if (cache[u]) { got = cache[u]; break; } try { const r = parseRss(await get(u, { type: "text", ms: 20000 }), label).map(x => ({ ...x, source: label })); if (r.length) { cache[u] = got = r; break; } err = u + " leer"; } catch (e) { err = u + " " + e.message; } }
+      if (got) { items.push(...got); stat.push(label + " " + got.length); } else stat.push(label + " Fehler " + err);
     }
     const seen = new Set();
     out[k] = items.filter(x => x.title && !seen.has(x.title) && seen.add(x.title)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
   }
   console.log("::notice::Medien: " + [...new Set(stat)].join(" | "));
+  out._stat = [...new Set(stat)];
   return out;
 });
 // ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
