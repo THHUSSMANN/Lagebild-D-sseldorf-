@@ -914,8 +914,8 @@ async function loadBlaulicht(){
 // Webcams: img = direktes Kamerabild (nur https), sonst Link zur Webcam-Seite
 const WEBCAM_LINKS={
   dus:[
-    {t:"Burgplatz / Altstadt",live:["w5t15erd","fxmwsxp6"],u:"https://www.duesseldorf.de/webcams/burgplatz-1",by:"Stadt Düsseldorf"},
-    {t:"Rheinufer",live:["wx7j7ulr","hvasmdro"],u:"https://www.duesseldorf.de/webcams/rheinufer-1",by:"Stadt Düsseldorf"},
+    {t:"Burgplatz / Altstadt",hls:"https://ch-fra-n12.livespotting.com/vpu/a6mam24n/fxmwsxp6_720.m3u8",u:"https://www.duesseldorf.de/webcams/burgplatz-1",by:"Stadt Düsseldorf"},
+    {t:"Rheinufer",hls:"https://ch-fra-n12.livespotting.com/vpu/a6mam24n/hvasmdro_720.m3u8",u:"https://www.duesseldorf.de/webcams/rheinufer-1",by:"Stadt Düsseldorf"},
     {t:"Flughafen · Vorfeld",hls:"https://stream-5gw.1000eyes.de/cupertino/dused0c.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
     {t:"Flughafen · Flugbetrieb",hls:"https://stream-5gw.1000eyes.de/cupertino/dusfcae.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
     {t:"Flughafen · Terminal",hls:"https://stream-5gw.1000eyes.de/cupertino/dusc926.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
