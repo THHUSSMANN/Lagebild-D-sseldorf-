@@ -1135,7 +1135,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]
 function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
 function ensureMap(){
   if(typeof L==="undefined")return null;
-  if(!MAP){MAP=L.map("stau-map",{scrollWheelZoom:false}).setView([C.center.lat,C.center.lon],10);MAPLAYER=L.layerGroup().addTo(MAP);}
+  if(!MAP){MAP=L.map("stau-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile}).setView([C.center.lat,C.center.lon],10);MAPLAYER=L.layerGroup().addTo(MAP);}
   applyMapMode();
   if(MAP._home){MAP._home.remove();MAP._home=null;}
   {const H=HOMES[C.key];if(H)MAP._home=L.marker([H.lat,H.lon],{icon:L.divIcon({className:"homeic",html:"🏠",iconSize:[26,26]})}).bindTooltip("Meine Adresse").addTo(MAP);}
