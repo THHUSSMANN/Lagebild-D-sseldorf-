@@ -36,6 +36,7 @@
   --accent:#4fb6d3; --accent-soft:#163846; --head:#0a1014; --head-fg:#e4ecf0; --ok:#5cc07a; --warn:#e3b13c; --bad:#ef6f5a; --crit:#d77cc3; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+.view{min-height:calc(100vh - 60px)}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head)}
@@ -158,6 +159,7 @@ nav.jump .wrap{display:flex;align-items:center;gap:8px}
 nav.jump .vb-scroll{flex:1;min-width:0;display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
 nav.jump .vb-scroll::-webkit-scrollbar{display:none}
 nav.jump a.vb-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;padding:0;border-radius:50%;font-size:20px;font-weight:700;background:var(--panel-2);border:1px solid var(--line);color:var(--fg)}
+nav.jump a.back.home{background:var(--panel-2);color:var(--fg);border-color:var(--accent)}
 nav.jump a.vb-x:hover{background:var(--bad);border-color:var(--bad);color:#fff}
 nav.jump a{flex:none;text-decoration:none;color:var(--fg);font-weight:600;font-size:14px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel)}
 nav.jump a:hover{border-color:var(--accent);color:var(--accent)}
@@ -422,7 +424,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </dialog>
 <div id="ring" class="ring" hidden><div class="ring-box"><div class="ring-ic">⏰</div><div id="ring-t" class="ring-t"></div><div id="ring-time" class="muted"></div><div class="ring-b"><button type="button" id="ring-snooze">5 min später</button><button type="button" id="ring-stop" class="ring-stop">Stopp</button></div></div></div>
 
-<nav class="jump pad" id="viewbar" aria-label="Bereiche" hidden>
+<nav class="jump pad" id="viewbar" aria-label="Bereiche">
   <div class="wrap">
     <div class="vb-scroll"><a href="#" class="back">‹ Übersicht</a><span id="viewbar-links" style="display:contents"></span></div>
     <a href="#" class="vb-x" aria-label="Fenster schließen, zurück zur Übersicht" title="Schließen">✕</a>
@@ -724,6 +726,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=48"></script>
+<script src="app.js?v=49"></script>
 </body>
 </html>

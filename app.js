@@ -1282,7 +1282,7 @@ function route(){
   if(v&&!$("v-"+v))v="";
   if(v&&!tileAvailable(v))v="";
   const inView=!!v;
-  $("home").hidden=inView;$("viewbar").hidden=!inView;
+  $("home").hidden=inView;$("viewbar").hidden=false;document.querySelector("#viewbar .vb-x").hidden=!inView;document.querySelector("#viewbar .back").classList.toggle("home",!inView);document.querySelector("#viewbar .back").textContent=inView?"‹ Übersicht":"Übersicht";
   document.querySelectorAll(".view").forEach(el=>el.hidden=el.dataset.view!==v);
   buildViewbar();
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
