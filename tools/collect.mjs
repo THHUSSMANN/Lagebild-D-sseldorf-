@@ -429,11 +429,14 @@ await job("busfahrten.json", async () => {
   for (const [k, pairs] of Object.entries(cfg)) for (const [from, to] of pairs) {
     try {
       const a = await stopId(from), b = await stopId(to);
-      const d = await get("https://efa.vrr.de/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin=" + encodeURIComponent(a.id) + "&type_destination=any&name_destination=" + encodeURIComponent(b.id) + "&itdTripDateTimeDepArr=dep&calcNumberOfTrips=8&maxChanges=0&useRealtime=1", { ms: 30000 });
-      const rows = (d.journeys || []).map(j => j.legs.filter(l => l.transportation && l.transportation.product && l.transportation.product.class !== 100 && l.transportation.product.class !== 99)).filter(l => l.length === 1).map(([l]) => ({
+      const at = t => { const p = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(t).reduce((o, x) => (o[x.type] = x.value, o), {}); return "&itdDate=" + p.year + p.month + p.day + "&itdTime=" + p.hour + p.minute; };
+      const js = [];
+      for (const h of [0, 1, 2]) { try { const d = await get("https://efa.vrr.de/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin=" + encodeURIComponent(a.id) + "&type_destination=any&name_destination=" + encodeURIComponent(b.id) + "&itdTripDateTimeDepArr=dep&calcNumberOfTrips=6&maxChanges=0&useRealtime=1" + at(new Date(Date.now() + h * 3600e3)), { ms: 30000 }); js.push(...(d.journeys || [])); } catch (e) { if (!js.length && h === 2) throw e; } }
+      const seen = new Set();
+      const rows = js.map(j => j.legs.filter(l => l.transportation && l.transportation.product && l.transportation.product.class !== 100 && l.transportation.product.class !== 99)).filter(l => l.length === 1).map(([l]) => ({
         line: l.transportation.disassembledName || l.transportation.number || "", dir: (l.transportation.destination || {}).name || "",
         dep: l.origin.departureTimePlanned, depEst: l.origin.departureTimeEstimated, arr: l.destination.arrivalTimePlanned, arrEst: l.destination.arrivalTimeEstimated,
-        plat: l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "" }));
+        plat: l.origin.properties && (l.origin.properties.platformName || l.origin.properties.platform) || "" })).filter(r => { const k = r.line + r.dep; if (seen.has(k)) return false; seen.add(k); return true; }).sort((x, y) => x.dep.localeCompare(y.dep));
       out.push({ key: k, from: a.name, to: b.name, fromQ: from, rows });
       console.log("::notice::Busfahrten " + a.name + " → " + b.name + ": " + rows.map(r => r.line + " " + (r.dep || "").slice(11, 16)).join(", "));
     } catch (e) { console.log("::notice::Busfahrten " + from + " → " + to + " Fehler: " + e.message); }
