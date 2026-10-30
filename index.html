@@ -42,7 +42,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .wrap{max-width:1400px;margin:0 auto}
 h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
-h1{font-size:26px;font-weight:700;letter-spacing:.01em}
+h1{font-size:30px;font-weight:700;letter-spacing:.01em}
 h2{font-size:15px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 a{color:var(--accent)}
 .muted{color:var(--muted)}
@@ -138,7 +138,9 @@ header select option{color:#14212b}
 button{cursor:pointer;font-weight:600}
 button:hover{border-color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.clock{font-family:var(--f-display);font-size:24px;font-weight:600}
+.brand .dt{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;margin-top:2px}
+.clock{font-family:var(--f-display);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em;line-height:1.1}
+.brand .dt .sub{font-size:18px;opacity:.85;font-weight:500}
 nav.jump{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
 nav.jump .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
 nav.jump .wrap::-webkit-scrollbar{display:none}
@@ -331,7 +333,7 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .jam .delay small{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
-@media (max-width:520px){h1{font-size:22px}.big{font-size:42px}.kpi .val{font-size:26px}.clock{font-size:20px}}
+@media (max-width:520px){h1{font-size:22px}.big{font-size:42px}.kpi .val{font-size:26px}.clock{font-size:28px}.brand .dt .sub{font-size:15px}}
 </style>
 </head>
 <body>
@@ -339,7 +341,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="wrap">
     <div class="brand">
       <h1 id="app-title">Lagebild Thomas Hußmann</h1>
-      <div class="sub" id="sub">Offene Daten für Düsseldorf</div>
+      <div class="dt"><span class="clock" id="clock">--:--:--</span><span class="sub" id="sub"></span></div>
     </div>
     <div class="ctrl">
       <div class="hlinks">
@@ -351,7 +353,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
       <button type="button" class="tool" id="calc-btn" aria-label="Taschenrechner">🧮 Rechner</button>
       <button type="button" class="tool" id="alarm-btn" aria-label="Wecker">⏰ Wecker</button>
       <button id="refresh" type="button">Aktualisieren</button>
-      <div class="clock" id="clock">--:--</div>
     </div>
     <div class="hrow">
       <div class="places">
@@ -701,6 +702,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=45"></script>
+<script src="app.js?v=46"></script>
 </body>
 </html>

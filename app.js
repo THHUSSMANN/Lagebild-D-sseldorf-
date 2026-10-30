@@ -1250,7 +1250,7 @@ async function refreshAll(force){
   if(pending){pending=false;refreshAll(true);}
 }
 let pending=false,lastRun=0;
-function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"});
+function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit",second:"2-digit"});
   $("sub").textContent=new Date().toLocaleDateString("de-DE",{...TZ,weekday:"long",day:"numeric",month:"long",year:"numeric"})+" · KW "+isoWeek(new Date());}
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
@@ -1310,7 +1310,7 @@ $("arrange").addEventListener("click",()=>{
 });
 $("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});
 applyTileOrder();route();
-applyPlaceUi();renderSources();tick();setInterval(tick,15000);
+applyPlaceUi();renderSources();tick();setInterval(tick,1000);
 
 refreshAll(true);
 setInterval(()=>{if(!document.hidden)refreshAll(false);},10*60*1000);
