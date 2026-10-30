@@ -456,8 +456,8 @@ await job("busfahrten.json", async () => {
 await job("medien.json", async () => {
   const WDR = ["https://www1.wdr.de/nachrichten/uebersicht-nachrichten-100.feed", "https://www1.wdr.de/nachrichten/index.feed", "https://www1.wdr.de/uebersicht-100.feed"];
   const F = {
-    dus: [["Rheinische Post Düsseldorf", "https://rp-online.de/nrw/staedte/duesseldorf/feed.rss"], ["WDR", WDR], ["Westdeutsche Zeitung", ["https://www.wz.de/nrw/duesseldorf/feed.rss", "https://www.wz.de/feed.rss"]]],
-    datteln: [["WDR", WDR], ["Ruhr Nachrichten", ["https://www.ruhrnachrichten.de/feed/", "https://www.ruhrnachrichten.de/rss"]], ["Recklinghäuser Zeitung", ["https://www.recklinghaeuser-zeitung.de/feed/"]]],
+    dus: [["Rheinische Post Düsseldorf", "https://rp-online.de/nrw/staedte/duesseldorf/feed.rss"], ["WDR", WDR], ["Westdeutsche Zeitung", ["https://www.wz.de/nrw/duesseldorf/feed.rss", "https://www.wz.de/feed.rss"]], ["Bild Düsseldorf", ["https://www.bild.de/feed/regional-duesseldorf.xml", "https://www.bild.de/feed/regional/duesseldorf.xml", "https://www.bild.de/rssfeeds/vw-duesseldorf/vw-duesseldorf-16786698,dzbildplus=true,sort=1,teaserbildmobil=false,view=rss2.bild.xml"]]],
+    datteln: [["WDR", WDR], ["Ruhr Nachrichten", ["https://www.ruhrnachrichten.de/feed/", "https://www.ruhrnachrichten.de/rss"]], ["Recklinghäuser Zeitung", ["https://www.recklinghaeuser-zeitung.de/feed/"]], ["Bild Ruhrgebiet", ["https://www.bild.de/feed/regional-ruhrgebiet.xml", "https://www.bild.de/feed/regional/ruhrgebiet.xml", "https://www.bild.de/rssfeeds/vw-ruhrgebiet/vw-ruhrgebiet-16786752,dzbildplus=true,sort=1,teaserbildmobil=false,view=rss2.bild.xml"]]],
     alpen: [["Rheinische Post Kreis Wesel", "https://rp-online.de/nrw/staedte/wesel/feed.rss"], ["WDR", WDR]],
     salzhausen: [["NDR", ["https://www.ndr.de/home/index-rss.xml", "https://www.ndr.de/nachrichten/index-rss.xml", "https://www.ndr.de/nachrichten/niedersachsen/index-rss.xml"]], ["Landeszeitung Lüneburg", ["https://www.landeszeitung.de/feed/", "https://www.landeszeitung.de/rss"]]]
   };
