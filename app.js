@@ -996,9 +996,15 @@ async function loadTomTom(){
     const d=await res.json();
     const CAT={0:"Unbekannt",1:"Unfall",2:"Nebel",3:"Gefahr",4:"Regen",5:"Glätte",6:"Stau",7:"Fahrstreifen gesperrt",8:"Straße gesperrt",9:"Baustelle",10:"Wind",11:"Überflutung",14:"Liegengebliebenes Fahrzeug"};
     const list=(d.incidents||[]).map(i=>{const p=i.properties||{};const c=(i.geometry&&i.geometry.coordinates)||[];const pt=Array.isArray(c[0])?c[Math.floor(c.length/2)]:c;
-      return {cat:p.iconCategory,mag:p.magnitudeOfDelay||0,delay:p.delay?Math.round(p.delay/60):null,len:p.length?p.length/1000:null,from:p.from,to:p.to,road:(p.roadNumbers||[]).join(", "),desc:((p.events||[])[0]||{}).description||CAT[p.iconCategory]||"",lat:pt&&pt[1],lon:pt&&pt[0],km:pt?distKm(la,lo,pt[1],pt[0]):99};})
+      return {geo:i.geometry,cat:p.iconCategory,mag:p.magnitudeOfDelay||0,delay:p.delay?Math.round(p.delay/60):null,len:p.length?p.length/1000:null,from:p.from,to:p.to,road:(p.roadNumbers||[]).join(", "),desc:((p.events||[])[0]||{}).description||CAT[p.iconCategory]||"",lat:pt&&pt[1],lon:pt&&pt[0],km:pt?distKm(la,lo,pt[1],pt[0]):99};})
       .filter(x=>x.delay>0||x.cat===1||x.cat===8||((x.cat===6||x.cat===7)&&x.mag>=2)).map(x=>{const H=HOMES[C.key];x.home=H&&isFinite(x.lat)?distKm(H.lat,H.lon,x.lat,x.lon):null;x.grp=/(^|, )A\d/.test(x.road)?0:x.home!=null&&x.home<=3?1:2;return x;})
       .sort((a,b)=>a.grp-b.grp||(a.grp===1?a.home-b.home:0)||(b.delay||0)-(a.delay||0)||b.mag-a.mag||a.km-b.km);
+    if(MAP){if(!MAP._ttinc)MAP._ttinc=L.layerGroup();MAP._ttinc.clearLayers();
+      const col=x=>x.cat===8?"#7d1f6b":x.mag>=4?"#8b0000":x.mag>=3||x.delay>=10?"#d62d20":x.mag>=2||x.delay>=3?"#f08a00":"#f3c623";
+      list.slice().reverse().forEach(x=>{const g=x.geo;if(!g)return;const pop='<b>'+esc(x.road||"Straße")+' · '+esc(x.desc||"")+'</b><br>'+esc([x.from,x.to].filter(Boolean).join(" → "))+(x.delay?'<br><b>+'+x.delay+' min</b>':'')+(x.len?' · '+fmt(x.len,1)+' km':'');
+        if(g.type==="LineString"&&g.coordinates.length>1){const ll=g.coordinates.map(c=>[c[1],c[0]]);L.polyline(ll,{color:"#fff",weight:9,opacity:.85,interactive:false}).addTo(MAP._ttinc);L.polyline(ll,{color:col(x),weight:6,opacity:1,dashArray:x.cat===8?"8 6":null}).bindPopup(pop).addTo(MAP._ttinc);}
+        else if(isFinite(x.lat))L.circleMarker([x.lat,x.lon],{radius:7,color:"#fff",weight:2,fillColor:col(x),fillOpacity:1}).bindPopup(pop).addTo(MAP._ttinc);});
+      applyMapMode();}
     const jams=list.filter(x=>x.cat===6||x.delay>0);
     TILE_PARTS.traffic.tt=jams.length?jams.length+" Behinderungen auf allen Straßen":"alle Straßen frei";composeTile("k-traffic","traffic");
     const magTxt=["","leicht","mäßig","stark","gesperrt"];
@@ -1015,21 +1021,24 @@ let MAPMODE=load("mapmode")||"tomtom";
 const MAP_BOUNDS={dus:[51.15,6.62,51.72,7.45],datteln:[51.15,6.62,51.72,7.45],alpen:[51.17,6.38,51.70,6.86],salzhausen:[53.08,9.92,53.36,10.42]};
 function mapBounds(){const b=MAP_BOUNDS[C.key];if(b)return b;const la=C.center.lat,lo=C.center.lon;return [la-.2,lo-.32,la+.2,lo+.32];}
 function gmapsUrl(){const [s,w,n,e]=mapBounds();const span=Math.max(n-s,(e-w)*0.62);const z=span>0.45?10:span>0.22?11:12;return "https://www.google.com/maps/@"+((s+n)/2).toFixed(4)+","+((w+e)/2).toFixed(4)+","+z+"z/data=!5m1!1e1";}
+let TTFLOW=load("ttflow")===true;
 function applyMapMode(){
-  if(!MAP)return;const tt=MAPMODE==="tomtom"&&!!TTKEY;
-  const k=encodeURIComponent(TTKEY||"");
+  if(!MAP)return;const tt=MAPMODE==="tomtom"&&!!TTKEY;const k=encodeURIComponent(TTKEY||"");
   if(!MAP._osm)MAP._osm=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'});
-  if(TTKEY&&(!MAP._ttbase||MAP._ttk!==TTKEY)){if(MAP._ttbase){MAP._ttbase.remove();MAP._tt.forEach(l=>l.remove());}MAP._ttk=TTKEY;
-    MAP._ttbase=L.tileLayer("https://api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key="+k,{maxZoom:18,attribution:"Karte & Verkehr © TomTom"});
-    MAP._tt=[L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?thickness=6&key="+k,{opacity:.9,maxZoom:18,zIndex:5}),L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/incidents/s3/{z}/{x}/{y}.png?key="+k,{maxZoom:18,zIndex:6})];}
-  [MAP._osm,MAP._ttbase,...(MAP._tt||[])].forEach(l=>l&&MAP.hasLayer(l)&&l.remove());
-  if(tt){MAP._ttbase.addTo(MAP);MAP._tt.forEach(l=>l.addTo(MAP));}else MAP._osm.addTo(MAP);
+  if(!MAP._light)MAP._light=L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd",attribution:'© OpenStreetMap © CARTO · Verkehr © TomTom'});
+  if(TTKEY&&(!MAP._tt||MAP._ttk!==TTKEY)){if(MAP._tt)MAP._tt.remove();MAP._ttk=TTKEY;
+    MAP._tt=L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?thickness=5&key="+k,{opacity:.8,maxZoom:18,zIndex:5});}
+  [MAP._osm,MAP._light,MAP._tt,MAP._ttinc].forEach(l=>l&&MAP.hasLayer(l)&&l.remove());
+  if(tt){MAP._light.addTo(MAP);if(TTFLOW)MAP._tt.addTo(MAP);if(MAP._ttinc)MAP._ttinc.addTo(MAP);}else MAP._osm.addTo(MAP);
   if(C.isDus&&!tt){if(!MAP._los)MAP._los=L.tileLayer.wms("https://vtmanager.duesseldorf.de/geovtinfo/wms",{layers:"vtinfo:LOS",format:"image/png",transparent:true,tiled:true,opacity:.85,zIndex:5,attribution:"Verkehrslage © Landeshauptstadt Düsseldorf"});MAP._los.addTo(MAP);}
   else if(MAP._los&&MAP.hasLayer(MAP._los))MAP._los.remove();
+  if(MAPLAYER){if(tt&&MAP.hasLayer(MAPLAYER))MAPLAYER.remove();else if(!tt&&!MAP.hasLayer(MAPLAYER))MAPLAYER.addTo(MAP);}
   document.querySelectorAll(".tt-leg").forEach(e=>e.hidden=!tt);document.querySelectorAll(".osm-leg").forEach(e=>e.hidden=tt||!C.isDus);
+  const fl=$("ttflow");if(fl){fl.parentElement.hidden=!tt;fl.checked=TTFLOW;}
   document.querySelectorAll("#mapsw [data-mm]").forEach(b=>b.classList.toggle("on",b.dataset.mm===(tt?"tomtom":"osm")));
-  $("stau-src").textContent=tt?"Karte & Verkehrsfluss: TomTom · Meldungen: TomTom, Autobahn GmbH":"Karte © OpenStreetMap · Meldungen: Autobahn GmbH"+(C.isDus?", Verkehrszentrale Düsseldorf":"");
+  $("stau-src").textContent=tt?"Verkehr: TomTom Echtzeit · Karte © OpenStreetMap/CARTO":"Karte © OpenStreetMap · Meldungen: Autobahn GmbH"+(C.isDus?", Verkehrszentrale Düsseldorf":"");
 }
+document.addEventListener("change",e=>{if(e.target.id==="ttflow"){TTFLOW=e.target.checked;store("ttflow",TTFLOW);applyMapMode();}});
 document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]");if(!b)return;
   if(b.dataset.mm==="tomtom"&&!TTKEY){location.hash="einstellungen";return;}
   MAPMODE=b.dataset.mm;store("mapmode",MAPMODE);applyMapMode();});

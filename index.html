@@ -525,7 +525,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <a id="gmaps" href="https://www.google.com/maps/@51.2254,6.7763,12z/data=!5m1!1e1" target="_blank" rel="noopener">Google Maps <small>öffnen ↗</small></a>
   </div>
   <div id="stau-map" class="map" role="img" aria-label="Verkehrskarte"></div>
-  <div class="legend"><span class="tt-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b,#8b0000)"></i>Verkehrsfluss alle Straßen</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
+  <label class="muted small" style="display:inline-flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ttflow"> zusätzlich Verkehrsfluss aller Straßen einfärben</label>
+  <div class="legend"><span class="tt-leg"><i style="background:linear-gradient(90deg,#f3c623,#f08a00,#d62d20,#8b0000)"></i>Stau leicht → schwer (alle Straßen)</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
   <div class="sublbl" style="margin-top:12px">Alle Straßen · TomTom Echtzeit</div>
   <div id="tt"><div class="state">wird geladen …</div></div>
   <div class="sublbl" style="margin-top:14px">Autobahnen · amtliche Meldungen der Autobahn GmbH</div>
@@ -789,6 +790,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=69"></script>
+<script src="app.js?v=70"></script>
 </body>
 </html>
