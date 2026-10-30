@@ -1054,7 +1054,7 @@ let TTFLOW=load("ttflow")===true;
 function applyMapMode(){
   if(!MAP)return;const tt=MAPMODE==="tomtom"&&!!TTKEY;const k=encodeURIComponent(TTKEY||"");
   if(!MAP._osm)MAP._osm=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'});
-  if(!MAP._light)MAP._light=L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd",attribution:'© OpenStreetMap © CARTO · Verkehr © TomTom'});
+  if(TTKEY&&(!MAP._light||MAP._lightk!==TTKEY)){if(MAP._light)MAP._light.remove();MAP._lightk=TTKEY;MAP._light=L.tileLayer("https://api.tomtom.com/maps/orbis/map-display/tile/{z}/{x}/{y}.png?apiVersion=1&style=street-light&key="+k,{maxZoom:20,attribution:"Karte & Verkehr © TomTom"});}
   if(TTKEY&&(!MAP._tt||MAP._ttk!==TTKEY)){if(MAP._tt)MAP._tt.remove();MAP._ttk=TTKEY;
     MAP._tt=L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?thickness=5&key="+k,{opacity:.8,maxZoom:18,zIndex:5});}
   [MAP._osm,MAP._light,MAP._tt,MAP._ttinc].forEach(l=>l&&MAP.hasLayer(l)&&l.remove());
@@ -1065,7 +1065,7 @@ function applyMapMode(){
   document.querySelectorAll(".tt-leg").forEach(e=>e.hidden=!tt);document.querySelectorAll(".osm-leg").forEach(e=>e.hidden=tt||!C.isDus);
   const fl=$("ttflow");if(fl){fl.parentElement.hidden=!tt;fl.checked=TTFLOW;}
   document.querySelectorAll("#mapsw [data-mm]").forEach(b=>b.classList.toggle("on",b.dataset.mm===(tt?"tomtom":"osm")));
-  $("stau-src").textContent=tt?"Verkehr: TomTom Echtzeit · Karte © OpenStreetMap/CARTO":"Karte © OpenStreetMap · Meldungen: Autobahn GmbH"+(C.isDus?", Verkehrszentrale Düsseldorf":"");
+  $("stau-src").textContent=tt?"Karte & Verkehr: TomTom Echtzeit":"Karte © OpenStreetMap · Meldungen: Autobahn GmbH"+(C.isDus?", Verkehrszentrale Düsseldorf":"");
 }
 document.addEventListener("change",e=>{if(e.target.id==="ttflow"){TTFLOW=e.target.checked;store("ttflow",TTFLOW);applyMapMode();}});
 document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]");if(!b)return;
