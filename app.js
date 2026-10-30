@@ -150,7 +150,7 @@ let STOPS=load("stops")||{};let DIRF=load("dirf")||{};let STOPIDX=null,EFADATA=n
 if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
-let WINDY=load("windy")||"";const TTKEY_DEFAULT="ZxOzAoiyJeFOKJYiLraG5DxMPtaFXBXt";let TTKEY=load("tomtom")||TTKEY_DEFAULT;
+let WINDY=load("windy")||"";const TTKEY_DEFAULT="RSDptU00A2TYdT3fwL1oTHnKl6XOEf51";let TTKEY=load("tomtom")||TTKEY_DEFAULT;
 const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
 // Strecken je Ort; die bisherige Liste gilt für Düsseldorf
 if(load("routes")!=null&&load("routes_dus")==null)store("routes_dus",load("routes"));
