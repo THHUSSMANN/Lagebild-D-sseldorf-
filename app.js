@@ -921,7 +921,6 @@ const WEBCAM_LINKS={
     {t:"Flughafen · Terminal",hls:"https://stream-5gw.1000eyes.de/cupertino/dusc926.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
     {t:"Flughafen · Rollweg",hls:"https://stream-5gw.1000eyes.de/cupertino/dus1ba9.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
     {t:"Flughafen · Abfertigung",hls:"https://stream-5gw.1000eyes.de/cupertino/dus5abb.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
-    {t:"Marktplatz",off:"von der Stadt eingestellt",u:"https://www.duesseldorf.de/webcams/marktplatz-1",by:"Stadt Düsseldorf"},
     {t:"Stadtwerke · Lausward",off:"liefert derzeit kein Bild",u:"https://www.swd-ag.de/ueber-uns/erzeugung-standorte/webcam/",by:"Stadtwerke Düsseldorf"},
     {t:"Unterbacher See",off:"liefert derzeit kein Bild",u:"https://unterbachersee.de/webcam/",by:"Unterbacher See"},
     {t:"Alle Webcams der Stadt",u:"https://www.duesseldorf.de/webcams"}],
@@ -944,14 +943,23 @@ function renderWebcamLinks(){
   const tiles=list.filter(x=>x.live||x.hls||x.img||x.off),links=list.filter(x=>!x.live&&!x.hls&&!x.img&&!x.off);
   box.innerHTML=(tiles.length?'<div class="sublbl">Live – antippen für Großansicht</div><div class="cams cams-l" style="margin-bottom:12px">'+tiles.map((x,i)=>
       x.off?'<a class="cam linkcam offcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">⏸</span><span class="lc-go">'+esc(x.off)+'</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></a>'
-      :'<div class="cam live" data-ci="'+i+'"><div class="lsbox"'+(x.live?' style="background-image:url(https://player.livespotting.com/poster/'+x.live[1]+'.jpg?height=360)"':'')+'>'+(x.hls?'<video muted playsinline autoplay data-hls="'+esc(x.hls)+'"></video>':'')+(x.img?'<img src="'+esc(x.img)+'?t='+Date.now()+'" alt="">':'')+(x.live?'<span class="ls-play">▶</span>':'')+'<span class="ls-badge">LIVE</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></div>').join("")+'</div>':'')+
+      :'<div class="cam live" data-ci="'+i+'"><div class="lsbox">'+(x.live?'<div class="lsinner" id="lst-'+i+'" data-li="'+i+'"></div><span class="ls-hit"></span>':'')+(x.hls?'<video muted playsinline autoplay data-hls="'+esc(x.hls)+'"></video>':'')+(x.img?'<img src="'+esc(x.img)+'?t='+Date.now()+'" alt="">':'')+'<span class="ls-badge">LIVE</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></div>').join("")+'</div>':'')+
     (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="cams cams-l" style="margin-bottom:10px">'+links.map(x=>'<a class="cam linkcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">📷</span><span class="lc-go">öffnen ↗</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(host(x.u))+'</span></span></a>').join("")+'</div>':'')||
     '<div class="state">Für '+esc(C.town)+' sind keine Webcams hinterlegt.</div>';
   box.querySelectorAll(".cam.live").forEach(el=>el.addEventListener("click",()=>openCam(tiles[+el.dataset.ci])));
   box.querySelectorAll("video[data-hls]").forEach(v=>attachHls(v,v.dataset.hls));
+  box.querySelectorAll(".lsinner").forEach(el=>tileLive(el,tiles[+el.dataset.li]));
   CAM_N.links=list.length;CAM_N.img=tiles.filter(x=>!x.off).length;camTile();
 }
 let HLSLOAD=null;
+// Livestream der Stadt stumm direkt in der Kachel abspielen
+function tileLive(el,x){
+  LSLOAD=LSLOAD||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://player.livespotting.com/player/clappr/latest/player.min.js";sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
+  LSLOAD.then(()=>{window.lsplayer.init(el.id,{player_id:x.live[0],livesource_id:x.live[1]});
+    let n=0;const t=setInterval(()=>{const v=el.querySelector("video");const p=el.querySelector(".player-poster");
+      if(v){v.muted=true;v.playsInline=true;}
+      if(p&&p.offsetParent!==null)p.click();
+      if((v&&!v.paused&&v.readyState>2)||++n>20)clearInterval(t);},500);}).catch(()=>{});}
 function attachHls(v,url){v.muted=true;v.playsInline=true;
   if(v.canPlayType("application/vnd.apple.mpegurl")){v.src=url;v.play().catch(()=>{});return;}
   HLSLOAD=HLSLOAD||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js";sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
