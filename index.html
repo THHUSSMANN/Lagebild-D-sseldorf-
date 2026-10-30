@@ -50,6 +50,10 @@
 .lp-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .lp-h b{font-family:var(--f-display);font-size:17px}
 .lp-v{font-family:var(--f-display);font-size:22px;font-weight:700;white-space:nowrap}
+.stop-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.stop-chips button{border-radius:999px;min-height:36px;padding:5px 14px;font-weight:600}
+.stop-chips button.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.efa-filter input{width:100%;min-height:40px;border-radius:10px;padding:6px 12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font-size:15px;margin-bottom:8px;box-sizing:border-box}
 .view-x:hover{background:var(--bad);border-color:var(--bad);color:#fff}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
@@ -627,6 +631,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <div class="grid">
   <section class="card" id="efa-card">
     <div class="card-head"><h2 id="efa-title">Abfahrten</h2><span class="src" id="efa-src">Echtzeit</span></div>
+    <div class="stop-chips" id="efa-stops"></div>
+    <div class="efa-filter"><input id="efa-dir" type="search" autocomplete="off" placeholder="Richtung oder Linie filtern, z. B. Busbahnhof"></div>
     <div id="efa"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card">
@@ -705,8 +711,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     </div>
     <div class="field">
       <label for="stop" id="stop-lbl">Haltestelle für Abfahrten</label>
-      <div class="inline"><input id="stop" type="text" autocomplete="off" placeholder="z. B. Düsseldorf Nikolaus-Knopp-Platz"><button type="button" id="stop-save">Übernehmen</button></div>
-      <span class="hint">Gilt für den gerade gewählten Ort. Haltestellenname, z. B. „Alpen Bahnhof“.</span>
+      <div class="inline"><input id="stop" type="search" list="stop-list" autocomplete="off" placeholder="Haltestelle oder Straße eintippen …"><datalist id="stop-list"></datalist><button type="button" id="stop-save">Übernehmen</button></div>
+      <span class="hint" id="stop-hint">Beim Tippen erscheinen alle Haltestellen des Orts zur Auswahl.</span>
     </div>
     <div class="field">
       <label for="routes" id="routes-lbl">Meine Strecken (Priorität)</label>
@@ -740,6 +746,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=52"></script>
+<script src="app.js?v=53"></script>
 </body>
 </html>

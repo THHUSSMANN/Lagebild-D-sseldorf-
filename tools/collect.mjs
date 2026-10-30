@@ -347,7 +347,21 @@ for (const [k, p] of Object.entries(PLACES)) {
   tasks.push(job("blaulicht-" + k + ".json", () => blaulicht(k, p)));
   tasks.push(job("nina-" + k + ".json", () => ninaDashboard(p)));
   tasks.push(job("uba-" + k + ".json", () => uba(p)));
-  if (p.efa) tasks.push(job("efa-" + k + ".json", async () => { const r = await efa(p.efa); return r; }));
+  if (p.efa) tasks.push((async () => {
+    // mehrere Haltestellen je Ort (config/haltestellen.json) + Haltestellenverzeichnis für die Suche
+    let list = [p.efa]; try { const cfg = JSON.parse(await fs.readFile(new URL("../config/haltestellen.json", import.meta.url), "utf8")); if (Array.isArray(cfg[k]) && cfg[k].length) list = cfg[k]; } catch {}
+    const avail = [];
+    for (const [i, name] of list.entries()) {
+      const file = i === 0 ? "efa-" + k + ".json" : "efa-" + k + "-" + i + ".json";
+      await job(file, async () => { const r = await efa(name); avail.push({ q: name, name: r.stop, file }); return r; });
+    }
+    await job("stops-" + k + ".json", async () => {
+      const d = await get("https://efa.vrr.de/standard/XML_COORD_REQUEST?outputFormat=rapidJSON&language=de&coord=" + p.lon.toFixed(5) + ":" + p.lat.toFixed(5) + ":WGS84[dd.ddddd]&inclFilter=1&type_1=STOP&radius_1=" + (k === "dus" ? 6000 : 4000) + "&max=600", { ms: 40000 });
+      const all = [...new Map((d.locations || []).map(l => [l.id, { id: l.id, name: stopName(l) || l.name, dist: l.properties && +l.properties.distance || null }])).values()].sort((a, b) => a.name.localeCompare(b.name, "de"));
+      console.log("::notice::Haltestellen " + k + ": " + all.length + " im Verzeichnis, abgerufen: " + avail.map(a => a.name).join(", "));
+      return { available: avail, all };
+    });
+  })());
 }
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
@@ -408,19 +422,6 @@ await job("landespegel.json", async () => {
   out.forEach(o => delete o.raw);
   return out;
 });
-// ---------- Probe: Haltestellensuche im Browser möglich? ----------
-async function probeStops() {
-  const U = ["https://efa.vrr.de/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf=Datteln%20Lohstr",
-    "https://openservice-test.vrr.de/static03/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&type_sf=any&name_sf=Datteln%20Lohstr",
-    "https://v6.db.transport.rest/locations?query=Datteln%20Lohstra%C3%9Fe&results=5",
-    "https://v5.db.transport.rest/locations?query=Datteln%20Lohstra%C3%9Fe&results=5"];
-  for (const u of U) { try { const r = await fetch(u, { headers: { ...UA, Origin: "https://thhussmann.github.io" } }); const t = await r.text();
-    let names = ""; try { const j = JSON.parse(t); names = (j.locations || j).slice(0, 5).map(x => (x.name || "") + "[" + (x.id || "") + "]" + (x.type || "")).join(" | "); } catch {}
-    console.log("::notice::Stop-Probe " + r.status + " ACAO=" + r.headers.get("access-control-allow-origin") + " " + u.slice(8, 60) + " → " + (names || t.slice(0, 120))); } catch (e) { console.log("::notice::Stop-Probe ERR " + u.slice(8, 60) + " " + e.message); } }
-  try { const s0 = await stopId("Datteln Lohstraße"); const id = s0.id + " " + s0.name; const d = await get("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&mode=direct&type_dm=stop&useRealtime=1&limit=15&name_dm=" + encodeURIComponent(s0.id));
-    console.log("::notice::Lohstraße " + id + ": " + (d.stopEvents || []).slice(0, 8).map(e => e.transportation.number + "→" + (e.transportation.destination || {}).name).join(" | ")); } catch (e) { console.log("::notice::Lohstraße ERR " + e.message); }
-}
-try { await probeStops(); } catch {}
 // ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
 async function pushAlarms() {
   const topic = process.env.NTFY_TOPIC; if (!topic) return "kein Thema";
