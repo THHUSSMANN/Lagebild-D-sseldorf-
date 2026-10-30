@@ -445,6 +445,27 @@ await job("busfahrten.json", async () => {
   }
   return out;
 });
+// ---------- Weitere Medien je Ort ----------
+await job("medien.json", async () => {
+  const F = {
+    dus: [["WDR Rheinland", "https://www1.wdr.de/nachrichten/rheinland/uebersicht-rheinland-100.feed"], ["Rheinische Post Düsseldorf", "https://rp-online.de/nrw/staedte/duesseldorf/feed.rss"], ["WDR NRW", "https://www1.wdr.de/uebersicht-100.feed"]],
+    datteln: [["WDR Ruhrgebiet", "https://www1.wdr.de/nachrichten/ruhrgebiet/uebersicht-ruhrgebiet-100.feed"], ["WDR NRW", "https://www1.wdr.de/uebersicht-100.feed"]],
+    alpen: [["WDR Rheinland", "https://www1.wdr.de/nachrichten/rheinland/uebersicht-rheinland-100.feed"], ["Rheinische Post Kreis Wesel", "https://rp-online.de/nrw/staedte/wesel/feed.rss"], ["WDR NRW", "https://www1.wdr.de/uebersicht-100.feed"]],
+    salzhausen: [["NDR Niedersachsen", "https://www.ndr.de/nachrichten/niedersachsen/index-rss.xml"], ["NDR Lüneburg", "https://www.ndr.de/nachrichten/niedersachsen/lueneburg_heide_unterelbe/index-rss.xml"]]
+  };
+  const cache = {}; const out = {}; const stat = [];
+  for (const [k, list] of Object.entries(F)) {
+    const items = [];
+    for (const [label, url] of list) {
+      try { if (!cache[url]) cache[url] = parseRss(await get(url, { type: "text", ms: 20000 }), label).map(x => ({ ...x, source: label })); items.push(...cache[url]); stat.push(label + " " + cache[url].length); }
+      catch (e) { stat.push(label + " Fehler " + e.message); }
+    }
+    const seen = new Set();
+    out[k] = items.filter(x => x.title && !seen.has(x.title) && seen.add(x.title)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
+  }
+  console.log("::notice::Medien: " + [...new Set(stat)].join(" | "));
+  return out;
+});
 // ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
 async function pushAlarms() {
   const topic = process.env.NTFY_TOPIC; if (!topic) return "kein Thema";

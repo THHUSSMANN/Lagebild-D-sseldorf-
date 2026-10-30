@@ -72,6 +72,10 @@ tr.hl td{background:color-mix(in srgb,#f3c623 30%,transparent)}
 tr.hl td:first-child{box-shadow:inset 4px 0 0 #e0a800}
 .stop-sug{display:flex;flex-direction:column;gap:4px;margin-top:4px}
 .stop-sug button{text-align:left;min-height:40px;border-radius:8px;padding:6px 12px}
+.segsw{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.segsw button{min-height:52px;border-radius:12px;font:700 16px var(--f-display);background:var(--panel);border:1px solid var(--line);color:var(--fg)}
+.segsw button.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.news-src{display:inline-block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin-right:6px}
 .mapsw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
 .mapsw button,.mapsw a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:700 15px var(--f-display);text-decoration:none;padding:4px 6px;text-align:center}
 .mapsw small{font:500 11.5px var(--f-body);color:var(--muted)}
@@ -577,11 +581,12 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 
 <div class="view" id="v-blaulicht" data-view="blaulicht" hidden>
-<section class="card wide" id="blaulicht">
+<div class="segsw" id="press-sw"><button type="button" data-ps="bl" class="on">🚓 Polizei &amp; Feuerwehr</button><button type="button" data-ps="news">📰 Nachrichten</button></div>
+<section class="card wide" id="blaulicht" data-ps-card="bl">
   <div class="card-head"><h2 id="bl-title">Pressemitteilungen Polizei &amp; Feuerwehr</h2><span class="src">Presseportal Blaulicht (offizielle Meldungen)</span></div>
   <div id="bl"><div class="state">wird geladen …</div></div>
 </section>
-  <section class="card wide">
+  <section class="card wide" data-ps-card="news" hidden>
     <div class="card-head"><h2 id="news-title">Nachrichten NRW</h2><span class="src">tagesschau</span></div>
     <div id="news" class="news"><div class="state">wird geladen …</div></div>
   </section>
@@ -809,6 +814,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=76"></script>
+<script src="app.js?v=77"></script>
 </body>
 </html>

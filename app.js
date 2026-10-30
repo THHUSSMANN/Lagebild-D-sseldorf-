@@ -1077,6 +1077,7 @@ document.addEventListener("change",e=>{if(e.target.id==="ttflow"){TTFLOW=e.targe
 document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]");if(!b)return;
   if(b.dataset.mm==="tomtom"&&!TTKEY){location.hash="einstellungen";return;}
   MAPMODE=b.dataset.mm;store("mapmode",MAPMODE);applyMapMode();});
+function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
 function ensureMap(){
   if(typeof L==="undefined")return null;
   if(!MAP){MAP=L.map("stau-map",{scrollWheelZoom:false}).setView([C.center.lat,C.center.lon],10);MAPLAYER=L.layerGroup().addTo(MAP);}
@@ -1086,7 +1087,7 @@ function ensureMap(){
   if(MAPRING)MAPRING.remove();if(MAPCENTER)MAPCENTER.remove();
   MAPRING=L.circle([C.center.lat,C.center.lon],{radius:JAM_RADIUS_KM*1000,color:"#8a9aa5",weight:1,dashArray:"4 6",fill:false,interactive:false}).addTo(MAP);
   MAPCENTER=L.circleMarker([C.center.lat,C.center.lon],{radius:5,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(C.town).addTo(MAP);
-  {const [s,w,n,e]=mapBounds();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
+  fitMap();
   return MAP;
 }
 function popupHtml(i,extra){
@@ -1439,16 +1440,20 @@ async function loadBoerse(){
 
 // ================= Nachrichten =================
 async function loadNews(){
-  const reg=NEWS_REGION[C.state]||10;
+  const reg=NEWS_REGION[C.state]||10;let items=[];
   try{const d=await getJSON("https://www.tagesschau.de/api2u/news/?regions="+reg);
-    const n=(d.news||[]).filter(x=>x.title);
-    if(!n.length)throw new Error("keine Meldungen");
-    $("news-title").textContent="Nachrichten "+(STATE_NAME[C.state]||"");
-    $("news").innerHTML='<div class="list">'+n.slice(0,8).map(x=>'<div class="li" style="grid-template-columns:1fr auto"><a class="t" href="'+esc(safeUrl(x.shareURL||x.detailsweb))+'" target="_blank" rel="noopener">'+esc(x.title)+'</a><span class="r muted small">'+(x.date?hhmm(x.date):"")+'</span>'+
-      (x.firstSentence?'<div class="d" style="grid-column:1/-1">'+esc(x.firstSentence)+'</div>':'')+'</div>').join("")+'</div>';
-    setStatus("news",true);
-  }catch(e){setStatus("news",false,errText(e));$("news").innerHTML=stateBox("Nachrichten nicht verfügbar – "+errText(e)+".",link("https://www.tagesschau.de/inland/regional/","tagesschau regional"));}
+    items=(d.news||[]).filter(x=>x.title).map(x=>({title:x.title,text:x.firstSentence||"",link:x.shareURL||x.detailsweb,date:x.date,source:"tagesschau"}));setStatus("news",true);}catch(e){setStatus("news",false,errText(e));}
+  try{const m=await getData("medien.json");items.push(...((m.data||{})[FAVKEYS.includes(C.key)?C.key:"dus"]||[]));}catch(e){}
+  const seen=new Set();items=items.filter(x=>!seen.has(x.title)&&seen.add(x.title)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  $("news-title").textContent="Nachrichten "+(C.isDus?"Düsseldorf & NRW":C.key==="salzhausen"?"Niedersachsen & Region":C.town+" & "+(STATE_NAME[C.state]||""));
+  const srcs=[...new Set(items.map(x=>x.source))];
+  $("news").innerHTML=items.length?'<div class="muted small" style="margin-bottom:6px">Quellen: '+esc(srcs.join(" · "))+'</div><div class="list">'+items.slice(0,20).map(x=>'<div class="li" style="grid-template-columns:1fr auto"><a class="t" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener"><span class="news-src">'+esc(x.source)+'</span>'+esc(x.title)+'</a><span class="r muted small">'+(x.date?hhmm(x.date):"")+'</span>'+
+      (x.text?'<div class="d" style="grid-column:1/-1">'+esc(String(x.text).slice(0,220))+'</div>':'')+'</div>').join("")+'</div>'
+    :stateBox("Nachrichten nicht verfügbar.",link("https://www.tagesschau.de/inland/regional/","tagesschau regional"));
 }
+document.addEventListener("click",e=>{const b=e.target.closest("#press-sw [data-ps]");if(!b)return;
+  document.querySelectorAll("#press-sw [data-ps]").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll("[data-ps-card]").forEach(c=>c.hidden=c.dataset.psCard!==b.dataset.ps);});
 
 // ================= Quellen =================
 function renderSources(){
@@ -1515,7 +1520,7 @@ function route(){
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
     const tabs=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x));el.hidden=tabs.length<2;
     el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===v?"on":"")+'">'+esc(l)+'</a>').join("");});
-  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&MAP)setTimeout(()=>MAP.invalidateSize(),60);}
+  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&MAP)setTimeout(()=>{MAP.invalidateSize();fitMap();},60);}
 }
 window.addEventListener("hashchange",route);
 document.querySelectorAll(".view").forEach(v=>{const x=document.createElement("a");x.href="#";x.className="view-x";x.setAttribute("aria-label","Schließen, zurück zur Übersicht");x.innerHTML="✕ Schließen";v.prepend(x);});
