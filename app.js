@@ -384,12 +384,12 @@ function applyPlaceUi(){
 
 // ================= Einstellungen & Ortssuche =================
 $("tk").value=TK;$("windy").value=WINDY;
-$("tomtom").value=TTKEY;$("tomtom-hint").textContent="✓ TomTom ist aktiv – der Schlüssel ist fest hinterlegt und gilt auf allen Geräten.";
+$("tomtom").value=TTKEY;$("tomtom").readOnly=true;$("tomtom-save").hidden=true;$("tomtom-hint").innerHTML="<b>✓ TomTom ist aktiv.</b> Der Schlüssel ist fest im Dashboard eingebaut und gilt automatisch auf allen Geräten – hier muss nichts mehr eingetragen oder gespeichert werden.";
 $("home-save").addEventListener("click",async()=>{const q=$("home-addr").value.trim();const key=C.key;
   if(!q){delete HOMES[key];store("homes",HOMES);$("home-hint").textContent="Adresse entfernt.";loadTomTom();return;}
   $("home-hint").textContent="Adresse wird gesucht …";
   try{const h=await geocodeHome(key,q);$("home-hint").textContent="✓ Gefunden: "+h.label;loadTomTom();}
-  catch(e){$("home-hint").textContent="Adresse nicht gefunden – bitte mit Ort eingeben ("+errText(e)+").";}});$("tomtom").placeholder="fest hinterlegt – nur bei Bedarf eigenen eintragen";
+  catch(e){$("home-hint").textContent="Adresse nicht gefunden – bitte mit Ort eingeben ("+errText(e)+").";}});
 $("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim()||TTKEY_DEFAULT;store("tomtom",TTKEY===TTKEY_DEFAULT?null:TTKEY);
   
   $("tomtom-hint").textContent="Schlüssel wird geprüft …";
