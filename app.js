@@ -363,7 +363,7 @@ function applyPlaceUi(){
   document.title="Lagebild Thomas Hußmann · "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
   $("gmaps").href="https://www.google.com/maps/@"+C.center.lat+","+C.center.lon+","+(C.isDus?12:11)+"z/data=!5m1!1e1";
-  $("stau-title").textContent="Staus & Behinderungen rund um "+C.town;
+  $("stau-title").textContent="Verkehrslage rund um "+C.town;
   $("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
   $("rhein-sec").textContent=C.isDus?"Rhein & Grundwasser":"Gewässer";
   $("efa-card").hidden=!C.efaDefault;
@@ -377,7 +377,7 @@ function applyPlaceUi(){
 $("tk").value=TK;$("windy").value=WINDY;
 $("tomtom").value=TTKEY===TTKEY_DEFAULT?"":TTKEY;$("tomtom").placeholder="fest hinterlegt – nur bei Bedarf eigenen eintragen";
 $("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim()||TTKEY_DEFAULT;store("tomtom",TTKEY===TTKEY_DEFAULT?null:TTKEY);
-  if(MAP&&MAP._tt){MAP._tt.forEach(l=>l.remove());MAP._tt=null;}
+  
   $("tomtom-hint").textContent="Schlüssel wird geprüft …";
   try{const r=await fetch("https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?point="+C.center.lat+","+C.center.lon+"&key="+encodeURIComponent(TTKEY));
     $("tomtom-hint").textContent=r.ok?"✓ Schlüssel funktioniert – Verkehrslage ist aktiv.":"Schlüssel wird nicht akzeptiert (Fehler "+r.status+"). Bitte prüfen.";}
@@ -977,7 +977,7 @@ function geomLines(w){
 }
 // ================= TomTom: Verkehrslage auf allen Straßen =================
 async function loadTomTom(){
-  const box=$("tt");
+  const box=$("tt");try{ensureMap();}catch(e){}
   if(!TTKEY){box.innerHTML='<div class="state">Für Staus auch auf Land- und Stadtstraßen (Echtzeit wie bei Google Maps) unter <a href="#einstellungen">Einstellungen</a> den kostenlosen TomTom-Schlüssel eintragen.</div>';return;}
   const r=C.isDus?0.16:0.2,la=C.center.lat,lo=C.center.lon,bbox=[lo-r*1.6,la-r,lo+r*1.6,la+r].map(x=>x.toFixed(4)).join(",");
   const fields="{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description},startTime,endTime,from,to,length,delay,roadNumbers}}}";
@@ -999,21 +999,29 @@ async function loadTomTom(){
     setStatus("tomtom",true);
   }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
 }
+let MAPMODE=load("mapmode")||"tomtom";
+function applyMapMode(){
+  if(!MAP)return;const tt=MAPMODE==="tomtom"&&!!TTKEY;
+  const k=encodeURIComponent(TTKEY||"");
+  if(!MAP._osm)MAP._osm=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'});
+  if(TTKEY&&(!MAP._ttbase||MAP._ttk!==TTKEY)){if(MAP._ttbase){MAP._ttbase.remove();MAP._tt.forEach(l=>l.remove());}MAP._ttk=TTKEY;
+    MAP._ttbase=L.tileLayer("https://api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key="+k,{maxZoom:18,attribution:"Karte & Verkehr © TomTom"});
+    MAP._tt=[L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?thickness=6&key="+k,{opacity:.9,maxZoom:18,zIndex:5}),L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/incidents/s3/{z}/{x}/{y}.png?key="+k,{maxZoom:18,zIndex:6})];}
+  [MAP._osm,MAP._ttbase,...(MAP._tt||[])].forEach(l=>l&&MAP.hasLayer(l)&&l.remove());
+  if(tt){MAP._ttbase.addTo(MAP);MAP._tt.forEach(l=>l.addTo(MAP));}else MAP._osm.addTo(MAP);
+  if(C.isDus&&!tt){if(!MAP._los)MAP._los=L.tileLayer.wms("https://vtmanager.duesseldorf.de/geovtinfo/wms",{layers:"vtinfo:LOS",format:"image/png",transparent:true,tiled:true,opacity:.85,zIndex:5,attribution:"Verkehrslage © Landeshauptstadt Düsseldorf"});MAP._los.addTo(MAP);}
+  else if(MAP._los&&MAP.hasLayer(MAP._los))MAP._los.remove();
+  document.querySelectorAll(".tt-leg").forEach(e=>e.hidden=!tt);document.querySelectorAll(".osm-leg").forEach(e=>e.hidden=tt||!C.isDus);
+  document.querySelectorAll("#mapsw [data-mm]").forEach(b=>b.classList.toggle("on",b.dataset.mm===(tt?"tomtom":"osm")));
+  $("stau-src").textContent=tt?"Karte & Verkehrsfluss: TomTom · Meldungen: TomTom, Autobahn GmbH":"Karte © OpenStreetMap · Meldungen: Autobahn GmbH"+(C.isDus?", Verkehrszentrale Düsseldorf":"");
+}
+document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]");if(!b)return;
+  if(b.dataset.mm==="tomtom"&&!TTKEY){location.hash="einstellungen";return;}
+  MAPMODE=b.dataset.mm;store("mapmode",MAPMODE);applyMapMode();});
 function ensureMap(){
   if(typeof L==="undefined")return null;
-  if(!MAP){
-    MAP=L.map("stau-map",{scrollWheelZoom:false}).setView([C.center.lat,C.center.lon],10);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(MAP);
-    MAPLAYER=L.layerGroup().addTo(MAP);
-  }
-  if(C.isDus&&!MAP._los&&!TTKEY){
-    MAP._los=L.tileLayer.wms("https://vtmanager.duesseldorf.de/geovtinfo/wms",{layers:"vtinfo:LOS",format:"image/png",transparent:true,tiled:true,opacity:.85,attribution:"Verkehrslage © Landeshauptstadt Düsseldorf"}).addTo(MAP);
-  }else if(!C.isDus&&MAP._los){MAP._los.remove();MAP._los=null;}
-  if(TTKEY&&!MAP._tt){const k=encodeURIComponent(TTKEY);
-    MAP._tt=[L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?thickness=6&key="+k,{opacity:.85,maxZoom:18,attribution:"Verkehr © TomTom"}).addTo(MAP),
-      L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/incidents/s3/{z}/{x}/{y}.png?key="+k,{maxZoom:18}).addTo(MAP)];
-    if(MAP._los){MAP._los.remove();MAP._los=null;}}
-  document.querySelectorAll(".tt-leg").forEach(e=>e.hidden=!TTKEY);
+  if(!MAP){MAP=L.map("stau-map",{scrollWheelZoom:false}).setView([C.center.lat,C.center.lon],10);MAPLAYER=L.layerGroup().addTo(MAP);}
+  applyMapMode();
   if(MAPRING)MAPRING.remove();if(MAPCENTER)MAPCENTER.remove();
   MAPRING=L.circle([C.center.lat,C.center.lon],{radius:JAM_RADIUS_KM*1000,color:"#8a9aa5",weight:1,dashArray:"4 6",fill:false,interactive:false}).addTo(MAP);
   MAPCENTER=L.circleMarker([C.center.lat,C.center.lon],{radius:5,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(C.town).addTo(MAP);

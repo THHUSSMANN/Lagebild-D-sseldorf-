@@ -61,6 +61,10 @@
 .fer td:first-child{font-weight:600;white-space:normal}
 .fer td.past{color:var(--muted);opacity:.6;text-decoration:line-through}
 .fer td.now{background:color-mix(in srgb,var(--ok) 22%,transparent);font-weight:700;border-radius:6px}
+.mapsw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.mapsw button,.mapsw a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:700 15px var(--f-display);text-decoration:none;padding:4px 6px;text-align:center}
+.mapsw small{font:500 11.5px var(--f-body);color:var(--muted)}
+.mapsw .on{background:var(--accent);border-color:var(--accent);color:var(--panel)} .mapsw .on small{color:var(--panel);opacity:.85}
 .view-x:hover{background:var(--bad);border-color:var(--bad);color:#fff}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
@@ -513,18 +517,22 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <div class="subtabs" data-for="staus"></div>
 <section id="verkehrslage"><div class="sec-title"><h2>Verkehrslage</h2></div></section>
 <section class="card wide" id="staus">
-  <div class="card-head"><h2 id="stau-title">Staus &amp; Behinderungen rund um Düsseldorf</h2><span class="src">Autobahn GmbH · Karte © OpenStreetMap-Mitwirkende</span><a class="pill" id="gmaps" style="text-decoration:none;color:var(--fg);padding:6px 12px" href="https://www.google.com/maps/@51.2254,6.7763,12z/data=!5m1!1e1" target="_blank" rel="noopener">Verkehr in Google Maps ↗</a></div>
+  <div class="card-head"><h2 id="stau-title">Verkehrslage</h2><span class="src" id="stau-src">TomTom · Autobahn GmbH</span></div>
+  <div class="mapsw" id="mapsw" role="tablist" aria-label="Kartenquelle">
+    <button type="button" data-mm="tomtom" role="tab">TomTom <small>Verkehr live</small></button>
+    <button type="button" data-mm="osm" role="tab">OpenStreetMap <small>amtliche Meldungen</small></button>
+    <a id="gmaps" href="https://www.google.com/maps/@51.2254,6.7763,12z/data=!5m1!1e1" target="_blank" rel="noopener">Google Maps <small>öffnen ↗</small></a>
+  </div>
+  <div id="stau-map" class="map" role="img" aria-label="Verkehrskarte"></div>
+  <div class="legend"><span class="tt-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b,#8b0000)"></i>Verkehrsfluss alle Straßen</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
+  <div class="sublbl" style="margin-top:12px">Alle Straßen · TomTom Echtzeit</div>
+  <div id="tt"><div class="state">wird geladen …</div></div>
+  <div class="sublbl" style="margin-top:14px">Autobahnen · amtliche Meldungen der Autobahn GmbH</div>
   <div id="prio"></div>
   <div class="muted small" style="margin:4px 0">Kennzahl oder Strecke antippen – darunter erscheinen alle Meldungen dazu.</div>
   <div class="stau-sum" id="stau-sum"></div>
   <div id="stau-detail" hidden></div>
-  <div id="stau-map" class="map" role="img" aria-label="Karte der Staus, Sperrungen und Baustellen rund um Düsseldorf"></div>
-  <div class="legend"><span data-dus><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf (Verkehrsfluss)</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockender Verkehr</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span><span class="tt-leg" hidden><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b,#8b0000)"></i>Verkehrsfluss alle Straßen (TomTom)</span></div>
   <div id="stau-list"><div class="state">Staus werden geladen …</div></div>
-</section>
-<section class="card wide" id="tt-card">
-  <div class="card-head"><h2 id="tt-title">Verkehrslage alle Straßen</h2><span class="src">TomTom Traffic · Echtzeit</span></div>
-  <div id="tt"><div class="state">wird geladen …</div></div>
 </section>
 </div>
 
@@ -775,6 +783,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=64"></script>
+<script src="app.js?v=65"></script>
 </body>
 </html>
