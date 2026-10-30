@@ -1089,9 +1089,9 @@ async function placeOf(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLA
     const a=((r.addresses||[])[0]||{}).address||{};const city=a.municipality||"",sub=a.municipalitySubdivision||"";
     const v=city&&sub&&sub!==city?city+"-"+sub:city||sub||a.countrySecondarySubdivision||"";if(!v)return "";PLACECACHE[k]=v;}catch(e){return "";}
   const ks=Object.keys(PLACECACHE);if(ks.length>600)ks.slice(0,200).forEach(x=>delete PLACECACHE[x]);store("placecache",PLACECACHE);return PLACECACHE[k];}
-let FILLING=false;
-async function fillPlaces(only){if(!TT||FILLING)return;FILLING=true;try{const l=(only||TT.list.slice(0,60)).filter(x=>!x.ort&&isFinite(x.lat));
-  for(let i=0;i<l.length;i+=3){await Promise.all(l.slice(i,i+3).map(async x=>{let v=await placeOf(x.lat,x.lon);if(!v){await new Promise(r=>setTimeout(r,700));v=await placeOf(x.lat,x.lon);}x.ort=v||null;}));renderTT();await new Promise(r=>setTimeout(r,350));}}finally{FILLING=false;}}
+let FILLING=false,FILLNEXT=null;
+async function fillPlaces(only){if(!TT)return;if(FILLING){FILLNEXT=only||null;return;}FILLING=true;try{const l=(only||TT.list.slice(0,60)).filter(x=>!x.ort&&isFinite(x.lat));
+  for(let i=0;i<l.length;i+=3){await Promise.all(l.slice(i,i+3).map(async x=>{let v=await placeOf(x.lat,x.lon);if(!v){await new Promise(r=>setTimeout(r,700));v=await placeOf(x.lat,x.lon);}x.ort=v||null;}));renderTT();if(FILLNEXT)break;await new Promise(r=>setTimeout(r,250));}}finally{FILLING=false;const n=FILLNEXT;FILLNEXT=null;if(n)fillPlaces(n);}}
 function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");const magTxt=["","leicht","mäßig","stark","gesperrt"];
   const F={stau:x=>x.cat===6||x.delay>0,unfall:x=>x.cat===1,sperr:x=>x.cat===8,delay:x=>x.delay>0};
   let l=TTF?list.filter(F[TTF]):list;if(TTF==="delay")l=l.slice().sort((a,b)=>b.delay-a.delay);
@@ -1103,7 +1103,7 @@ function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");con
       '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
       '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",x.grp===1?" · "+fmt(x.home,1)+" km von meiner Adresse":isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join("")+'</div>'
     :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
-  const missing=l.slice(0,30).filter(x=>!x.ort&&isFinite(x.lat));if(missing.length&&!FILLING)setTimeout(()=>fillPlaces(missing),50);
+  const missing=l.slice(0,30).filter(x=>!x.ort&&isFinite(x.lat));if(missing.length)setTimeout(()=>fillPlaces(missing),50);
 }
 document.addEventListener("click",e=>{const f=e.target.closest("#tt [data-ttf]");if(f){TTF=TTF===f.dataset.ttf?null:f.dataset.ttf;renderTT();return;}
   const j=e.target.closest("#tt .ttj");if(j&&TT&&MAP){const x=TT.list[+j.dataset.i];if(!x||!isFinite(x.lat))return;
