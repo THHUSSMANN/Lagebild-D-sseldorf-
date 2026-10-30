@@ -1482,7 +1482,7 @@ async function loadNews(){
   const seen=new Set();items=items.filter(x=>!seen.has(x.title)&&seen.add(x.title)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   $("news-title").textContent="Nachrichten "+(C.isDus?"Düsseldorf & NRW":C.key==="salzhausen"?"Niedersachsen & Region":C.town+" & "+(STATE_NAME[C.state]||""));
   const srcs=[...new Set(items.map(x=>x.source))];
-  $("news").innerHTML=items.length?'<div class="muted small" style="margin-bottom:6px">Quellen: '+esc(srcs.join(" · "))+'</div><div class="list">'+items.slice(0,20).map(x=>'<div class="li" style="grid-template-columns:1fr auto"><a class="t" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener"><span class="news-src">'+esc(x.source)+'</span>'+esc(x.title)+'</a><span class="r muted small">'+(x.date?hhmm(x.date):"")+'</span>'+
+  $("news").innerHTML=items.length?'<div class="muted small" style="margin-bottom:6px">Quellen: '+esc(srcs.join(" · "))+'</div><div class="list">'+items.slice(0,40).map(x=>'<div class="li" style="grid-template-columns:1fr auto"><a class="t" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener"><span class="news-src">'+esc(x.source)+'</span>'+esc(x.title)+'</a><span class="r muted small">'+(x.date?hhmm(x.date):"")+'</span>'+
       (x.text?'<div class="d" style="grid-column:1/-1">'+esc(String(x.text).slice(0,220))+'</div>':'')+'</div>').join("")+'</div>'
     :stateBox("Nachrichten nicht verfügbar.",link("https://www.tagesschau.de/inland/regional/","tagesschau regional"));
 }

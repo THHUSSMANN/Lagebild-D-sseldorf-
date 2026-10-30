@@ -473,7 +473,9 @@ await job("medien.json", async () => {
       if (got) { items.push(...got); stat.push(label + " " + got.length); } else stat.push(label + " Fehler " + err);
     }
     const seen = new Set();
-    out[k] = items.filter(x => x.title && !seen.has(x.title) && seen.add(x.title)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
+    const per = {};
+    out[k] = items.filter(x => x.title && !seen.has(x.title) && seen.add(x.title)).sort((a, b) => b.date.localeCompare(a.date))
+      .filter(x => (per[x.source] = (per[x.source] || 0) + 1) <= 6).slice(0, 40);
   }
   console.log("::notice::Medien: " + [...new Set(stat)].join(" | "));
   out._stat = [...new Set(stat)];
