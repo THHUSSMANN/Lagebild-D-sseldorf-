@@ -216,8 +216,11 @@ function renderAlarm(){
   document.body.classList.toggle("alarm",list.length>0&&!seen);document.body.classList.toggle("alarm-seen",!!seen);
   const b=$("alarmbar");b.hidden=!list.length;b.classList.toggle("seen",!!seen);
   b.innerHTML=list.length?'<span class="ab-h">⚠ Warnung'+(list.reduce((s,x)=>s+x.n,0)>1?"en":"")+'</span>'+list.map(x=>'<button type="button" class="ab-c" data-sel="'+esc(x.sel)+'"><b>'+esc(x.name)+'</b> '+esc(x.title)+(x.n>1?' <small>(+'+(x.n-1)+' weitere)</small>':'')+' ›</button>').join("")+(seen?'<span class="ab-s">gesehen ✓ – blinkt wieder bei neuer Warnung</span>':'<button type="button" class="ab-ok" data-ack="1">Gesehen ✓</button>'):"";
-  const others=list.filter(x=>x.key!==C.key);
-  if(others.length&&LOCAL_ALARM.n===0)setKpi("k-warn","0<small> hier</small>","⚠ "+others.map(x=>x.name+": "+x.title).join(" · "),"bad");
+  // Kachel: Summe über alle Lieblingsstädte, je Stadt eine Zeile
+  if(list.length){const tot=list.reduce((t,x)=>t+x.n,0);
+    const el=$("k-warn");setKpi("k-warn",String(tot)+"<small> "+(tot===1?"Warnung":"Warnungen")+"</small>","","bad");
+    const short=t=>String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"");
+    el.querySelector(".note").innerHTML=list.map(x=>'<span class="wl"><b>'+esc(x.name)+(x.n>1?" ("+x.n+")":"")+':</b> '+esc(short(x.title))+'</span>').join("");}
   document.querySelectorAll("#favs .fav").forEach(f=>f.classList.toggle("alarm-on",!!(FAV_ALARM[f.dataset.fav]&&FAV_ALARM[f.dataset.fav].n)));
 }
 $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){store("alarm_seen",ALARM_SIG);renderAlarm();return;}const c=e.target.closest(".ab-c");if(!c)return;if(c.dataset.sel!==sel)choose(c.dataset.sel);location.hash="warnungen";});
@@ -506,8 +509,8 @@ async function loadAlerts(){
     (a.area?'<div class="meta">Gebiet: '+esc(a.area)+'</div>':'')+(a.text?'<p>'+esc(a.text)+'</p>':'')+(a.instr?'<details><summary>Handlungsempfehlung</summary><p>'+esc(a.instr)+'</p></details>':'')+
     (a.id?'<div class="meta">'+link("https://warnung.bund.de/meldungen/"+encodeURIComponent(a.id),"Meldung mit Handlungsempfehlungen öffnen")+'</div>':'')+
     '<div class="meta">'+esc(a.src)+(a.sev?' · '+esc(sevDe[String(a.sev).toLowerCase()]||a.sev):'')+(a.from?' · ab '+dateTime(a.from):'')+(a.to?' bis '+dateTime(a.to):'')+'</div></div>').join("");
-  setAlarm(out.length,out[0].title,out.map(a=>a.title));
   const top=sc(out[0].sev);setKpi("k-warn",String(out.length),(nN?nN+" × NINA · ":"")+out[0].title,top==="info"?"warn":top);
+  setAlarm(out.length,out[0].title,out.map(a=>a.title));
 }
 
 // ================= Gewässer =================
