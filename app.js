@@ -1081,14 +1081,14 @@ async function loadTomTom(){
     setStatus("tomtom",true);
   }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
 }
-let TT=null,TTF=null;const PLACECACHE=load("placecache")||{};
+let TT=null,TTF=null;const PLACECACHE=Object.fromEntries(Object.entries(load("placecache")||{}).filter(([,v])=>v));
 async function placeOf(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLACECACHE[k]!==undefined)return PLACECACHE[k];
   try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
     const a=((r.addresses||[])[0]||{}).address||{};const city=a.municipality||"",sub=a.municipalitySubdivision||"";
-    PLACECACHE[k]=city&&sub&&sub!==city?city+"-"+sub:city||sub||"";}catch(e){PLACECACHE[k]="";}
+    const v=city&&sub&&sub!==city?city+"-"+sub:city||sub||a.countrySecondarySubdivision||"";if(!v)return "";PLACECACHE[k]=v;}catch(e){return "";}
   const ks=Object.keys(PLACECACHE);if(ks.length>600)ks.slice(0,200).forEach(x=>delete PLACECACHE[x]);store("placecache",PLACECACHE);return PLACECACHE[k];}
-async function fillPlaces(){if(!TT)return;const l=TT.list.slice(0,30).filter(x=>x.ort===undefined&&isFinite(x.lat));
-  for(let i=0;i<l.length;i+=6){await Promise.all(l.slice(i,i+6).map(async x=>{x.ort=await placeOf(x.lat,x.lon);}));renderTT();}}
+async function fillPlaces(){if(!TT)return;const l=TT.list.slice(0,60).filter(x=>!x.ort&&isFinite(x.lat));
+  for(let i=0;i<l.length;i+=3){await Promise.all(l.slice(i,i+3).map(async x=>{let v=await placeOf(x.lat,x.lon);if(!v){await new Promise(r=>setTimeout(r,700));v=await placeOf(x.lat,x.lon);}x.ort=v||null;}));renderTT();await new Promise(r=>setTimeout(r,350));}}
 function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");const magTxt=["","leicht","mäßig","stark","gesperrt"];
   const F={stau:x=>x.cat===6||x.delay>0,unfall:x=>x.cat===1,sperr:x=>x.cat===8,delay:x=>x.delay>0};
   let l=TTF?list.filter(F[TTF]):list;if(TTF==="delay")l=l.slice().sort((a,b)=>b.delay-a.delay);
