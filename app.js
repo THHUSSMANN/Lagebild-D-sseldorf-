@@ -377,7 +377,7 @@ function applyPlaceUi(){
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
   $("k-ein").hidden=C.key!=="datteln";
   $("k-bahn").dataset.view="bahn";
-  {const fav=C.isDus||C.key==="datteln";GROUPS.mobil[0][1]="Deutsche Bahn";GROUPS.mobil[1][1]=C.isDus?"Rheinbahn":"Nahverkehr";
+  {const fav=C.isDus||C.key==="datteln";
     $("bahn").querySelector("h2").textContent=fav?"Bahn-Verbindungen":"Bahn-Verbindung suchen";
     $("trip-from").value="";$("trip-to").value="";$("trip-from").placeholder=fav?"z. B. Düsseldorf-Heerdt":"Startbahnhof oder Adresse";$("trip-to").placeholder="Zielbahnhof oder Adresse";
     if(!fav)setKpi("k-bahn","Suche<small> Bahn</small>","Verbindung suchen · Abfahrten vor Ort","info");}
@@ -893,8 +893,9 @@ function composeTile(id,group,main,cls){
 }
 // ================= Bahn-Verbindungen =================
 const TRIP_KEYS={dus:["dus-re","re-dus"],datteln:["re-dus","dus-re"]};
+const RSTRIP={r0:"dus-re",r1:"re-dus",r2:"dus-do",r3:"do-dus"};
 async function loadTrips(){
-  const keys=TRIP_KEYS[C.key]||[];const box=$("trips");
+  const keys=typeof RS!=="undefined"&&RS.dir?[RSTRIP[RS.dir]]:(TRIP_KEYS[C.key]||[]);const box=$("trips");
   if(!keys.length){box.innerHTML="";box.hidden=true;return;}
   box.hidden=false;
   try{const d=await getData("trips.json");const list=(d.data||[]).filter(t=>keys.includes(t.key)).sort((a,b)=>keys.indexOf(a.key)-keys.indexOf(b.key));
@@ -1714,6 +1715,10 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.dir)RS.dir=C.key=
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
     }catch(e){RS.data[k]={err:errText(e)};}
     renderReise();}}
+function rsMode(m){RS.mode=m;document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
+  if(m==="bahn"){const t=RSTRIP[RS.dir]||"";const st={"dus-re":"Düsseldorf Hbf → Recklinghausen Hbf","re-dus":"Recklinghausen Hbf → Düsseldorf Hbf","dus-do":"Düsseldorf Hbf → Dortmund Hbf","do-dus":"Dortmund Hbf → Düsseldorf Hbf"}[t]||"";
+    const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);});
 function renderReise(){const D=RS.data;setStauTitle();
   $("rs-dir").innerHTML=RSDIRS.map(([k,t])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="'+(RS.dir===k?"on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
@@ -1745,7 +1750,7 @@ function drawReise(){if(typeof L==="undefined"){$("rs-map").hidden=true;return;}
     else L.polyline(ll,{color:"#8a9aa5",weight:5,opacity:.8,dashArray:"8 8"}).bindTooltip("Route "+(a.i+1)+" antippen zum Auswählen").on("click",()=>{RS.sel=a.i;renderReise();}).addTo(RSLAY);
     const b=L.latLngBounds(ll);bounds=bounds?bounds.extend(b):b;});
   if(bounds)RSMAP.fitBounds(bounds,{padding:[14,14]});}
-document.addEventListener("click",e=>{const d=e.target.closest("[data-rsdir]");if(d){RS.dir=d.dataset.rsdir;RS.sel=0;renderReise();return;}
+document.addEventListener("click",e=>{const d=e.target.closest("[data-rsdir]");if(d){RS.dir=d.dataset.rsdir;RS.sel=0;renderReise();if(RS.mode==="bahn")rsMode("bahn");return;}
   const a=e.target.closest("[data-rsalt]");if(a&&!e.target.closest("a")){RS.sel=+a.dataset.rsalt;renderReise();}});
 document.addEventListener("click",e=>{const j=e.target.closest("#rs-incs .carinc");if(!j||!RSMAP)return;e.stopImmediatePropagation();const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
   $("rs-map").scrollIntoView({behavior:"smooth",block:"center"});RSMAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText).openOn(RSMAP);},true);
@@ -1908,12 +1913,12 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus/reise","Reise"],["staus/karte","Sperrungen & Events"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus/reise","Reise"],["staus/karte","Sperrungen & Events"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
   if(["bezirke"].includes(v))return C.isDus;
   if(v==="einsaetze")return C.key==="datteln";
-  if(v==="bahn")return true;
+  if(v==="bahn"||v==="oepnv")return false; // jetzt unter Verkehr → Reise → Bus & Bahn
   return !!$("v-"+v);
 }
 const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].some(([x])=>x===v));
@@ -1977,7 +1982,7 @@ $("arrange").addEventListener("click",()=>{
   if(!EDITING)saveTileOrder();
 });
 $("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});
-applyTileOrder();route();
+applyTileOrder();{const kb=$("k-bahn");if(kb)kb.hidden=true;}route();
 applyPlaceUi();renderSources();tick();setInterval(tick,1000);
 
 refreshAll(true);

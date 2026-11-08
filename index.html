@@ -415,6 +415,8 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .ttab{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
 .ttab #car-routes{display:block;margin:0}
 .ttab #car-wrap{border-bottom:3px solid var(--line)}
+#rs-mode{margin-top:-2px}
+#rs-mode button{min-height:40px}
 #rs-dir button{min-height:58px;line-height:1.25}
 #rs-dir button small{display:block;font-weight:500;font-size:13px;opacity:.85}
 .rsmap{height:42vh;min-height:240px;margin:6px 0 4px}
@@ -659,6 +661,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="card-head"><h2 id="stau-title">Verkehrslage</h2><span class="src" id="stau-src">TomTom · Autobahn GmbH</span></div>
   <div data-pane="reise" hidden>
   <div class="seg" id="rs-dir"></div>
+  <div class="seg" id="rs-mode"><button type="button" data-rsm="auto" class="on">🚗 Auto</button><button type="button" data-rsm="bahn">🚆 Bus &amp; Bahn</button></div>
+  <div data-rsp="auto">
   <div id="rs-alts"><div class="state">wird berechnet …</div></div>
   <div id="rs-map" class="map rsmap" role="img" aria-label="Karte der Fahrt"></div>
   <div id="rs-incs"></div>
@@ -670,6 +674,30 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div id="stau-detail" hidden></div>
   <div class="tnote muted small" id="tnote">Zeile antippen für Details · Fahrzeit: TomTom · Strecken: Autobahn GmbH, 60 km Umkreis</div>
   
+  </div>
+  <div data-rsp="bahn" hidden>
+  <section class="card" id="trips-card">
+    <div class="card-head"><h2>Deutsche Bahn</h2><span class="src">Düsseldorf Hbf ⇄ Recklinghausen Hbf · Nah- und Fernverkehr · Echtzeit</span></div>
+    <div id="trips"><div class="state">wird geladen …</div></div>
+    <form id="trip-form" class="settings" style="margin-top:6px">
+      <div class="field"><label for="trip-from">Von</label><input id="trip-from" type="text" autocomplete="off" placeholder="z. B. Düsseldorf-Heerdt"></div>
+      <div class="field"><label for="trip-to">Nach</label><input id="trip-to" type="text" autocomplete="off" placeholder="z. B. Köln Hbf"></div>
+      <div class="field"><label>&nbsp;</label><div class="row" style="gap:8px"><button type="submit" id="trip-db">Bei bahn.de suchen</button><button type="button" id="trip-gm">Google Maps</button></div></div>
+    </form>
+  </section>
+<div class="grid">
+  <section class="card" id="efa-card">
+    <div class="card-head"><h2 id="efa-title">Abfahrten</h2><span class="src" id="efa-src">Echtzeit</span></div>
+    <div class="stop-chips" id="efa-stops"></div>
+    <div class="efa-filter"><input id="efa-dir" type="search" autocomplete="off" placeholder="Richtung oder Linie filtern, z. B. Busbahnhof"></div>
+    <div id="efa"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Leihräder in der Nähe</h2><span class="src">nextbike</span></div>
+    <div id="bike"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+  </div>
   </div>
   <div data-pane="karte" hidden>
   <div class="seg mapgo" id="mapgo">
@@ -813,32 +841,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <div class="view" id="v-bahn" data-view="bahn" hidden>
 <div class="subtabs" data-for="bahn"></div>
 <section id="bahn"><div class="sec-title"><h2>Bahn-Verbindungen</h2></div></section>
-  <section class="card" id="trips-card">
-    <div class="card-head"><h2>Deutsche Bahn</h2><span class="src">Düsseldorf Hbf ⇄ Recklinghausen Hbf · Nah- und Fernverkehr · Echtzeit</span></div>
-    <div id="trips"><div class="state">wird geladen …</div></div>
-    <form id="trip-form" class="settings" style="margin-top:6px">
-      <div class="field"><label for="trip-from">Von</label><input id="trip-from" type="text" autocomplete="off" placeholder="z. B. Düsseldorf-Heerdt"></div>
-      <div class="field"><label for="trip-to">Nach</label><input id="trip-to" type="text" autocomplete="off" placeholder="z. B. Köln Hbf"></div>
-      <div class="field"><label>&nbsp;</label><div class="row" style="gap:8px"><button type="submit" id="trip-db">Bei bahn.de suchen</button><button type="button" id="trip-gm">Google Maps</button></div></div>
-    </form>
-  </section>
 </div>
 
 <div class="view" id="v-oepnv" data-view="oepnv" hidden>
 <div class="subtabs" data-for="oepnv"></div>
 <section id="oepnv"><div class="sec-title"><h2>ÖPNV &amp; Rad</h2></div></section>
-<div class="grid">
-  <section class="card" id="efa-card">
-    <div class="card-head"><h2 id="efa-title">Abfahrten</h2><span class="src" id="efa-src">Echtzeit</span></div>
-    <div class="stop-chips" id="efa-stops"></div>
-    <div class="efa-filter"><input id="efa-dir" type="search" autocomplete="off" placeholder="Richtung oder Linie filtern, z. B. Busbahnhof"></div>
-    <div id="efa"><div class="state">wird geladen …</div></div>
-  </section>
-  <section class="card">
-    <div class="card-head"><h2>Leihräder in der Nähe</h2><span class="src">nextbike</span></div>
-    <div id="bike"><div class="state">wird geladen …</div></div>
-  </section>
-</div>
 </div>
 
 <div class="view" id="v-parken" data-view="parken" hidden>
@@ -966,6 +973,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=132"></script>
+<script src="app.js?v=133"></script>
 </body>
 </html>

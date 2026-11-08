@@ -186,7 +186,9 @@ async function kreisRe() {
 // ---------- Verbindungen (VRR-Fahrplanauskunft, inkl. DB-Fernverkehr) ----------
 const TRIPS = [
   ["dus-re", "Düsseldorf Hbf", "Recklinghausen Hbf"],
-  ["re-dus", "Recklinghausen Hbf", "Düsseldorf Hbf"]
+  ["re-dus", "Recklinghausen Hbf", "Düsseldorf Hbf"],
+  ["dus-do", "Düsseldorf Hbf", "Dortmund Hbf"],
+  ["do-dus", "Dortmund Hbf", "Düsseldorf Hbf"]
 ];
 // Haltestellenname ohne Gleis; „Recklinghausen, Recklinghausen Hbf“ → „Recklinghausen Hbf“
 function stopName(x) {
