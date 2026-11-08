@@ -1057,7 +1057,7 @@ function geomLines(w){
 }
 // ================= TomTom: Verkehrslage auf allen Straßen =================
 async function loadTomTom(){
-  const box=$("tt");try{ensureMap();}catch(e){}
+  const box=$("tt");renderCarRoutes();try{ensureMap();}catch(e){}
   if(!TTKEY){box.innerHTML='<div class="state">Für Staus auch auf Land- und Stadtstraßen (Echtzeit wie bei Google Maps) unter <a href="#einstellungen">Einstellungen</a> den kostenlosen TomTom-Schlüssel eintragen.</div>';return;}
   const la=C.center.lat,lo=C.center.lon,mb=mapBounds(),bbox=[mb[1],mb[0],mb[3],mb[2]].map(x=>x.toFixed(4)).join(",");
   const fields="{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description},startTime,endTime,from,to,length,delay,roadNumbers}}}";
@@ -1136,6 +1136,14 @@ document.addEventListener("change",e=>{if(e.target.id==="ttflow"){TTFLOW=e.targe
 document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]");if(!b)return;
   if(b.dataset.mm==="tomtom"&&!TTKEY){location.hash="einstellungen";return;}
   MAPMODE=b.dataset.mm;store("mapmode",MAPMODE);applyMapMode();});
+// Autofahrt zwischen den eigenen Adressen in Düsseldorf und Datteln (Google Maps, mit aktueller Verkehrslage)
+function renderCarRoutes(){const box=$("car-routes");if(!box)return;const A=HOMES.dus,B=HOMES.datteln;
+  if(!(C.key==="dus"||C.key==="datteln")){box.hidden=true;return;}
+  box.hidden=false;
+  if(!A||!B){box.innerHTML='<div class="muted small" style="grid-column:1/-1">Für die Autofahrt Düsseldorf ⇄ Datteln einmal den Einrichtungslink mit deinen Adressen öffnen (oder unter Einstellungen „Meine Adresse“ für beide Orte eintragen).</div>';return;}
+  const u=(o,d)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(o.label)+"&destination="+encodeURIComponent(d.label);
+  const ab=[[A,B,"Düsseldorf → Datteln"],[B,A,"Datteln → Düsseldorf"]];if(C.key==="datteln")ab.reverse();
+  box.innerHTML=ab.map(([o,d,t])=>'<a class="carbtn" target="_blank" rel="noopener" href="'+u(o,d)+'">🚗 '+t+'<small>Route mit Verkehr in Google Maps ↗</small></a>').join("");}
 function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
 function ensureMap(){
   if(typeof L==="undefined")return null;
