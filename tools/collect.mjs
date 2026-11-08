@@ -198,7 +198,7 @@ const TRIPS = [
   ["o-do-dat", "Dortmund Stadion", "Datteln Busbahnhof", true],
   ["o-dat-do", "Datteln Busbahnhof", "Dortmund Hbf", true],
   // Alpen-Menzelen und Salzhausen (Winsen/Luhe) – alle 30 Minuten neu, sonst letzter Stand
-  ...[["al", "Alpen Bahnhof"], ["wl", "Winsen (Luhe) Bahnhof"]].flatMap(([c, n]) => [["dus", "Düsseldorf Hbf"], ["re", "Recklinghausen Hbf"], ["do", "Dortmund Hbf"]]
+  ...[["al", "Alpen Bahnhof"], ["wl", "Winsen(Luhe)"]].flatMap(([c, n]) => [["dus", "Düsseldorf Hbf"], ["re", "Recklinghausen Hbf"], ["do", "Dortmund Hbf"]]
     .flatMap(([c2, n2]) => [[c + "-" + c2, n, n2, false, true], [c2 + "-" + c, n2, n, false, true]]))
 ];
 // Haltestellenname ohne Gleis; „Recklinghausen, Recklinghausen Hbf“ → „Recklinghausen Hbf“
@@ -250,7 +250,7 @@ async function trips() {
       const list = journeys.filter(j => j.dep && !seen.has(j.dep + "|" + j.legs.map(l => l.line).join(">")) && seen.add(j.dep + "|" + j.legs.map(l => l.line).join(">")))
         .filter(j => allModes || j.trainsOnly).sort((x, y) => new Date(x.dep) - new Date(y.dep));
       out.push({ key, from, to, journeys: list, at: Date.now() });
-      console.log("::notice::Verbindung " + key + ": " + list.length + " Zugverbindungen (" + list.filter(j => j.legs.some(l => /^(ICE|IC|EC|ECE)/i.test(l.line))).length + " mit Fernverkehr) – " + list.map(j => j.dep.slice(11, 16) + " " + j.legs.filter(l => !l.walk).map(l => l.line).join(">")).join(" | "));
+      console.log("::notice::Verbindung " + key + " (" + a.name + " → " + b.name + "): " + list.length + " Zugverbindungen (" + list.filter(j => j.legs.some(l => /^(ICE|IC|EC|ECE)/i.test(l.line))).length + " mit Fernverkehr) – " + list.map(j => j.dep.slice(11, 16) + " " + j.legs.filter(l => !l.walk).map(l => l.line).join(">")).join(" | "));
     } catch (e) { out.push({ key, from, to, error: String(e.message || e), journeys: [] }); console.log("::warning::Verbindung " + key + ": " + (e.message || e)); }
   }
   return out;

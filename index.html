@@ -439,6 +439,13 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 #rs-tdir button{min-height:48px;font-size:14px}
 #rs-mode button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px}
 header .hbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+header .tools-toggle{width:100%;margin:8px 0 0}
+header .tools-toggle[aria-expanded="true"] .rcaret{display:inline-block;transform:rotate(180deg)}
+header .tools{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+header .tools[hidden]{display:none}
+header .tools .ctrl{flex:none;max-width:none;width:100%}
+header #headnav{flex:none;max-width:none;width:100%}
+header #headnav a.on{background:var(--accent);color:var(--panel);border-color:transparent}
 .mi{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
 #rs-dir button{min-height:58px;line-height:1.25}
 #rs-dir button small{display:block;font-weight:500;font-size:13px;opacity:.85}
@@ -589,6 +596,9 @@ html,body{overflow-anchor:none}
       <div class="dt"><span class="clock" id="clock">--:--:--</span><span class="sub" id="sub"></span></div>
       <button id="refresh" type="button" class="refresh">↻ Aktualisieren</button>
     </div>
+    <nav class="ctrl" id="headnav" aria-label="Themen"></nav>
+    <button type="button" class="hbtn tools-toggle" id="tools-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-.6-.6-2.3z"/></svg>Tools <span class="rcaret">▾</span></button>
+    <div class="tools" id="tools" hidden>
     <div class="ctrl">
       <a class="hbtn" href="https://dus.eventcal.io" target="_blank" rel="noopener">EventCal ↗</a>
       <a class="hbtn" href="https://dus.eventdoc.io/de" target="_blank" rel="noopener">EventDoc ↗</a>
@@ -597,11 +607,6 @@ html,body{overflow-anchor:none}
       <button type="button" class="hbtn" id="calc-btn" aria-label="Taschenrechner"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>Rechner</button>
       <button type="button" class="hbtn" id="alarm-btn" aria-label="Wecker"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>Wecker</button>
     </div>
-    <div class="hrow">
-      <div class="places">
-        <nav class="favs" id="favs" aria-label="Meine Städte"></nav>
-        <label class="pick"><span>Bereich</span><select id="bezirk" aria-label="Bereich wählen"></select></label>
-      </div>
       <div class="radio" id="radio" aria-label="Radio"><button type="button" class="rtoggle" id="radio-toggle" aria-expanded="false">📻 Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
         <div class="rlist" id="radio-list" hidden>
         <button type="button" class="rbtn" data-st="wdr2">WDR 2 <small>Rhein Ruhr</small></button>
@@ -610,6 +615,12 @@ html,body{overflow-anchor:none}
         <a class="rlink" href="https://www.ardaudiothek.de/" target="_blank" rel="noopener">ARD Sounds ↗</a>
         <a class="rlink" href="https://tunein.com/" target="_blank" rel="noopener">TuneIn ↗</a>
         </div>
+      </div>
+    </div>
+    <div class="hrow">
+      <div class="places">
+        <nav class="favs" id="favs" aria-label="Meine Städte"></nav>
+        <label class="pick"><span>Bereich</span><select id="bezirk" aria-label="Bereich wählen"></select></label>
       </div>
     </div>
     <div class="alarmbar" id="alarmbar" role="alert" hidden></div>
@@ -1047,6 +1058,6 @@ html,body{overflow-anchor:none}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=158"></script>
+<script src="app.js?v=159"></script>
 </body>
 </html>

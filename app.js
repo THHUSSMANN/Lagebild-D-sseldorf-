@@ -344,6 +344,7 @@ $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");
   all.forEach(x=>x.classList.remove("on","load"));b.classList.add("load");
   a.src=url;a.play().then(()=>{b.classList.remove("load");b.classList.add("on");}).catch(()=>{b.classList.remove("load");window.open(RADIO_SITE[k],"_blank","noopener");});
 });
+$("tools-toggle").addEventListener("click",()=>{const l=$("tools"),open=l.hidden;l.hidden=!open;$("tools-toggle").setAttribute("aria-expanded",open?"true":"false");});
 $("radio-toggle").addEventListener("click",()=>{const l=$("radio-list"),open=l.hidden;l.hidden=!open;$("radio-toggle").setAttribute("aria-expanded",open?"true":"false");});
 setInterval(()=>{const on=document.querySelector("#radio .rbtn.on");const t=on?"· "+on.textContent.replace(/\s+/g," ").trim()+" läuft":"";if($("radio-now").textContent!==t)$("radio-now").textContent=t;},1000);
 $("radio-audio").addEventListener("error",()=>document.querySelectorAll("#radio .rbtn").forEach(x=>x.classList.remove("on","load")));
@@ -1984,6 +1985,7 @@ function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tile
 function buildViewbar(){
   const cur=location.hash.slice(1).split("/")[0];
   const g=groupOf(cur);
+  {const hn=$("headnav");if(hn)hn.innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);return '<a class="hbtn'+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 let ROUTEKEY=null;
