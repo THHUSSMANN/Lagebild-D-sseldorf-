@@ -15,6 +15,9 @@ const PLACES = {
   datteln: { name: "Datteln", lat: 51.6539, lon: 7.3417, ars: "055620000000", uR: 30,
     feeds: [["Feuerwehr Datteln", "https://www.presseportal.de/rss/dienststelle_130639.rss2"], ["Blaulicht Datteln", "https://www.presseportal.de/rss/polizei/r/Datteln.rss2"]],
     efa: "Datteln Busbahnhof" },
+  dortmund: { name: "Dortmund", lat: 51.5136, lon: 7.4653, ars: "059130000000", uR: 15,
+    feeds: [["Polizei & Feuerwehr Dortmund", "https://www.presseportal.de/rss/polizei/r/Dortmund.rss2"]],
+    efa: "Dortmund Hbf" },
   alpen: { name: "Alpen-Menzelen", lat: 51.6449, lon: 6.5634, ars: "051700000000", uR: 30,
     feeds: [["Alpen", "https://www.presseportal.de/rss/polizei/r/Alpen.rss2"], ["Xanten", "https://www.presseportal.de/rss/polizei/r/Xanten.rss2"], ["Rheinberg", "https://www.presseportal.de/rss/polizei/r/Rheinberg.rss2"]],
     efa: "Alpen Bahnhof" },
@@ -193,7 +196,10 @@ const TRIPS = [
   ["do-re", "Dortmund Hbf", "Recklinghausen Hbf"],
   // ÖPNV mit Bus & Bahn (alle Verkehrsmittel, auch mit Umstieg)
   ["o-do-dat", "Dortmund Stadion", "Datteln Busbahnhof", true],
-  ["o-dat-do", "Datteln Busbahnhof", "Dortmund Hbf", true]
+  ["o-dat-do", "Datteln Busbahnhof", "Dortmund Hbf", true],
+  // Alpen-Menzelen und Salzhausen (Winsen/Luhe) – alle 30 Minuten neu, sonst letzter Stand
+  ...[["al", "Alpen Bahnhof"], ["wl", "Winsen (Luhe) Bahnhof"]].flatMap(([c, n]) => [["dus", "Düsseldorf Hbf"], ["re", "Recklinghausen Hbf"], ["do", "Dortmund Hbf"]]
+    .flatMap(([c2, n2]) => [[c + "-" + c2, n, n2, false, true], [c2 + "-" + c, n2, n, false, true]]))
 ];
 // Haltestellenname ohne Gleis; „Recklinghausen, Recklinghausen Hbf“ → „Recklinghausen Hbf“
 function stopName(x) {
@@ -211,7 +217,9 @@ async function stopId(name) {
 }
 async function trips() {
   const out = [];
-  for (const [key, from, to, allModes] of TRIPS) {
+  let prev = null; try { prev = await get(LIVE + "trips.json", { ms: 15000 }); } catch {}
+  for (const [key, from, to, allModes, slow] of TRIPS) {
+    if (slow && prev) { const p = (prev.data || []).find(x => x.key === key); if (p && p.at && Date.now() - p.at < 30 * 60e3 && (p.journeys || []).length) { out.push(p); continue; } }
     try {
       const a = await stopId(from), b = await stopId(to);
       // Nur Züge (Fern-, Regionalverkehr, S-Bahn): Busse, U-/Straßenbahn usw. ausgeschlossen.
@@ -241,7 +249,7 @@ async function trips() {
       journeys.push(...fern.filter(j => j.arr && j.dep && dur(j) > 0 && dur(j) <= Math.max(best + 30, 120)));
       const list = journeys.filter(j => j.dep && !seen.has(j.dep + "|" + j.legs.map(l => l.line).join(">")) && seen.add(j.dep + "|" + j.legs.map(l => l.line).join(">")))
         .filter(j => allModes || j.trainsOnly).sort((x, y) => new Date(x.dep) - new Date(y.dep));
-      out.push({ key, from, to, journeys: list });
+      out.push({ key, from, to, journeys: list, at: Date.now() });
       console.log("::notice::Verbindung " + key + ": " + list.length + " Zugverbindungen (" + list.filter(j => j.legs.some(l => /^(ICE|IC|EC|ECE)/i.test(l.line))).length + " mit Fernverkehr) – " + list.map(j => j.dep.slice(11, 16) + " " + j.legs.filter(l => !l.walk).map(l => l.line).join(">")).join(" | "));
     } catch (e) { out.push({ key, from, to, error: String(e.message || e), journeys: [] }); console.log("::warning::Verbindung " + key + ": " + (e.message || e)); }
   }
@@ -357,7 +365,7 @@ for (const [k, p] of Object.entries(PLACES)) {
   if (p.efa) tasks.push(efaPlace(k, p));
 }
 // zusätzliche Orte nur für Abfahrten (Reise → ÖPNV)
-for (const [k, p] of Object.entries({ dortmund: { name: "Dortmund", lat: 51.50286, lon: 7.44386, efa: "Dortmund Hbf" } })) tasks.push(efaPlace(k, p));
+
 function efaPlace(k, p) { return (async () => {
     // mehrere Haltestellen je Ort (config/haltestellen.json) + Haltestellenverzeichnis für die Suche
     let list = [p.efa]; try { const cfg = JSON.parse(await fs.readFile(new URL("../config/haltestellen.json", import.meta.url), "utf8")); if (Array.isArray(cfg[k]) && cfg[k].length) list = cfg[k]; } catch {}
@@ -467,6 +475,7 @@ await job("medien.json", async () => {
   const WDR = ["https://www1.wdr.de/nachrichten/uebersicht-nachrichten-100.feed", "https://www1.wdr.de/nachrichten/index.feed", "https://www1.wdr.de/uebersicht-100.feed"];
   const F = {
     dus: [["Rheinische Post Düsseldorf", "https://rp-online.de/nrw/staedte/duesseldorf/feed.rss"], ["WDR", WDR], ["Westdeutsche Zeitung", ["https://www.wz.de/nrw/duesseldorf/feed.rss", "https://www.wz.de/feed.rss"]], ["Bild Düsseldorf", ["https://www.bild.de/feed/regional-duesseldorf.xml", "https://www.bild.de/feed/regional/duesseldorf.xml", "https://www.bild.de/rssfeeds/vw-duesseldorf/vw-duesseldorf-16786698,dzbildplus=true,sort=1,teaserbildmobil=false,view=rss2.bild.xml"]]],
+    dortmund: [["WDR", WDR], ["Ruhr Nachrichten", ["https://www.ruhrnachrichten.de/feed/", "https://www.ruhrnachrichten.de/rss"]]],
     datteln: [["WDR", WDR], ["Ruhr Nachrichten", ["https://www.ruhrnachrichten.de/feed/", "https://www.ruhrnachrichten.de/rss"]], ["Recklinghäuser Zeitung", ["https://www.recklinghaeuser-zeitung.de/feed/"]], ["Bild Ruhrgebiet", ["https://www.bild.de/feed/regional-ruhrgebiet.xml", "https://www.bild.de/feed/regional/ruhrgebiet.xml", "https://www.bild.de/rssfeeds/vw-ruhrgebiet/vw-ruhrgebiet-16786752,dzbildplus=true,sort=1,teaserbildmobil=false,view=rss2.bild.xml"]]],
     alpen: [["Rheinische Post Kreis Wesel", "https://rp-online.de/nrw/staedte/wesel/feed.rss"], ["RP Xanten", "https://rp-online.de/nrw/staedte/xanten/feed.rss"], ["RP Rheinberg", "https://rp-online.de/nrw/staedte/rheinberg/feed.rss"], ["RP Alpen", "https://rp-online.de/nrw/staedte/alpen/feed.rss"],
       ["NRZ Wesel", ["https://www.nrz.de/lokales/wesel-hamminkeln-schermbeck/feed.rss", "https://www.nrz.de/lokales/wesel-hamminkeln-schermbeck/rss", "https://www.nrz.de/staedte/wesel-hamminkeln-schermbeck/feed.rss", "https://www.nrz.de/rss"]],
