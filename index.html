@@ -542,6 +542,28 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 @media (max-width:520px){h1{font-size:22px}.big{font-size:42px}.kpi .val{font-size:26px}.clock{font-size:28px}.brand .dt .sub{font-size:15px}}
 @media (max-width:700px){#stau-map,.map{height:46vh!important;min-height:240px!important;max-height:360px}.mapsw button,.mapsw a{min-height:44px;font-size:13.5px}.mapsw small{font-size:10.5px}}
+
+/* ---------- Moderner Knopfstil (Glas-Optik, angelehnt an aktuelles iOS) ---------- */
+:root{--glass:rgba(255,255,255,.62);--glass-b:rgba(255,255,255,.75);--glass-hi:rgba(255,255,255,.9);--glass-sh:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.08)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass:rgba(255,255,255,.07);--glass-b:rgba(255,255,255,.13);--glass-hi:rgba(255,255,255,.18);--glass-sh:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35)}}
+:root[data-theme="dark"]{--glass:rgba(255,255,255,.07);--glass-b:rgba(255,255,255,.13);--glass-hi:rgba(255,255,255,.18);--glass-sh:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35)}
+.seg button,.subtabs a,.btn,header .fav,header .rbtn,header .rtoggle,header .rlink,.rs-quick a,.alt,#viewbar a:not(.back),.view-x,#el-where button,#pk-seg button,.alt .ag a{
+  border-radius:16px!important;
+  background-color:var(--glass);
+  background-image:linear-gradient(180deg,var(--glass-hi),rgba(255,255,255,0) 55%);
+  border:1px solid var(--glass-b);
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
+  box-shadow:var(--glass-sh);
+  transition:transform .12s ease,box-shadow .2s ease,background-color .2s ease}
+.subtabs a,#viewbar a,header .fav,header .rbtn,header .rtoggle,header .rlink,.view-x{border-radius:999px!important}
+header{--glass:rgba(255,255,255,.08);--glass-b:rgba(255,255,255,.18);--glass-hi:rgba(255,255,255,.14);--glass-sh:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25)}
+header .fav,header .rtoggle,header .rlink,header .rbtn{color:#fff}
+.seg button:active,.subtabs a:active,.btn:active,header .fav:active,header .rbtn:active,.rs-quick a:active,.alt:active,.kpi.tile:active,#viewbar a:active{transform:scale(.965)}
+/* gewählte Knöpfe: kräftig gefüllt mit sanftem Glanz */
+.seg button.on,.subtabs a.on,#viewbar a.on,header .rbtn.on,.alt.on,.alt .ag a:not(.sec){background-color:var(--accent);color:var(--panel);border-color:transparent;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%);box-shadow:0 4px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.35)}
+.alt.on{background-color:var(--panel-2);color:var(--fg);border:2px solid var(--accent)}
+.kpi.tile{border-radius:18px;background-image:linear-gradient(180deg,var(--glass-hi),rgba(255,255,255,0) 50%);box-shadow:var(--glass-sh);transition:transform .12s ease}
 </style>
 </head>
 <body>
@@ -1002,6 +1024,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=141"></script>
+<script src="app.js?v=142"></script>
 </body>
 </html>
