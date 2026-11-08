@@ -1109,7 +1109,7 @@ function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");con
 document.addEventListener("click",e=>{const f=e.target.closest("#tt [data-ttf]");if(f){TTF=TTF===f.dataset.ttf?null:f.dataset.ttf;renderTT();return;}
   const j=e.target.closest("#tt .ttj");if(j&&TT&&MAP){const x=TT.list[+j.dataset.i];if(!x||!isFinite(x.lat))return;
     if(MAPMODE!=="tomtom"&&TTKEY){MAPMODE="tomtom";store("mapmode",MAPMODE);applyMapMode();}
-    openMap();$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([x.lat,x.lon],14);
+    openMap();setTimeout(()=>$("stau-map").scrollIntoView({behavior:"smooth",block:"center"}),150);MAP.setView([x.lat,x.lon],14);
     if(MAP._ttinc)MAP._ttinc.eachLayer(l=>{if(l.getPopup&&l.getPopup()&&(l.getLatLng?Math.abs(l.getLatLng().lat-x.lat)<1e-5:l.getLatLngs().flat().some(p=>Math.abs(p.lat-x.lat)<1e-5&&Math.abs(p.lng-x.lon)<1e-5)))l.openPopup([x.lat,x.lon]);});}});
 let MAPMODE=load("mapmode")||"tomtom";
 // Fester Kartenausschnitt je Ort: [Süd, West, Nord, Ost]
@@ -1165,7 +1165,7 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
     }catch(e){el.innerHTML='<span class="cs">–</span>';{const ii=$("cari-"+i);if(ii)ii.textContent="Fahrzeit derzeit nicht verfügbar";}CARR[i]={t,err:1};renderCarIncs();}
     await new Promise(z=>setTimeout(z,400));}
     for(const r of CARR)for(const x of (r.secs||[]))if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);renderCarIncs();}})();}
-let CARR=[];
+let CARR=[],MAPFOCUS=0;
 function renderCarIncs(){const box=$("car-incs");if(!box)return;
   const openSet=new Set([...box.querySelectorAll("details.cr[open]")].map(d=>d.dataset.t));
   box.innerHTML=CARR.filter(r=>r&&r.secs&&r.secs.length).map(r=>'<details class="cr" data-t="'+esc(r.t)+'"'+(openSet.has(r.t)?' open':'')+'><summary class="route-h">Behinderungen <b>'+esc(r.t)+'</b>'+(r.secs?'<span class="route-n">'+(r.secs.length?r.secs.length+(r.secs.length===1?" Behinderung":" Behinderungen"):"frei")+'</span>':'')+'</summary>'+(r.wait?'<div class="muted small">wird berechnet …</div>':r.err?'<div class="muted small">Strecke derzeit nicht verfügbar.</div>':r.secs.length?r.secs.map(x=>
@@ -1173,7 +1173,7 @@ function renderCarIncs(){const box=$("car-incs");if(!box)return;
     '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
     '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Strecke.</div>')+'</details>').join("");}
 document.addEventListener("click",e=>{const j=e.target.closest(".carinc");if(!j||!MAP)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
-  openMap();$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);});
+  openMap();setTimeout(()=>$("stau-map").scrollIntoView({behavior:"smooth",block:"center"}),150);MAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);});
 function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
 function ensureMap(){
   if(typeof L==="undefined")return null;
@@ -1234,6 +1234,7 @@ function showAbDetail(k){
   if(/^r\d+$/.test(k)){const r=ROUTES[+k.slice(1)];const l=(ROUTE_ITEMS[+k.slice(1)]||[]).sort((a,b)=>a.km-b.km);set={t:"Meine Strecke: "+r.ab+" Richtung "+r.dir,l};}
   else set=AB_SETS[k];
   if(!set){box.hidden=true;return;}
+  {const an=/^r\d+$/.test(k)?$("tnote"):$("stau-sum");if(an&&an.nextElementSibling!==box)an.after(box);}
   box.hidden=false;
   box.innerHTML='<div class="abd-head"><h3>'+esc(set.t)+' <span class="muted small">('+set.l.length+')</span></h3><button type="button" class="btn sm" data-close="1">Schließen ✕</button></div>'+
     (set.l.length?'<div class="muted small" style="margin-bottom:6px">Eintrag antippen für alle Angaben (Abschnitt, Dauer, Umleitung).</div>'+set.l.map(abItem).join(""):'<div class="state good">Keine Meldungen auf dieser Strecke im Umkreis von '+PRIO_RADIUS_KM+' km.</div>');
@@ -1245,7 +1246,7 @@ document.addEventListener("click",e=>{
   const f=e.target.closest("#stau-sum .fbtn");if(f){selectAb(f.dataset.f);return;}
   const r=e.target.closest("#prio .route[data-route]");if(r){selectAb("r"+r.dataset.route);return;}
   if(e.target.closest("#stau-detail [data-close]")){selectAb(AB_SEL);return;}
-  const g=e.target.closest("#stau-detail [data-goto]");if(g&&MAP){const [la,lo]=g.dataset.goto.split(",").map(Number);openMap();$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([la,lo],13);
+  const g=e.target.closest("#stau-detail [data-goto]");if(g&&MAP){const [la,lo]=g.dataset.goto.split(",").map(Number);openMap();setTimeout(()=>$("stau-map").scrollIntoView({behavior:"smooth",block:"center"}),150);MAP.setView([la,lo],13);
     MAPLAYER.eachLayer(l=>{const ll=l.getLatLng&&l.getLatLng();if(ll&&Math.abs(ll.lat-la)<1e-6&&Math.abs(ll.lng-lo)<1e-6&&l.openPopup)l.openPopup();});}
 });
 document.addEventListener("keydown",e=>{const r=e.target.closest&&e.target.closest("#prio .route[data-route]");if(r&&(e.key==="Enter"||e.key===" ")){e.preventDefault();selectAb("r"+r.dataset.route);}});
@@ -1614,8 +1615,9 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Verkehrslage & Sperrungen"],["stadtverkehr","Stadtverkehr Düsseldorf"],["verkehr","Baustellen & Tanken"],["parken","Parken"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Lage"],["staus/karte","Karte"],["staus/meld","Meldungen"],["stadtverkehr","Stadt"],["verkehr","Bau & Tanken"],["parken","Parken"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
+  v=String(v).split("/")[0];
   if(["stadtverkehr","parken","bezirke"].includes(v))return C.isDus;
   if(v==="einsaetze")return C.key==="datteln";
   if(v==="bahn")return true;
@@ -1631,12 +1633,13 @@ function applyTileOrder(){
 }
 function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view));buildViewbar();}
 function buildViewbar(){
-  const cur=location.hash.slice(1);
+  const cur=location.hash.slice(1).split("/")[0];
   const g=groupOf(cur);
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 function route(){
-  let v=location.hash.slice(1);
+  let v=location.hash.slice(1);const pane=v.split("/")[1]||"lage";v=v.split("/")[0];
+  document.querySelectorAll("#staus [data-pane]").forEach(p=>p.hidden=p.dataset.pane!==pane);
   if(v&&!$("v-"+v))v="";
   if(v&&!tileAvailable(v))v="";
   const inView=!!v;
@@ -1645,8 +1648,10 @@ function route(){
   buildViewbar();
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
     const tabs=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x));el.hidden=tabs.length<2;
-    el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===v?"on":"")+'">'+esc(l)+'</a>').join("");});
-  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&MAP)setTimeout(()=>{MAP.invalidateSize();fitMap();},60);}
+    const cur=v+(pane!=="lage"?"/"+pane:"");el.classList.toggle("grid3",g==="verkehr");
+    el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'">'+esc(l)+(x==="staus/meld"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
+  if(typeof foldCount==="function")foldCount();
+  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&pane==="karte")setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS)fitMap();MAPFOCUS=0;}}catch(e){}},60);}
 }
 window.addEventListener("hashchange",route);
 document.querySelectorAll(".view").forEach(v=>{const x=document.createElement("a");x.href="#";x.className="view-x";x.setAttribute("aria-label","Schließen, zurück zur Übersicht");x.innerHTML="✕ Schließen";v.prepend(x);});
@@ -1680,10 +1685,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now(
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 
 // Verkehr: aufklappbare Bereiche, Zustand merken, Anzahl im Titel
-function openMap(){const f=$("fold-map");if(f&&!f.open){f.open=true;}}
-document.querySelectorAll("details.fold").forEach(f=>{
-  const k="fold_"+f.id,st=load(k);if(st===true)f.open=true;
-  f.addEventListener("toggle",()=>{store(k,f.open);if(f.id==="fold-map"&&f.open)setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();fitMap();}}catch(e){}},60);});});
+function openMap(){if(location.hash!=="#staus/karte"){MAPFOCUS=1;location.hash="staus/karte";route();}if(MAP)MAP.invalidateSize();}
 function foldCount(){const c=$("fcnt-all");if(!c)return;let n=0;["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(el)n+=el.querySelectorAll(".jam,.li,details.abd").length;});c.textContent=n?String(n):"";}
 ["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(!el)return;foldCount(id);new MutationObserver(()=>foldCount(id)).observe(el,{childList:true,subtree:true});});
 

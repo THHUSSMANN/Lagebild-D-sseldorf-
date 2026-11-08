@@ -248,6 +248,10 @@ section[id]{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 64px)}
 .view-title{font-family:var(--f-display);font-size:24px;font-weight:700;margin:4px 0 0}
 nav.jump a.back{background:var(--accent);color:var(--panel);border-color:var(--accent)}
 .subtabs{display:flex;gap:6px;flex-wrap:wrap}
+.subtabs.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.subtabs.grid3 a{text-align:center;padding:10px 6px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14.5px}
+.subtabs a.on .fcnt{background:var(--panel);color:var(--accent)}
+@media (min-width:700px){.subtabs.grid3{grid-template-columns:repeat(6,1fr)}}
 .subtabs a{text-decoration:none;color:var(--fg);font-weight:600;font-size:14px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
 .subtabs a.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
 .trips{display:flex;flex-direction:column;gap:8px}
@@ -616,13 +620,15 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <div class="subtabs" data-for="staus"></div>
 <section class="card wide" id="staus">
   <div class="card-head"><h2 id="stau-title">Verkehrslage</h2><span class="src" id="stau-src">TomTom · Autobahn GmbH</span></div>
+  <div data-pane="lage">
   <div class="ttab">
   <div id="car-wrap" hidden><div id="car-routes"></div></div>
   <div id="prio"></div>
   </div>
   <div id="stau-detail" hidden></div>
   <div class="tnote muted small" id="tnote">Zeile antippen für Details · Fahrzeit: TomTom · Strecken: Autobahn GmbH, 60 km Umkreis</div>
-  <details class="fold fbtnfold" id="fold-map"><summary>Karte öffnen</summary>
+  </div>
+  <div data-pane="karte" hidden>
   <div class="mapsw" id="mapsw" role="tablist" aria-label="Kartenquelle">
     <button type="button" data-mm="tomtom" role="tab">TomTom <small>Verkehr live</small></button>
     <button type="button" data-mm="osm" role="tab">OpenStreetMap <small>amtliche Meldungen</small></button>
@@ -631,8 +637,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div id="stau-map" class="map" role="img" aria-label="Verkehrskarte"></div>
   <label class="muted small" style="display:inline-flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ttflow"> zusätzlich Verkehrsfluss aller Straßen einfärben</label>
   <div class="legend"><span class="tt-leg"><i style="background:linear-gradient(90deg,#f3c623,#f08a00,#d62d20,#8b0000)"></i>Stau leicht → schwer (alle Straßen)</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
-  </details>
-  <details class="fold" id="fold-all"><summary>Alle Meldungen <span class="fcnt" id="fcnt-all"></span></summary>
+  </div>
+  <div data-pane="meld" hidden>
   <div class="stau-sum" id="stau-sum"></div>
   <h3 class="sub2">Alle Straßen · TomTom Echtzeit</h3>
   <div id="tt"><div class="state">wird geladen …</div></div>
@@ -640,7 +646,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div id="stau-list"><div class="state">Staus werden geladen …</div></div>
   <h3 class="sub2">Weitere Meldungen &amp; Sperrungen</h3>
   <div id="traffic"><div class="state">Verkehrsmeldungen werden geladen …</div></div>
-  </details>
+  </div>
 </section>
 </div>
 
@@ -898,6 +904,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=112"></script>
+<script src="app.js?v=113"></script>
 </body>
 </html>
