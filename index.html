@@ -566,7 +566,15 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <section id="verkehrslage"><div class="sec-title"><h2>Verkehrslage</h2></div></section>
 <section class="card wide" id="staus">
   <div class="card-head"><h2 id="stau-title">Verkehrslage</h2><span class="src" id="stau-src">TomTom · Autobahn GmbH</span></div>
-  <div class="segsw" id="car-routes" hidden></div>
+  <div id="prio"></div>
+  <div class="muted small" style="margin:4px 0">Kennzahl oder Strecke antippen – darunter erscheinen alle Meldungen dazu.</div>
+  <div class="stau-sum" id="stau-sum"></div>
+  <div id="stau-detail" hidden></div>
+  <div id="car-wrap" hidden>
+    <h3 class="sublbl" style="margin-top:18px">Autofahrt Düsseldorf ⇄ Datteln · Fahrzeit live, Route in Google Maps</h3>
+    <div class="segsw" id="car-routes"></div>
+  </div>
+  <div class="sublbl" style="margin-top:18px">Verkehrskarte</div>
   <div class="mapsw" id="mapsw" role="tablist" aria-label="Kartenquelle">
     <button type="button" data-mm="tomtom" role="tab">TomTom <small>Verkehr live</small></button>
     <button type="button" data-mm="osm" role="tab">OpenStreetMap <small>amtliche Meldungen</small></button>
@@ -577,11 +585,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="legend"><span class="tt-leg"><i style="background:linear-gradient(90deg,#f3c623,#f08a00,#d62d20,#8b0000)"></i>Stau leicht → schwer (alle Straßen)</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
   <div class="sublbl" style="margin-top:12px">Alle Straßen · TomTom Echtzeit</div>
   <div id="tt"><div class="state">wird geladen …</div></div>
-  <div class="sublbl" style="margin-top:14px">Autobahnen · amtliche Meldungen der Autobahn GmbH</div>
-  <div id="prio"></div>
-  <div class="muted small" style="margin:4px 0">Kennzahl oder Strecke antippen – darunter erscheinen alle Meldungen dazu.</div>
-  <div class="stau-sum" id="stau-sum"></div>
-  <div id="stau-detail" hidden></div>
+  <div class="sublbl" style="margin-top:14px">Alle Autobahn-Meldungen im Umkreis</div>
   <div id="stau-list"><div class="state">Staus werden geladen …</div></div>
 </section>
 <section class="card wide">

@@ -1138,8 +1138,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]
   MAPMODE=b.dataset.mm;store("mapmode",MAPMODE);applyMapMode();});
 // Autofahrt zwischen den eigenen Adressen in Düsseldorf und Datteln (Google Maps, mit aktueller Verkehrslage)
 function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];const A=HOMES.dus,B=HOMES.datteln;
-  if(!(C.key==="dus"||C.key==="datteln")){box.hidden=true;return;}
-  box.hidden=false;
+  const wr=$("car-wrap");if(!(C.key==="dus"||C.key==="datteln")){if(wr)wr.hidden=true;return;}
+  if(wr)wr.hidden=false;
   if(!A||!B){box.innerHTML='<div class="muted small" style="grid-column:1/-1">Für die Autofahrt Düsseldorf ⇄ Datteln einmal den Einrichtungslink mit deinen Adressen öffnen (oder unter Einstellungen „Meine Adresse“ für beide Orte eintragen).</div>';return;}
   const u=(o,d)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(o.label)+"&destination="+encodeURIComponent(d.label);
   const ab=[[A,B,"Düsseldorf → Datteln"],[B,A,"Datteln → Düsseldorf"]];if(C.key==="datteln")ab.reverse();
@@ -1214,7 +1214,7 @@ function renderPrio(rawW,rawC,okRoads){
     else if(ws.length){cls="warn";val="Behinderung";sub=(ws[0].subtitle||ws[0].title||"")+" · "+fmt(ws[0].km)+" km entfernt";}
     ROUTE_ITEMS[ROUTES.indexOf(r)]=[...cl.map(c=>({...c,_c:1})),...ws];
     return '<div role="button" tabindex="0" data-route="'+ROUTES.indexOf(r)+'" class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span><span class="rs">'+esc(sub)+'</span></div>';});
-  box.innerHTML='<div class="sublbl">Meine Autobahn-Strecken · Lage im Umkreis von '+PRIO_RADIUS_KM+' km um '+esc(C.town)+'</div><div class="prio">'+cards.join("")+'</div>';
+  box.innerHTML='<div class="sublbl" style="margin-top:4px">Meine Autobahn-Strecken · Lage im Umkreis von '+PRIO_RADIUS_KM+' km um '+esc(C.town)+' <span class="muted small" style="font-weight:400">(Autobahn GmbH)</span></div><div class="prio">'+cards.join("")+'</div>';
 }
 // Detailliste hinter Kennzahlen und „Meine Strecken“
 function abItem(i){
