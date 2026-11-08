@@ -1647,12 +1647,17 @@ async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]")
 document.addEventListener("click",e=>{const b=e.target.closest("[data-mapgo]");if(!b)return;e.preventDefault();const k=b.dataset.mapgo;
   if(location.hash!=="#staus/karte"){MAPFOCUS=1;location.hash="staus/karte";setTimeout(()=>mapGo(k),250);}else mapGo(k);});
 
-// ================= E-Ladesäulen (OpenStreetMap) =================
-let ELKEY=null,ELR=load("el_rad")||2,ELF=load("el_f")||"all",ELD=null;
+// ================= E-Ladesäulen (OpenStreetMap, ganz DE/AT) =================
+var ELKEY=null,ELR=load("el_rad")||2,ELF=load("el_f")||"all",ELD=null,ELP=null,ELMAP=null,ELLAY=null;
+function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],["datteln","Datteln",51.6539,7.3417],["alpen","Alpen-Menzelen",51.6449,6.5634],["salzhausen","Salzhausen",53.2236,10.1645]];
+  return F.map(([k,n,la,lo])=>{const H=HOMES[k];return {k,name:n,lat:H&&isFinite(H.lat)?H.lat:la,lon:H&&isFinite(H.lon)?H.lon:lo};});}
+function renderELWhere(){$("el-where").innerHTML='<button type="button" data-elw="gps">📍 Mein Standort</button>'+elFavs().map(f=>'<button type="button" data-elw="'+f.k+'" class="'+(ELP&&ELP.k===f.k?"on":"")+'">'+esc(f.name)+'</button>').join("");}
 function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
   [["all","Alle Ladesäulen"],["fast","Schnelllader (ab 50 kW)"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
-async function loadEL(){const box=$("el-list");if(!box)return;ELKEY=C.key;renderELSeg();$("el-title").textContent="E-Ladesäulen rund um "+C.short;
-  const la=C.center.lat,lo=C.center.lon;box.innerHTML='<div class="state">wird geladen …</div>';
+async function loadEL(){const box=$("el-list");if(!box)return;ELKEY=C.key;
+  if(!ELP){const f=elFavs().find(x=>x.k===C.key);ELP=f||{k:C.key,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon};}
+  renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
+  const la=ELP.lat,lo=ELP.lon;box.innerHTML='<div class="state">wird geladen …</div>';
   const q='[out:json][timeout:25];nwr["amenity"="charging_station"](around:'+(ELR*1000)+','+la+','+lo+');out center tags;';
   try{let d;try{d=await getJSON("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q),30000);}catch(e){d=await getJSON("https://overpass.kumi.systems/api/interpreter?data="+encodeURIComponent(q),30000);}
     const kw=t=>{let m=0;for(const [k,v] of Object.entries(t))if(/(^|:)output$/.test(k)){const x=String(v).match(/([\d.,]+)\s*(kW|W)?/i);if(x){let n=parseFloat(x[1].replace(",","."));if(/^W$/i.test(x[2]||"")||n>1000)n/=1000;if(n>m)m=n;}}return m||null;};
@@ -1662,17 +1667,37 @@ async function loadEL(){const box=$("el-list");if(!box)return;ELKEY=C.key;render
       return {name:t.name||t.operator||t.network||t.brand||"Ladesäule",op:t.operator||t.network||"",addr:[[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),t["addr:city"]].filter(Boolean).join(", "),
         cap:t.capacity,so,kw:kw(t),fee:t.fee,oh:t.opening_hours,lat,lon,km:distKm(la,lo,lat,lon)};}).filter(x=>isFinite(x.lat)).sort((a,b)=>a.km-b.km);
     renderEL();
-  }catch(e){box.innerHTML=stateBox("E-Ladesäulen nicht verfügbar – "+errText(e)+".",'<a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a>');}}
+  }catch(e){ELD=null;$("el-map").hidden=true;box.innerHTML=stateBox("E-Ladesäulen nicht verfügbar – "+errText(e)+".",'<a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a>');}}
 function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?ELD.filter(x=>x.kw>=50):ELD;
   const nav=x=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+x.lat+","+x.lon;
-  box.innerHTML='<div class="muted small" style="margin-bottom:4px">'+l.length+' Ladestationen'+(ELF==="fast"?" mit mind. 50 kW":"")+' im Umkreis von '+ELR+' km, die nächste zuerst. Antippen öffnet die Route in Google Maps.</div>'+
+  const info=x=>esc([x.so.join(", "),x.cap?x.cap+" Ladepunkte":"",x.fee==="no"?"kostenlos":"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "));
+  if(typeof L!=="undefined"){$("el-map").hidden=false;if(!ELMAP){ELMAP=L.map("el-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile});L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(ELMAP);ELLAY=L.layerGroup().addTo(ELMAP);}
+    ELMAP.invalidateSize();ELLAY.clearLayers();
+    L.circleMarker([ELP.lat,ELP.lon],{radius:6,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(ELP.name).addTo(ELLAY);
+    l.slice(0,300).forEach(x=>L.circleMarker([x.lat,x.lon],{radius:7,color:"#fff",weight:2,fillColor:x.kw>=50?"#0b6e8a":"#2e9d5b",fillOpacity:1}).bindPopup('<b>'+esc(x.name)+'</b><br>'+(x.kw?fmt(x.kw,0)+' kW · ':'')+info(x)+(x.addr?'<br>'+esc(x.addr):'')+'<br><a href="'+nav(x)+'" target="_blank" rel="noopener">Route in Google Maps ↗</a>').addTo(ELLAY));
+    ELMAP.fitBounds(L.latLng(ELP.lat,ELP.lon).toBounds(ELR*2000),{padding:[4,4]});}
+  else $("el-map").hidden=true;
+  box.innerHTML='<div class="muted small" style="margin-bottom:4px">'+l.length+' Ladestationen'+(ELF==="fast"?" mit mind. 50 kW":"")+' im Umkreis von '+ELR+' km um '+esc(ELP.name)+', die nächste zuerst. In der Karte: blau = Schnelllader, grün = normal. Antippen öffnet die Route in Google Maps.</div>'+
     (l.length?l.slice(0,80).map(x=>'<a class="el" href="'+nav(x)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="t">'+esc(x.name)+'</span><span class="k">'+fmt(x.km,1)+' km</span>'+
-      '<span class="d">'+(x.kw?'<span class="kw'+(x.kw>=50?" fast":"")+'">'+fmt(x.kw,0)+' kW</span>':'')+esc([x.so.join(", "),x.cap?x.cap+" Ladepunkte":"",x.fee==="no"?"kostenlos":"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "))+
+      '<span class="d">'+(x.kw?'<span class="kw'+(x.kw>=50?" fast":"")+'">'+fmt(x.kw,0)+' kW</span>':'')+info(x)+
       (x.addr||x.op&&x.op!==x.name?'<br>'+esc([x.addr,x.op&&x.op!==x.name?x.op:""].filter(Boolean).join(" · ")):"")+'</span></a>').join("")
      :'<div class="state">Keine Ladestationen gefunden – Umkreis vergrößern.</div>')+
-    '<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende. Belegung live gibt es dort nicht. Amtliche Liste: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
+    '<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende, Ortssuche: Nominatim. Belegung live gibt es dort nicht. Amtliche Liste für Deutschland: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
+function elSet(p){ELP=p;$("el-hits").innerHTML="";loadEL();}
 document.addEventListener("click",e=>{const r=e.target.closest("[data-elr]");if(r){ELR=+r.dataset.elr;store("el_rad",ELR);loadEL();return;}
-  const f=e.target.closest("[data-elf]");if(f){ELF=f.dataset.elf;store("el_f",ELF);renderELSeg();renderEL();}});
+  const f=e.target.closest("[data-elf]");if(f){ELF=f.dataset.elf;store("el_f",ELF);renderELSeg();renderEL();return;}
+  const w=e.target.closest("[data-elw]");if(w){const k=w.dataset.elw;
+    if(k==="gps"){if(!navigator.geolocation){$("el-list").innerHTML=stateBox("Standort wird von diesem Browser nicht unterstützt.");return;}
+      $("el-list").innerHTML='<div class="state">Standort wird ermittelt …</div>';
+      navigator.geolocation.getCurrentPosition(p=>elSet({k:"gps",name:"meinem Standort",lat:p.coords.latitude,lon:p.coords.longitude}),()=>{$("el-list").innerHTML=stateBox("Standort nicht freigegeben. Auf dem iPhone unter Einstellungen → Datenschutz → Ortungsdienste für Safari erlauben.");},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});return;}
+    const fv=elFavs().find(x=>x.k===k);if(fv)elSet(fv);return;}
+  const h=e.target.closest("[data-elhit]");if(h){const [la,lo]=h.dataset.elhit.split(",").map(Number);$("el-q").value=h.textContent;elSet({k:"q",name:h.dataset.n,lat:la,lon:lo});}});
+document.addEventListener("submit",async e=>{if(e.target.id!=="el-form")return;e.preventDefault();const q=$("el-q").value.trim();if(!q)return;const hb=$("el-hits");hb.innerHTML='<div class="muted small">sucht …</div>';
+  try{const r=await getJSON("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=de,at&accept-language=de&q="+encodeURIComponent(q));
+    if(!r.length){hb.innerHTML='<div class="muted small">Nichts gefunden – anders schreiben, z. B. „Hauptstraße 5, Wels“.</div>';return;}
+    if(r.length===1){elSet({k:"q",name:r[0].name||q,lat:+r[0].lat,lon:+r[0].lon});return;}
+    hb.innerHTML=r.map(x=>'<button type="button" data-elhit="'+x.lat+','+x.lon+'" data-n="'+esc(x.name||q)+'">'+esc(x.display_name)+'</button>').join("");
+  }catch(err){hb.innerHTML='<div class="muted small">Ortssuche nicht erreichbar – '+esc(errText(err))+'.</div>';}});
 
 // ================= Parken Datteln (OpenStreetMap) =================
 var PKS=null,PKDAT=null;
