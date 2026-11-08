@@ -1206,7 +1206,7 @@ function renderPrio(rawW,rawC,okRoads){
     const ws=rawW.filter(w=>routeHit(w,r)).map(w=>({...w,jam:jamInfo(w)}));
     const jams=ws.filter(w=>w.jam).sort((a,b)=>(b.jam.delay||0)-(a.jam.delay||0));
     const blocked=cl.length?cl[0]:ws.find(w=>w.isBlocked==="true"||w.isBlocked===true);
-    let cls="ok",val="freie Fahrt",sub="im Umkreis von "+PRIO_RADIUS_KM+" km um "+C.town;
+    let cls="ok",val="freie Fahrt",sub="keine Meldungen der Autobahn GmbH";
     if(blocked){cls="crit";val="Sperrung";sub=(blocked.subtitle||blocked.title||"")+" · "+fmt(blocked.km)+" km entfernt";}
     else if(jams.length){const j=jams[0];const st=jams.some(x=>x.jam.kind==="stau");cls=st&&(j.jam.delay||0)>=15?"bad":"warn";
       val=(st?"Stau":"stockend")+(j.jam.delay!=null?" · +"+j.jam.delay+" min":"")+(j.jam.len?" · "+fmt(j.jam.len,1)+" km":"")+(jams.length>1?" ("+jams.length+" Meldungen)":"");
@@ -1214,7 +1214,7 @@ function renderPrio(rawW,rawC,okRoads){
     else if(ws.length){cls="warn";val="Behinderung";sub=(ws[0].subtitle||ws[0].title||"")+" · "+fmt(ws[0].km)+" km entfernt";}
     ROUTE_ITEMS[ROUTES.indexOf(r)]=[...cl.map(c=>({...c,_c:1})),...ws];
     return '<div role="button" tabindex="0" data-route="'+ROUTES.indexOf(r)+'" class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span><span class="rs">'+esc(sub)+'</span></div>';});
-  box.innerHTML='<div class="sublbl">Meine Strecken</div><div class="prio">'+cards.join("")+'</div>';
+  box.innerHTML='<div class="sublbl">Meine Autobahn-Strecken · Lage im Umkreis von '+PRIO_RADIUS_KM+' km um '+esc(C.town)+'</div><div class="prio">'+cards.join("")+'</div>';
 }
 // Detailliste hinter Kennzahlen und „Meine Strecken“
 function abItem(i){
