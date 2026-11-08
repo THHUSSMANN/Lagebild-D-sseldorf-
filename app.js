@@ -162,7 +162,8 @@ const TTKEY_DEFAULT="RSDptU00A2TYdT3fwL1oTHnKl6XOEf51";let TTKEY=load("tomtom")|
 const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
 // Strecken je Ort; die bisherige Liste gilt für Düsseldorf
 if(load("routes")!=null&&load("routes_dus")==null)store("routes_dus",load("routes"));
-const routesFor=k=>load("routes_"+k)??(k==="dus"?ROUTES_DEFAULT:"");
+const ROUTES_DEFAULTS={dus:ROUTES_DEFAULT,datteln:"A2 Oberhausen; A43 Wuppertal; A52 Düsseldorf; A2 Hannover; A43 Münster"};
+const routesFor=k=>load("routes_"+k)??(ROUTES_DEFAULTS[k]||"");
 let ROUTES_TXT=routesFor(String(load("sel")||"dus-4").startsWith("dus-")?"dus":String(load("sel")).replace(/^p-/,""));
 function parseRoutes(t){return String(t||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^A?\s*(\d{1,3})\s*(?:Richtung|Ri\.|→|->|>|nach)?\s*(.+)$/i);return m?{ab:"A"+m[1],dir:m[2].trim()}:null;}).filter(Boolean);}
 let ROUTES=parseRoutes(ROUTES_TXT);
