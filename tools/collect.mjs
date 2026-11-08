@@ -190,7 +190,10 @@ const TRIPS = [
   ["dus-do", "Düsseldorf Hbf", "Dortmund Hbf"],
   ["do-dus", "Dortmund Hbf", "Düsseldorf Hbf"],
   ["re-do", "Recklinghausen Hbf", "Dortmund Hbf"],
-  ["do-re", "Dortmund Hbf", "Recklinghausen Hbf"]
+  ["do-re", "Dortmund Hbf", "Recklinghausen Hbf"],
+  // ÖPNV mit Bus & Bahn (alle Verkehrsmittel, auch mit Umstieg)
+  ["o-do-dat", "Dortmund Stadion", "Datteln Busbahnhof", true],
+  ["o-dat-do", "Datteln Busbahnhof", "Dortmund Hbf", true]
 ];
 // Haltestellenname ohne Gleis; „Recklinghausen, Recklinghausen Hbf“ → „Recklinghausen Hbf“
 function stopName(x) {
@@ -208,12 +211,12 @@ async function stopId(name) {
 }
 async function trips() {
   const out = [];
-  for (const [key, from, to] of TRIPS) {
+  for (const [key, from, to, allModes] of TRIPS) {
     try {
       const a = await stopId(from), b = await stopId(to);
       // Nur Züge (Fern-, Regionalverkehr, S-Bahn): Busse, U-/Straßenbahn usw. ausgeschlossen.
       // Vier Abfragen (jetzt bis in 3 Stunden), damit alle Züge der nächsten Stunden enthalten sind.
-      const excl = "&excludedMeans=checkbox" + [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 19].map(n => "&exclMOT_" + n + "=1").join("");
+      const excl = allModes ? "" : "&excludedMeans=checkbox" + [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 19].map(n => "&exclMOT_" + n + "=1").join("");
       const at = d => { const p = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d).reduce((o, x) => (o[x.type] = x.value, o), {});
         return "&itdDate=" + p.year + p.month + p.day + "&itdTime=" + p.hour + p.minute; };
       const base = "https://efa.vrr.de/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin=" + encodeURIComponent(a.id) + "&type_destination=any&name_destination=" + encodeURIComponent(b.id) + "&itdTripDateTimeDepArr=dep&calcNumberOfTrips=10&useRealtime=1&lineRestriction=400&routeType=LEASTTIME" + excl;
@@ -231,13 +234,13 @@ async function trips() {
         return { trainsOnly: rideLegs.every(l => /^(ICE|IC|EC|ECE|RE|RB|S|RRX|NX|FLX|NJ|TGV|THA)\s?\d*/i.test(l.line) || /zug|bahn/i.test(l.name)), dep: (ride[0] || legs[0] || {}).dep, depEst: (ride[0] || legs[0] || {}).depEst, arr: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arr, arrEst: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arrEst, changes: Math.max(0, ride.length - 1), legs };
       });
       let fern = [];
-      try { fern = await irisFern(from, to); } catch (e) { console.log("::warning::IRIS " + key + ": " + (e.message || e)); }
-      try { const fc = await fernCombos(from, to); fern.push(...fc); } catch (e) { console.log("::warning::Fern+Umstieg " + key + ": " + (e.message || e)); }
+      if (!allModes) try { fern = await irisFern(from, to); } catch (e) { console.log("::warning::IRIS " + key + ": " + (e.message || e)); }
+      if (!allModes) try { const fc = await fernCombos(from, to); fern.push(...fc); } catch (e) { console.log("::warning::Fern+Umstieg " + key + ": " + (e.message || e)); }
       const dur = j => (new Date(j.arrEst || j.arr) - new Date(j.depEst || j.dep)) / 6e4;
       const best = Math.min(...journeys.filter(j => j.arr && j.dep).map(dur), 999);
       journeys.push(...fern.filter(j => j.arr && j.dep && dur(j) > 0 && dur(j) <= Math.max(best + 30, 120)));
       const list = journeys.filter(j => j.dep && !seen.has(j.dep + "|" + j.legs.map(l => l.line).join(">")) && seen.add(j.dep + "|" + j.legs.map(l => l.line).join(">")))
-        .filter(j => j.trainsOnly).sort((x, y) => new Date(x.dep) - new Date(y.dep));
+        .filter(j => allModes || j.trainsOnly).sort((x, y) => new Date(x.dep) - new Date(y.dep));
       out.push({ key, from, to, journeys: list });
       console.log("::notice::Verbindung " + key + ": " + list.length + " Zugverbindungen (" + list.filter(j => j.legs.some(l => /^(ICE|IC|EC|ECE)/i.test(l.line))).length + " mit Fernverkehr) – " + list.map(j => j.dep.slice(11, 16) + " " + j.legs.filter(l => !l.walk).map(l => l.line).join(">")).join(" | "));
     } catch (e) { out.push({ key, from, to, error: String(e.message || e), journeys: [] }); console.log("::warning::Verbindung " + key + ": " + (e.message || e)); }

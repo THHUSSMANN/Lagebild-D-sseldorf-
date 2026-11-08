@@ -903,15 +903,15 @@ function composeTile(id,group,main,cls){
 // ================= Bahn-Verbindungen =================
 const TRIP_KEYS={dus:["dus-re","re-dus"],datteln:["re-dus","dus-re"]};
 const RSTRIP={r0:"dus-re",r1:"re-dus",r2:"dus-do",r3:"do-dus",r4:"re-do",r5:"do-re"};
-async function loadTrips(){
-  const keys=typeof RS!=="undefined"&&RS.tdir?[RSTRIP[RS.tdir]]:(TRIP_KEYS[C.key]||[]);const box=$("trips");
+async function loadTrips(opt){opt=opt||{};
+  const keys=opt.keys||(typeof RS!=="undefined"&&RS.tdir?[RSTRIP[RS.tdir]]:(TRIP_KEYS[C.key]||[]));const box=opt.box||$("trips");
   if(!keys.length){box.innerHTML="";box.hidden=true;return;}
   box.hidden=false;
   try{const d=await getData("trips.json");const list=(d.data||[]).filter(t=>keys.includes(t.key)).sort((a,b)=>keys.indexOf(a.key)-keys.indexOf(b.key));
     const t2=x=>x?hhmm(x):"–";
     const del=(p,e)=>{if(!p||!e)return"";const m=Math.round((new Date(e)-new Date(p))/6e4);return m>0?' <span style="color:var(--bad);font-weight:600">+'+m+'</span>':"";};
     const now=Date.now()-60e3;
-    {const first=k=>{const t=list.find(x=>x.key===k);const j=t&&(t.journeys||[]).find(j=>new Date(j.depEst||j.dep).getTime()>=now);return j;};
+    if(!opt.box){const first=k=>{const t=list.find(x=>x.key===k);const j=t&&(t.journeys||[]).find(j=>new Date(j.depEst||j.dep).getTime()>=now);return j;};
       const k1=C.isDus?"dus-re":"re-dus",j=first(k1);
       if(j){const m=j.depEst&&j.dep?Math.round((new Date(j.depEst)-new Date(j.dep))/6e4):0;
         TILE_PARTS.mobil.bahn=(C.isDus?"Bahn nach Recklinghausen":"Bahn nach Düsseldorf")+" an "+hhmm(j.arrEst||j.arr);
@@ -1753,7 +1753,9 @@ function setBtns(box,html){if(!box)return;const t=document.createElement("div");
   if(old.length===nw.length&&old.every((o,i)=>o.tagName===nw[i].tagName&&o.outerHTML.split(">")[0].replace(/class="[^"]*"/,"")===nw[i].outerHTML.split(">")[0].replace(/class="[^"]*"/,""))){
     old.forEach((o,i)=>{if(o.className!==nw[i].className)o.className=nw[i].className;if(o.innerHTML!==nw[i].innerHTML)o.innerHTML=nw[i].innerHTML;});}
   else box.innerHTML=html;}
-function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
+function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();
+    const ob=$("oe-trips");if(ob){const ks=RS.city==="dortmund"?["o-do-dat","o-dat-do"]:RS.city==="datteln"?["o-dat-do","o-do-dat"]:[];
+      ob.closest("section").hidden=!ks.length;if(ks.length){ob.hidden=false;ob.innerHTML='<div class="state">wird geladen …</div>';loadTrips({keys:ks,box:ob});}else{ob.hidden=true;ob.innerHTML="";}}}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
     setBtns($("rs-tdir"),TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(RSDIRS.find(x=>x[0]===k)||[])[3]+(RS.tdir===k?" on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join(""));
     const t=RSTRIP[RS.tdir]||"";const st={"dus-re":"Düsseldorf Hbf → Recklinghausen Hbf","re-dus":"Recklinghausen Hbf → Düsseldorf Hbf","dus-do":"Düsseldorf Hbf → Dortmund Hbf","do-dus":"Dortmund Hbf → Düsseldorf Hbf","re-do":"Recklinghausen Hbf → Dortmund Hbf","do-re":"Dortmund Hbf → Recklinghausen Hbf"}[t]||"";
