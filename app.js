@@ -814,7 +814,6 @@ function renderGarages(){
 // ================= Stadtverkehr Düsseldorf (Verkehrszentrale) =================
 const VT="https://vtmanager.duesseldorf.de/geoserverwfs?service=WFS&version=1.1.0&request=GetFeature&outputFormat=application/json&srsName=EPSG:4326&typeName=";
 async function loadVT(){
-  if(!C.isDus)return;
   try{
     const [sp,me,ve]=await Promise.all(["vtinfo:Sperrungen","vtinfo:Meldungen","vtinfo:Veranstaltungen"].map(t=>getJSON(VT+t,20000)));
     const now=Date.now(),wk=now+7*864e5;
@@ -844,7 +843,7 @@ let VTGEO=null,VTLAYER=null;
 function drawVTOnMap(){
   if(!MAP||typeof L==="undefined")return;
   if(VTLAYER){VTLAYER.remove();VTLAYER=null;}
-  if(!C.isDus||!VTGEO)return;
+  if(!VTGEO)return;
   VTLAYER=L.layerGroup().addTo(MAP);
   VTGEO.active.filter(x=>x.kind==="Sperrung"&&x.geo).forEach(x=>L.geoJSON(x.geo,{style:{color:"#7d1f6b",weight:5,opacity:.85,dashArray:"6 4"}}).bindPopup("<b>Sperrung</b><br>"+esc(x.short||x.name)).addTo(VTLAYER));
   VTGEO.ev.filter(x=>x.geo).forEach(x=>L.geoJSON(x.geo,{style:{color:"#0b6e8a",weight:5,opacity:.8}}).bindPopup("<b>Veranstaltung</b><br>"+esc(x.short||x.name)+"<br>"+dateTime(x.from)).addTo(VTLAYER));
@@ -1594,10 +1593,91 @@ function renderSources(){
 
 // ================= Ablauf =================
 let busy=false,lastSlow=0,slowKey="";
+// ================= Stadtverkehr Datteln (TomTom) =================
+const TOWNS={dus:{lat:51.2254,lon:6.7763,z:12,name:"Düsseldorf"},datteln:{lat:51.6539,lon:7.3417,z:13,name:"Datteln"}};
+const homeOr=k=>HOMES[k]&&isFinite(HOMES[k].lat)?HOMES[k]:{...TOWNS[k],label:TOWNS[k].name};
+async function loadDatteln(){const box=$("sd-list");if(!box)return;
+  if(!TTKEY){box.innerHTML=stateBox("Für den Stadtverkehr Datteln unter Einstellungen den kostenlosen TomTom-Schlüssel eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
+  const T=TOWNS.datteln,bbox=[T.lon-.12,T.lat-.075,T.lon+.12,T.lat+.075].map(x=>x.toFixed(4)).join(",");
+  const fields="{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description},from,to,length,delay,roadNumbers}}}";
+  const CAT={0:"Meldung",1:"Unfall",2:"Nebel",3:"Gefahr",4:"Regen",5:"Glätte",6:"Stau",7:"Fahrstreifen gesperrt",8:"Straße gesperrt",9:"Baustelle",10:"Wind",11:"Überflutung",14:"Liegengebliebenes Fahrzeug"};
+  try{const d=await getJSON("https://api.tomtom.com/traffic/services/5/incidentDetails?key="+encodeURIComponent(TTKEY)+"&bbox="+bbox+"&language=de-DE&timeValidityFilter=present&fields="+encodeURIComponent(fields));
+    const l=(d.incidents||[]).map(i=>{const p=i.properties||{};const c=(i.geometry&&i.geometry.coordinates)||[];const pt=Array.isArray(c[0])?c[Math.floor(c.length/2)]:c;
+      return {cat:p.iconCategory,mag:p.magnitudeOfDelay||0,delay:p.delay?Math.round(p.delay/60):0,len:p.length?p.length/1000:null,from:p.from,to:p.to,road:(p.roadNumbers||[]).join(", "),desc:((p.events||[])[0]||{}).description||"",lat:pt&&pt[1],lon:pt&&pt[0]};})
+      .map(x=>{x.km=isFinite(x.lat)?distKm(T.lat,T.lon,x.lat,x.lon):99;return x;})
+      .sort((a,b)=>(b.cat===8)-(a.cat===8)||(b.delay||0)-(a.delay||0)||b.mag-a.mag||a.km-b.km);
+    const grp=x=>x.cat===9?"Baustellen":x.cat===8||x.cat===7?"Sperrungen":"Staus, Unfälle & Behinderungen";
+    const order=["Staus, Unfälle & Behinderungen","Sperrungen","Baustellen"];
+    box.innerHTML=l.length?'<div class="stau-sum" style="margin-bottom:8px">'+order.map(g=>'<div class="fact"><b>'+l.filter(x=>grp(x)===g).length+'</b><span>'+g+'</span></div>').join("")+'</div>'+
+      order.map(g=>{const a=l.filter(x=>grp(x)===g);return a.length?'<div class="sublbl" style="margin-top:10px">'+g+'</div>'+a.slice(0,25).map(x=>
+        '<div class="jam sdj" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
+        '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
+        '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+(x.len?" · "+fmt(x.len,1)+" km":"")+" · "+fmt(x.km,1)+' km vom Zentrum · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):"";}).join("")
+      :'<div class="state good">Keine Staus, Sperrungen oder Baustellen in und um Datteln gemeldet.</div>';
+  }catch(e){box.innerHTML=stateBox("Verkehrslage Datteln nicht verfügbar – "+errText(e)+".");}}
+document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
+  MAPFOCUS=1;location.hash="staus/karte";setTimeout(()=>{if(!MAP)return;MAP.invalidateSize();MAP.setView([la,lo],15);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);},250);});
+
+// ================= Karte: Orte und Strecken =================
+let MAPGO=null;
+async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));
+  const info=$("mapgo-info");if(!MAP){try{ensureMap();}catch(e){}}if(!MAP)return;MAP.invalidateSize();
+  if(MAP._route){MAP._route.remove();MAP._route=null;}
+  if(k==="dus"||k==="datteln"){const T=TOWNS[k];MAP.setView([T.lat,T.lon],T.z);info.textContent="Live-Verkehr rund um "+T.name+(MAPMODE!=="tomtom"&&TTKEY?" · für alle Straßen oben „TomTom“ wählen":"");return;}
+  const A=homeOr("dus"),B=homeOr("datteln");const [o,d,t]=k==="r0"?[A,B,"Düsseldorf → Datteln"]:[B,A,"Datteln → Düsseldorf"];
+  if(!TTKEY){info.textContent="Für die Strecke den TomTom-Schlüssel unter Einstellungen eintragen.";MAP.fitBounds([[o.lat,o.lon],[d.lat,d.lon]],{padding:[20,20]});return;}
+  info.textContent=t+" · Strecke wird berechnet …";
+  try{let pts=null,secs=[],sm=null;const c=CARR.find(r=>r&&r.t===t&&r.pts);
+    if(c){pts=c.pts;secs=c.secs||[];}
+    const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&sectionType=traffic&key="+encodeURIComponent(TTKEY);
+    const r=await getJSON(url);const rt=r.routes[0];sm=rt.summary;pts=(rt.legs||[]).flatMap(l=>l.points||[]);
+    const tr=(rt.sections||[]).filter(x=>x.sectionType==="TRAFFIC");
+    if(MAPGO!==k)return;
+    const ll=pts.map(p=>[p.latitude,p.longitude]);const g=L.layerGroup().addTo(MAP);MAP._route=g;
+    L.polyline(ll,{color:"#fff",weight:10,opacity:.9,interactive:false}).addTo(g);
+    L.polyline(ll,{color:"#0b6e8a",weight:6,opacity:.95}).bindTooltip(t).addTo(g);
+    tr.forEach(x=>{const seg=ll.slice(x.startPointIndex,x.endPointIndex+1);if(seg.length<2)return;const dl=Math.round((x.delayInSeconds||0)/60);
+      L.polyline(seg,{color:x.simpleCategory==="ROAD_CLOSURE"?"#7d1f6b":dl>=10?"#d62d20":"#f08a00",weight:7,opacity:1}).bindPopup("<b>"+({JAM:"Stau",ROAD_WORK:"Baustelle",ROAD_CLOSURE:"Sperrung"}[x.simpleCategory]||"Behinderung")+"</b>"+(dl?"<br>+"+dl+" min":"")).addTo(g);});
+    L.marker(ll[0],{icon:L.divIcon({className:"homeic",html:"🏠",iconSize:[26,26]})}).bindTooltip("Start").addTo(g);
+    L.circleMarker(ll[ll.length-1],{radius:7,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip("Ziel").addTo(g);
+    MAP.fitBounds(L.latLngBounds(ll),{padding:[16,16]});
+    const min=Math.round(sm.travelTimeInSeconds/60),dl=Math.round((sm.trafficDelayInSeconds||0)/60);
+    info.innerHTML='<b>'+esc(t)+'</b> · '+(min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0"):min)+' min · '+fmt(sm.lengthInMeters/1000)+' km · '+(dl>0?'<span class="cs '+(dl>=15?"bad":"warn")+'">+'+dl+' min Stau</span>':'<span class="cs ok">frei</span>')+(tr.length?' · '+tr.length+(tr.length===1?" Behinderung":" Behinderungen")+' farbig markiert':'');
+  }catch(e){info.textContent=t+" · Strecke derzeit nicht verfügbar ("+errText(e)+").";}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-mapgo]");if(!b)return;e.preventDefault();const k=b.dataset.mapgo;
+  if(location.hash!=="#staus/karte"){MAPFOCUS=1;location.hash="staus/karte";setTimeout(()=>mapGo(k),250);}else mapGo(k);});
+
+// ================= E-Ladesäulen (OpenStreetMap) =================
+let ELKEY=null,ELR=load("el_rad")||2,ELF=load("el_f")||"all",ELD=null;
+function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
+  [["all","Alle Ladesäulen"],["fast","Schnelllader (ab 50 kW)"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
+async function loadEL(){const box=$("el-list");if(!box)return;ELKEY=C.key;renderELSeg();$("el-title").textContent="E-Ladesäulen rund um "+C.short;
+  const la=C.center.lat,lo=C.center.lon;box.innerHTML='<div class="state">wird geladen …</div>';
+  const q='[out:json][timeout:25];nwr["amenity"="charging_station"](around:'+(ELR*1000)+','+la+','+lo+');out center tags;';
+  try{let d;try{d=await getJSON("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q),30000);}catch(e){d=await getJSON("https://overpass.kumi.systems/api/interpreter?data="+encodeURIComponent(q),30000);}
+    const kw=t=>{let m=0;for(const [k,v] of Object.entries(t))if(/(^|:)output$/.test(k)){const x=String(v).match(/([\d.,]+)\s*(kW|W)?/i);if(x){let n=parseFloat(x[1].replace(",","."));if(/^W$/i.test(x[2]||"")||n>1000)n/=1000;if(n>m)m=n;}}return m||null;};
+    const SOCK={type2:"Typ 2",type2_combo:"CCS",chademo:"CHAdeMO",tesla_supercharger:"Tesla",schuko:"Schuko",type2_cable:"Typ 2 Kabel"};
+    ELD=(d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
+      const so=Object.keys(SOCK).filter(k=>t["socket:"+k]&&t["socket:"+k]!=="no").map(k=>SOCK[k]+(/^\d+$/.test(t["socket:"+k])?" ×"+t["socket:"+k]:""));
+      return {name:t.name||t.operator||t.network||t.brand||"Ladesäule",op:t.operator||t.network||"",addr:[[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),t["addr:city"]].filter(Boolean).join(", "),
+        cap:t.capacity,so,kw:kw(t),fee:t.fee,oh:t.opening_hours,lat,lon,km:distKm(la,lo,lat,lon)};}).filter(x=>isFinite(x.lat)).sort((a,b)=>a.km-b.km);
+    renderEL();
+  }catch(e){box.innerHTML=stateBox("E-Ladesäulen nicht verfügbar – "+errText(e)+".",'<a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a>');}}
+function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?ELD.filter(x=>x.kw>=50):ELD;
+  const nav=x=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+x.lat+","+x.lon;
+  box.innerHTML='<div class="muted small" style="margin-bottom:4px">'+l.length+' Ladestationen'+(ELF==="fast"?" mit mind. 50 kW":"")+' im Umkreis von '+ELR+' km, die nächste zuerst. Antippen öffnet die Route in Google Maps.</div>'+
+    (l.length?l.slice(0,80).map(x=>'<a class="el" href="'+nav(x)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="t">'+esc(x.name)+'</span><span class="k">'+fmt(x.km,1)+' km</span>'+
+      '<span class="d">'+(x.kw?'<span class="kw'+(x.kw>=50?" fast":"")+'">'+fmt(x.kw,0)+' kW</span>':'')+esc([x.so.join(", "),x.cap?x.cap+" Ladepunkte":"",x.fee==="no"?"kostenlos":"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "))+
+      (x.addr||x.op&&x.op!==x.name?'<br>'+esc([x.addr,x.op&&x.op!==x.name?x.op:""].filter(Boolean).join(" · ")):"")+'</span></a>').join("")
+     :'<div class="state">Keine Ladestationen gefunden – Umkreis vergrößern.</div>')+
+    '<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende. Belegung live gibt es dort nicht. Amtliche Liste: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
+document.addEventListener("click",e=>{const r=e.target.closest("[data-elr]");if(r){ELR=+r.dataset.elr;store("el_rad",ELR);loadEL();return;}
+  const f=e.target.closest("[data-elf]");if(f){ELF=f.dataset.elf;store("el_f",ELF);renderELSeg();renderEL();}});
+
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
   const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
-  if(C.isDus)tasks.push(loadVT(),loadGarages());
+  tasks.push(loadVT(),loadDatteln());if(ELKEY)tasks.push(loadEL());if(C.isDus)tasks.push(loadGarages());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
@@ -1615,10 +1695,10 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Lage"],["staus/karte","Karte"],["staus/meld","Meldungen"],["stadtverkehr","Stadt"],["verkehr","Bau & Tanken"],["parken","Parken"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Lage"],["staus/karte","Karte"],["staus/meld","Meldungen"],["stadtverkehr","Stadt Düsseldorf"],["stadtdatteln","Stadt Datteln"],["parken","Parken"],["verkehr","Baustellen"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
-  if(["stadtverkehr","parken","bezirke"].includes(v))return C.isDus;
+  if(["parken","bezirke"].includes(v))return C.isDus;
   if(v==="einsaetze")return C.key==="datteln";
   if(v==="bahn")return true;
   return !!$("v-"+v);
@@ -1651,7 +1731,8 @@ function route(){
     const cur=v+(pane!=="lage"?"/"+pane:"");el.classList.toggle("grid3",g==="verkehr");
     el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'">'+esc(l)+(x==="staus/meld"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
   if(typeof foldCount==="function")foldCount();
-  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&pane==="karte")setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS)fitMap();MAPFOCUS=0;}}catch(e){}},60);}
+  if(v==="eladen"&&ELKEY!==C.key)loadEL();
+  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&pane==="karte")setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}
 }
 window.addEventListener("hashchange",route);
 document.querySelectorAll(".view").forEach(v=>{const x=document.createElement("a");x.href="#";x.className="view-x";x.setAttribute("aria-label","Schließen, zurück zur Übersicht");x.innerHTML="✕ Schließen";v.prepend(x);});

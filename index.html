@@ -251,7 +251,7 @@ nav.jump a.back{background:var(--accent);color:var(--panel);border-color:var(--a
 .subtabs.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .subtabs.grid3 a{text-align:center;padding:10px 6px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14.5px}
 .subtabs a.on .fcnt{background:var(--panel);color:var(--accent)}
-@media (min-width:700px){.subtabs.grid3{grid-template-columns:repeat(6,1fr)}}
+@media (min-width:1000px){.subtabs.grid3{grid-template-columns:repeat(9,1fr)}}
 .subtabs a{text-decoration:none;color:var(--fg);font-weight:600;font-size:14px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
 .subtabs a.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
 .trips{display:flex;flex-direction:column;gap:8px}
@@ -388,6 +388,21 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .stau-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .stau-sum .fact{background:var(--panel-2);border-radius:6px;padding:8px 10px}
 
+
+/* Knöpfe: Karte, E-Laden */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.seg button{font:600 14.5px var(--f-body);padding:9px 6px;min-height:44px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+@media (min-width:700px){.seg{grid-template-columns:repeat(4,1fr)}}
+.seg.s3{grid-template-columns:repeat(3,1fr)}
+#el-seg .seg{grid-template-columns:repeat(auto-fit,minmax(90px,1fr))}
+.el{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.el .t{font:700 15.5px var(--f-display)}
+.el .k{font:700 15px var(--f-display);text-align:right;white-space:nowrap}
+.el .d{grid-column:1/-1;font-size:13.5px;color:var(--muted)}
+.el .kw{display:inline-block;font:700 12.5px var(--f-body);border-radius:999px;padding:1px 8px;margin-right:6px;background:var(--panel-2);color:var(--fg)}
+.el .kw.fast{background:var(--accent);color:var(--panel)}
+.el a{color:var(--accent)}
 /* Verkehr als Ampel-Tabelle */
 .ttab{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
 .ttab #car-routes{display:block;margin:0}
@@ -629,6 +644,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div class="tnote muted small" id="tnote">Zeile antippen für Details · Fahrzeit: TomTom · Strecken: Autobahn GmbH, 60 km Umkreis</div>
   </div>
   <div data-pane="karte" hidden>
+  <div class="seg mapgo" id="mapgo">
+    <button type="button" data-mapgo="dus">Düsseldorf</button><button type="button" data-mapgo="datteln">Datteln</button>
+    <button type="button" data-mapgo="r0">Düsseldorf → Datteln</button><button type="button" data-mapgo="r1">Datteln → Düsseldorf</button>
+  </div>
+  <div class="muted small" id="mapgo-info" style="margin:-2px 0 8px"></div>
   <div class="mapsw" id="mapsw" role="tablist" aria-label="Kartenquelle">
     <button type="button" data-mm="tomtom" role="tab">TomTom <small>Verkehr live</small></button>
     <button type="button" data-mm="osm" role="tab">OpenStreetMap <small>amtliche Meldungen</small></button>
@@ -650,9 +670,9 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </section>
 </div>
 
-<div class="view" id="v-stadtverkehr" data-view="stadtverkehr" data-dus hidden>
+<div class="view" id="v-stadtverkehr" data-view="stadtverkehr" hidden>
 <div class="subtabs" data-for="stadtverkehr"></div>
-<section class="card wide" id="stadtverkehr" data-dus>
+<section class="card wide" id="stadtverkehr">
   <div class="card-head"><h2>Stadtverkehr Düsseldorf</h2><span class="src">Verkehrszentrale der Landeshauptstadt (live)</span></div>
   <div class="stau-sum" id="vt-sum"></div>
   <div class="grid" style="gap:12px">
@@ -660,6 +680,15 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div><div class="sublbl">Verkehrsrelevante Veranstaltungen</div><div id="vt-events"><div class="state">wird geladen …</div></div>
       <div class="sublbl" style="margin-top:12px">Demnächst (7 Tage)</div><div id="vt-next"><div class="state">wird geladen …</div></div></div>
   </div>
+</section>
+</div>
+
+<div class="view" id="v-stadtdatteln" data-view="stadtdatteln" hidden>
+<div class="subtabs" data-for="stadtdatteln"></div>
+<section class="card wide" id="stadtdatteln">
+  <div class="card-head"><h2>Stadtverkehr Datteln</h2><span class="src">TomTom Echtzeit · Datteln und Umgebung (ca. 8 km)</span></div>
+  <div id="sd-list"><div class="state">wird geladen …</div></div>
+  <div class="muted small" style="margin-top:8px"><a href="#staus/karte" data-mapgo="datteln">Datteln in der Karte zeigen ›</a></div>
 </section>
 </div>
 
@@ -737,21 +766,31 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <div class="view" id="v-verkehr" data-view="verkehr" hidden>
 <div class="subtabs" data-for="verkehr"></div>
-<section id="verkehr"><div class="sec-title"><h2>Baustellen, Tanken &amp; E-Laden an Autobahnen</h2><span class="muted small" id="ab-list">A3 · A44 · A46 · A52 · A57 · A59 · A524 · A535 · Umkreis 30 km</span></div></section>
-<div class="grid">
-  <section class="card">
-    <div class="card-head"><h2>Baustellen</h2><span class="src">Autobahn GmbH</span></div>
-    <div id="roadworks"><div class="state">wird geladen …</div></div>
-  </section>
-  <section class="card">
-    <div class="card-head"><h2>Tankstellen in der Nähe</h2><span class="src">Tankerkönig (MTS-K)</span></div>
-    <div id="fuel"><div class="state">wird geladen …</div></div>
-  </section>
-  <section class="card">
-    <div class="card-head"><h2>E-Laden an der Autobahn</h2><span class="src">Autobahn GmbH</span></div>
-    <div id="charging"><div class="state">wird geladen …</div></div>
-  </section>
+<section class="card wide">
+  <div class="card-head"><h2>Baustellen an Autobahnen</h2><span class="src" id="ab-list">Autobahn GmbH</span></div>
+  <div id="roadworks"><div class="state">wird geladen …</div></div>
+</section>
 </div>
+
+<div class="view" id="v-tanken" data-view="tanken" hidden>
+<div class="subtabs" data-for="tanken"></div>
+<section class="card wide">
+  <div class="card-head"><h2>Tankstellen in der Nähe</h2><span class="src">Tankerkönig (MTS-K)</span></div>
+  <div id="fuel"><div class="state">wird geladen …</div></div>
+</section>
+</div>
+
+<div class="view" id="v-eladen" data-view="eladen" hidden>
+<div class="subtabs" data-for="eladen"></div>
+<section class="card wide">
+  <div class="card-head"><h2 id="el-title">E-Ladesäulen</h2><span class="src">OpenStreetMap</span></div>
+  <div id="el-seg"></div>
+  <div id="el-list"><div class="state">wird geladen …</div></div>
+</section>
+<section class="card wide">
+  <div class="card-head"><h2>E-Laden an der Autobahn</h2><span class="src">Autobahn GmbH</span></div>
+  <div id="charging"><div class="state">wird geladen …</div></div>
+</section>
 </div>
 
 <div class="view" id="v-bahn" data-view="bahn" hidden>
@@ -904,6 +943,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=113"></script>
+<script src="app.js?v=114"></script>
 </body>
 </html>
