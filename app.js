@@ -771,15 +771,16 @@ function normalizePlaces(j){
   }).filter(p=>isFinite(p.lat)&&isFinite(p.lon));
 }
 async function loadParking(){
-  const parts=[["pr","odd-pr.json"],["bh","odd-bh.json"],["aed","odd-aed.json"],["wc","odd-wc.json"],["rad","odd-rad.json"],["blitz","odd-blitz.json"]];
+  const parts=[["pr","odd-pr.json"],["bh","odd-bh.json"]];
   let ok=0;
   await Promise.all(parts.map(async([k,f])=>{try{PARK[k]=(await getData(f)).data;ok++;}catch(e){}}));
   setStatus("park",ok>0,ok?(ok<parts.length?"teilweise":""):"Daten fehlen");
   renderParking();
 }
+function PKREF(){return C.isDus?{lat:C.lat,lon:C.lon}:(HOMES.dus&&isFinite(HOMES.dus.lat)?HOMES.dus:{lat:51.2254,lon:6.7763});}
 function renderParking(){
-  if(!C.isDus)return;
-  const near=(list,n,max)=>(list||[]).map(p=>({...p,km:distKm(C.lat,C.lon,p.lat,p.lon)})).filter(p=>!max||p.km<=max).sort((x,y)=>x.km-y.km).slice(0,n);
+  const R=PKREF();
+  const near=(list,n,max)=>(list||[]).map(p=>({...p,km:distKm(R.lat,R.lon,p.lat,p.lon)})).filter(p=>!max||p.km<=max).sort((x,y)=>x.km-y.km).slice(0,n);
   const route=p=>' · <a href="https://maps.apple.com/?daddr='+p.lat+','+p.lon+'" target="_blank" rel="noopener">Route</a>';
   const box=(id,list,label,n,max)=>{
     if(!list){$(id).innerHTML=stateBox(label+" nicht verfügbar.");return;}
@@ -788,7 +789,6 @@ function renderParking(){
     $(id).innerHTML='<div class="list">'+s.map(p=>'<div class="li"><span class="tag alt">'+fmt(p.km,1)+' km</span><div class="t">'+esc(p.name||p.addr||label)+'</div><div class="r"></div><div class="d">'+esc([p.name?p.addr:"",p.info].filter(Boolean).join(" · "))+route(p)+'</div></div>').join("")+'</div>';
   };
   box("park-pr",PARK.pr,"P+R-Anlagen",6);box("park-bh",PARK.bh,"Behindertenparkplätze",6);
-  box("svc-aed",PARK.aed,"Defibrillator",4);box("svc-wc",PARK.wc,"Toilette",4);box("svc-rad",PARK.rad,"Radstation",3);box("svc-blitz",PARK.blitz,"Messstelle",4,5);
   renderGarages();
 }
 // Parkhäuser live (Verkehrszentrale)
@@ -799,9 +799,9 @@ async function loadGarages(){
   renderGarages();
 }
 function renderGarages(){
-  if(!C.isDus)return;
+  const R=PKREF();
   if(!GARAGES){$("park-ph").innerHTML=stateBox("Parkhaus-Belegung nicht verfügbar.",link("https://vtmanager.duesseldorf.de/info/?parkquartier#main","Verkehrszentrale"));return;}
-  const s=GARAGES.map(p=>({...p,km:distKm(C.lat,C.lon,p.lat,p.lon)})).sort((a,b)=>a.km-b.km).slice(0,8);
+  const s=GARAGES.map(p=>({...p,km:distKm(R.lat,R.lon,p.lat,p.lon)})).sort((a,b)=>a.km-b.km).slice(0,8);
   {const g=s.find(p=>p.status===1&&p.kurzparkermax&&p.kurzparkerbelegt!=null);if(g){TILE_PARTS.traffic.park=fmt(Math.max(0,g.kurzparkermax-g.kurzparkerbelegt))+" frei im Parkhaus "+(g.bezeichnung||g.name);composeTile("k-traffic","traffic");}if(false)setKpi("k-park",fmt(Math.max(0,g.kurzparkermax-g.kurzparkerbelegt))+"<small> frei</small>",(g.bezeichnung||g.name)+" · "+fmt(g.km,1)+" km",(g.kurzparkerbelegt/g.kurzparkermax)>=.95?"bad":"ok");}
   const tr=t=>t>0?"↑":t<0?"↓":"";
   $("park-ph").innerHTML='<div class="list">'+s.map(p=>{const max=p.kurzparkermax,used=p.kurzparkerbelegt,free=(max!=null&&used!=null)?Math.max(0,max-used):null;
@@ -1674,15 +1674,42 @@ function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?E
 document.addEventListener("click",e=>{const r=e.target.closest("[data-elr]");if(r){ELR=+r.dataset.elr;store("el_rad",ELR);loadEL();return;}
   const f=e.target.closest("[data-elf]");if(f){ELF=f.dataset.elf;store("el_f",ELF);renderELSeg();renderEL();}});
 
+// ================= Parken Datteln (OpenStreetMap) =================
+var PKS=null,PKDAT=null;
+function pkShow(k){PKS=k;document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
+  document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==k);if(k==="datteln"&&!PKDAT)loadPkDat();}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pks]");if(b)pkShow(b.dataset.pks);});
+async function loadPkDat(){const box=$("pk-dat");if(!box)return;
+  const H=HOMES.datteln&&isFinite(HOMES.datteln.lat)?HOMES.datteln:null,Z={lat:51.6539,lon:7.3417};
+  const q='[out:json][timeout:25];(nwr["amenity"="parking"](around:3000,'+Z.lat+','+Z.lon+');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:3000,'+Z.lat+','+Z.lon+'););out center tags;';
+  try{let d;try{d=await getJSON("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q),30000);}catch(e){d=await getJSON("https://overpass.kumi.systems/api/interpreter?data="+encodeURIComponent(q),30000);}
+    const R=H||Z;
+    PKDAT=(d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
+      const kind=t.amenity==="parking_space"||(t.parking_space==="disabled")?"bh":t.park_ride&&t.park_ride!=="no"?"pr":/multi-storey|underground/.test(t.parking||"")?"ph":"pp";
+      return {kind,name:t.name||({ph:t.parking==="underground"?"Tiefgarage":"Parkhaus",pr:"Park + Ride",bh:"Behindertenparkplatz",pp:"Parkplatz"})[kind],cap:t.capacity,dis:t["capacity:disabled"],
+        fee:t.fee,max:t.maxstay,oh:t.opening_hours,access:t.access,addr:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),lat,lon,km:distKm(R.lat,R.lon,lat,lon)};})
+      .filter(x=>isFinite(x.lat)&&!/^(private|no|customers)$/.test(x.access||"")).sort((a,b)=>a.km-b.km);
+    renderPkDat(!!H);
+  }catch(e){box.innerHTML=stateBox("Parkdaten für Datteln nicht verfügbar – "+errText(e)+".");}}
+function renderPkDat(home){const box=$("pk-dat");if(!PKDAT)return;
+  const nav=x=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+x.lat+","+x.lon;
+  const G=[["ph","Parkhäuser & Tiefgaragen",8],["pp","Parkplätze",12],["pr","Park + Ride",4],["bh","Behindertenparkplätze",8]];
+  const bh=PKDAT.filter(x=>x.kind==="bh"||Number(x.dis)>0);
+  box.innerHTML='<div class="muted small" style="margin-bottom:4px">Öffentliche Parkmöglichkeiten, die nächste zuerst (Entfernung von '+(home?"deiner Adresse":"der Innenstadt")+'). Antippen öffnet die Route in Google Maps. Eine Live-Belegung gibt es für Datteln nicht.</div>'+
+    G.map(([k,l,n])=>{const a=k==="bh"?bh:PKDAT.filter(x=>x.kind===k);if(!a.length)return"";return '<div class="sublbl" style="margin-top:12px">'+l+' <span class="muted small" style="font-weight:400">('+a.length+')</span></div>'+a.slice(0,n).map(x=>
+      '<a class="el" href="'+nav(x)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="t">'+esc(x.name)+'</span><span class="k">'+fmt(x.km,1)+' km</span><span class="d">'+
+      esc([x.addr,x.cap?x.cap+" Plätze":"",Number(x.dis)>0?x.dis+" Behindertenplätze":"",x.fee==="yes"?"gebührenpflichtig":x.fee==="no"?"kostenlos":"",x.max?"max. "+x.max:"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "))+'</span></a>').join("");}).join("")
+    ||'<div class="state">Keine öffentlichen Parkplätze gefunden.</div>';
+  box.insertAdjacentHTML("beforeend",'<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende.</div>');}
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
   const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
-  tasks.push(loadVT(),loadDatteln());if(ELKEY)tasks.push(loadEL());if(C.isDus)tasks.push(loadGarages());
+  tasks.push(loadVT(),loadDatteln());if(ELKEY)tasks.push(loadEL());tasks.push(loadGarages());if(PKDAT)tasks.push(loadPkDat());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
     tasks.push(loadUBA(),loadPollen(),loadHol());
-    tasks.push(loadWindy());if(C.isDus)tasks.push(loadParking());
+    tasks.push(loadWindy(),loadParking());
   }
   await Promise.allSettled(tasks);
   $("updated").textContent=C.name+" · zuletzt aktualisiert "+new Date().toLocaleString("de-DE",{...TZ,dateStyle:"medium",timeStyle:"short"})+" · Staus alle 3, Rest alle 10 Minuten";
@@ -1698,7 +1725,7 @@ const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.datas
 const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Lage"],["staus/karte","Karte"],["staus/meld","Meldungen"],["stadtverkehr","Stadt Düsseldorf"],["stadtdatteln","Stadt Datteln"],["parken","Parken"],["verkehr","Baustellen"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
-  if(["parken","bezirke"].includes(v))return C.isDus;
+  if(["bezirke"].includes(v))return C.isDus;
   if(v==="einsaetze")return C.key==="datteln";
   if(v==="bahn")return true;
   return !!$("v-"+v);
@@ -1732,6 +1759,7 @@ function route(){
     el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'">'+esc(l)+(x==="staus/meld"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
   if(typeof foldCount==="function")foldCount();
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
+  if(v==="parken")pkShow(PKS||(C.key==="datteln"?"datteln":"dus"));
   if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&pane==="karte")setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}
 }
 window.addEventListener("hashchange",route);

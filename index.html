@@ -824,10 +824,12 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </div>
 </div>
 
-<div class="view" id="v-parken" data-view="parken" data-dus hidden>
+<div class="view" id="v-parken" data-view="parken" hidden>
 <div class="subtabs" data-for="parken"></div>
-<section id="parken" data-dus><div class="sec-title"><h2>Parken</h2><span class="muted small">Parkhäuser live aus der Verkehrszentrale, übrige Standorte aus Open Data Düsseldorf, nach Nähe sortiert</span></div></section>
-<div class="grid" data-dus>
+<div class="seg" id="pk-seg" style="grid-template-columns:1fr 1fr"><button type="button" data-pks="dus">Parken Düsseldorf</button><button type="button" data-pks="datteln">Parken Datteln</button></div>
+<div data-pk="dus">
+<div class="muted small" style="margin:0 2px 8px">Parkhäuser live aus der Verkehrszentrale, übrige Standorte aus Open Data Düsseldorf, nach Nähe sortiert</div>
+<div class="grid">
   <section class="card">
     <div class="card-head"><h2>Parkhäuser</h2><a class="src" href="https://vtmanager.duesseldorf.de/info/?parkquartier#main" target="_blank" rel="noopener">Live-Belegung öffnen ↗</a></div>
     <div id="park-ph"><div class="state">wird geladen …</div></div>
@@ -840,15 +842,13 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
     <div class="card-head"><h2>Behindertenparkplätze</h2></div>
     <div id="park-bh"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card wide">
-    <div class="card-head"><h2>Notfall &amp; Service in der Nähe</h2><span class="src">Open Data Düsseldorf</span></div>
-    <div class="grid" style="gap:12px">
-      <div><div class="sublbl">Defibrillatoren (AED)</div><div id="svc-aed"><div class="state">wird geladen …</div></div></div>
-      <div><div class="sublbl">Öffentliche Toiletten</div><div id="svc-wc"><div class="state">wird geladen …</div></div></div>
-      <div><div class="sublbl">Radstationen</div><div id="svc-rad"><div class="state">wird geladen …</div></div></div>
-      <div><div class="sublbl">Stationäre Verkehrsüberwachung</div><div id="svc-blitz"><div class="state">wird geladen …</div></div></div>
-    </div>
-  </section>
+</div>
+</div>
+<div data-pk="datteln" hidden>
+<section class="card wide">
+  <div class="card-head"><h2>Parken in Datteln</h2><span class="src">OpenStreetMap · ca. 3 km um die Innenstadt</span></div>
+  <div id="pk-dat"><div class="state">wird geladen …</div></div>
+</section>
 </div>
 </div>
 
@@ -943,6 +943,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=114"></script>
+<script src="app.js?v=115"></script>
 </body>
 </html>
