@@ -166,7 +166,7 @@ let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
 let WINDY=load("windy")||"";let HOMES=load("homes")||{};
 // feste Adressen für die Fahrt Düsseldorf ⇄ Datteln
-const FIXHOME={dus:{label:"Alt-Heerdt 87, 40549 Düsseldorf",lat:51.22836,lon:6.72003},datteln:{label:"Helene-Weber-Straße 35, 45711 Datteln",lat:51.66458,lon:7.34213},dortmund:{label:"Blankensteiner Straße 5, 44137 Dortmund",lat:51.50286,lon:7.44386}};
+const FIXHOME={dus:{label:"Alt-Heerdt 87, 40549 Düsseldorf",lat:51.22836,lon:6.72003},datteln:{label:"Helene-Weber-Straße 30, 45711 Datteln",lat:51.66456,lon:7.34258},dortmund:{label:"Blankensteiner Straße 5, 44137 Dortmund",lat:51.50286,lon:7.44386}};
 for(const k of ["dus","datteln"])if(!HOMES[k]||!isFinite(HOMES[k].lat))HOMES[k]={q:FIXHOME[k].label,...FIXHOME[k]};
 async function geocodeHome(key,q){const r=await getJSON("https://api.tomtom.com/search/2/geocode/"+encodeURIComponent(q)+".json?limit=1&countrySet=DE&language=de-DE&key="+encodeURIComponent(TTKEY));
   const x=(r.results||[])[0];if(!x)throw new Error("nicht gefunden");HOMES[key]={q,label:x.address.freeformAddress,lat:x.position.lat,lon:x.position.lon};store("homes",HOMES);return HOMES[key];}
@@ -895,7 +895,7 @@ function composeTile(id,group,main,cls){
 }
 // ================= Bahn-Verbindungen =================
 const TRIP_KEYS={dus:["dus-re","re-dus"],datteln:["re-dus","dus-re"]};
-const RSTRIP={r0:"dus-re",r1:"re-dus",r2:"dus-do",r3:"do-dus"};
+const RSTRIP={r0:"dus-re",r1:"re-dus",r2:"dus-do",r3:"do-dus",r4:"re-do",r5:"do-re"};
 async function loadTrips(){
   const keys=typeof RS!=="undefined"&&RS.tdir?[RSTRIP[RS.tdir]]:(TRIP_KEYS[C.key]||[]);const box=$("trips");
   if(!keys.length){box.innerHTML="";box.hidden=true;return;}
@@ -1690,7 +1690,7 @@ document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)ret
 let MAPGO=null;
 // ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
 let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
-const RSDIRS=[["r0","Düsseldorf → Datteln","dus","datteln"],["r1","Datteln → Düsseldorf","datteln","dus"],["r2","Düsseldorf → Dortmund","dus","dortmund"],["r3","Dortmund → Düsseldorf","dortmund","dus"]];
+const RSDIRS=[["r0","Düsseldorf → Datteln","dus","datteln"],["r1","Datteln → Düsseldorf","datteln","dus"],["r2","Düsseldorf → Dortmund","dus","dortmund"],["r3","Dortmund → Düsseldorf","dortmund","dus"],["r4","Datteln → Dortmund","datteln","dortmund"],["r5","Dortmund → Datteln","dortmund","datteln"]];
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
   el.textContent=pane!=="reise"?"Verkehr · "+C.town:"Reise";}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -1718,7 +1718,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.key
     }catch(e){RS.data[k]={err:errText(e)};}
     renderReise();}}
 const CITYN={dus:"Düsseldorf",datteln:"Datteln",dortmund:"Dortmund"};
-const TDIRS=[["r0","dus","nach Datteln","bis Recklinghausen Hbf"],["r2","dus","nach Dortmund","bis Dortmund Hbf"],["r1","datteln","nach Düsseldorf","ab Recklinghausen Hbf"],["r3","dortmund","nach Düsseldorf","ab Dortmund Hbf"]];
+const TDIRS=[["r0","dus","nach Datteln","bis Recklinghausen Hbf"],["r2","dus","nach Dortmund","bis Dortmund Hbf"],["r1","datteln","nach Düsseldorf","ab Recklinghausen Hbf"],["r3","dortmund","nach Düsseldorf","ab Dortmund Hbf"],["r4","datteln","nach Dortmund","ab Recklinghausen Hbf"],["r5","dortmund","nach Datteln","bis Recklinghausen Hbf"]];
 function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
   $("rs-city").innerHTML=Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="'+(c===k?"on":"")+'">'+n+'</button>').join("");
   const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
@@ -1728,7 +1728,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");
 function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
     $("rs-tdir").innerHTML=TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="'+(RS.tdir===k?"on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join("");
-    const t=RSTRIP[RS.tdir]||"";const st={"dus-re":"Düsseldorf Hbf → Recklinghausen Hbf","re-dus":"Recklinghausen Hbf → Düsseldorf Hbf","dus-do":"Düsseldorf Hbf → Dortmund Hbf","do-dus":"Dortmund Hbf → Düsseldorf Hbf"}[t]||"";
+    const t=RSTRIP[RS.tdir]||"";const st={"dus-re":"Düsseldorf Hbf → Recklinghausen Hbf","re-dus":"Recklinghausen Hbf → Düsseldorf Hbf","dus-do":"Düsseldorf Hbf → Dortmund Hbf","do-dus":"Dortmund Hbf → Düsseldorf Hbf","re-do":"Recklinghausen Hbf → Dortmund Hbf","do-re":"Dortmund Hbf → Recklinghausen Hbf"}[t]||"";
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=t.dataset.rstd;rsMode("bahn");}});
 function renderReise(){const D=RS.data;setStauTitle();
@@ -1743,8 +1743,8 @@ function renderReise(){const D=RS.data;setStauTitle();
     cur.alts.map(a=>{const m=(a.rw||[]).length;
       return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=15?"bad":a.dl>0?"warn":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
         '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
-        (a.i===RS.sel?'<span class="ag"><a href="'+gmUrl(o,d,null,1)+'" target="_blank" rel="noopener">Navigation starten ↗</a><a class="sec" href="'+gmView(o,d,a.via)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>'+(a.i?'Route '+(a.i+1)+' in Google Maps ansehen ↗':'In Google Maps ansehen ↗')+'</a></span>':'')+'</div>';}).join("")+
-    (cur.alts.some(a=>a.via)?'<div class="muted small" style="margin:0 2px 8px">„Navigation starten“ führt immer von '+esc(o.label)+' direkt nach '+esc(d.label)+'. Google wählt dabei selbst die Route, die anderen Routen bietet Google zu Beginn grau zum Antippen an. „Route 2/3 ansehen“ zeigt die Route in Google Maps über einen Zwischenpunkt, nur zum Anschauen.</div>':'');
+        (a.i===RS.sel?'<span class="ag"><a href="'+gmUrl(o,d,null,1)+'" target="_blank" rel="noopener">Navigation starten ↗</a><a class="sec" href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>In Google Maps ansehen ↗</a></span>':'')+'</div>';}).join("")+
+    '<div class="muted small" style="margin:0 2px 8px">Beide Google-Knöpfe gehen ohne Zwischenziel von '+esc(o.label)+' nach '+esc(d.label)+'. Google wählt die Route selbst und bietet die Alternativen grau zum Antippen an.</div>';
   const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;
   inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Behinderungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live, schon in der Fahrzeit eingerechnet)</span></div>'+(n?a.secs.map(incRow).join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>')+
     '<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Sperrungen der Autobahn GmbH auf Route '+(a.i+1)+' <span class="muted small">(in Fahrtrichtung, km ab Start)</span></div>'+(a.ab?(a.ab.length?a.ab.map(abRow).join(""):'<div class="state good">Keine Staus oder Sperrungen der Autobahn GmbH auf dieser Route.</div>'):'<div class="state">wird geladen …</div>')+
