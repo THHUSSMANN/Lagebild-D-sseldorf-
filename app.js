@@ -850,8 +850,9 @@ async function loadVT(){
     const ev=dedupe((ve.features||[]).map(f=>norm(f,"Veranstaltung"))).filter(x=>new Date(x.to)>=now).sort((a,b)=>new Date(a.from)-new Date(b.from));
     VTGEO={active,ev};
     const range=x=>dateTime(x.from)+" – "+(isoDay(new Date(x.from))===isoDay(new Date(x.to))?hhmm(x.to):dateTime(x.to));
-    const item=(x,badge)=>'<div class="li"><span class="tag '+(x.kind==="Sperrung"?"ab":"alt")+'">'+esc(badge||x.kind)+'</span><div class="t">'+esc(x.short||x.name)+'</div><div class="r"></div>'+
-      '<div class="d">'+esc(range(x))+(x.text?'<details><summary>Details</summary>'+esc(x.text)+'</details>':'')+'</div></div>';
+    const pt=g=>{let c=g&&g.coordinates;while(Array.isArray(c)&&Array.isArray(c[0]))c=c[0];return Array.isArray(c)&&isFinite(c[1])&&Math.abs(c[1])<=90?c:null;};
+    const item=(x,badge)=>{const c=pt(x.geo);return '<div class="li"'+(c?' data-lat="'+c[1]+'" data-lon="'+c[0]+'"':'')+'><span class="tag '+(x.kind==="Sperrung"?"ab":"alt")+'">'+esc(badge||x.kind)+'</span><div class="t"><b class="ortp"></b>'+esc(x.short||x.name)+'</div><div class="r"></div>'+
+      '<div class="d">'+esc(range(x))+(x.text?'<details><summary>Details</summary>'+esc(x.text)+'</details>':'')+'</div></div>';};
     const nSp=active.filter(x=>x.kind==="Sperrung").length;
     TILE_PARTS.traffic.vt=nSp+" Sperrungen in der Stadt";composeTile("k-traffic","traffic");
     if(false)setKpi("k-vt",String(nSp)+"<small> Sperrungen</small>",ev.length?ev.length+" Veranstaltung(en) angekündigt":"keine Veranstaltungen",nSp>30?"warn":"info");
@@ -859,7 +860,7 @@ async function loadVT(){
     $("vt-now").innerHTML=active.length?'<div class="list">'+active.slice(0,15).map(x=>item(x)).join("")+'</div>'+(active.length>15?'<div class="muted small">+ '+(active.length-15)+' weitere</div>':''):'<div class="state good">Keine aktiven Sperrungen.</div>';
     $("vt-events").innerHTML=ev.length?'<div class="list">'+ev.slice(0,8).map(x=>item(x,"Event")).join("")+'</div>':'<div class="state good">Keine angekündigten Veranstaltungen.</div>';
     $("vt-next").innerHTML=soon.length?'<div class="list">'+soon.slice(0,8).map(x=>item(x)).join("")+'</div>':'<div class="state good">Nichts Neues angekündigt.</div>';
-    setStatus("vt",true);drawVTOnMap();
+    setStatus("vt",true);drawVTOnMap();fillOrte($("vt-now")).then(()=>fillOrte($("vt-next"))).then(()=>fillOrte($("vt-events")));
   }catch(e){setStatus("vt",false,errText(e));["vt-now","vt-events","vt-next"].forEach(id=>$(id).innerHTML=stateBox("Nicht verfügbar – "+errText(e)+".",link("https://vtmanager.duesseldorf.de/info/","Verkehrszentrale")));}
 }
 let VTGEO=null,VTLAYER=null;
@@ -1108,6 +1109,8 @@ async function loadTomTom(){
   }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
 }
 let TT=null,TTF=null;const PLACECACHE=Object.fromEntries(Object.entries(load("placecache")||{}).filter(([,v])=>v));
+// Ort (Stadt/Stadtteil) vor Stau- und Baustellenmeldungen setzen
+async function fillOrte(box){if(!box||!TTKEY)return;for(const el of [...box.querySelectorAll("[data-lat] .ortp:empty")].slice(0,40)){const r=el.closest("[data-lat]");const la=+r.dataset.lat,lo=+r.dataset.lon;if(!isFinite(la))continue;const o=await placeOf(la,lo);if(o&&!el.textContent)el.textContent=o+" · ";}}
 async function placeOf(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLACECACHE[k]!==undefined)return PLACECACHE[k];
   try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
     const a=((r.addresses||[])[0]||{}).address||{};const city=a.municipality||"",sub=a.municipalitySubdivision||"";
@@ -1123,7 +1126,7 @@ function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");con
   const nU=list.filter(F.unfall).length,nS=list.filter(F.sperr).length,mx=jams.length?Math.max(0,...jams.map(x=>x.delay||0)):0;
   box.innerHTML='<div class="stau-sum" style="margin-bottom:8px">'+fb("stau",String(jams.length),"Staus / zäh",jams.length)+fb("unfall",String(nU),"Unfälle",nU)+fb("sperr",String(nS),"Sperrungen",nS)+fb("delay",mx?"+"+mx+" min":"–","größte Verzögerung",mx)+'</div>'+
     '<div class="muted small" style="margin-bottom:6px">'+(TTF?'Gefiltert – Kennzahl erneut antippen zeigt wieder alles. ':'Kennzahl antippen filtert die Liste. ')+'Eintrag antippen zeigt ihn in der Karte.</div>'+
-    (l.length?'<div>'+l.slice(0,30).map((x,i)=>(!TTF&&(i===0||l[i-1].grp!==x.grp)?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam ttj" role="button" tabindex="0" data-i="'+list.indexOf(x)+'"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
+    (l.length?'<div>'+l.slice(0,30).map((x,i)=>(!TTF&&(i===0||l[i-1].grp!==x.grp)?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam ttj" role="button" tabindex="0" data-i="'+list.indexOf(x)+'"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
       '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
       '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",x.grp===1?" · "+fmt(x.home,1)+" km von meiner Adresse":isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join("")+'</div>'
     :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
@@ -1383,7 +1386,7 @@ async function loadAutobahn(){
   if(AB_SEL&&!/^r\d/.test(AB_SEL))showAbDetail(AB_SEL);else if(AB_SEL)showAbDetail(AB_SEL);
   $("stau-list").innerHTML=jams.length?'<div>'+jams.map(j=>{const J=j.jam;
       const det=[J.len?fmt(J.len,1)+" km":"",J.speed!=null?"Ø "+J.speed+" km/h":"",fmt(j.km)+" km entfernt"].filter(Boolean).join(" · ");
-      return '<div class="jam"><span class="tag ab">'+esc(j.ab)+'</span><div class="t">'+(j.pr<99?'<span class="pill" style="margin-right:6px">Meine Strecke</span>':'')+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
+      return '<div class="jam" data-lat="'+j.lat+'" data-lon="'+j.lon+'"><span class="tag ab">'+esc(j.ab)+'</span><div class="t"><b class="ortp"></b>'+(j.pr<99?'<span class="pill" style="margin-right:6px">Meine Strecke</span>':'')+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
         '<div class="delay'+(J.delay!=null&&J.delay<15?" mid":"")+'">'+(J.delay!=null?"+"+J.delay+" min":"")+'<small>'+(J.delay!=null?"Verzögerung":"")+'</small></div>'+
         '<div class="d">'+esc(j.subtitle||"")+(det?" · "+esc(det):"")+(desc(j)?'<br>'+esc(desc(j)):"")+'</div></div>';}).join("")+'</div>'
     :'<div class="state good">Derzeit keine Staus auf '+esc(roads.join(", "))+' im Umkreis von '+JAM_RADIUS_KM+' km.</div>';
@@ -1403,9 +1406,10 @@ async function loadAutobahn(){
   const jamIds=new Set(jams.map(j=>j.ab+"|"+j.title+"|"+j.subtitle+"|"+(j.identifier||"")));
   const msgs=uniq([...got.closure.map(x=>({...x,_c:1})),...warnings]).filter(m=>!jamIds.has(m.ab+"|"+m.title+"|"+m.subtitle+"|"+(m.identifier||"")))
     .sort((a,b)=>(isClosed(b)?1:0)-(isClosed(a)?1:0)||a.km-b.km);
-  $("traffic").innerHTML=msgs.length?'<div class="list">'+msgs.slice(0,15).map(i=>'<div class="li"><span class="tag ab">'+esc(i.ab)+'</span><div class="t">'+
+  $("traffic").innerHTML=msgs.length?'<div class="list">'+msgs.slice(0,15).map(i=>'<div class="li" data-lat="'+i.lat+'" data-lon="'+i.lon+'"><span class="tag ab">'+esc(i.ab)+'</span><div class="t"><b class="ortp"></b>'+
     (isClosed(i)?'<span class="pill p-bad" style="margin-right:6px"><i></i>Sperrung</span>':'')+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
     (msgs.length>15?'<div class="muted small">+ '+(msgs.length-15)+' weitere</div>':''):'<div class="state good">Keine weiteren Behinderungen im Umkreis.</div>';
+  fillOrte($("stau-list")).then(()=>fillOrte($("traffic")));
   const rw=uniq(got.roadworks).sort((a,b)=>a.km-b.km);
   setKpi("k-verk",String(rw.length)+"<small> Baustellen</small>",uniq(got.electric_charging_station).length+" Ladepunkte","info");
   $("roadworks").innerHTML=rw.length?'<div class="list">'+rw.slice(0,12).map(i=>'<div class="li"><span class="tag ab">'+esc(i.ab)+'</span><div class="t">'+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
@@ -1690,6 +1694,7 @@ async function loadDatteln(){const box=$("sd-list");if(!box)return;
         '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
         '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+(x.len?" · "+fmt(x.len,1)+" km":"")+" · "+fmt(x.km,1)+' km vom Zentrum · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):"";}).join("")
       :'<div class="state good">Keine Staus, Sperrungen oder Baustellen in und um Datteln gemeldet.</div>';
+    fillOrte(box);
   }catch(e){box.innerHTML=stateBox("Verkehrslage Datteln nicht verfügbar – "+errText(e)+".");}}
 document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
   MAPFOCUS=1;if(location.hash!=="#staus/karte")location.hash="staus/karte";setTimeout(()=>{if(!MAP)return;$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.invalidateSize();MAP.setView([la,lo],15);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);},250);});
@@ -1700,7 +1705,7 @@ let MAPGO=null;
 let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
 const RSDIRS=[["r0","Düsseldorf → Datteln","dus","datteln"],["r1","Datteln → Düsseldorf","datteln","dus"],["r2","Düsseldorf → Dortmund","dus","dortmund"],["r3","Dortmund → Düsseldorf","dortmund","dus"],["r4","Datteln → Dortmund","datteln","dortmund"],["r5","Dortmund → Datteln","dortmund","datteln"]];
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
-  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise":pane==="karte"?(mk==="datteln"?"Staus & Baustellen · Datteln":"Sperrungen & Events · Düsseldorf"):"Verkehrsmeldungen · "+C.town;}
+  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise":"Verkehrslage · "+(pane==="karte"?(mk==="datteln"?"Datteln":"Düsseldorf"):C.town);}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
 const gmView=(o,d,via)=>{const A=o.label||o.lat+","+o.lon,B=d.label||d.lat+","+d.lon;
@@ -1793,9 +1798,9 @@ document.addEventListener("click",e=>{const j=e.target.closest("#rs-incs .carinc
   $("rs-map").scrollIntoView({behavior:"smooth",block:"center"});RSMAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText).openOn(RSMAP);},true);
 document.addEventListener("click",e=>{const b=e.target.closest("[data-vts]");if(!b)return;const k=b.dataset.vts;
   document.querySelectorAll("#vt-seg [data-vts]").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll("[data-vtp]").forEach(p=>p.hidden=p.dataset.vtp!==k);});
-function karteLbl(k){k=k||(MAPGO==="dus"||MAPGO==="datteln"?MAPGO:(C.key==="datteln"?"datteln":"dus"));return k==="datteln"?"Staus & Baustellen":"Sperrungen & Events";}
+function karteLbl(k){return "Verkehrslage";k=k||(MAPGO==="dus"||MAPGO==="datteln"?MAPGO:(C.key==="datteln"?"datteln":"dus"));return k==="datteln"?"Staus & Baustellen":"Sperrungen & Events";}
 function mapCity(k){const rr=k==="r0"||k==="r1";if(rr){const p=$("mapcity-route").parentNode;p.append($("mapcity-route"),$(k==="r0"?"mapcity-dus":"mapcity-datteln"),$(k==="r0"?"mapcity-datteln":"mapcity-dus"));}
-  $("mapcity-route").hidden=!rr;if(!rr)MAPRT=null;if(k!=="dus"&&k!=="datteln"&&!rr)k=null;$("mapcity-dus").hidden=!(rr||k==="dus");$("mapcity-datteln").hidden=!(rr||k==="datteln");if(rr)k=null;if(k)document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));setStauTitle();}
+  $("mapcity-route").hidden=!rr;if(!rr)MAPRT=null;if(k!=="dus"&&k!=="datteln"&&!rr)k=null;$("mapcity-dus").hidden=!(rr||k==="dus");$("mapcity-datteln").hidden=!(rr||k==="datteln");if(rr)k=null;if(k){document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));}setStauTitle();}
 async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));mapCity(k);
   const info=$("mapgo-info");if(!MAP){try{ensureMap();}catch(e){}}
   if(MAP){MAP.invalidateSize();if(MAP._route){MAP._route.remove();MAP._route=null;}}
@@ -1950,7 +1955,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus/reise","Reise"],["staus/karte","Sperrungen & Events"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus/reise","Reise"],["staus/karte","Verkehrslage"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
   if(["bezirke"].includes(v))return C.isDus;
@@ -1976,7 +1981,7 @@ let ROUTEKEY=null;
 window.addEventListener("hashchange",route);
 function route(){try{route0();}finally{const h=location.hash.slice(1);ROUTEKEY=(h.split("/")[0]||"")+"/"+(h.split("/")[1]||"reise");}}
 function route0(){
-  {const h=location.hash.slice(1);if(h==="verkehr"){history.replaceState(null,"","#staus/meld");}
+  {const h=location.hash.slice(1);if(h==="verkehr"||h==="staus/meld"){history.replaceState(null,"","#staus/karte");}
   if(h==="stadtverkehr"||h==="stadtdatteln"){const k=h==="stadtverkehr"?"dus":"datteln";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
   let v=location.hash.slice(1);const pane=v.split("/")[1]||"reise";v=v.split("/")[0];
   document.querySelectorAll("#staus [data-pane]").forEach(p=>p.hidden=p.dataset.pane!==pane);
@@ -1989,7 +1994,7 @@ function route0(){
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
     const tabs=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x));el.hidden=tabs.length<2;
     const cur=v+(pane!=="lage"?"/"+pane:"");el.classList.toggle("grid3",g==="verkehr");
-    el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'"'+(x==="staus/karte"?' data-karte':'')+'>'+esc(x==="staus/karte"?karteLbl():l)+(x==="staus/meld"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
+    el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'"'+(x==="staus/karte"?' data-karte':'')+'>'+esc(x==="staus/karte"?karteLbl():l)+(x==="staus/karte"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
   if(typeof foldCount==="function")foldCount();
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
   if(v==="parken")pkShow(PKS||"gps");
