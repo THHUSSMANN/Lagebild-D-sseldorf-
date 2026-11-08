@@ -1112,7 +1112,7 @@ document.addEventListener("click",e=>{const f=e.target.closest("#tt [data-ttf]")
     if(MAP._ttinc)MAP._ttinc.eachLayer(l=>{if(l.getPopup&&l.getPopup()&&(l.getLatLng?Math.abs(l.getLatLng().lat-x.lat)<1e-5:l.getLatLngs().flat().some(p=>Math.abs(p.lat-x.lat)<1e-5&&Math.abs(p.lng-x.lon)<1e-5)))l.openPopup([x.lat,x.lon]);});}});
 let MAPMODE=load("mapmode")||"tomtom";
 // Fester Kartenausschnitt je Ort: [Süd, West, Nord, Ost]
-const MAP_BOUNDS={dus:[51.15,6.62,51.72,7.45],datteln:[51.15,6.62,51.72,7.45],alpen:[51.17,6.38,51.70,6.86],salzhausen:[53.08,9.92,53.36,10.42]};
+const MAP_BOUNDS={dus:[51.12,6.66,51.36,6.96],datteln:[51.60,7.24,51.72,7.46],alpen:[51.50,6.40,51.70,6.70],salzhausen:[53.15,10.04,53.30,10.30]};
 function mapBounds(){const b=MAP_BOUNDS[C.key];if(b)return b;const la=C.center.lat,lo=C.center.lon;return [la-.2,lo-.32,la+.2,lo+.32];}
 function gmapsUrl(){const [s,w,n,e]=mapBounds();const span=Math.max(n-s,(e-w)*0.62);const z=span>0.45?10:span>0.22?11:12;return "https://www.google.com/maps/@"+((s+n)/2).toFixed(4)+","+((w+e)/2).toFixed(4)+","+z+"z/data=!5m1!1e1";}
 let TTFLOW=load("ttflow")===true;
