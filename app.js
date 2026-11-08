@@ -1700,7 +1700,7 @@ let MAPGO=null;
 let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
 const RSDIRS=[["r0","Düsseldorf → Datteln","dus","datteln"],["r1","Datteln → Düsseldorf","datteln","dus"],["r2","Düsseldorf → Dortmund","dus","dortmund"],["r3","Dortmund → Düsseldorf","dortmund","dus"],["r4","Datteln → Dortmund","datteln","dortmund"],["r5","Dortmund → Datteln","dortmund","datteln"]];
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
-  el.textContent=pane!=="reise"?"Verkehr · "+C.town:"Reise";}
+  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise":pane==="karte"?(mk==="datteln"?"Staus & Baustellen · Datteln":"Sperrungen & Events · Düsseldorf"):"Verkehrsmeldungen · "+C.town;}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
 const gmView=(o,d,via)=>{const A=o.label||o.lat+","+o.lon,B=d.label||d.lat+","+d.lon;
@@ -1795,7 +1795,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-vts]");if(
   document.querySelectorAll("#vt-seg [data-vts]").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll("[data-vtp]").forEach(p=>p.hidden=p.dataset.vtp!==k);});
 function karteLbl(k){k=k||(MAPGO==="dus"||MAPGO==="datteln"?MAPGO:(C.key==="datteln"?"datteln":"dus"));return k==="datteln"?"Staus & Baustellen":"Sperrungen & Events";}
 function mapCity(k){const rr=k==="r0"||k==="r1";if(rr){const p=$("mapcity-route").parentNode;p.append($("mapcity-route"),$(k==="r0"?"mapcity-dus":"mapcity-datteln"),$(k==="r0"?"mapcity-datteln":"mapcity-dus"));}
-  $("mapcity-route").hidden=!rr;if(!rr)MAPRT=null;if(k!=="dus"&&k!=="datteln"&&!rr)k=null;$("mapcity-dus").hidden=!(rr||k==="dus");$("mapcity-datteln").hidden=!(rr||k==="datteln");if(rr)k=null;if(k)document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));}
+  $("mapcity-route").hidden=!rr;if(!rr)MAPRT=null;if(k!=="dus"&&k!=="datteln"&&!rr)k=null;$("mapcity-dus").hidden=!(rr||k==="dus");$("mapcity-datteln").hidden=!(rr||k==="datteln");if(rr)k=null;if(k)document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));setStauTitle();}
 async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));mapCity(k);
   const info=$("mapgo-info");if(!MAP){try{ensureMap();}catch(e){}}
   if(MAP){MAP.invalidateSize();if(MAP._route){MAP._route.remove();MAP._route=null;}}
