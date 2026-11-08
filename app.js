@@ -359,6 +359,7 @@ selEl.addEventListener("change",()=>{
 });
 function choose(v,scroll){
   const before=C.key;sel=v;store("sel",v);C=ctx();selEl.value=v;
+  if(typeof RS!=="undefined"&&!RS.lock&&(C.isDus||C.key==="datteln")){RS.city=null;RS.at=0;}
   applyPlaceUi();
   if(before===C.key&&C.isDus){renderWeather();renderAir();renderParking();renderBike();loadFuel();}
   else{WX=null;AQ=null;OBS=null;BIKE=null;clearPlaceViews();refreshAll(true);}
@@ -1724,7 +1725,10 @@ function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
   const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
   const tk=TDIRS.filter(x=>x[1]===k);if(!tk.some(x=>x[0]===RS.tdir))RS.tdir=tk[0][0];
   rsMode(RS.mode||"auto");}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(b)rsCity(b.dataset.rscity);});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(!b)return;const k=b.dataset.rscity;
+  // oberen Ort mitziehen (Dortmund ist dort kein Ort)
+  RS.lock=1;try{if(k==="dus"&&!C.isDus)choose("dus-4");else if(k==="datteln"&&C.key!=="datteln")choose("p-datteln");}finally{RS.lock=0;}
+  rsCity(k);});
 function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
     $("rs-tdir").innerHTML=TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="'+(RS.tdir===k?"on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join("");
@@ -1733,7 +1737,7 @@ function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=t.dataset.rstd;rsMode("bahn");}});
 function renderReise(){const D=RS.data;setStauTitle();
   if(!RS.city){rsCity(C.key==="datteln"?"datteln":"dus");return;}
-  $("rs-quick").innerHTML=Object.entries(CITYN).filter(([c])=>c!==RS.city).map(([c,n])=>'<a href="'+gmUrl(null,FIXHOME[c],null,1)+'" target="_blank" rel="noopener">🧭 Jetzt nach '+n+'</a>').join("");
+  $("rs-quick").innerHTML=Object.entries(CITYN).filter(([c])=>c!==RS.city).map(([c,n])=>'<a href="'+gmUrl(FIXHOME[RS.city],FIXHOME[c],null,1)+'" target="_blank" rel="noopener">🧭 Jetzt nach '+n+'</a>').join("");
   $("rs-dir").innerHTML=RSDIRS.filter(x=>x[2]===RS.city).map(([k,t])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="'+(RS.dir===k?"on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
