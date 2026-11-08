@@ -225,7 +225,7 @@ function renderAlarm(){
   const seen=list.length&&load("alarm_seen")===ALARM_SIG;
   document.body.classList.toggle("alarm",list.length>0&&!seen);document.body.classList.toggle("alarm-seen",!!seen);
   const b=$("alarmbar");b.hidden=!list.length;b.classList.toggle("seen",!!seen);
-  b.innerHTML=list.length?'<span class="ab-h">⚠ Warnung'+(list.reduce((s,x)=>s+x.n,0)>1?"en":"")+'</span>'+list.map(x=>'<button type="button" class="ab-c" data-sel="'+esc(x.sel)+'"><b>'+esc(x.name)+'</b> '+esc(x.title)+(x.n>1?' <small>(+'+(x.n-1)+' weitere)</small>':'')+' ›</button>').join("")+(seen?'<span class="ab-s">gesehen ✓ – blinkt wieder bei neuer Warnung</span>':'<button type="button" class="ab-ok" data-ack="1">Gesehen ✓</button>'):"";
+  b.innerHTML=list.length?'<span class="ab-h">Warnung'+(list.reduce((s,x)=>s+x.n,0)>1?"en":"")+'</span>'+list.map(x=>'<button type="button" class="ab-c" data-sel="'+esc(x.sel)+'"><b>'+esc(x.name)+'</b> '+esc(x.title)+(x.n>1?' <small>(+'+(x.n-1)+' weitere)</small>':'')+' ›</button>').join("")+(seen?'<span class="ab-s">gesehen ✓ – blinkt wieder bei neuer Warnung</span>':'<button type="button" class="ab-ok" data-ack="1">Gesehen ✓</button>'):"";
   // Kachel: Summe über alle Lieblingsstädte, je Stadt eine Zeile
   if(list.length){const tot=list.reduce((t,x)=>t+x.n,0);
     const el=$("k-warn");setKpi("k-warn",String(tot)+"<small> "+(tot===1?"Warnung":"Warnungen")+"</small>","","bad");
@@ -281,13 +281,13 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
   const dayLbl=ts=>{const d=new Date(ts),t=new Date();const dd=Math.round((new Date(d.toDateString())-new Date(t.toDateString()))/864e5);return dd===0?"heute":dd===1?"morgen":d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});};
   function render(){const l=list().filter(a=>a.at>Date.now()-60000).sort((a,b)=>a.at-b.at);save(l);
     $("al-list").innerHTML=l.length?l.map(a=>'<div class="al-it"><div><b>'+hm(a.at)+'</b> <span class="muted small">'+dayLbl(a.at)+(a.push?' · mit Push':'')+'</span><div>'+esc(a.text||"Wecker")+'</div></div><button type="button" data-del="'+a.id+'">Löschen</button></div>').join(""):'<div class="muted small">Kein Wecker gestellt.</div>';
-    $("alarm-btn").textContent="⏰ Wecker"+(l.length?" ("+hm(l[0].at)+")":"");
+    $("alarm-btn").textContent="Wecker"+(l.length?" ("+hm(l[0].at)+")":"");
     $("al-next").innerHTML=l.length?'<div><div class="lbl2">Nächster Wecker</div><div class="big-t">'+hm(l[0].at)+'</div></div><div>'+esc(l[0].text||"Wecker")+'<div class="small" style="opacity:.7">'+dayLbl(l[0].at)+'</div></div>':'<div><div class="lbl2">Jetzt</div><div class="big-t" id="al-now">'+hm(Date.now())+'</div></div><div style="opacity:.8">Kein Wecker gestellt</div>';}
   function unlockAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();}catch(e){}}
   function beep(){if(!AC)return;const t=AC.currentTime;[0,.25,.5].forEach((d,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type="square";o.frequency.value=i===2?1175:880;g.gain.setValueAtTime(.0001,t+d);g.gain.exponentialRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d+.2);o.connect(g).connect(AC.destination);o.start(t+d);o.stop(t+d+.22);});}
   function ring(a){document.querySelectorAll("dialog[open]").forEach(d=>d.close());ringing=a;$("ring-t").textContent=a.text||"Wecker";$("ring-time").textContent=hm(a.at)+" Uhr";$("ring").hidden=false;unlockAudio();beep();clearInterval(beepT);beepT=setInterval(beep,1200);
     try{navigator.vibrate&&navigator.vibrate([400,200,400]);}catch(e){}
-    document.title="⏰ "+(a.text||"Wecker");}
+    document.title=(a.text||"Wecker");}
   function stopRing(){clearInterval(beepT);$("ring").hidden=true;ringing=null;document.title="Lagebild Thomas Hußmann · "+C.town;}
   setInterval(()=>{if(ringing)return;const now=Date.now();const l=list();const due=l.find(a=>a.at<=now&&!a.done&&now-a.at<10*60000);
     if(due){due.done=true;save(l);ring(due);render();}},1000);
@@ -295,7 +295,7 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
     if(at<=Date.now()+30000){$("al-msg").textContent="Bitte eine Zeit in der Zukunft wählen.";return;}
     const a={id:String(Date.now()),at,text:text.trim(),push};unlockAudio();
     if(push){if(at-Date.now()>3*864e5){$("al-msg").textContent="Push geht höchstens 3 Tage im Voraus – nur Wecker im Dashboard gestellt.";a.push=false;}
-      else{try{const r=await fetch("https://ntfy.sh/",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({topic:NTFY_TOPIC,title:"⏰ "+(a.text||"Wecker")+" – "+hm(at)+" Uhr",message:a.text||"Wecker aus dem Lagebild",priority:5,tags:["alarm_clock"],delay:String(Math.floor(at/1000)),click:location.origin+location.pathname})});
+      else{try{const r=await fetch("https://ntfy.sh/",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({topic:NTFY_TOPIC,title:(a.text||"Wecker")+" – "+hm(at)+" Uhr",message:a.text||"Wecker aus dem Lagebild",priority:5,tags:["alarm_clock"],delay:String(Math.floor(at/1000)),click:location.origin+location.pathname})});
         if(!r.ok)throw new Error("HTTP "+r.status);$("al-msg").textContent="Gestellt für "+hm(at)+" Uhr ("+dayLbl(at)+") – Push-Nachricht ist vorgemerkt.";}
       catch(e){a.push=false;$("al-msg").textContent="Gestellt – Push konnte nicht vorgemerkt werden ("+e.message+").";}}}
     else $("al-msg").textContent="Gestellt für "+hm(at)+" Uhr ("+dayLbl(at)+").";
@@ -475,23 +475,23 @@ function renderWear(w){const box=$("wear");if(!box||!w)return;
   const tmin=Math.min(...temps),tmax=Math.max(...temps),feel=w.current.apparent_temperature,rain=Math.max(...pp),rainSum=pr.reduce((a,b)=>a+b,0),gust=w.daily.wind_gusts_10m_max[0],uv=w.daily.uv_index_max[0];
   const codes=use.map(i=>h.weather_code[i]);const snow=codes.some(c=>c>=71&&c<=77||c===85||c===86);
   const t=Math.min(tmin,feel);const rows=[];
-  if(t<0)rows.push(["🧥","Wintermantel, Mütze, Schal und Handschuhe","Gefühlt "+fmt(feel)+" °C – es friert."]);
-  else if(t<6)rows.push(["🧥","Warme Winterjacke, Schal","Morgens/abends nur "+fmt(tmin)+" °C."]);
-  else if(t<11)rows.push(["🧥","Übergangsjacke oder dicker Pullover","Zwischen "+fmt(tmin)+" und "+fmt(tmax)+" °C."]);
-  else if(t<16)rows.push(["🧶","Leichte Jacke oder Pullover","Zwischen "+fmt(tmin)+" und "+fmt(tmax)+" °C."]);
-  else if(tmax<23)rows.push(["👕","Langarmshirt, Jacke reicht dünn","Bis "+fmt(tmax)+" °C."]);
-  else rows.push(["👕","Leichte, luftige Kleidung","Bis "+fmt(tmax)+" °C."]);
-  if(tmax-tmin>=8)rows.push(["🧅","Zwiebelprinzip","Es wird im Tagesverlauf "+fmt(tmax-tmin)+" Grad wärmer bzw. kälter."]);
-  if(snow)rows.push(["🥾","Feste, rutschfeste Winterschuhe","Schnee oder Schneeregen möglich."]);
-  else if(rain>=60||rainSum>=2)rows.push(["☔",gust>=50?"Regenjacke mit Kapuze, wasserfeste Schuhe":"Regenjacke und Schirm, wasserfeste Schuhe","Regenrisiko bis "+fmt(rain)+" %"+(rainSum?" · rund "+fmt(rainSum,1)+" mm":"")+"."]);
-  else if(rain>=30)rows.push(["🌂",gust>=50?"Kapuze statt Schirm":"Knirps einpacken","Regenrisiko bis "+fmt(rain)+" %."]);
-  if(gust>=50)rows.push(["💨","Windfeste Jacke mit Kapuze – Schirm eher zu Hause lassen","Böen bis "+fmt(gust)+" km/h."]);
-  if(uv>=6)rows.push(["🧢","Sonnenbrille, Kopfbedeckung, Sonnencreme","UV-Index "+fmt(uv)+"."]);
-  else if(uv>=3&&tmax>=18)rows.push(["🕶️","Sonnenbrille mitnehmen","UV-Index "+fmt(uv)+"."]);
+  if(t<0)rows.push(["","Wintermantel, Mütze, Schal und Handschuhe","Gefühlt "+fmt(feel)+" °C – es friert."]);
+  else if(t<6)rows.push(["","Warme Winterjacke, Schal","Morgens/abends nur "+fmt(tmin)+" °C."]);
+  else if(t<11)rows.push(["","Übergangsjacke oder dicker Pullover","Zwischen "+fmt(tmin)+" und "+fmt(tmax)+" °C."]);
+  else if(t<16)rows.push(["","Leichte Jacke oder Pullover","Zwischen "+fmt(tmin)+" und "+fmt(tmax)+" °C."]);
+  else if(tmax<23)rows.push(["","Langarmshirt, Jacke reicht dünn","Bis "+fmt(tmax)+" °C."]);
+  else rows.push(["","Leichte, luftige Kleidung","Bis "+fmt(tmax)+" °C."]);
+  if(tmax-tmin>=8)rows.push(["","Zwiebelprinzip","Es wird im Tagesverlauf "+fmt(tmax-tmin)+" Grad wärmer bzw. kälter."]);
+  if(snow)rows.push(["","Feste, rutschfeste Winterschuhe","Schnee oder Schneeregen möglich."]);
+  else if(rain>=60||rainSum>=2)rows.push(["",gust>=50?"Regenjacke mit Kapuze, wasserfeste Schuhe":"Regenjacke und Schirm, wasserfeste Schuhe","Regenrisiko bis "+fmt(rain)+" %"+(rainSum?" · rund "+fmt(rainSum,1)+" mm":"")+"."]);
+  else if(rain>=30)rows.push(["",gust>=50?"Kapuze statt Schirm":"Knirps einpacken","Regenrisiko bis "+fmt(rain)+" %."]);
+  if(gust>=50)rows.push(["","Windfeste Jacke mit Kapuze – Schirm eher zu Hause lassen","Böen bis "+fmt(gust)+" km/h."]);
+  if(uv>=6)rows.push(["","Sonnenbrille, Kopfbedeckung, Sonnencreme","UV-Index "+fmt(uv)+"."]);
+  else if(uv>=3&&tmax>=18)rows.push(["","Sonnenbrille mitnehmen","UV-Index "+fmt(uv)+"."]);
   const no=[];
   if(tmax<18)no.push("kurze Hosen und Sandalen");if(rain>=50)no.push("Wildleder und Stoffschuhe");if(t<6)no.push("dünne Sneaker");if(tmax>=25)no.push("dicke Jacke");if(gust>=50)no.push("Regenschirm");
-  box.innerHTML='<div class="wear">'+rows.map(r=>'<div class="wear-row"><span class="wear-ic">'+r[0]+'</span><div><b>'+esc(r[1])+'</b><div class="muted small">'+esc(r[2])+'</div></div></div>').join("")+
-    (no.length?'<div class="wear-row"><span class="wear-ic">🚫</span><div><b class="wear-no">Besser nicht: '+esc(no.join(", "))+'</b></div></div>':'')+'</div>';
+  box.innerHTML='<div class="wear">'+rows.map(r=>'<div class="wear-row"><div><b>'+esc(r[1])+'</b><div class="muted small">'+esc(r[2])+'</div></div></div>').join("")+
+    (no.length?'<div class="wear-row"><div><b class="wear-no">Besser nicht: '+esc(no.join(", "))+'</b></div></div>':'')+'</div>';
   $("wear-src").textContent="heute "+(idx.length?"7–21 Uhr":"nächste Stunden")+" · "+C.town;}
 function renderWeather(){
   $("wx-place").textContent=C.name+(C.detail?" · "+C.detail:"");
@@ -982,9 +982,9 @@ function renderWebcamLinks(){
   const host=u=>{try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return"";}};
   const tiles=list.filter(x=>x.live||x.hls||x.img||x.off),links=list.filter(x=>!x.live&&!x.hls&&!x.img&&!x.off);
   box.innerHTML=(tiles.length?'<div class="sublbl">Live – antippen für Großansicht</div><div class="cams cams-l" style="margin-bottom:12px">'+tiles.map((x,i)=>
-      x.off?'<a class="cam linkcam offcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">⏸</span><span class="lc-go">'+esc(x.off)+'</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></a>'
+      x.off?'<a class="cam linkcam offcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-go">'+esc(x.off)+'</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></a>'
       :'<div class="cam live" data-ci="'+i+'"><div class="lsbox">'+(x.live?'<div class="lsinner" id="lst-'+i+'" data-li="'+i+'"></div><span class="ls-hit"></span>':'')+(x.hls?'<video muted playsinline autoplay data-hls="'+esc(x.hls)+'"></video>':'')+(x.img?'<img src="'+esc(x.img)+'?t='+Date.now()+'" alt="">':'')+'<span class="ls-badge">LIVE</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></div>').join("")+'</div>':'')+
-    (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="cams cams-l" style="margin-bottom:10px">'+links.map(x=>'<a class="cam linkcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">📷</span><span class="lc-go">öffnen ↗</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(host(x.u))+'</span></span></a>').join("")+'</div>':'')||
+    (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="cams cams-l" style="margin-bottom:10px">'+links.map(x=>'<a class="cam linkcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-go">öffnen ↗</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(host(x.u))+'</span></span></a>').join("")+'</div>':'')||
     '<div class="state">Für '+esc(C.town)+' sind keine Webcams hinterlegt.</div>';
   box.querySelectorAll(".cam.live").forEach(el=>el.addEventListener("click",()=>openCam(tiles[+el.dataset.ci])));
   box.querySelectorAll("video[data-hls]").forEach(v=>attachHls(v,v.dataset.hls));
@@ -1143,7 +1143,7 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
   if(!A||!B){box.innerHTML='<div class="muted small" style="grid-column:1/-1">Für die Autofahrt Düsseldorf ⇄ Datteln einmal den Einrichtungslink mit deinen Adressen öffnen (oder unter Einstellungen „Meine Adresse“ für beide Orte eintragen).</div>';return;}
   const u=(o,d)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(o.label)+"&destination="+encodeURIComponent(d.label);
   const ab=[[A,B,"Düsseldorf → Datteln"],[B,A,"Datteln → Düsseldorf"]];if(C.key==="datteln")ab.reverse();
-  box.innerHTML=ab.map(([o,d,t],i)=>'<a class="carbtn" target="_blank" rel="noopener" href="'+u(o,d)+'">🚗 '+t+'<span class="cartime" id="cart-'+i+'">Fahrzeit wird berechnet …</span><small>Route in Google Maps öffnen ↗</small></a>').join("");
+  box.innerHTML=ab.map(([o,d,t],i)=>'<a class="carbtn" target="_blank" rel="noopener" href="'+u(o,d)+'">'+t+'<span class="cartime" id="cart-'+i+'">Fahrzeit wird berechnet …</span><small>Route in Google Maps öffnen ↗</small></a>').join("");
   if(!TTKEY)return;
   box.insertAdjacentHTML("beforeend",'<div id="car-incs" class="car-incs"></div>');
   CARR=ab.map(([,,t])=>({t,wait:1}));renderCarIncs();
@@ -1165,7 +1165,7 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
     for(const r of CARR)for(const x of (r.secs||[]))if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);renderCarIncs();}})();}
 let CARR=[];
 function renderCarIncs(){const box=$("car-incs");if(!box)return;
-  box.innerHTML=CARR.filter(Boolean).map(r=>'<div class="route-h">🚗 Strecke <b>'+esc(r.t)+'</b>'+(r.secs?'<span class="route-n">'+(r.secs.length?r.secs.length+(r.secs.length===1?" Behinderung":" Behinderungen"):"frei")+'</span>':'')+'</div>'+(r.wait?'<div class="muted small">wird berechnet …</div>':r.err?'<div class="muted small">Strecke derzeit nicht verfügbar.</div>':r.secs.length?r.secs.map(x=>
+  box.innerHTML=CARR.filter(Boolean).map(r=>'<div class="route-h">Strecke <b>'+esc(r.t)+'</b>'+(r.secs?'<span class="route-n">'+(r.secs.length?r.secs.length+(r.secs.length===1?" Behinderung":" Behinderungen"):"frei")+'</span>':'')+'</div>'+(r.wait?'<div class="muted small">wird berechnet …</div>':r.err?'<div class="muted small">Strecke derzeit nicht verfügbar.</div>':r.secs.length?r.secs.map(x=>
     '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road.split(" · ")[0]||"Straße")+'</span><div class="t"><span class="pill '+(x.cat==="Sperrung"||x.delay>=10?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(x.cat)+'</span>'+esc(x.road.split(" · ")[1]||"")+'</div>'+
     '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
     '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Strecke.</div>')).join("");}
@@ -1177,7 +1177,7 @@ function ensureMap(){
   if(!MAP){MAP=L.map("stau-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile}).setView([C.center.lat,C.center.lon],10);MAPLAYER=L.layerGroup().addTo(MAP);}
   applyMapMode();
   if(MAP._home){MAP._home.remove();MAP._home=null;}
-  {const H=HOMES[C.key];if(H)MAP._home=L.marker([H.lat,H.lon],{icon:L.divIcon({className:"homeic",html:"🏠",iconSize:[26,26]})}).bindTooltip("Meine Adresse").addTo(MAP);}
+  {const H=HOMES[C.key];if(H)MAP._home=L.marker([H.lat,H.lon],{icon:L.divIcon({className:"homeic",html:"",iconSize:[18,18]})}).bindTooltip("Meine Adresse").addTo(MAP);}
   if(MAPRING)MAPRING.remove();if(MAPCENTER)MAPCENTER.remove();
   MAPRING=L.circle([C.center.lat,C.center.lon],{radius:JAM_RADIUS_KM*1000,color:"#8a9aa5",weight:1,dashArray:"4 6",fill:false,interactive:false}).addTo(MAP);
   MAPCENTER=L.circleMarker([C.center.lat,C.center.lon],{radius:5,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(C.town).addTo(MAP);
