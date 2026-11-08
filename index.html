@@ -251,7 +251,8 @@ nav.jump a.back{background:var(--accent);color:var(--panel);border-color:var(--a
 .subtabs.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .subtabs.grid3 a{text-align:center;padding:10px 6px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14.5px}
 .subtabs a.on .fcnt{background:var(--panel);color:var(--accent)}
-@media (min-width:1000px){.subtabs.grid3{grid-template-columns:repeat(9,1fr)}}
+.subtabs.grid3 a:last-child:nth-child(3n+1){grid-column:1/-1}
+@media (min-width:1000px){.subtabs.grid3{grid-template-columns:repeat(7,1fr)}.subtabs.grid3 a:last-child:nth-child(3n+1){grid-column:auto}}
 .subtabs a{text-decoration:none;color:var(--fg);font-weight:600;font-size:14px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
 .subtabs a.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
 .trips{display:flex;flex-direction:column;gap:8px}
@@ -664,6 +665,19 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div id="stau-map" class="map" role="img" aria-label="Verkehrskarte"></div>
   <label class="muted small" style="display:inline-flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ttflow"> zusätzlich Verkehrsfluss aller Straßen einfärben</label>
   <div class="legend"><span class="tt-leg"><i style="background:linear-gradient(90deg,#f3c623,#f08a00,#d62d20,#8b0000)"></i>Stau leicht → schwer (alle Straßen)</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
+  <div id="mapcity-dus" class="mapcity" hidden>
+  <div class="sublbl" style="margin-top:14px;font-size:15px">Stadtverkehr Düsseldorf <span class="muted small">· Verkehrszentrale der Landeshauptstadt (live)</span></div>
+  <div class="stau-sum" id="vt-sum"></div>
+  <div class="grid" style="gap:12px">
+    <div><div class="sublbl">Aktuelle Sperrungen &amp; Meldungen</div><div id="vt-now"><div class="state">wird geladen …</div></div></div>
+    <div><div class="sublbl">Verkehrsrelevante Veranstaltungen</div><div id="vt-events"><div class="state">wird geladen …</div></div>
+      <div class="sublbl" style="margin-top:12px">Demnächst (7 Tage)</div><div id="vt-next"><div class="state">wird geladen …</div></div></div>
+  </div>
+  </div>
+  <div id="mapcity-datteln" class="mapcity" hidden>
+  <div class="sublbl" style="margin-top:14px;font-size:15px">Stadtverkehr Datteln <span class="muted small">· TomTom Echtzeit, Datteln und ca. 8 km Umgebung · Eintrag antippen zeigt ihn in der Karte</span></div>
+  <div id="sd-list"><div class="state">wird geladen …</div></div>
+  </div>
   </div>
   <div data-pane="meld" hidden>
   <div class="stau-sum" id="stau-sum"></div>
@@ -674,28 +688,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <h3 class="sub2">Weitere Meldungen &amp; Sperrungen</h3>
   <div id="traffic"><div class="state">Verkehrsmeldungen werden geladen …</div></div>
   </div>
-</section>
-</div>
-
-<div class="view" id="v-stadtverkehr" data-view="stadtverkehr" hidden>
-<div class="subtabs" data-for="stadtverkehr"></div>
-<section class="card wide" id="stadtverkehr">
-  <div class="card-head"><h2>Stadtverkehr Düsseldorf</h2><span class="src">Verkehrszentrale der Landeshauptstadt (live)</span></div>
-  <div class="stau-sum" id="vt-sum"></div>
-  <div class="grid" style="gap:12px">
-    <div><div class="sublbl">Aktuelle Sperrungen &amp; Meldungen</div><div id="vt-now"><div class="state">wird geladen …</div></div></div>
-    <div><div class="sublbl">Verkehrsrelevante Veranstaltungen</div><div id="vt-events"><div class="state">wird geladen …</div></div>
-      <div class="sublbl" style="margin-top:12px">Demnächst (7 Tage)</div><div id="vt-next"><div class="state">wird geladen …</div></div></div>
-  </div>
-</section>
-</div>
-
-<div class="view" id="v-stadtdatteln" data-view="stadtdatteln" hidden>
-<div class="subtabs" data-for="stadtdatteln"></div>
-<section class="card wide" id="stadtdatteln">
-  <div class="card-head"><h2>Stadtverkehr Datteln</h2><span class="src">TomTom Echtzeit · Datteln und Umgebung (ca. 8 km)</span></div>
-  <div id="sd-list"><div class="state">wird geladen …</div></div>
-  <div class="muted small" style="margin-top:8px"><a href="#staus/karte" data-mapgo="datteln">Datteln in der Karte zeigen ›</a></div>
 </section>
 </div>
 
@@ -797,6 +789,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   </form>
   <div id="el-hits"></div>
   <div class="seg" id="el-where"></div>
+  <div id="el-gpsmsg" aria-live="polite"></div>
   <div id="el-seg"></div>
   <div id="el-map" class="elmap" hidden role="img" aria-label="Karte der Ladesäulen"></div>
   <div id="el-list"><div class="state">wird geladen …</div></div>
@@ -837,7 +830,13 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 
 <div class="view" id="v-parken" data-view="parken" hidden>
 <div class="subtabs" data-for="parken"></div>
-<div class="seg" id="pk-seg" style="grid-template-columns:1fr 1fr"><button type="button" data-pks="dus">Parken Düsseldorf</button><button type="button" data-pks="datteln">Parken Datteln</button></div>
+<div class="seg" id="pk-seg" style="grid-template-columns:1fr 1fr 1fr"><button type="button" data-pks="gps">📍 Mein Standort</button><button type="button" data-pks="dus">Düsseldorf</button><button type="button" data-pks="datteln">Datteln</button></div>
+<div data-pk="gps" hidden>
+<section class="card wide">
+  <div class="card-head"><h2>Parken in der Nähe</h2><span class="src">OpenStreetMap · 2 km um deinen Standort</span></div>
+  <div id="pk-gps"><div class="state">wird geladen …</div></div>
+</section>
+</div>
 <div data-pk="dus">
 <div class="muted small" style="margin:0 2px 8px">Parkhäuser live aus der Verkehrszentrale, übrige Standorte aus Open Data Düsseldorf, nach Nähe sortiert</div>
 <div class="grid">
@@ -954,6 +953,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=117"></script>
+<script src="app.js?v=118"></script>
 </body>
 </html>

@@ -1616,11 +1616,12 @@ async function loadDatteln(){const box=$("sd-list");if(!box)return;
       :'<div class="state good">Keine Staus, Sperrungen oder Baustellen in und um Datteln gemeldet.</div>';
   }catch(e){box.innerHTML=stateBox("Verkehrslage Datteln nicht verfügbar – "+errText(e)+".");}}
 document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
-  MAPFOCUS=1;location.hash="staus/karte";setTimeout(()=>{if(!MAP)return;MAP.invalidateSize();MAP.setView([la,lo],15);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);},250);});
+  MAPFOCUS=1;if(location.hash!=="#staus/karte")location.hash="staus/karte";setTimeout(()=>{if(!MAP)return;$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.invalidateSize();MAP.setView([la,lo],15);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);},250);});
 
 // ================= Karte: Orte und Strecken =================
 let MAPGO=null;
-async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));
+function mapCity(k){if(k!=="dus"&&k!=="datteln")k=null;$("mapcity-dus").hidden=k!=="dus";$("mapcity-datteln").hidden=k!=="datteln";}
+async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));mapCity(k);
   const info=$("mapgo-info");if(!MAP){try{ensureMap();}catch(e){}}if(!MAP)return;MAP.invalidateSize();
   if(MAP._route){MAP._route.remove();MAP._route=null;}
   if(k==="dus"||k==="datteln"){const T=TOWNS[k];MAP.setView([T.lat,T.lon],T.z);info.textContent="Live-Verkehr rund um "+T.name+(MAPMODE!=="tomtom"&&TTKEY?" · für alle Straßen oben „TomTom“ wählen":"");return;}
@@ -1683,15 +1684,16 @@ function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?E
       (x.addr||x.op&&x.op!==x.name?'<br>'+esc([x.addr,x.op&&x.op!==x.name?x.op:""].filter(Boolean).join(" · ")):"")+'</span></a>').join("")
      :'<div class="state">Keine Ladestationen gefunden – Umkreis vergrößern.</div>')+
     '<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende, Ortssuche: Nominatim. Belegung live gibt es dort nicht. Amtliche Liste für Deutschland: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
-function elGPS(){const box=$("el-list");
-  if(!window.isSecureContext||!navigator.geolocation){box.innerHTML=stateBox("Standort wird hier nicht unterstützt. Bitte die Seite über https öffnen.");return;}
+function elGPS(){const msg=$("el-gpsmsg");let done=false;
+  const show=h=>{msg.innerHTML=h;msg.scrollIntoView({behavior:"smooth",block:"nearest"});};
+  if(!window.isSecureContext||!navigator.geolocation){show(stateBox("Standort wird hier nicht unterstützt."));return;}
   document.querySelectorAll("#el-where button").forEach(b=>b.classList.toggle("on",b.dataset.elw==="gps"));
-  box.innerHTML='<div class="state">Standort wird ermittelt …</div>';
-  const ok=p=>elSet({k:"gps",name:"meinem Standort",lat:p.coords.latitude,lon:p.coords.longitude});
-  const fail=err=>{const c=err&&err.code;
-    box.innerHTML=c===1?stateBox("Standort nicht freigegeben.",'So geht es auf dem iPhone: <b>Einstellungen → Datenschutz &amp; Sicherheit → Ortungsdienste</b> muss an sein, dort bei <b>Safari-Websites</b> „Beim Verwenden der App“ wählen. Dann <b>Einstellungen → Apps → Safari → Standort</b> auf „Fragen“ oder „Erlauben“ stellen. Danach die App schließen, neu öffnen und „Mein Standort“ noch einmal antippen.')
-      :stateBox(c===3?"Standort hat zu lange gedauert.":"Standort konnte nicht ermittelt werden.",'Bitte noch einmal antippen, am besten mit WLAN oder im Freien. Oder oben einen Ort bzw. eine Adresse eingeben.');};
-  // erst schnell und grob (WLAN/Mobilfunk), bei Zeitüberschreitung genauer per GPS
+  show('<div class="state">📍 Standort wird ermittelt …</div>');
+  const ok=p=>{if(done)return;done=true;msg.innerHTML="";elSet({k:"gps",name:"Mein Standort",lat:p.coords.latitude,lon:p.coords.longitude});};
+  const fail=err=>{if(done)return;done=true;const c=err&&err.code;
+    show(c===1?stateBox("Standort nicht freigegeben.",'So geht es auf dem iPhone: <b>Einstellungen → Datenschutz &amp; Sicherheit → Ortungsdienste</b> muss an sein, dort bei <b>Safari-Websites</b> „Beim Verwenden der App“ wählen. Dann <b>Einstellungen → Apps → Safari → Standort</b> auf „Fragen“ oder „Erlauben“ stellen. Danach die App schließen, neu öffnen und „Mein Standort“ noch einmal antippen.')
+      :stateBox(c===3||c==="wd"?"Standort hat zu lange gedauert.":"Standort konnte nicht ermittelt werden.",'Bitte noch einmal antippen, am besten mit WLAN oder im Freien. Oder oben einen Ort bzw. eine Adresse eingeben.'));};
+  setTimeout(()=>fail({code:"wd"}),32000); // falls das iPhone gar nicht antwortet
   navigator.geolocation.getCurrentPosition(ok,err=>{if(err&&err.code===1)return fail(err);
     navigator.geolocation.getCurrentPosition(ok,fail,{enableHighAccuracy:true,timeout:20000,maximumAge:0});},
     {enableHighAccuracy:false,timeout:8000,maximumAge:300000});}
@@ -1710,32 +1712,41 @@ document.addEventListener("submit",async e=>{if(e.target.id!=="el-form")return;e
   }catch(err){hb.innerHTML='<div class="muted small">Ortssuche nicht erreichbar – '+esc(errText(err))+'.</div>';}});
 
 // ================= Parken Datteln (OpenStreetMap) =================
-var PKS=null,PKDAT=null;
+var PKS=null,PKDAT=null,PKGPS=null,PKPOS=null;
 function pkShow(k){PKS=k;document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
-  document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==k);if(k==="datteln"&&!PKDAT)loadPkDat();}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-pks]");if(b)pkShow(b.dataset.pks);});
-async function loadPkDat(){const box=$("pk-dat");if(!box)return;
-  const H=HOMES.datteln&&isFinite(HOMES.datteln.lat)?HOMES.datteln:null,Z={lat:51.6539,lon:7.3417};
-  const q='[out:json][timeout:25];(nwr["amenity"="parking"](around:3000,'+Z.lat+','+Z.lon+');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:3000,'+Z.lat+','+Z.lon+'););out center tags;';
-  try{let d;try{d=await getJSON("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q),30000);}catch(e){d=await getJSON("https://overpass.kumi.systems/api/interpreter?data="+encodeURIComponent(q),30000);}
-    const R=H||Z;
-    PKDAT=(d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
+  document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==k);if(k==="datteln"&&!PKDAT)loadPkDat();if(k==="gps")pkGPS();}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pks]");if(b){e.preventDefault();pkShow(b.dataset.pks);}});
+function pkParse(d,R){return (d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
       const kind=t.amenity==="parking_space"||(t.parking_space==="disabled")?"bh":t.park_ride&&t.park_ride!=="no"?"pr":/multi-storey|underground/.test(t.parking||"")?"ph":"pp";
       return {kind,name:t.name||({ph:t.parking==="underground"?"Tiefgarage":"Parkhaus",pr:"Park + Ride",bh:"Behindertenparkplatz",pp:"Parkplatz"})[kind],cap:t.capacity,dis:t["capacity:disabled"],
         fee:t.fee,max:t.maxstay,oh:t.opening_hours,access:t.access,addr:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),lat,lon,km:distKm(R.lat,R.lon,lat,lon)};})
-      .filter(x=>isFinite(x.lat)&&!/^(private|no|customers)$/.test(x.access||"")).sort((a,b)=>a.km-b.km);
-    renderPkDat(!!H);
+      .filter(x=>isFinite(x.lat)&&!/^(private|no|customers)$/.test(x.access||"")).sort((a,b)=>a.km-b.km);}
+async function pkQuery(Z,r){const q='[out:json][timeout:25];(nwr["amenity"="parking"](around:'+r+','+Z.lat+','+Z.lon+');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:'+r+','+Z.lat+','+Z.lon+'););out center tags;';
+  try{return await getJSON("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q),30000);}catch(e){return await getJSON("https://overpass.kumi.systems/api/interpreter?data="+encodeURIComponent(q),30000);}}
+async function loadPkDat(){const box=$("pk-dat");if(!box)return;
+  const H=HOMES.datteln&&isFinite(HOMES.datteln.lat)?HOMES.datteln:null,Z={lat:51.6539,lon:7.3417};
+  try{const d=await pkQuery(Z,3000);PKDAT=pkParse(d,H||Z);
+    renderPk("pk-dat",PKDAT,'Öffentliche Parkmöglichkeiten, die nächste zuerst (Entfernung von '+(H?"deiner Adresse":"der Innenstadt")+'). Antippen öffnet die Route in Google Maps. Eine Live-Belegung gibt es für Datteln nicht.');
   }catch(e){box.innerHTML=stateBox("Parkdaten für Datteln nicht verfügbar – "+errText(e)+".");}}
-function renderPkDat(home){const box=$("pk-dat");if(!PKDAT)return;
+function pkGPS(){const box=$("pk-gps");if(!box)return;
+  if(!window.isSecureContext||!navigator.geolocation){box.innerHTML=stateBox("Standort wird hier nicht unterstützt.");return;}
+  box.innerHTML='<div class="state">Standort wird ermittelt …</div>';
+  const ok=async p=>{PKPOS={lat:p.coords.latitude,lon:p.coords.longitude};box.innerHTML='<div class="state">Parkplätze im Umkreis von 2 km werden geladen …</div>';
+    try{const d=await pkQuery(PKPOS,2000);PKGPS=pkParse(d,PKPOS);
+      renderPk("pk-gps",PKGPS,'Öffentliche Parkmöglichkeiten bis 2 km um deinen Standort, die nächste zuerst. Antippen öffnet die Route in Google Maps. Live-Belegung gibt es hier nicht, für Düsseldorfer Parkhäuser oben „Düsseldorf“ wählen. <a href="#" data-pks="gps">Standort neu ermitteln ↻</a>');
+    }catch(e){box.innerHTML=stateBox("Parkdaten nicht verfügbar – "+errText(e)+".");}};
+  const fail=err=>{box.innerHTML=err&&err.code===1?stateBox("Standort nicht freigegeben.",'Auf dem iPhone: <b>Einstellungen → Datenschutz &amp; Sicherheit → Ortungsdienste → Safari-Websites</b> auf „Beim Verwenden der App“ und <b>Einstellungen → Apps → Safari → Standort</b> auf „Fragen“ oder „Erlauben“. Dann die App neu öffnen.')
+    :stateBox("Standort konnte nicht ermittelt werden.",'<a href="#" data-pks="gps">Noch einmal versuchen ↻</a>');};
+  navigator.geolocation.getCurrentPosition(ok,err=>{if(err&&err.code===1)return fail(err);navigator.geolocation.getCurrentPosition(ok,fail,{enableHighAccuracy:true,timeout:20000,maximumAge:0});},{enableHighAccuracy:false,timeout:8000,maximumAge:120000});}
+function renderPk(id,data,intro){const box=$(id);if(!data)return;
   const nav=x=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+x.lat+","+x.lon;
   const G=[["ph","Parkhäuser & Tiefgaragen",8],["pp","Parkplätze",12],["pr","Park + Ride",4],["bh","Behindertenparkplätze",8]];
-  const bh=PKDAT.filter(x=>x.kind==="bh"||Number(x.dis)>0);
-  box.innerHTML='<div class="muted small" style="margin-bottom:4px">Öffentliche Parkmöglichkeiten, die nächste zuerst (Entfernung von '+(home?"deiner Adresse":"der Innenstadt")+'). Antippen öffnet die Route in Google Maps. Eine Live-Belegung gibt es für Datteln nicht.</div>'+
-    G.map(([k,l,n])=>{const a=k==="bh"?bh:PKDAT.filter(x=>x.kind===k);if(!a.length)return"";return '<div class="sublbl" style="margin-top:12px">'+l+' <span class="muted small" style="font-weight:400">('+a.length+')</span></div>'+a.slice(0,n).map(x=>
+  const bh=data.filter(x=>x.kind==="bh"||Number(x.dis)>0);
+  box.innerHTML='<div class="muted small" style="margin-bottom:4px">'+intro+'</div>'+
+    (G.map(([k,l,n])=>{const a=k==="bh"?bh:data.filter(x=>x.kind===k);if(!a.length)return"";return '<div class="sublbl" style="margin-top:12px">'+l+' <span class="muted small" style="font-weight:400">('+a.length+')</span></div>'+a.slice(0,n).map(x=>
       '<a class="el" href="'+nav(x)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="t">'+esc(x.name)+'</span><span class="k">'+fmt(x.km,1)+' km</span><span class="d">'+
       esc([x.addr,x.cap?x.cap+" Plätze":"",Number(x.dis)>0?x.dis+" Behindertenplätze":"",x.fee==="yes"?"gebührenpflichtig":x.fee==="no"?"kostenlos":"",x.max?"max. "+x.max:"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "))+'</span></a>').join("");}).join("")
-    ||'<div class="state">Keine öffentlichen Parkplätze gefunden.</div>';
-  box.insertAdjacentHTML("beforeend",'<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende.</div>');}
+    ||'<div class="state">Keine öffentlichen Parkplätze gefunden.</div>')+'<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende.</div>';}
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
   const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
@@ -1757,7 +1768,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Lage"],["staus/karte","Karte"],["staus/meld","Meldungen"],["stadtverkehr","Stadt Düsseldorf"],["stadtdatteln","Stadt Datteln"],["parken","Parken"],["verkehr","Baustellen"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Lage"],["staus/karte","Karte"],["staus/meld","Meldungen"],["parken","Parken"],["verkehr","Baustellen"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
   if(["bezirke"].includes(v))return C.isDus;
@@ -1780,6 +1791,7 @@ function buildViewbar(){
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 function route(){
+  {const h=location.hash.slice(1);if(h==="stadtverkehr"||h==="stadtdatteln"){const k=h==="stadtverkehr"?"dus":"datteln";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
   let v=location.hash.slice(1);const pane=v.split("/")[1]||"lage";v=v.split("/")[0];
   document.querySelectorAll("#staus [data-pane]").forEach(p=>p.hidden=p.dataset.pane!==pane);
   if(v&&!$("v-"+v))v="";
@@ -1794,8 +1806,8 @@ function route(){
     el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'">'+esc(l)+(x==="staus/meld"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
   if(typeof foldCount==="function")foldCount();
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
-  if(v==="parken")pkShow(PKS||(C.key==="datteln"?"datteln":"dus"));
-  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&pane==="karte")setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}
+  if(v==="parken")pkShow(PKS||"gps");
+  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&pane==="karte"){if(!MAPGO)mapCity(C.key==="datteln"?"datteln":"dus");setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }
 window.addEventListener("hashchange",route);
 document.querySelectorAll(".view").forEach(v=>{const x=document.createElement("a");x.href="#";x.className="view-x";x.setAttribute("aria-label","Schließen, zurück zur Übersicht");x.innerHTML="✕ Schließen";v.prepend(x);});
