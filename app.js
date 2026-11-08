@@ -1733,11 +1733,14 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.key
 const CITYN={dus:"Düsseldorf",datteln:"Datteln",dortmund:"Dortmund"};
 const TDIRS=[["r0","dus","nach Datteln","bis Recklinghausen Hbf"],["r2","dus","nach Dortmund","bis Dortmund Hbf"],["r1","datteln","nach Düsseldorf","ab Recklinghausen Hbf"],["r3","dortmund","nach Düsseldorf","ab Dortmund Hbf"],["r4","datteln","nach Dortmund","ab Recklinghausen Hbf"],["r5","dortmund","nach Datteln","bis Recklinghausen Hbf"]];
 function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
-  setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===k?" on":"")+'">'+n+'</button>').join(""));
+  setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===k&&RS.open?" on":"")+'">'+n+'</button>').join(""));
   const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
   const tk=TDIRS.filter(x=>x[1]===k);if(!tk.some(x=>x[0]===RS.tdir))RS.tdir=tk[0][0];
   rsMode(RS.mode||"auto");}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(!b)return;const k=b.dataset.rscity;
+  // erneutes Antippen der gewählten Stadt klappt wieder zu
+  if(RS.open&&RS.city===k){RS.open=false;$("rs-body").hidden=true;rsCity(k);return;}
+  RS.open=true;$("rs-body").hidden=false;
   // oberen Ort mitziehen (Dortmund ist dort kein Ort)
   const y=window.scrollY;const keep=()=>{if(Math.abs(window.scrollY-y)>4)window.scrollTo(0,y);};
   const pn=document.querySelector('#staus [data-pane="reise"]');if(pn){pn.style.minHeight=pn.offsetHeight+"px";setTimeout(()=>pn.style.minHeight="",4000);}
