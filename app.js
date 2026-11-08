@@ -83,6 +83,13 @@ async function getJSON(url,ms=15000){
     return JSON.parse(await r.text());}
   finally{clearTimeout(t)}
 }
+// OpenStreetMap-Abfrage: mehrere öffentliche Server gleichzeitig, der schnellste gewinnt
+const OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+async function overpass(q){const ctls=[];
+  const one=u=>{const c=new AbortController();ctls.push(c);const t=setTimeout(()=>c.abort(),25000);
+    return fetch(u+"?data="+encodeURIComponent(q),{signal:c.signal}).then(async r=>{if(!r.ok)throw new Error("HTTP "+r.status);const d=JSON.parse(await r.text());if(!d||!Array.isArray(d.elements))throw new Error("JSON");return d;}).finally(()=>clearTimeout(t));};
+  try{const d=await Promise.any(OVERPASS.map(one));ctls.forEach(c=>{try{c.abort();}catch(e){}});return d;}
+  catch(e){throw new Error("Kein OpenStreetMap-Server hat geantwortet ("+((e.errors||[]).map(x=>errText(x)).filter((v,i,a)=>a.indexOf(v)===i).join(", ")||"unbekannt")+")");}}
 function errText(e){
   const m=String(e&&e.message||e);
   if(/Failed to fetch|NetworkError|Load failed|blocked|access control/i.test(m))return "nicht erreichbar oder vom Browser blockiert (CORS)";
@@ -1692,7 +1699,7 @@ async function loadEL(){const box=$("el-list");if(!box)return;ELKEY=C.key;
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
   const la=ELP.lat,lo=ELP.lon;box.innerHTML='<div class="state">wird geladen …</div>';
   const q='[out:json][timeout:25];nwr["amenity"="charging_station"](around:'+(ELR*1000)+','+la+','+lo+');out center tags;';
-  try{let d;try{d=await getJSON("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q),30000);}catch(e){d=await getJSON("https://overpass.kumi.systems/api/interpreter?data="+encodeURIComponent(q),30000);}
+  try{const d=await overpass(q);
     const kw=t=>{let m=0;for(const [k,v] of Object.entries(t))if(/(^|:)output$/.test(k)){const x=String(v).match(/([\d.,]+)\s*(kW|W)?/i);if(x){let n=parseFloat(x[1].replace(",","."));if(/^W$/i.test(x[2]||"")||n>1000)n/=1000;if(n>m)m=n;}}return m||null;};
     const SOCK={type2:"Typ 2",type2_combo:"CCS",chademo:"CHAdeMO",tesla_supercharger:"Tesla",schuko:"Schuko",type2_cable:"Typ 2 Kabel"};
     ELD=(d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
@@ -1754,7 +1761,7 @@ function pkParse(d,R){return (d.elements||[]).map(e=>{const t=e.tags||{};const l
         fee:t.fee,max:t.maxstay,oh:t.opening_hours,access:t.access,addr:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),lat,lon,km:distKm(R.lat,R.lon,lat,lon)};})
       .filter(x=>isFinite(x.lat)&&!/^(private|no|customers)$/.test(x.access||"")).sort((a,b)=>a.km-b.km);}
 async function pkQuery(Z,r){const q='[out:json][timeout:25];(nwr["amenity"="parking"](around:'+r+','+Z.lat+','+Z.lon+');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:'+r+','+Z.lat+','+Z.lon+'););out center tags;';
-  try{return await getJSON("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q),30000);}catch(e){return await getJSON("https://overpass.kumi.systems/api/interpreter?data="+encodeURIComponent(q),30000);}}
+  return overpass(q);}
 async function loadPkDat(){const box=$("pk-dat");if(!box)return;
   const H=HOMES.datteln&&isFinite(HOMES.datteln.lat)?HOMES.datteln:null,Z={lat:51.6539,lon:7.3417};
   try{const d=await pkQuery(Z,3000);PKDAT=pkParse(d,H||Z);
