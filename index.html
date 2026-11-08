@@ -415,7 +415,8 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .ttab{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
 .ttab #car-routes{display:block;margin:0}
 .ttab #car-wrap{border-bottom:3px solid var(--line)}
-#rs-mode{margin-top:-2px}
+#rs-mode{grid-template-columns:repeat(3,1fr)!important;margin-bottom:12px}
+#rs-tdir button{min-height:48px;font-size:14px}
 #rs-mode button{min-height:40px}
 #rs-dir button{min-height:58px;line-height:1.25}
 #rs-dir button small{display:block;font-weight:500;font-size:13px;opacity:.85}
@@ -660,9 +661,9 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <section class="card wide" id="staus">
   <div class="card-head"><h2 id="stau-title">Verkehrslage</h2><span class="src" id="stau-src">TomTom · Autobahn GmbH</span></div>
   <div data-pane="reise" hidden>
-  <div class="seg" id="rs-dir"></div>
-  <div class="seg" id="rs-mode"><button type="button" data-rsm="auto" class="on">🚗 Auto</button><button type="button" data-rsm="bahn">🚆 Bus &amp; Bahn</button></div>
+  <div class="seg" id="rs-mode"><button type="button" data-rsm="auto" class="on">🚗 PKW</button><button type="button" data-rsm="bahn">🚆 Deutsche Bahn</button><button type="button" data-rsm="oepnv">🚌 ÖPNV</button></div>
   <div data-rsp="auto">
+  <div class="seg" id="rs-dir"></div>
   <div id="rs-alts"><div class="state">wird berechnet …</div></div>
   <div id="rs-map" class="map rsmap" role="img" aria-label="Karte der Fahrt"></div>
   <div id="rs-incs"></div>
@@ -676,6 +677,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   
   </div>
   <div data-rsp="bahn" hidden>
+  <div class="seg" id="rs-tdir"></div>
   <section class="card" id="trips-card">
     <div class="card-head"><h2>Deutsche Bahn</h2><span class="src">Düsseldorf Hbf ⇄ Recklinghausen Hbf · Nah- und Fernverkehr · Echtzeit</span></div>
     <div id="trips"><div class="state">wird geladen …</div></div>
@@ -685,6 +687,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
       <div class="field"><label>&nbsp;</label><div class="row" style="gap:8px"><button type="submit" id="trip-db">Bei bahn.de suchen</button><button type="button" id="trip-gm">Google Maps</button></div></div>
     </form>
   </section>
+  </div>
+  <div data-rsp="oepnv" hidden>
 <div class="grid">
   <section class="card" id="efa-card">
     <div class="card-head"><h2 id="efa-title">Abfahrten</h2><span class="src" id="efa-src">Echtzeit</span></div>
@@ -973,6 +977,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=133"></script>
+<script src="app.js?v=134"></script>
 </body>
 </html>
