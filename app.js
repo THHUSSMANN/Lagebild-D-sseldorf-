@@ -1143,7 +1143,14 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;const A=HOME
   if(!A||!B){box.innerHTML='<div class="muted small" style="grid-column:1/-1">Für die Autofahrt Düsseldorf ⇄ Datteln einmal den Einrichtungslink mit deinen Adressen öffnen (oder unter Einstellungen „Meine Adresse“ für beide Orte eintragen).</div>';return;}
   const u=(o,d)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(o.label)+"&destination="+encodeURIComponent(d.label);
   const ab=[[A,B,"Düsseldorf → Datteln"],[B,A,"Datteln → Düsseldorf"]];if(C.key==="datteln")ab.reverse();
-  box.innerHTML=ab.map(([o,d,t])=>'<a class="carbtn" target="_blank" rel="noopener" href="'+u(o,d)+'">🚗 '+t+'<small>Route mit Verkehr in Google Maps ↗</small></a>').join("");}
+  box.innerHTML=ab.map(([o,d,t],i)=>'<a class="carbtn" target="_blank" rel="noopener" href="'+u(o,d)+'">🚗 '+t+'<span class="cartime" id="cart-'+i+'">Fahrzeit wird berechnet …</span><small>Route in Google Maps öffnen ↗</small></a>').join("");
+  if(!TTKEY)return;
+  ab.forEach(async([o,d],i)=>{const el=$("cart-"+i);
+    try{const r=await getJSON("https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&language=de-DE&key="+encodeURIComponent(TTKEY));
+      const sm=r.routes[0].summary;const min=Math.round(sm.travelTimeInSeconds/60),dl=Math.round((sm.trafficDelayInSeconds||0)/60),km=sm.lengthInMeters/1000;
+      const arr=new Date(Date.now()+sm.travelTimeInSeconds*1000);
+      el.innerHTML='<b>'+(min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0"):min)+' min</b>'+(dl>0?' · <span class="cardl">+'+dl+' Stau</span>':' · frei')+' · '+fmt(km)+' km · an '+hhmm(arr);
+    }catch(e){el.textContent="Fahrzeit derzeit nicht verfügbar";}});}
 function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
 function ensureMap(){
   if(typeof L==="undefined")return null;
