@@ -415,6 +415,18 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .ttab{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
 .ttab #car-routes{display:block;margin:0}
 .ttab #car-wrap{border-bottom:3px solid var(--line)}
+#rs-dir button{min-height:58px;line-height:1.25}
+#rs-dir button small{display:block;font-weight:500;font-size:13px;opacity:.85}
+.rsmap{height:42vh;min-height:240px;margin:6px 0 4px}
+.alt{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:var(--panel);cursor:pointer}
+.alt.on{border:2px solid var(--accent);background:var(--panel-2)}
+.alt .an{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 14px var(--f-display);background:#8a9aa5;color:#fff}
+.alt.on .an{background:var(--accent)}
+.alt .at{font:700 17px var(--f-display)}
+.alt .ad{grid-column:2/4;font-size:13.5px;color:var(--muted)}
+.alt .ag{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.alt .ag a{font:600 14px var(--f-body);padding:8px 12px;border-radius:8px;background:var(--accent);color:var(--panel);text-decoration:none}
+.alt .ag a.sec{background:var(--panel-2);color:var(--fg);border:1px solid var(--line)}
 .carrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none;min-height:48px}
 .carrow:last-of-type{border-bottom:0}
 .carrow .cn{font:700 16px var(--f-display)}
@@ -643,9 +655,14 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <div class="subtabs" data-for="staus"></div>
 <section class="card wide" id="staus">
   <div class="card-head"><h2 id="stau-title">Verkehrslage</h2><span class="src" id="stau-src">TomTom · Autobahn GmbH</span></div>
+  <div data-pane="reise" hidden>
+  <div class="seg" id="rs-dir"></div>
+  <div id="rs-alts"><div class="state">wird berechnet …</div></div>
+  <div id="rs-map" class="map rsmap" role="img" aria-label="Karte der Fahrt"></div>
+  <div id="rs-incs"></div>
+  </div>
   <div data-pane="lage">
   <div class="ttab">
-  <div id="car-wrap" hidden><div id="car-routes"></div></div>
   <div id="prio"></div>
   </div>
   <div id="stau-detail" hidden></div>
@@ -654,7 +671,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div data-pane="karte" hidden>
   <div class="seg mapgo" id="mapgo">
     <button type="button" data-mapgo="dus">Düsseldorf</button><button type="button" data-mapgo="datteln">Datteln</button>
-    <button type="button" data-mapgo="r0">Düsseldorf → Datteln</button><button type="button" data-mapgo="r1">Datteln → Düsseldorf</button>
   </div>
   <div class="muted small" id="mapgo-info" style="margin:-2px 0 8px"></div>
   <div class="mapsw" id="mapsw" role="tablist" aria-label="Kartenquelle">
@@ -948,6 +964,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=124"></script>
+<script src="app.js?v=125"></script>
 </body>
 </html>

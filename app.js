@@ -1667,6 +1667,62 @@ document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)ret
 
 // ================= Karte: Orte und Strecken =================
 let MAPGO=null;
+// ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
+let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
+const RSDIRS=[["r0","Düsseldorf → Datteln"],["r1","Datteln → Düsseldorf"]];
+const hm=min=>min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0")+" min":min+" min";
+function rsEnds(k){const A=homeOr("dus"),B=homeOr("datteln");return k==="r0"?[A,B]:[B,A];}
+const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon)+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
+async function loadReise(force){if(!$("rs-alts"))return;if(!RS.dir)RS.dir=C.key==="datteln"?"r1":"r0";
+  if(!force&&Date.now()-RS.at<3*60*1000&&RS.data.r0&&RS.data.r1){renderReise();return;}
+  RS.at=Date.now();renderReise();
+  if(!TTKEY){$("rs-alts").innerHTML=stateBox("Für die Fahrzeit den TomTom-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
+  for(const [k,t] of RSDIRS){const [o,d]=rsEnds(k);
+    try{const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&maxAlternatives=2&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
+      let r;try{r=await getJSON(url,20000);}catch(e){await new Promise(z=>setTimeout(z,1200));r=await getJSON(url,20000);}
+      const main=(r.routes[0].legs||[]).flatMap(l=>l.points||[]);
+      const alts=r.routes.map((rt,i)=>{const P=routeParse(rt);const sm=rt.summary;
+        let via=null;if(i>0){let best=-1;for(let a=Math.floor(P.pts.length*.15);a<P.pts.length*.85;a+=3){const q=P.pts[a];let m=1e9;for(let b=0;b<main.length;b+=4){const dd=Math.abs(main[b].latitude-q.latitude)+Math.abs(main[b].longitude-q.longitude);if(dd<m)m=dd;}if(m>best){best=m;via=[q.latitude,q.longitude];}}}
+        return {t,i,...P,min:Math.round(sm.travelTimeInSeconds/60),dl:Math.round((sm.trafficDelayInSeconds||0)/60),km:sm.lengthInMeters/1000,arr:new Date(Date.now()+sm.travelTimeInSeconds*1000),via,rw:null};});
+      RS.data[k]={alts};
+      alts.forEach(a=>routeRW(a).then(l=>{a.rw=l;if(RS.dir===k)renderReise();}));
+      (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
+    }catch(e){RS.data[k]={err:errText(e)};}
+    renderReise();}}
+function renderReise(){const D=RS.data;
+  $("rs-dir").innerHTML=RSDIRS.map(([k,t])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="'+(RS.dir===k?"on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
+  const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
+  if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
+  if(cur.err){box.innerHTML=stateBox("Fahrzeit derzeit nicht verfügbar – "+cur.err+".");inc.innerHTML="";drawReise();return;}
+  if(RS.sel>=cur.alts.length)RS.sel=0;const [o,d]=rsEnds(RS.dir);
+  box.innerHTML='<div class="muted small" style="margin:2px 2px 6px">'+(cur.alts.length>1?cur.alts.length+" Routen, die schnellste zuerst. Route antippen zeigt sie in der Karte und ihre Störungen darunter.":"Eine Route gefunden.")+'</div>'+
+    cur.alts.map(a=>{const m=(a.rw||[]).length;
+      return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=15?"bad":a.dl>0?"warn":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
+        '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
+        (a.i===RS.sel?'<span class="ag"><a href="'+gmUrl(o,d,a.via,1)+'" target="_blank" rel="noopener">Navigation starten ↗</a><a class="sec" href="'+gmUrl(o,d,a.via)+'" target="_blank" rel="noopener">In Google Maps ansehen ↗</a></span>':'')+'</div>';}).join("")+
+    (cur.alts.some(a=>a.via)?'<div class="muted small" style="margin:0 2px 8px">Bei Route 2 und 3 gibt die App Google Maps einen Zwischenpunkt auf dieser Route mit, damit Google genau diesen Weg nimmt. Google zeigt ihn als Zwischenstopp an.</div>':'');
+  const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;
+  inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Behinderungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live, schon in der Fahrzeit eingerechnet)</span></div>'+(n?a.secs.map(incRow).join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>')+
+    '<div class="sublbl" style="margin-top:12px;font-size:15px">Baustellen auf Route '+(a.i+1)+' <span class="muted small">(Autobahn GmbH, in Fahrtrichtung, km ab Start)</span></div>'+(a.rw?(m?a.rw.map(rwRow).join(""):'<div class="state good">Keine Autobahn-Baustellen auf dieser Route gemeldet.</div>'):'<div class="state">wird geladen …</div>');
+  drawReise();}
+function drawReise(){if(typeof L==="undefined"){$("rs-map").hidden=true;return;}const el=$("rs-map");el.hidden=false;if(!el.offsetWidth)return;
+  if(!RSMAP){RSMAP=L.map("rs-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile});L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(RSMAP);RSLAY=L.layerGroup().addTo(RSMAP);}
+  RSMAP.invalidateSize();RSLAY.clearLayers();const cur=RS.data[RS.dir];
+  if(!cur||!cur.alts){const [o,d]=rsEnds(RS.dir);RSMAP.fitBounds([[o.lat,o.lon],[d.lat,d.lon]],{padding:[20,20]});return;}
+  const ord=cur.alts.filter(a=>a.i!==RS.sel).concat(cur.alts.filter(a=>a.i===RS.sel));let bounds=null;
+  ord.forEach(a=>{const ll=a.pts.map(p=>[p.latitude,p.longitude]);if(ll.length<2)return;const on=a.i===RS.sel;
+    if(on){L.polyline(ll,{color:"#fff",weight:10,opacity:.9,interactive:false}).addTo(RSLAY);L.polyline(ll,{color:"#0b6e8a",weight:6}).bindTooltip("Route "+(a.i+1)).addTo(RSLAY);
+      a.secs.forEach(x=>{if(isFinite(x.lat))L.circleMarker([x.lat,x.lon],{radius:8,color:"#fff",weight:2,fillColor:x.cat==="Sperrung"?"#7d1f6b":x.delay>=10?"#d62d20":"#f08a00",fillOpacity:1}).bindPopup("<b>"+esc(x.cat)+"</b>"+(x.delay?"<br>+"+x.delay+" min":"")).addTo(RSLAY);});
+      (a.rw||[]).forEach(w=>L.circleMarker([w.lat,w.lon],{radius:6,color:"#fff",weight:2,fillColor:"#8a9aa5",fillOpacity:1}).bindPopup(popupHtml(w,"Baustelle")).addTo(RSLAY));
+      L.marker(ll[0],{icon:L.divIcon({className:"homeic",html:"🏠",iconSize:[26,26]})}).bindTooltip("Start").addTo(RSLAY);
+      L.circleMarker(ll[ll.length-1],{radius:7,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip("Ziel").addTo(RSLAY);}
+    else L.polyline(ll,{color:"#8a9aa5",weight:5,opacity:.8,dashArray:"8 8"}).bindTooltip("Route "+(a.i+1)+" antippen zum Auswählen").on("click",()=>{RS.sel=a.i;renderReise();}).addTo(RSLAY);
+    const b=L.latLngBounds(ll);bounds=bounds?bounds.extend(b):b;});
+  if(bounds)RSMAP.fitBounds(bounds,{padding:[14,14]});}
+document.addEventListener("click",e=>{const d=e.target.closest("[data-rsdir]");if(d){RS.dir=d.dataset.rsdir;RS.sel=0;renderReise();return;}
+  const a=e.target.closest("[data-rsalt]");if(a&&!e.target.closest("a")){RS.sel=+a.dataset.rsalt;renderReise();}});
+document.addEventListener("click",e=>{const j=e.target.closest("#rs-incs .carinc");if(!j||!RSMAP)return;e.stopImmediatePropagation();const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
+  $("rs-map").scrollIntoView({behavior:"smooth",block:"center"});RSMAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText).openOn(RSMAP);},true);
 function karteLbl(k){k=k||(MAPGO==="dus"||MAPGO==="datteln"?MAPGO:(C.key==="datteln"?"datteln":"dus"));return k==="datteln"?"Staus & Baustellen":"Sperrungen & Events";}
 function mapCity(k){const rr=k==="r0"||k==="r1";if(rr){const p=$("mapcity-route").parentNode;p.append($("mapcity-route"),$(k==="r0"?"mapcity-dus":"mapcity-datteln"),$(k==="r0"?"mapcity-datteln":"mapcity-dus"));}
   $("mapcity-route").hidden=!rr;if(!rr)MAPRT=null;if(k!=="dus"&&k!=="datteln"&&!rr)k=null;$("mapcity-dus").hidden=!(rr||k==="dus");$("mapcity-datteln").hidden=!(rr||k==="datteln");if(rr)k=null;if(k)document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));}
@@ -1803,7 +1859,7 @@ function renderPk(id,data,intro){const box=$(id);if(!data)return;
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
   const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
-  tasks.push(loadVT(),loadDatteln());if(ELKEY)tasks.push(loadEL());tasks.push(loadGarages());if(PKDAT)tasks.push(loadPkDat());
+  tasks.push(loadVT(),loadDatteln());if(location.hash==="#staus/reise")tasks.push(loadReise(true));else RS.at=0;if(ELKEY)tasks.push(loadEL());tasks.push(loadGarages());if(PKDAT)tasks.push(loadPkDat());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
@@ -1821,7 +1877,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Aktuelle Lage"],["staus/karte","Sperrungen & Events"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus/reise","Reise"],["staus","Aktuelle Lage"],["staus/karte","Sperrungen & Events"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
   if(["bezirke"].includes(v))return C.isDus;
@@ -1861,9 +1917,11 @@ function route(){
   if(typeof foldCount==="function")foldCount();
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
   if(v==="parken")pkShow(PKS||"gps");
-  if(inView){window.scrollTo(0,Math.max(0,$("viewbar").offsetTop));if(v==="staus"&&pane==="karte"){if(!MAPGO)mapCity(C.key==="datteln"?"datteln":"dus");setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
+  if(inView){window.scrollTo(0,0);if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
+    if(v==="staus"&&pane==="karte"){if(!MAPGO)mapCity(C.key==="datteln"?"datteln":"dus");setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }
 window.addEventListener("hashchange",route);
+try{history.scrollRestoration="manual";}catch(e){}window.scrollTo(0,0);
 document.querySelectorAll(".view").forEach(v=>{const x=document.createElement("a");x.href="#";x.className="view-x";x.setAttribute("aria-label","Schließen, zurück zur Übersicht");x.innerHTML="✕ Schließen";v.prepend(x);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
 let EDITING=false,SORT=null;
@@ -1874,7 +1932,7 @@ document.querySelectorAll("#tiles .tile").forEach(t=>{
   ctl.querySelectorAll("button").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();
     const list=[...$("tiles").children].filter(x=>!x.hidden);const i=list.indexOf(t),j=i+Number(b.dataset.mv);
     if(j<0||j>=list.length)return;if(Number(b.dataset.mv)<0)list[j].before(t);else list[j].after(t);saveTileOrder();}));
-  const go=()=>{if(EDITING)return;location.hash=t.dataset.view;};
+  const go=()=>{if(EDITING)return;location.hash=t.dataset.view==="staus"?"staus/reise":t.dataset.view;};
   t.addEventListener("click",go);t.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
 });
 $("arrange").addEventListener("click",()=>{
