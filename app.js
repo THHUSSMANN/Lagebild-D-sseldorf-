@@ -1517,18 +1517,28 @@ async function loadBoerse(){
 }
 
 // ================= Nachrichten =================
+let NEWSMODE=load("newsmode")||"reg",NEWSDATA={reg:[],nat:[]};
 async function loadNews(){
-  const reg=NEWS_REGION[C.state]||10;let items=[];
-  try{const d=await getJSON("https://www.tagesschau.de/api2u/news/?regions="+reg);
-    items=(d.news||[]).filter(x=>x.title).map(x=>({title:x.title,text:x.firstSentence||"",link:x.shareURL||x.detailsweb,date:x.date,source:"tagesschau"}));setStatus("news",true);}catch(e){setStatus("news",false,errText(e));}
-  try{const m=await getData("medien.json");items.push(...((m.data||{})[FAVKEYS.includes(C.key)?C.key:"dus"]||[]));}catch(e){}
-  const seen=new Set();items=items.filter(x=>!seen.has(x.title)&&seen.add(x.title)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  $("news-title").textContent="Nachrichten "+(C.isDus?"Düsseldorf & NRW":C.key==="salzhausen"?"Niedersachsen & Region":C.town+" & "+(STATE_NAME[C.state]||""));
-  const srcs=[...new Set(items.map(x=>x.source))];
-  $("news").innerHTML=items.length?'<div class="muted small" style="margin-bottom:6px">Quellen: '+esc(srcs.join(" · "))+'</div><div class="list">'+items.slice(0,40).map(x=>'<div class="li" style="grid-template-columns:1fr auto"><a class="t" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener"><span class="news-src">'+esc(x.source)+'</span>'+esc(x.title)+'</a><span class="r muted small">'+(x.date?hhmm(x.date):"")+'</span>'+
-      (x.text?'<div class="d" style="grid-column:1/-1">'+esc(String(x.text).slice(0,220))+'</div>':'')+'</div>').join("")+'</div>'
-    :stateBox("Nachrichten nicht verfügbar.",link("https://www.tagesschau.de/inland/regional/","tagesschau regional"));
+  const reg=NEWS_REGION[C.state]||10;const R=[],N=[];
+  const ts=x=>({title:x.title,text:x.firstSentence||"",link:x.shareURL||x.detailsweb,date:x.date,source:"tagesschau"});
+  await Promise.all([
+    getJSON("https://www.tagesschau.de/api2u/news/?regions="+reg).then(d=>{R.push(...(d.news||[]).filter(x=>x.title).map(ts));setStatus("news",true);}).catch(e=>setStatus("news",false,errText(e))),
+    getJSON("https://www.tagesschau.de/api2u/homepage/").then(d=>N.push(...(d.news||[]).filter(x=>x.title).map(ts))).catch(()=>{}),
+    getData("medien.json").then(m=>{const d=m.data||{};R.push(...(d[FAVKEYS.includes(C.key)?C.key:"dus"]||[]));N.push(...(d._national||[]));}).catch(()=>{})]);
+  const prep=l=>{const seen=new Set();return l.filter(x=>!seen.has(x.title)&&seen.add(x.title)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));};
+  NEWSDATA={reg:prep(R),nat:prep(N)};renderNews();
 }
+function renderNews(){
+  const regName=C.isDus?"Düsseldorf & NRW":C.key==="salzhausen"?"Lüneburger Heide & Niedersachsen":C.town+" & "+(STATE_NAME[C.state]||"");
+  $("news-title").textContent="Nachrichten";
+  const items=NEWSDATA[NEWSMODE]||[];const srcs=[...new Set(items.map(x=>x.source))];
+  const dt=x=>{if(!x)return"";const d=new Date(x);return d.toDateString()===new Date().toDateString()?hhmm(x):d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+" "+hhmm(x);};
+  $("news").innerHTML='<div class="stop-chips" id="news-sw"><button type="button" data-nm="reg" class="'+(NEWSMODE==="reg"?"on":"")+'">Regional · '+esc(regName)+'</button><button type="button" data-nm="nat" class="'+(NEWSMODE==="nat"?"on":"")+'">Überregional</button></div>'+
+    (items.length?'<div class="muted small" style="margin-bottom:6px">Quellen: '+esc(srcs.join(" · "))+'</div><div class="list">'+items.slice(0,40).map(x=>'<div class="li" style="grid-template-columns:1fr auto"><a class="t" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener"><span class="news-src">'+esc(x.source)+'</span>'+esc(x.title)+'</a><span class="r muted small">'+dt(x.date)+'</span>'+
+      (x.text?'<div class="d" style="grid-column:1/-1">'+esc(String(x.text).slice(0,220))+'</div>':'')+'</div>').join("")+'</div>'
+    :stateBox("Nachrichten nicht verfügbar.",link("https://www.tagesschau.de/","tagesschau")));
+}
+document.addEventListener("click",e=>{const b=e.target.closest("#news-sw [data-nm]");if(!b)return;NEWSMODE=b.dataset.nm;store("newsmode",NEWSMODE);renderNews();});
 document.addEventListener("click",e=>{const b=e.target.closest("#press-sw [data-ps]");if(!b)return;
   document.querySelectorAll("#press-sw [data-ps]").forEach(x=>x.classList.toggle("on",x===b));
   document.querySelectorAll("[data-ps-card]").forEach(c=>c.hidden=c.dataset.psCard!==b.dataset.ps);});

@@ -480,6 +480,12 @@ await job("medien.json", async () => {
       .filter(x => (per[x.source] = (per[x.source] || 0) + 1) <= 6).slice(0, 40);
   }
   console.log("::notice::Medien: " + [...new Set(stat)].join(" | "));
+  // überregional
+  { const N = [["Spiegel", "https://www.spiegel.de/schlagzeilen/index.rss"], ["Zeit", "https://newsfeed.zeit.de/index"], ["FAZ", "https://www.faz.net/rss/aktuell/"], ["Welt", "https://www.welt.de/feeds/latest.rss"], ["Bild", "https://www.bild.de/feed/alles.xml"], ["Süddeutsche", "https://rss.sueddeutsche.de/rss/Topthemen"]];
+    const items = [];
+    for (const [label, url] of N) { try { const r = parseRss(await get(url, { type: "text", ms: 20000 }), label).map(x => ({ ...x, source: label })); items.push(...r); stat.push(label + " " + r.length); } catch (e) { stat.push(label + " Fehler " + e.message); } }
+    const seen = new Set(), per = {};
+    out._national = items.filter(x => x.title && !seen.has(x.title) && seen.add(x.title)).sort((a, b) => b.date.localeCompare(a.date)).filter(x => (per[x.source] = (per[x.source] || 0) + 1) <= 6).slice(0, 40); }
   out._stat = [...new Set(stat)];
   return out;
 });
