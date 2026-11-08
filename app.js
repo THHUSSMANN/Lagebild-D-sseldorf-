@@ -1109,7 +1109,7 @@ function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");con
 document.addEventListener("click",e=>{const f=e.target.closest("#tt [data-ttf]");if(f){TTF=TTF===f.dataset.ttf?null:f.dataset.ttf;renderTT();return;}
   const j=e.target.closest("#tt .ttj");if(j&&TT&&MAP){const x=TT.list[+j.dataset.i];if(!x||!isFinite(x.lat))return;
     if(MAPMODE!=="tomtom"&&TTKEY){MAPMODE="tomtom";store("mapmode",MAPMODE);applyMapMode();}
-    $("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([x.lat,x.lon],14);
+    openMap();$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([x.lat,x.lon],14);
     if(MAP._ttinc)MAP._ttinc.eachLayer(l=>{if(l.getPopup&&l.getPopup()&&(l.getLatLng?Math.abs(l.getLatLng().lat-x.lat)<1e-5:l.getLatLngs().flat().some(p=>Math.abs(p.lat-x.lat)<1e-5&&Math.abs(p.lng-x.lon)<1e-5)))l.openPopup([x.lat,x.lon]);});}});
 let MAPMODE=load("mapmode")||"tomtom";
 // Fester Kartenausschnitt je Ort: [Süd, West, Nord, Ost]
@@ -1166,12 +1166,13 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
     for(const r of CARR)for(const x of (r.secs||[]))if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);renderCarIncs();}})();}
 let CARR=[];
 function renderCarIncs(){const box=$("car-incs");if(!box)return;
-  box.innerHTML=CARR.filter(Boolean).map(r=>'<div class="route-h">Strecke <b>'+esc(r.t)+'</b>'+(r.secs?'<span class="route-n">'+(r.secs.length?r.secs.length+(r.secs.length===1?" Behinderung":" Behinderungen"):"frei")+'</span>':'')+'</div>'+(r.wait?'<div class="muted small">wird berechnet …</div>':r.err?'<div class="muted small">Strecke derzeit nicht verfügbar.</div>':r.secs.length?r.secs.map(x=>
+  const openSet=new Set([...box.querySelectorAll("details.cr[open]")].map(d=>d.dataset.t));
+  box.innerHTML=CARR.filter(r=>r&&r.secs&&r.secs.length).map(r=>'<details class="cr" data-t="'+esc(r.t)+'"'+(openSet.has(r.t)?' open':'')+'><summary class="route-h">Behinderungen <b>'+esc(r.t)+'</b>'+(r.secs?'<span class="route-n">'+(r.secs.length?r.secs.length+(r.secs.length===1?" Behinderung":" Behinderungen"):"frei")+'</span>':'')+'</summary>'+(r.wait?'<div class="muted small">wird berechnet …</div>':r.err?'<div class="muted small">Strecke derzeit nicht verfügbar.</div>':r.secs.length?r.secs.map(x=>
     '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road.split(" · ")[0]||"Straße")+'</span><div class="t"><span class="pill '+(x.cat==="Sperrung"||x.delay>=10?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(x.cat)+'</span>'+esc(x.road.split(" · ")[1]||"")+'</div>'+
     '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
-    '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Strecke.</div>')).join("");}
+    '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Strecke.</div>')+'</details>').join("");}
 document.addEventListener("click",e=>{const j=e.target.closest(".carinc");if(!j||!MAP)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
-  $("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);});
+  openMap();$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);});
 function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
 function ensureMap(){
   if(typeof L==="undefined")return null;
@@ -1214,8 +1215,8 @@ function renderPrio(rawW,rawC,okRoads){
       sub=(j.subtitle||j.title||"")+" · "+fmt(j.km)+" km entfernt";}
     else if(ws.length){cls="warn";val="Behinderung";sub=(ws[0].subtitle||ws[0].title||"")+" · "+fmt(ws[0].km)+" km entfernt";}
     ROUTE_ITEMS[ROUTES.indexOf(r)]=[...cl.map(c=>({...c,_c:1})),...ws];
-    return '<div role="button" tabindex="0" data-route="'+ROUTES.indexOf(r)+'" class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span><span class="rs">'+esc(sub)+'</span></div>';});
-  box.innerHTML='<div class="sublbl" style="margin-top:4px">Meine Autobahn-Strecken · Lage im Umkreis von '+PRIO_RADIUS_KM+' km um '+esc(C.town)+' <span class="muted small" style="font-weight:400">(Autobahn GmbH)</span></div><div class="prio">'+cards.join("")+'</div>';
+    return '<div role="button" tabindex="0" data-route="'+ROUTES.indexOf(r)+'" class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span>'+(cls==="ok"?'':'<span class="rs">'+esc(sub)+'</span>')+'</div>';});
+  box.innerHTML='<div class="sublbl" style="margin-top:4px">Meine Autobahn-Strecken · '+PRIO_RADIUS_KM+' km um '+esc(C.town)+' <span class="muted small" style="font-weight:400">(Autobahn GmbH)</span></div><div class="prio">'+cards.join("")+'</div>';
 }
 // Detailliste hinter Kennzahlen und „Meine Strecken“
 function abItem(i){
@@ -1243,7 +1244,7 @@ document.addEventListener("click",e=>{
   const f=e.target.closest("#stau-sum .fbtn");if(f){selectAb(f.dataset.f);return;}
   const r=e.target.closest("#prio .route[data-route]");if(r){selectAb("r"+r.dataset.route);return;}
   if(e.target.closest("#stau-detail [data-close]")){selectAb(AB_SEL);return;}
-  const g=e.target.closest("#stau-detail [data-goto]");if(g&&MAP){const [la,lo]=g.dataset.goto.split(",").map(Number);$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([la,lo],13);
+  const g=e.target.closest("#stau-detail [data-goto]");if(g&&MAP){const [la,lo]=g.dataset.goto.split(",").map(Number);openMap();$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([la,lo],13);
     MAPLAYER.eachLayer(l=>{const ll=l.getLatLng&&l.getLatLng();if(ll&&Math.abs(ll.lat-la)<1e-6&&Math.abs(ll.lng-lo)<1e-6&&l.openPopup)l.openPopup();});}
 });
 document.addEventListener("keydown",e=>{const r=e.target.closest&&e.target.closest("#prio .route[data-route]");if(r&&(e.key==="Enter"||e.key===" ")){e.preventDefault();selectAb("r"+r.dataset.route);}});
@@ -1676,4 +1677,14 @@ setInterval(()=>{if(!document.hidden)refreshAll(false);},10*60*1000);
 setInterval(()=>{if(!document.hidden&&!busy){loadAutobahn();loadTomTom();}},3*60*1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastRun>5*60*1000)refreshAll(false);});
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+
+// Verkehr: aufklappbare Bereiche, Zustand merken, Anzahl im Titel
+function openMap(){const f=$("fold-map");if(f&&!f.open){f.open=true;}}
+document.querySelectorAll("details.fold").forEach(f=>{
+  const k="fold_"+f.id,st=load(k);if(st===true)f.open=true;
+  f.addEventListener("toggle",()=>{store(k,f.open);if(f.id==="fold-map"&&f.open)setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();fitMap();}}catch(e){}},60);});});
+function foldCount(id){const el=$(id),c=document.querySelector('.fcnt[data-cnt="'+id+'"]');if(!el||!c)return;
+  const n=el.querySelectorAll(".jam,.li,details.abd").length;c.textContent=n?String(n):"";}
+["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(!el)return;foldCount(id);new MutationObserver(()=>foldCount(id)).observe(el,{childList:true,subtree:true});});
+
 })();
