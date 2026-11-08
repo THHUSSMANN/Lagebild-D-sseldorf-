@@ -1137,7 +1137,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]
   if(b.dataset.mm==="tomtom"&&!TTKEY){location.hash="einstellungen";return;}
   MAPMODE=b.dataset.mm;store("mapmode",MAPMODE);applyMapMode();});
 // Autofahrt zwischen den eigenen Adressen in Düsseldorf und Datteln (Google Maps, mit aktueller Verkehrslage)
-function renderCarRoutes(){const box=$("car-routes");if(!box)return;const A=HOMES.dus,B=HOMES.datteln;
+function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];const A=HOMES.dus,B=HOMES.datteln;
   if(!(C.key==="dus"||C.key==="datteln")){box.hidden=true;return;}
   box.hidden=false;
   if(!A||!B){box.innerHTML='<div class="muted small" style="grid-column:1/-1">Für die Autofahrt Düsseldorf ⇄ Datteln einmal den Einrichtungslink mit deinen Adressen öffnen (oder unter Einstellungen „Meine Adresse“ für beide Orte eintragen).</div>';return;}
@@ -1145,12 +1145,29 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;const A=HOME
   const ab=[[A,B,"Düsseldorf → Datteln"],[B,A,"Datteln → Düsseldorf"]];if(C.key==="datteln")ab.reverse();
   box.innerHTML=ab.map(([o,d,t],i)=>'<a class="carbtn" target="_blank" rel="noopener" href="'+u(o,d)+'">🚗 '+t+'<span class="cartime" id="cart-'+i+'">Fahrzeit wird berechnet …</span><small>Route in Google Maps öffnen ↗</small></a>').join("");
   if(!TTKEY)return;
-  ab.forEach(async([o,d],i)=>{const el=$("cart-"+i);
-    try{const r=await getJSON("https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&language=de-DE&key="+encodeURIComponent(TTKEY));
-      const sm=r.routes[0].summary;const min=Math.round(sm.travelTimeInSeconds/60),dl=Math.round((sm.trafficDelayInSeconds||0)/60),km=sm.lengthInMeters/1000;
+  box.insertAdjacentHTML("beforeend",'<div id="car-incs" class="car-incs"></div>');
+  ab.forEach(async([o,d,t],i)=>{const el=$("cart-"+i);
+    try{const r=await getJSON("https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY));
+      const rt=r.routes[0],sm=rt.summary;const min=Math.round(sm.travelTimeInSeconds/60),dl=Math.round((sm.trafficDelayInSeconds||0)/60),km=sm.lengthInMeters/1000;
       const arr=new Date(Date.now()+sm.travelTimeInSeconds*1000);
       el.innerHTML='<b>'+(min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0"):min)+' min</b>'+(dl>0?' · <span class="cardl">+'+dl+' Stau</span>':' · frei')+' · '+fmt(km)+' km · an '+hhmm(arr);
-    }catch(e){el.textContent="Fahrzeit derzeit nicht verfügbar";}});}
+      const pts=(rt.legs||[]).flatMap(l=>l.points||[]);const ins=(rt.guidance&&rt.guidance.instructions)||[];
+      const roadAt=idx=>{let best=null;for(const x of ins){if(x.pointIndex<=idx)best=x;else break;}return best?[(best.roadNumbers||[]).join("/"),best.street].filter(Boolean).join(" · "):"";};
+      const CATS={JAM:"Stau",ROAD_WORK:"Baustelle",ROAD_CLOSURE:"Sperrung",OTHER:"Behinderung"};
+      const secs=(rt.sections||[]).filter(x=>x.sectionType==="TRAFFIC").map(x=>{const p=pts[x.startPointIndex]||{};const e=pts[x.endPointIndex]||p;
+        let len=0;for(let k=x.startPointIndex;k<x.endPointIndex&&k+1<pts.length;k++)len+=distKm(pts[k].latitude,pts[k].longitude,pts[k+1].latitude,pts[k+1].longitude);
+        return {cat:CATS[x.simpleCategory]||"Behinderung",delay:Math.round((x.delayInSeconds||0)/60),speed:x.effectiveSpeedInKmh,len,road:roadAt(x.startPointIndex),lat:p.latitude,lon:p.longitude,cause:((x.tec&&x.tec.causes)||[]).map(c=>c.mainCauseCode).join(","),ort:null};});
+      CARR[i]={t,secs,pts};renderCarIncs();
+      for(const x of secs){if(isFinite(x.lat)){x.ort=await placeOf(x.lat,x.lon);renderCarIncs();}}
+    }catch(e){el.textContent="Fahrzeit derzeit nicht verfügbar";CARR[i]={t,err:1};renderCarIncs();}});}
+let CARR=[];
+function renderCarIncs(){const box=$("car-incs");if(!box)return;
+  box.innerHTML=CARR.filter(Boolean).map(r=>'<div class="sublbl" style="margin-top:10px">Auf der Strecke '+esc(r.t)+'</div>'+(r.err?'<div class="muted small">Strecke derzeit nicht verfügbar.</div>':r.secs.length?r.secs.map(x=>
+    '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road.split(" · ")[0]||"Straße")+'</span><div class="t"><span class="pill '+(x.cat==="Sperrung"||x.delay>=10?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(x.cat)+'</span>'+esc(x.road.split(" · ")[1]||"")+'</div>'+
+    '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
+    '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Strecke.</div>')).join("");}
+document.addEventListener("click",e=>{const j=e.target.closest(".carinc");if(!j||!MAP)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
+  $("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);});
 function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
 function ensureMap(){
   if(typeof L==="undefined")return null;
