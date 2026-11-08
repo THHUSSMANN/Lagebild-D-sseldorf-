@@ -371,7 +371,7 @@ function applyPlaceUi(){
   document.title="Lagebild Thomas Hußmann · "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
   $("gmaps").href=gmapsUrl();
-  $("stau-title").textContent="Verkehrslage rund um "+C.town;
+  $("stau-title").textContent="Verkehr ab "+C.town+" – Autobahnen, Fahrten & Karte";
   $("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
   $("rhein-sec").textContent=C.isDus?"Rhein & Grundwasser":"Gewässer";
   $("efa-card").hidden=!C.efaDefault;
