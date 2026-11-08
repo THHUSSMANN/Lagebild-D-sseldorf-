@@ -102,7 +102,7 @@ function errText(e){
   if(/JSON/i.test(m))return "unerwartetes Datenformat";
   return m;
 }
-const FAVKEYS=["dus","datteln","alpen","salzhausen"];
+const FAVKEYS=["dus","datteln","alpen","salzhausen"];const EFAKEYS=[...FAVKEYS,"dortmund"];
 async function getData(name){
   const d=await getJSON("data/"+name+"?t="+Math.floor(Date.now()/60000),15000);
   if(!d||!("data" in d))throw new Error("Datei leer");
@@ -158,6 +158,8 @@ if(!load("def_heerdt")){if(sel==="dus-1")sel="dus-4";store("def_heerdt",1);store
   else if(STADTTEILE.some(t=>t.key===v||"dus-"+t.key===v))sel="dus-"+v.replace(/^dus-/,"");
   else{const p=[...FAVS,...CUSTOM].find(x=>x.key===v||x.name.toLowerCase()===v||x.name.toLowerCase().startsWith(v));if(p)sel="p-"+p.key;}
   store("sel",sel);}catch(e){}})();
+let EFAK=null;function ec(){return EFAK||C;}
+const EFACITY={dus:{key:"dus",isDus:true,efaDefault:"Düsseldorf Nikolaus-Knopp-Platz"},datteln:{key:"datteln",isDus:false,efaDefault:"Datteln Busbahnhof"},dortmund:{key:"dortmund",isDus:false,efaDefault:"Dortmund Hbf"}};
 let STOPS=load("stops")||{};let DIRF=load("dirf")||{};let STOPIDX=null,EFADATA=null;
 if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
@@ -417,7 +419,7 @@ $("windy-save").addEventListener("click",()=>{WINDY=$("windy").value.trim();stor
 $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!v||!C.efaDefault)return;STOPS[C.key]=v;store("stops",STOPS);loadEFA();
   const m=stopMatch(v);$("stop-hint").innerHTML=m.file?"Übernommen – Abfahrten werden angezeigt.":m.id?"Diese Haltestelle wird noch nicht automatisch abgerufen. Live-Abfahrten öffnen sich über den Link in der Bus-Ansicht; sag Claude Bescheid, dann wird sie fest ergänzt.":"Haltestelle nicht im Verzeichnis gefunden – bitte aus der Vorschlagsliste wählen.";});
 $("efa-dir").addEventListener("input",()=>{DIRF[C.key]=$("efa-dir").value;store("dirf",DIRF);renderEFA();});
-$("efa-stops").addEventListener("click",e=>{const d=e.target.closest("[data-bdir]");if(d){store("busdir_"+C.key,+d.dataset.bdir);renderEFA();return;}const b=e.target.closest("[data-stop]");if(!b)return;STOPS[C.key]=b.dataset.stop;store("stops",STOPS);$("stop").value=b.dataset.stop;loadEFA();});
+$("efa-stops").addEventListener("click",e=>{const d=e.target.closest("[data-bdir]");if(d){store("busdir_"+ec().key,+d.dataset.bdir);renderEFA();return;}const b=e.target.closest("[data-stop]");if(!b)return;STOPS[ec().key]=b.dataset.stop;store("stops",STOPS);$("stop").value=b.dataset.stop;loadEFA();});
 $("stop").addEventListener("keydown",e=>{if(e.key==="Enter"){$("stop-sug").innerHTML="";$("stop-save").click();}});
 $("stop").addEventListener("input",()=>{const q=normStop($("stop").value);const box=$("stop-sug");
   if(q.length<2||!STOPIDX){box.innerHTML="";return;}
@@ -1433,26 +1435,26 @@ function stopMatch(v){const n=normStop(v);const I=STOPIDX||{available:[],all:[]}
   if(a)return {file:a.file,name:a.name};
   const s=I.all.find(x=>normStop(x.name)===n)||I.all.find(x=>normStop(x.name).includes(n));
   return s?{id:s.id,name:s.name}:{};}
-async function loadStopIndex(){STOPIDX=null;if(!C.efaDefault||!FAVKEYS.includes(C.key))return;
-  try{STOPIDX=(await getData("stops-"+C.key+".json")).data;
+async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includes(ec().key))return;
+  try{STOPIDX=(await getData("stops-"+ec().key+".json")).data;
   }catch(e){STOPIDX={available:[],all:[]};}}
 async function loadEFA(){
-  if(!C.efaDefault){setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
+  if(!ec().efaDefault){setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
-  const stop=STOPS[C.key]||C.efaDefault;const m=stopMatch(stop);
+  const stop=STOPS[ec().key]||ec().efaDefault;const m=stopMatch(stop);
   const avail=(STOPIDX&&STOPIDX.available)||[];
   $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,""))+'</button>').join(""):"";
-  $("efa-dir").value=DIRF[C.key]||"";
-  $("efa-title").textContent=(C.isDus?"Rheinbahn · ":"Abfahrten ")+(m.name||stop).replace(/^Düsseldorf[, ]*/,"");
-  $("efa-src").textContent=C.isDus?"Bus, U- und Straßenbahn · Echtzeit":"Bus & Bahn vor Ort · Echtzeit";
-  const file=m.file||(stop===C.efaDefault?"efa-"+C.key+".json":null);
-  if(!file||!FAVKEYS.includes(C.key)){EFADATA=null;
+  $("efa-dir").value=DIRF[ec().key]||"";
+  $("efa-title").textContent=(ec().isDus?"Rheinbahn · ":"Abfahrten ")+(m.name||stop).replace(/^Düsseldorf[, ]*/,"");
+  $("efa-src").textContent=ec().isDus?"Bus, U- und Straßenbahn · Echtzeit":"Bus & Bahn vor Ort · Echtzeit";
+  const file=m.file||(stop===ec().efaDefault?"efa-"+ec().key+".json":null);
+  if(!file||!EFAKEYS.includes(ec().key)){EFADATA=null;
     $("efa").innerHTML=stateBox("„"+esc(m.name||stop)+"“ wird noch nicht automatisch abgerufen.",(m.id?link("https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(m.id),"Live-Abfahrten öffnen")+" · ":"")+"Claude kann sie fest ergänzen.");return;}
   try{if(!BUSF)BUSF=await getData("busfahrten.json").then(x=>x.data||[]).catch(()=>[]);EFADATA=await getData(file);renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));}
-  catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link(C.isDus?"https://www.rheinbahn.de/":"https://www.vrr.de/",C.isDus?"Rheinbahn":"VRR-Fahrplanauskunft"));}
+  catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link(ec().isDus?"https://www.rheinbahn.de/":"https://www.vrr.de/",ec().isDus?"Rheinbahn":"VRR-Fahrplanauskunft"));}
 }
 function renderEFA(){const d=EFADATA;if(!d)return;
-  const pairs=(BUSF||[]).filter(x=>x.key===C.key);
+  const pairs=(BUSF||[]).filter(x=>x.key===ec().key);
   $("efa-dir").parentElement.hidden=pairs.length>0;$("efa-stops").hidden=false;
   if(pairs.length){const now=Date.now()-60e3;
     const short=x=>x.replace(/^Datteln,?\s*/,"").replace(/^Bus Bf$/,"Busbahnhof").replace(/^Lohstr\.$/,"Lohstraße");
@@ -1460,23 +1462,23 @@ function renderEFA(){const d=EFADATA;if(!d)return;
     const f=nx[0]&&nx[0].r[0];
     if(f){TILE_PARTS.mobil.bus="Bus "+esc(f.line)+" "+hhmm(f.depEst||f.dep)+" "+short(nx[0].x.from)+" → "+short(nx[0].x.to);composeTile("k-bahn","mobil");}
     $("efa-title").textContent="Bus Lohstraße ⇄ Busbahnhof";
-    const di=Math.min(+(load("busdir_"+C.key)||0),nx.length-1);
+    const di=Math.min(+(load("busdir_"+ec().key)||0),nx.length-1);
     $("efa-stops").innerHTML=nx.map(({x},i)=>'<button type="button" data-bdir="'+i+'" class="'+(i===di?"on":"")+'">'+esc(short(x.from))+' → '+esc(short(x.to))+'</button>').join("");
     $("efa").innerHTML=nx.filter((_,i)=>i===di).map(({x,r})=>'<div class="sublbl">'+esc(short(x.from))+' → '+esc(short(x.to))+'</div>'+(r.length?'<div class="list" style="margin-bottom:12px">'+r.slice(0,6).map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
       return '<div class="li"><span class="tag">'+esc(r.line)+'</span><div class="t"><b>'+hhmm(r.dep)+'</b>'+(dm>0?' <span style="color:var(--bad);font-weight:600">+'+dm+'</span>':'')+' → an '+hhmm(r.arrEst||r.arr)+'</div><div class="r muted small">'+(r.plat?'Steig '+esc(r.plat):'')+'</div><div class="d">Richtung '+esc(r.dir)+'</div></div>';}).join("")+'</div>':'<div class="muted small" style="margin-bottom:12px">Keine direkte Fahrt in den nächsten Stunden.</div>')).join("")+
       '<div class="muted small">Nur Busse ohne Umstieg zwischen Lohstraße und Busbahnhof · Echtzeit abgerufen '+dataAge(d)+'</div>';
-    return;}const now=Date.now()-60e3;const f=normStop(DIRF[C.key]||"");
+    return;}const now=Date.now()-60e3;const f=normStop(DIRF[ec().key]||"");
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
   if(f)rows=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);
   rows=rows.slice(0,14);
   if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Abfahrten mit diesem Filter im abgerufenen Zeitraum.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
-    if(!(C.isDus||C.key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
+    if(!(ec().isDus||ec().key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
   $("efa").innerHTML=busTripsHtml(d.data.stop)+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
 }
 let BUSF=null;
 function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
-  const t=BUSF.filter(x=>x.key===C.key&&(normStop(x.from)===n||normStop(x.fromQ).endsWith(n)||n.endsWith(normStop(x.from))));
+  const t=BUSF.filter(x=>x.key===ec().key&&(normStop(x.from)===n||normStop(x.fromQ).endsWith(n)||n.endsWith(normStop(x.from))));
   const now=Date.now()-60e3;
   return t.map(x=>{const r=x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now).slice(0,5);
     return '<div class="sublbl">Direkt nach '+esc(x.to.replace(/^Datteln,?\s*/,"").replace(/^Bus Bf$/,"Busbahnhof"))+'</div>'+(r.length?'<div class="list" style="margin-bottom:10px">'+r.map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
@@ -1484,15 +1486,15 @@ function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
 function depTable(rows){
   let r='<table><thead><tr><th>Zeit</th><th>Linie</th><th>Richtung</th><th class="num">Gleis/Steig</th><th class="num">+min</th></tr></thead><tbody>';
   rows.forEach(x=>{const del=x.delay!=null?x.delay:(x.planned&&x.est?Math.round((new Date(x.est)-new Date(x.planned))/6e4):null);
-    const hl=C.isDus&&/^U ?75$/i.test(String(x.line).trim())&&/vennhauser/i.test(x.dir||"");
+    const hl=ec().isDus&&/^U ?75$/i.test(String(x.line).trim())&&/vennhauser/i.test(x.dir||"");
     r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(x.planned?hhmm(x.planned):"–")+'</b></td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
       (x.cancelled?'<span class="pill p-bad"><i></i>fällt aus</span>':del==null?'<span class="muted">–</span>':del>0?'<span style="color:var(--bad);font-weight:600">+'+del+'</span>':'<span style="color:var(--ok)">0</span>')+'</td></tr>';});
   return r+'</tbody></table>';
 }
 async function loadDep(){
-  if(!FAVKEYS.includes(C.key)){$("dep").innerHTML=stateBox("Bahn-Abfahrten sind für Düsseldorf und die Favoriten hinterlegt.",link("https://www.bahn.de/","bahn.de"));return;}
-  try{const d=await getData("db-"+C.key+".json");const now=Date.now()-60e3;
-    $("dep-title").textContent=d.data.stop+(C.isDus?" · Bahn":" · Bahn & Bus");
+  if(!EFAKEYS.includes(ec().key)){$("dep").innerHTML=stateBox("Bahn-Abfahrten sind für Düsseldorf und die Favoriten hinterlegt.",link("https://www.bahn.de/","bahn.de"));return;}
+  try{const d=await getData("db-"+ec().key+".json");const now=Date.now()-60e3;
+    $("dep-title").textContent=d.data.stop+(ec().isDus?" · Bahn":" · Bahn & Bus");
     const rows=(d.data.rows||[]).filter(x=>new Date(x.planned).getTime()+((x.delay||0)*6e4)>=now).slice(0,12);
     if(!rows.length){$("dep").innerHTML=stateBox("Keine weiteren Abfahrten im abgerufenen Zeitraum.");setStatus("db",true);return;}
     $("dep").innerHTML='<div class="muted small">'+(d.data.dist!=null?"nächste Haltestelle, "+fmt(d.data.dist)+" m entfernt · ":"")+'Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
@@ -1690,15 +1692,15 @@ let MAPGO=null;
 let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
 const RSDIRS=[["r0","Düsseldorf → Datteln","dus","datteln"],["r1","Datteln → Düsseldorf","datteln","dus"],["r2","Düsseldorf → Dortmund","dus","dortmund"],["r3","Dortmund → Düsseldorf","dortmund","dus"]];
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
-  el.textContent=pane!=="reise"?"Verkehr · "+C.town:RS.mode==="bahn"?"Reise · Deutsche Bahn":RS.mode==="oepnv"?"Reise · Bus & Bahn vor Ort":"Reise · "+((RSDIRS.find(x=>x[0]===RS.dir)||RSDIRS[0])[1]);}
+  el.textContent=pane!=="reise"?"Verkehr · "+C.town:"Reise";}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
 const gmView=(o,d,via)=>{const A=o.label||o.lat+","+o.lon,B=d.label||d.lat+","+d.lon;
   return IOS?"comgooglemaps://?saddr="+encodeURIComponent(A)+"&daddr="+(via?via[0].toFixed(5)+","+via[1].toFixed(5)+"+to:":"")+encodeURIComponent(B)+"&directionsmode=driving":gmUrl(o,d,via);};
 const hm=min=>min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0")+" min":min+" min";
 function rsEnds(k){const r=RSDIRS.find(x=>x[0]===k)||RSDIRS[0];return [FIXHOME[r[2]],FIXHOME[r[3]]];}
-const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon)+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
-async function loadReise(force){if(!$("rs-alts"))return;if(!RS.dir)RS.dir=C.key==="datteln"?"r1":"r0";
+const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon):"")+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
+async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.key==="datteln"?"datteln":"dus");
   if(!force&&Date.now()-RS.at<3*60*1000&&RSDIRS.every(x=>RS.data[x[0]])){renderReise();return;}
   RS.at=Date.now();renderReise();
   if(!TTKEY){$("rs-alts").innerHTML=stateBox("Für die Fahrzeit den TomTom-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
@@ -1715,14 +1717,24 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.dir)RS.dir=C.key=
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
     }catch(e){RS.data[k]={err:errText(e)};}
     renderReise();}}
-function rsMode(m){RS.mode=m;setStauTitle();document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
-  if(m==="bahn"){if(!RS.tdir)RS.tdir=C.key==="datteln"?"r1":"r0";
-    $("rs-tdir").innerHTML=[["r0","Düsseldorf → Recklinghausen"],["r1","Recklinghausen → Düsseldorf"],["r2","Düsseldorf → Dortmund"],["r3","Dortmund → Düsseldorf"]].map(([k,l])=>'<button type="button" data-rstd="'+k+'" class="'+(RS.tdir===k?"on":"")+'">'+l+'</button>').join("");
+const CITYN={dus:"Düsseldorf",datteln:"Datteln",dortmund:"Dortmund"};
+const TDIRS=[["r0","dus","nach Datteln","bis Recklinghausen Hbf"],["r2","dus","nach Dortmund","bis Dortmund Hbf"],["r1","datteln","nach Düsseldorf","ab Recklinghausen Hbf"],["r3","dortmund","nach Düsseldorf","ab Dortmund Hbf"]];
+function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
+  $("rs-city").innerHTML=Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="'+(c===k?"on":"")+'">'+n+'</button>').join("");
+  const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
+  const tk=TDIRS.filter(x=>x[1]===k);if(!tk.some(x=>x[0]===RS.tdir))RS.tdir=tk[0][0];
+  rsMode(RS.mode||"auto");}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(b)rsCity(b.dataset.rscity);});
+function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
+  if(m==="bahn"){
+    $("rs-tdir").innerHTML=TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="'+(RS.tdir===k?"on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join("");
     const t=RSTRIP[RS.tdir]||"";const st={"dus-re":"Düsseldorf Hbf → Recklinghausen Hbf","re-dus":"Recklinghausen Hbf → Düsseldorf Hbf","dus-do":"Düsseldorf Hbf → Dortmund Hbf","do-dus":"Dortmund Hbf → Düsseldorf Hbf"}[t]||"";
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=t.dataset.rstd;rsMode("bahn");}});
 function renderReise(){const D=RS.data;setStauTitle();
-  $("rs-dir").innerHTML=RSDIRS.map(([k,t])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="'+(RS.dir===k?"on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
+  if(!RS.city){rsCity(C.key==="datteln"?"datteln":"dus");return;}
+  $("rs-quick").innerHTML=Object.entries(CITYN).filter(([c])=>c!==RS.city).map(([c,n])=>'<a href="'+gmUrl(null,FIXHOME[c],null,1)+'" target="_blank" rel="noopener">🧭 Jetzt nach '+n+'</a>').join("");
+  $("rs-dir").innerHTML=RSDIRS.filter(x=>x[2]===RS.city).map(([k,t])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="'+(RS.dir===k?"on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
   if(cur.err){box.innerHTML=stateBox("Fahrzeit derzeit nicht verfügbar – "+cur.err+".");inc.innerHTML="";drawReise();return;}

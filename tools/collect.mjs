@@ -349,7 +349,11 @@ for (const [k, p] of Object.entries(PLACES)) {
   tasks.push(job("blaulicht-" + k + ".json", () => blaulicht(k, p)));
   tasks.push(job("nina-" + k + ".json", () => ninaDashboard(p)));
   tasks.push(job("uba-" + k + ".json", () => uba(p)));
-  if (p.efa) tasks.push((async () => {
+  if (p.efa) tasks.push(efaPlace(k, p));
+}
+// zusätzliche Orte nur für Abfahrten (Reise → ÖPNV)
+for (const [k, p] of Object.entries({ dortmund: { name: "Dortmund", lat: 51.50286, lon: 7.44386, efa: "Dortmund Hbf" } })) tasks.push(efaPlace(k, p));
+function efaPlace(k, p) { return (async () => {
     // mehrere Haltestellen je Ort (config/haltestellen.json) + Haltestellenverzeichnis für die Suche
     let list = [p.efa]; try { const cfg = JSON.parse(await fs.readFile(new URL("../config/haltestellen.json", import.meta.url), "utf8")); if (Array.isArray(cfg[k]) && cfg[k].length) list = cfg[k]; } catch {}
     const avail = [];
@@ -365,8 +369,7 @@ for (const [k, p] of Object.entries(PLACES)) {
       console.log("::notice::Haltestellen " + k + ": " + all.length + " im Verzeichnis, abgerufen: " + avail.map(a => a.name).join(", "));
       return { available: avail, all };
     });
-  })());
-}
+  })(); }
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
 tasks.push(job("trips.json", trips));
