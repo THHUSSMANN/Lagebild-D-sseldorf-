@@ -1447,7 +1447,9 @@ async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includ
 async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
-  const stop=STOPS[ec().key]||ec().efaDefault;const m=stopMatch(stop);
+  // gespeicherte Haltestelle nur verwenden, wenn sie für diesen Ort wirklich abgerufen wird (sonst Standard, z. B. Nikolaus-Knopp-Platz)
+  let stop=STOPS[ec().key]||ec().efaDefault;{const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
+  const m=stopMatch(stop);
   const avail=(STOPIDX&&STOPIDX.available)||[];
   $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,""))+'</button>').join(""):"";
   $("efa-dir").value=DIRF[ec().key]||"";
