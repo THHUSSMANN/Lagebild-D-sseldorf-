@@ -1683,13 +1683,23 @@ function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?E
       (x.addr||x.op&&x.op!==x.name?'<br>'+esc([x.addr,x.op&&x.op!==x.name?x.op:""].filter(Boolean).join(" · ")):"")+'</span></a>').join("")
      :'<div class="state">Keine Ladestationen gefunden – Umkreis vergrößern.</div>')+
     '<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende, Ortssuche: Nominatim. Belegung live gibt es dort nicht. Amtliche Liste für Deutschland: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
+function elGPS(){const box=$("el-list");
+  if(!window.isSecureContext||!navigator.geolocation){box.innerHTML=stateBox("Standort wird hier nicht unterstützt. Bitte die Seite über https öffnen.");return;}
+  document.querySelectorAll("#el-where button").forEach(b=>b.classList.toggle("on",b.dataset.elw==="gps"));
+  box.innerHTML='<div class="state">Standort wird ermittelt …</div>';
+  const ok=p=>elSet({k:"gps",name:"meinem Standort",lat:p.coords.latitude,lon:p.coords.longitude});
+  const fail=err=>{const c=err&&err.code;
+    box.innerHTML=c===1?stateBox("Standort nicht freigegeben.",'So geht es auf dem iPhone: <b>Einstellungen → Datenschutz &amp; Sicherheit → Ortungsdienste</b> muss an sein, dort bei <b>Safari-Websites</b> „Beim Verwenden der App“ wählen. Dann <b>Einstellungen → Apps → Safari → Standort</b> auf „Fragen“ oder „Erlauben“ stellen. Danach die App schließen, neu öffnen und „Mein Standort“ noch einmal antippen.')
+      :stateBox(c===3?"Standort hat zu lange gedauert.":"Standort konnte nicht ermittelt werden.",'Bitte noch einmal antippen, am besten mit WLAN oder im Freien. Oder oben einen Ort bzw. eine Adresse eingeben.');};
+  // erst schnell und grob (WLAN/Mobilfunk), bei Zeitüberschreitung genauer per GPS
+  navigator.geolocation.getCurrentPosition(ok,err=>{if(err&&err.code===1)return fail(err);
+    navigator.geolocation.getCurrentPosition(ok,fail,{enableHighAccuracy:true,timeout:20000,maximumAge:0});},
+    {enableHighAccuracy:false,timeout:8000,maximumAge:300000});}
 function elSet(p){ELP=p;$("el-hits").innerHTML="";loadEL();}
 document.addEventListener("click",e=>{const r=e.target.closest("[data-elr]");if(r){ELR=+r.dataset.elr;store("el_rad",ELR);loadEL();return;}
   const f=e.target.closest("[data-elf]");if(f){ELF=f.dataset.elf;store("el_f",ELF);renderELSeg();renderEL();return;}
   const w=e.target.closest("[data-elw]");if(w){const k=w.dataset.elw;
-    if(k==="gps"){if(!navigator.geolocation){$("el-list").innerHTML=stateBox("Standort wird von diesem Browser nicht unterstützt.");return;}
-      $("el-list").innerHTML='<div class="state">Standort wird ermittelt …</div>';
-      navigator.geolocation.getCurrentPosition(p=>elSet({k:"gps",name:"meinem Standort",lat:p.coords.latitude,lon:p.coords.longitude}),()=>{$("el-list").innerHTML=stateBox("Standort nicht freigegeben. Auf dem iPhone unter Einstellungen → Datenschutz → Ortungsdienste für Safari erlauben.");},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});return;}
+    if(k==="gps"){elGPS();return;}
     const fv=elFavs().find(x=>x.k===k);if(fv)elSet(fv);return;}
   const h=e.target.closest("[data-elhit]");if(h){const [la,lo]=h.dataset.elhit.split(",").map(Number);$("el-q").value=h.textContent;elSet({k:"q",name:h.dataset.n,lat:la,lon:lo});}});
 document.addEventListener("submit",async e=>{if(e.target.id!=="el-form")return;e.preventDefault();const q=$("el-q").value.trim();if(!q)return;const hb=$("el-hits");hb.innerHTML='<div class="muted small">sucht …</div>';
