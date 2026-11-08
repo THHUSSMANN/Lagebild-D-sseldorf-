@@ -1728,6 +1728,8 @@ document.addEventListener("click",e=>{const d=e.target.closest("[data-rsdir]");i
   const a=e.target.closest("[data-rsalt]");if(a&&!e.target.closest("a")){RS.sel=+a.dataset.rsalt;renderReise();}});
 document.addEventListener("click",e=>{const j=e.target.closest("#rs-incs .carinc");if(!j||!RSMAP)return;e.stopImmediatePropagation();const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
   $("rs-map").scrollIntoView({behavior:"smooth",block:"center"});RSMAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText).openOn(RSMAP);},true);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-vts]");if(!b)return;const k=b.dataset.vts;
+  document.querySelectorAll("#vt-seg [data-vts]").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll("[data-vtp]").forEach(p=>p.hidden=p.dataset.vtp!==k);});
 function karteLbl(k){k=k||(MAPGO==="dus"||MAPGO==="datteln"?MAPGO:(C.key==="datteln"?"datteln":"dus"));return k==="datteln"?"Staus & Baustellen":"Sperrungen & Events";}
 function mapCity(k){const rr=k==="r0"||k==="r1";if(rr){const p=$("mapcity-route").parentNode;p.append($("mapcity-route"),$(k==="r0"?"mapcity-dus":"mapcity-datteln"),$(k==="r0"?"mapcity-datteln":"mapcity-dus"));}
   $("mapcity-route").hidden=!rr;if(!rr)MAPRT=null;if(k!=="dus"&&k!=="datteln"&&!rr)k=null;$("mapcity-dus").hidden=!(rr||k==="dus");$("mapcity-datteln").hidden=!(rr||k==="datteln");if(rr)k=null;if(k)document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));}
@@ -1925,10 +1927,13 @@ function route(){
   if(typeof foldCount==="function")foldCount();
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
   if(v==="parken")pkShow(PKS||"gps");
-  if(inView){window.scrollTo(0,0);if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
+  if(inView){window.scrollTo(0,0);requestAnimationFrame(()=>window.scrollTo(0,0));setTimeout(()=>window.scrollTo(0,0),80);if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
     if(v==="staus"&&pane==="karte"){if(!MAPGO)mapCity(C.key==="datteln"?"datteln":"dus");setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }
 window.addEventListener("hashchange",route);
+// interne Links ohne Sprung des Browsers zu gleichnamigen Abschnitten
+document.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey)return;const a=e.target.closest('a[href^="#"]');if(!a||a.target)return;
+  const h=a.getAttribute("href");e.preventDefault();history.pushState(null,"",h.length>1?h:location.pathname+location.search);route();});
 try{history.scrollRestoration="manual";}catch(e){}window.scrollTo(0,0);
 document.querySelectorAll(".view").forEach(v=>{const x=document.createElement("a");x.href="#";x.className="view-x";x.setAttribute("aria-label","Schließen, zurück zur Übersicht");x.innerHTML="✕ Schließen";v.prepend(x);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
@@ -1940,7 +1945,7 @@ document.querySelectorAll("#tiles .tile").forEach(t=>{
   ctl.querySelectorAll("button").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();
     const list=[...$("tiles").children].filter(x=>!x.hidden);const i=list.indexOf(t),j=i+Number(b.dataset.mv);
     if(j<0||j>=list.length)return;if(Number(b.dataset.mv)<0)list[j].before(t);else list[j].after(t);saveTileOrder();}));
-  const go=()=>{if(EDITING)return;location.hash=t.dataset.view==="staus"?"staus/reise":t.dataset.view;};
+  const go=()=>{if(EDITING)return;history.pushState(null,"","#"+(t.dataset.view==="staus"?"staus/reise":t.dataset.view));route();};
   t.addEventListener("click",go);t.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
 });
 $("arrange").addEventListener("click",()=>{

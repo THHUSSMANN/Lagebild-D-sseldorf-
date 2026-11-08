@@ -427,6 +427,8 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .alt .ag{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
 .alt .ag a{font:600 14px var(--f-body);padding:8px 12px;border-radius:8px;background:var(--accent);color:var(--panel);text-decoration:none}
 .alt .ag a.sec{background:var(--panel-2);color:var(--fg);border:1px solid var(--line)}
+.vtseg{grid-template-columns:repeat(3,1fr)!important;margin-top:8px}
+.vtseg button{font-size:13.5px;line-height:1.2}
 .carrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none;min-height:48px}
 .carrow:last-of-type{border-bottom:0}
 .carrow .cn{font:700 16px var(--f-display)}
@@ -685,11 +687,10 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <div id="mapcity-dus" class="mapcity" hidden>
   <div class="sublbl" style="margin-top:14px;font-size:15px">Sperrungen &amp; Events Düsseldorf <span class="muted small">· Verkehrszentrale der Landeshauptstadt (live)</span></div>
   <div class="stau-sum" id="vt-sum"></div>
-  <div class="grid" style="gap:12px">
-    <div><div class="sublbl">Aktuelle Sperrungen &amp; Meldungen</div><div id="vt-now"><div class="state">wird geladen …</div></div></div>
-    <div><div class="sublbl">Verkehrsrelevante Veranstaltungen</div><div id="vt-events"><div class="state">wird geladen …</div></div>
-      <div class="sublbl" style="margin-top:12px">Demnächst (7 Tage)</div><div id="vt-next"><div class="state">wird geladen …</div></div></div>
-  </div>
+  <div class="seg vtseg" id="vt-seg"><button type="button" data-vts="now" class="on">Sperrungen &amp; Meldungen</button><button type="button" data-vts="events">Veranstaltungen</button><button type="button" data-vts="next">Demnächst (7 Tage)</button></div>
+  <div data-vtp="now"><div id="vt-now"><div class="state">wird geladen …</div></div></div>
+  <div data-vtp="events" hidden><div id="vt-events"><div class="state">wird geladen …</div></div></div>
+  <div data-vtp="next" hidden><div id="vt-next"><div class="state">wird geladen …</div></div></div>
   </div>
   <div id="mapcity-datteln" class="mapcity" hidden>
   <div class="sublbl" style="margin-top:14px;font-size:15px">Staus &amp; Baustellen Datteln <span class="muted small">· TomTom Echtzeit, Datteln und ca. 8 km Umgebung · Eintrag antippen zeigt ihn in der Karte</span></div>
@@ -964,6 +965,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=126"></script>
+<script src="app.js?v=127"></script>
 </body>
 </html>
