@@ -1146,8 +1146,10 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
   box.innerHTML=ab.map(([o,d,t],i)=>'<a class="carbtn" target="_blank" rel="noopener" href="'+u(o,d)+'">🚗 '+t+'<span class="cartime" id="cart-'+i+'">Fahrzeit wird berechnet …</span><small>Route in Google Maps öffnen ↗</small></a>').join("");
   if(!TTKEY)return;
   box.insertAdjacentHTML("beforeend",'<div id="car-incs" class="car-incs"></div>');
-  ab.forEach(async([o,d,t],i)=>{const el=$("cart-"+i);
-    try{const r=await getJSON("https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY));
+  CARR=ab.map(([,,t])=>({t,wait:1}));renderCarIncs();
+  (async()=>{for(const [i,[o,d,t]] of ab.entries()){const el=$("cart-"+i);
+    try{const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
+      let r;try{r=await getJSON(url);}catch(e){await new Promise(z=>setTimeout(z,1500));r=await getJSON(url);}
       const rt=r.routes[0],sm=rt.summary;const min=Math.round(sm.travelTimeInSeconds/60),dl=Math.round((sm.trafficDelayInSeconds||0)/60),km=sm.lengthInMeters/1000;
       const arr=new Date(Date.now()+sm.travelTimeInSeconds*1000);
       el.innerHTML='<b>'+(min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0"):min)+' min</b>'+(dl>0?' · <span class="cardl">+'+dl+' Stau</span>':' · frei')+' · '+fmt(km)+' km · an '+hhmm(arr);
@@ -1158,11 +1160,12 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
         let len=0;for(let k=x.startPointIndex;k<x.endPointIndex&&k+1<pts.length;k++)len+=distKm(pts[k].latitude,pts[k].longitude,pts[k+1].latitude,pts[k+1].longitude);
         return {cat:CATS[x.simpleCategory]||"Behinderung",delay:Math.round((x.delayInSeconds||0)/60),speed:x.effectiveSpeedInKmh,len,road:roadAt(x.startPointIndex),lat:p.latitude,lon:p.longitude,cause:((x.tec&&x.tec.causes)||[]).map(c=>c.mainCauseCode).join(","),ort:null};});
       CARR[i]={t,secs,pts};renderCarIncs();
-      for(const x of secs){if(isFinite(x.lat)){x.ort=await placeOf(x.lat,x.lon);renderCarIncs();}}
-    }catch(e){el.textContent="Fahrzeit derzeit nicht verfügbar";CARR[i]={t,err:1};renderCarIncs();}});}
+    }catch(e){el.textContent="Fahrzeit derzeit nicht verfügbar";CARR[i]={t,err:1};renderCarIncs();}
+    await new Promise(z=>setTimeout(z,400));}
+    for(const r of CARR)for(const x of (r.secs||[]))if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);renderCarIncs();}})();}
 let CARR=[];
 function renderCarIncs(){const box=$("car-incs");if(!box)return;
-  box.innerHTML=CARR.filter(Boolean).map(r=>'<div class="sublbl" style="margin-top:10px">Auf der Strecke '+esc(r.t)+'</div>'+(r.err?'<div class="muted small">Strecke derzeit nicht verfügbar.</div>':r.secs.length?r.secs.map(x=>
+  box.innerHTML=CARR.filter(Boolean).map(r=>'<div class="sublbl" style="margin-top:10px">Auf der Strecke '+esc(r.t)+'</div>'+(r.wait?'<div class="muted small">wird berechnet …</div>':r.err?'<div class="muted small">Strecke derzeit nicht verfügbar.</div>':r.secs.length?r.secs.map(x=>
     '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road.split(" · ")[0]||"Straße")+'</span><div class="t"><span class="pill '+(x.cat==="Sperrung"||x.delay>=10?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(x.cat)+'</span>'+esc(x.road.split(" · ")[1]||"")+'</div>'+
     '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
     '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Strecke.</div>')).join("");}
