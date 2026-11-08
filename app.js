@@ -1201,12 +1201,12 @@ async function routeRW(r){const P=r.pts;
     out.push({...w,at:cum[bk]});});
   return out.sort((a,b)=>a.at-b.at);}
 function rwRow(x){const lines=(x.description||[]).map(v=>String(v).trim()).filter(Boolean);const lane=lines.find(l=>/fahrstreifen|spur|gesperrt|verengt|verschwenk|tempo|km\/h/i.test(l));const when=lines.filter(l=>/beginn|ende|bis|ab |\d{2}\.\d{2}\./i.test(l)).slice(0,2);
-    return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag ab">'+esc(x.ab)+'</span><div class="t"><span class="pill" style="margin-right:6px"><i style="background:#8a9aa5"></i>Baustelle</span>'+esc(x.subtitle||x.title||"")+'</div>'+
+    return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag ab">'+esc(x.ab)+'</span><div class="t"><span class="pill" style="margin-right:6px"><i style="background:#8a9aa5"></i>Baustelle</span>'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+esc(x.subtitle||x.title||"")+'</div>'+
     '<div class="delay mid">'+fmt(x.at,0)+' km<small>ab Start</small></div>'+
     '<div class="d">'+esc([lane,...when].filter(Boolean).join(" · ")||x.title||"")+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>';}
-function incRow(x){return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road.split(" · ")[0]||"Straße")+'</span><div class="t"><span class="pill '+(x.cat==="Sperrung"||x.delay>=10?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(x.cat)+'</span>'+esc(x.road.split(" · ")[1]||"")+'</div>'+
+function incRow(x){return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road.split(" · ")[0]||"Straße")+'</span><div class="t"><span class="pill '+(x.cat==="Sperrung"||x.delay>=10?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(x.cat)+'</span>'+(x.ort?'<b>'+esc(x.ort)+'</b>'+(x.road.split(" · ")[1]?" · ":""):"")+esc(x.road.split(" · ")[1]||"")+'</div>'+
     '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
-    '<div class="d">'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>';}
+    '<div class="d">'+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>';}
 let MAPRT=null;
 function renderMapRoute(){const box=$("mapcity-route");if(!box)return;const r=MAPRT;if(!r){box.innerHTML="";return;}
   const n=(r.secs||[]).length,m=(r.rw||[]).length;
@@ -1276,7 +1276,7 @@ function abItem(i){
   const lines=(i.description||[]).map(x=>String(x).trim()).filter(Boolean);
   const pill=i._rw&&!closed?'<span class="pill"><i style="background:#8a9aa5"></i>Baustelle</span>':closed?'<span class="pill p-bad"><i></i>Sperrung</span>':J?(J.kind==="stau"?'<span class="pill p-bad"><i></i>Stau</span>':'<span class="pill p-warn"><i></i>stockend</span>'):'<span class="pill p-warn"><i></i>Behinderung</span>';
   const facts=[J&&J.delay!=null?"<b>+"+J.delay+" min</b>":"",J&&J.len?fmt(J.len,1)+" km lang":"",J&&J.speed!=null?"Ø "+J.speed+" km/h":"",fmt(i.km)+" km von "+esc(C.town),i._rw?esc(lines.filter(l=>/fahrstreifen|spur|verengt|verschwenk|tempo|km\/h|ende|bis/i.test(l)).slice(0,2).join(" · ")):""].filter(Boolean).join(" · ");
-  return '<details class="abd"><summary><span class="tag ab">'+esc(i.ab)+'</span><span class="abd-t">'+pill+' '+esc(i.title||"")+'</span><span class="abd-s">'+esc(i.subtitle||"")+'</span><span class="abd-f">'+facts+'</span></summary>'+
+  return '<details class="abd"><summary><span class="tag ab">'+esc(i.ab)+'</span><span class="abd-t">'+pill+' '+(i.ort?'<b>'+esc(i.ort)+'</b> · ':'')+esc(i.title||"")+'</span><span class="abd-s">'+esc(i.subtitle||"")+'</span><span class="abd-f">'+facts+'</span></summary>'+
     '<div class="abd-b">'+(lines.length?lines.map(esc).join("<br>"):'<span class="muted">Keine weiteren Angaben der Autobahn GmbH.</span>')+
     (isFinite(i.lat)?'<div style="margin-top:8px"><button type="button" class="btn sm" data-goto="'+i.lat+','+i.lon+'">Auf der Karte zeigen</button> <a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=map&center='+i.lat+','+i.lon+'&zoom=14&layer=traffic">Google Maps ↗</a></div>':'')+'</div></details>';}
 function showAbDetail(k){
@@ -1290,6 +1290,8 @@ function showAbDetail(k){
   box.innerHTML='<div class="abd-head"><h3>'+esc(set.t)+' <span class="muted small">('+set.l.length+')</span></h3><button type="button" class="btn sm" data-close="1">Schließen ✕</button></div>'+
     (set.l.length?'<div class="muted small" style="margin-bottom:6px">Eintrag antippen für alle Angaben (Abschnitt, Dauer, Umleitung).</div>'+set.l.map(abItem).join(""):'<div class="state good">Keine Meldungen auf dieser Strecke im Umkreis von '+PRIO_RADIUS_KM+' km.</div>');
   document.querySelectorAll("#stau-sum .fbtn,#prio .route").forEach(b=>b.classList.toggle("on",(b.dataset.f||("r"+b.dataset.route))===k));
+  const miss=set.l.filter(x=>!x.ort&&!x._pq&&isFinite(x.lat)).slice(0,40);
+  if(miss.length)(async()=>{for(const x of miss){x._pq=1;x.ort=await placeOf(x.lat,x.lon);}if(AB_SEL===k){const op=[...box.querySelectorAll("details.abd")].map(d=>d.open);showAbDetail(k);box.querySelectorAll("details.abd").forEach((d,j)=>{if(op[j])d.open=true;});}})();
 }
 function selectAb(k){AB_SEL=AB_SEL===k?null:k;if(!AB_SEL){$("stau-detail").hidden=true;document.querySelectorAll("#stau-sum .fbtn,#prio .route").forEach(b=>b.classList.remove("on"));return;}
   showAbDetail(AB_SEL);setTimeout(()=>$("stau-detail").scrollIntoView({behavior:"smooth",block:"start"}),30);}
@@ -1693,7 +1695,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.dir)RS.dir=C.key=
         let via=null;if(i>0){let best=-1;for(let a=Math.floor(P.pts.length*.15);a<P.pts.length*.85;a+=3){const q=P.pts[a];let m=1e9;for(let b=0;b<main.length;b+=4){const dd=Math.abs(main[b].latitude-q.latitude)+Math.abs(main[b].longitude-q.longitude);if(dd<m)m=dd;}if(m>best){best=m;via=[q.latitude,q.longitude];}}}
         return {t,i,...P,min:Math.round(sm.travelTimeInSeconds/60),dl:Math.round((sm.trafficDelayInSeconds||0)/60),km:sm.lengthInMeters/1000,arr:new Date(Date.now()+sm.travelTimeInSeconds*1000),via,rw:null};});
       RS.data[k]={alts};
-      alts.forEach(a=>routeRW(a).then(l=>{a.rw=l;if(RS.dir===k)renderReise();}));
+      alts.forEach(a=>routeRW(a).then(async l=>{a.rw=l;if(RS.dir===k)renderReise();for(const w of l)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k&&RS.data[k]&&RS.data[k].alts&&RS.data[k].alts[RS.sel]===a)renderReise();}}));
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
     }catch(e){RS.data[k]={err:errText(e)};}
     renderReise();}}
