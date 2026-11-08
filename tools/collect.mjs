@@ -489,6 +489,61 @@ await job("medien.json", async () => {
   out._stat = [...new Set(stat)];
   return out;
 });
+// ---------- Ladesäulen & Parkplätze (OpenStreetMap) rund um die Lieblingsorte, 1× täglich ----------
+// Der Browser fragt OpenStreetMap sonst selbst ab – das ist abends oft überlastet. Hier vorab gesammelt.
+// Ladesäulenregister der Bundesnetzagentur (amtlich, vollständiger als OpenStreetMap)
+async function bnetza(RC) {
+  const page = await get("https://www.bundesnetzagentur.de/ladeinfrastruktur", { type: "text" });
+  let m = page.match(/href="([^"]*Ladesaeulenregister[^"]*\.csv[^"]*)"/i); if (!m) throw new Error("CSV-Link nicht gefunden");
+  let url = decode(m[1]); if (!/^https?:/.test(url)) url = new URL(url, "https://www.bundesnetzagentur.de/").href;
+  const r = await fetch(url, { headers: UA, signal: AbortSignal.timeout(240000) }); if (!r.ok) throw new Error("CSV HTTP " + r.status);
+  const buf = new Uint8Array(await r.arrayBuffer()); let txt = new TextDecoder("utf-8").decode(buf);
+  if ((txt.match(/�/g) || []).length > 20) txt = new TextDecoder("windows-1252").decode(buf);
+  const lines = txt.split(/\r?\n/); const hi = lines.findIndex(l => /Breitengrad/i.test(l)); if (hi < 0) throw new Error("Kopfzeile fehlt");
+  const sep = (lines[hi].match(/;/g) || []).length >= (lines[hi].match(/,/g) || []).length ? ";" : ",";
+  const split = l => { const o = []; let cur = "", q = false; for (let i = 0; i < l.length; i++) { const ch = l[i]; if (ch === '"') { if (q && l[i + 1] === '"') { cur += '"'; i++; } else q = !q; } else if (ch === sep && !q) { o.push(cur); cur = ""; } else cur += ch; } o.push(cur); return o.map(x => x.trim()); };
+  const H = split(lines[hi]); const col = re => H.findIndex(h => re.test(h));
+  const iLat = col(/^Breitengrad/i), iLon = col(/^L(ä|ae)ngengrad/i), iOp = col(/^Betreiber/i), iName = col(/Anzeigename/i), iStr = col(/^Stra(ß|ss)e/i), iNr = col(/^Hausnummer/i), iOrt = col(/^Ort$/i),
+    iKw = col(/Nennleistung Ladeeinrichtung/i), iN = col(/Anzahl Ladepunkte/i), iStat = col(/^Status/i), iOh = col(/^(Ö|Oe)ffnungszeiten$/i), iLoc = col(/Standortbezeichnung/i);
+  const iPlug = H.map((h, i) => /^Steckertypen/i.test(h) ? i : -1).filter(i => i >= 0);
+  const num = v => parseFloat(String(v || "").replace(",", "."));
+  const numLL = v => parseFloat(String(v || "").replace(",", "."));
+  const P = Object.values(PLACES); const out = [];
+  for (let k = hi + 1; k < lines.length; k++) { const l = lines[k]; if (!l) continue; const c = split(l);
+    const lat = numLL(c[iLat]), lon = numLL(c[iLon]); if (!isFinite(lat) || !isFinite(lon)) continue;
+    if (!P.some(p => distKm(p.lat, p.lon, lat, lon) <= RC)) continue;
+    if (iStat >= 0 && c[iStat] && !/betrieb/i.test(c[iStat])) continue;
+    const plugs = [...new Set(iPlug.flatMap(i => String(c[i] || "").split(/[,;]/).map(x => x.trim()).filter(Boolean)))];
+    out.push({ lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5, op: c[iOp] || "", name: (iName >= 0 && c[iName]) || (iLoc >= 0 && c[iLoc]) || "", addr: [[c[iStr], c[iNr]].filter(Boolean).join(" "), c[iOrt]].filter(Boolean).join(", "),
+      kw: iKw >= 0 ? num(c[iKw]) || null : null, n: iN >= 0 ? parseInt(c[iN]) || null : null, plugs, oh: iOh >= 0 ? c[iOh] || "" : "" }); }
+  if (!out.length) throw new Error("keine Einträge erkannt (Spalten: " + H.slice(0, 12).join("|") + ")");
+  return out;
+}
+async function osmPoi() {
+  try { const prev = await get(LIVE + "osm-poi.json", { ms: 20000 });
+    if (prev && prev.data && prev.data.c && Date.now() - new Date(prev.generated) < 20 * 3600e3 && !prev.stale) { await fs.writeFile(path.join(OUT, "osm-poi.json"), JSON.stringify(prev)); return "ok (vom " + prev.generated.slice(0, 16) + ")"; } } catch {}
+  const SERVERS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+  const op = async q => { let err; for (const u of SERVERS) { try { const r = await fetch(u, { method: "POST", headers: { ...UA, "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q), signal: AbortSignal.timeout(150000) });
+    if (!r.ok) throw new Error("HTTP " + r.status); const d = JSON.parse(await r.text()); if (!Array.isArray(d.elements)) throw new Error("Format"); return d.elements; } catch (e) { err = e; await sleep(2000); } } throw err; };
+  const keepC = k => /^(name|operator|network|brand|addr:(street|housenumber|city)|capacity|fee|opening_hours|amenity)$/.test(k) || /^socket:/.test(k) || /(^|:)output$/.test(k);
+  const keepP = k => /^(amenity|parking|park_ride|parking_space|name|capacity|capacity:disabled|fee|maxstay|opening_hours|access|addr:(street|housenumber))$/.test(k);
+  const slim = (els, keep) => els.map(e => { const lat = e.lat ?? (e.center && e.center.lat), lon = e.lon ?? (e.center && e.center.lon); if (!isFinite(lat)) return null;
+    const t = {}; for (const [k, v] of Object.entries(e.tags || {})) if (keep(k)) t[k] = v; return { lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5, tags: t }; }).filter(Boolean);
+  const RC = 15, RP = 10; const out = { places: {}, c: [], p: [] }; const seenC = new Set(), seenP = new Set();
+  for (const [k, p] of Object.entries(PLACES)) {
+    const c = await op('[out:json][timeout:120];nwr["amenity"="charging_station"](around:' + RC * 1000 + ',' + p.lat + ',' + p.lon + ');out center tags;'); await sleep(1500);
+    const pk = await op('[out:json][timeout:120];(nwr["amenity"="parking"](around:' + RP * 1000 + ',' + p.lat + ',' + p.lon + ');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:' + RP * 1000 + ',' + p.lat + ',' + p.lon + '););out center tags;'); await sleep(1500);
+    for (const e of slim(c, keepC)) { const id = e.lat + "," + e.lon; if (!seenC.has(id)) { seenC.add(id); out.c.push(e); } }
+    for (const e of slim(pk, keepP)) { const id = e.lat + "," + e.lon; if (!seenP.has(id)) { seenP.add(id); out.p.push(e); } }
+    out.places[k] = { lat: p.lat, lon: p.lon, rc: RC, rp: RP };
+  }
+  try { out.b = await bnetza(RC); } catch (e) { out.b = []; out.bErr = String(e.message || e); }
+  await write("osm-poi.json", out);
+  return "ok (" + out.c.length + " Ladestationen OSM, " + out.b.length + " Ladeeinrichtungen BNetzA" + (out.bErr ? " – BNetzA: " + out.bErr : "") + ", " + out.p.length + " Parkplätze)";
+}
+try { results["osm-poi.json"] = await osmPoi(); } catch (e) { results["osm-poi.json"] = "Fehler: " + (e.message || e);
+  try { const prev = await get(LIVE + "osm-poi.json", { ms: 15000 }); prev.stale = true; await fs.writeFile(path.join(OUT, "osm-poi.json"), JSON.stringify(prev)); } catch {} }
+console.log("::notice::OSM-Daten: " + results["osm-poi.json"]);
 // ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
 async function pushAlarms() {
   const topic = process.env.NTFY_TOPIC; if (!topic) return "kein Thema";

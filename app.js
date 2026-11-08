@@ -83,6 +83,11 @@ async function getJSON(url,ms=15000){
     return JSON.parse(await r.text());}
   finally{clearTimeout(t)}
 }
+// Vorab gesammelte OpenStreetMap-Daten rund um die Lieblingsorte (Datensammler, 1× täglich)
+let OSMPOI=null;
+async function osmLocal(kind,lat,lon,rKm){try{if(!OSMPOI)OSMPOI=getData("osm-poi.json").then(d=>d.data).catch(e=>{OSMPOI=null;throw e;});const D=await OSMPOI;if(!D||!D.places)return null;
+  const R=kind==="c"?"rc":"rp";const ok=Object.values(D.places).some(p=>distKm(p.lat,p.lon,lat,lon)+rKm<=p[R]);if(!ok)return null;
+  const pre=D[kind].filter(e=>Math.abs(e.lat-lat)<rKm/100&&Math.abs(e.lon-lon)<rKm/60);const near=e=>Math.abs(e.lat-lat)<rKm/100&&Math.abs(e.lon-lon)<rKm/60&&distKm(lat,lon,e.lat,e.lon)<=rKm;return {elements:pre.filter(near),b:kind==="c"?(D.b||[]).filter(near):[]};}catch(e){return null;}}
 // OpenStreetMap-Abfrage: mehrere öffentliche Server gleichzeitig, der schnellste gewinnt
 const OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
 async function overpass(q){const ctls=[];
@@ -1769,13 +1774,16 @@ async function loadEL(){const box=$("el-list");if(!box)return;ELKEY=C.key;
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
   const la=ELP.lat,lo=ELP.lon;box.innerHTML='<div class="state">wird geladen …</div>';
   const q='[out:json][timeout:25];nwr["amenity"="charging_station"](around:'+(ELR*1000)+','+la+','+lo+');out center tags;';
-  try{const d=await overpass(q);
+  try{const d=(await osmLocal("c",la,lo,ELR))||await overpass(q);const BN=d.b||[];
     const kw=t=>{let m=0;for(const [k,v] of Object.entries(t))if(/(^|:)output$/.test(k)){const x=String(v).match(/([\d.,]+)\s*(kW|W)?/i);if(x){let n=parseFloat(x[1].replace(",","."));if(/^W$/i.test(x[2]||"")||n>1000)n/=1000;if(n>m)m=n;}}return m||null;};
     const SOCK={type2:"Typ 2",type2_combo:"CCS",chademo:"CHAdeMO",tesla_supercharger:"Tesla",schuko:"Schuko",type2_cable:"Typ 2 Kabel"};
     ELD=(d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
       const so=Object.keys(SOCK).filter(k=>t["socket:"+k]&&t["socket:"+k]!=="no").map(k=>SOCK[k]+(/^\d+$/.test(t["socket:"+k])?" ×"+t["socket:"+k]:""));
       return {name:t.name||t.operator||t.network||t.brand||"Ladesäule",op:t.operator||t.network||"",addr:[[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),t["addr:city"]].filter(Boolean).join(", "),
         cap:t.capacity,so,kw:kw(t),fee:t.fee,oh:t.opening_hours,lat,lon,km:distKm(la,lo,lat,lon)};}).filter(x=>isFinite(x.lat)).sort((a,b)=>a.km-b.km);
+    if(BN.length){const pl=a=>[...new Set(a.map(x=>/combo|ccs/i.test(x)?"CCS":/chademo/i.test(x)?"CHAdeMO":/tesla/i.test(x)?"Tesla":/schuko/i.test(x)?"Schuko":/typ\s?2/i.test(x)?"Typ 2":x))];
+      const bn=BN.map(b=>({name:b.name||b.op||"Ladesäule",op:b.op,addr:b.addr,cap:b.n,so:pl(b.plugs||[]),kw:b.kw,fee:null,oh:b.oh,lat:b.lat,lon:b.lon,km:distKm(la,lo,b.lat,b.lon),bn:1}));
+      ELD=bn.concat(ELD.filter(x=>!bn.some(b=>distKm(b.lat,b.lon,x.lat,x.lon)<0.04))).sort((a,b)=>a.km-b.km);}
     renderEL();
   }catch(e){ELD=null;$("el-map").hidden=true;box.innerHTML=stateBox("E-Ladesäulen nicht verfügbar – "+errText(e)+".",'<a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a>');}}
 function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?ELD.filter(x=>x.kw>=50):ELD;
@@ -1792,7 +1800,7 @@ function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?E
       '<span class="d">'+(x.kw?'<span class="kw'+(x.kw>=50?" fast":"")+'">'+fmt(x.kw,0)+' kW</span>':'')+info(x)+
       (x.addr||x.op&&x.op!==x.name?'<br>'+esc([x.addr,x.op&&x.op!==x.name?x.op:""].filter(Boolean).join(" · ")):"")+'</span></a>').join("")
      :'<div class="state">Keine Ladestationen gefunden – Umkreis vergrößern.</div>')+
-    '<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende, Ortssuche: Nominatim. Belegung live gibt es dort nicht. Amtliche Liste für Deutschland: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
+    '<div class="muted small" style="margin-top:8px">Daten: Ladesäulenregister der Bundesnetzagentur (rund um deine Orte) und OpenStreetMap-Mitwirkende, Ortssuche: Nominatim. Belegung live gibt es dort nicht. Amtliche Liste für Deutschland: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
 function elGPS(){const msg=$("el-gpsmsg");let done=false;
   const show=h=>{msg.innerHTML=h;msg.scrollIntoView({behavior:"smooth",block:"nearest"});};
   if(!window.isSecureContext||!navigator.geolocation){show(stateBox("Standort wird hier nicht unterstützt."));return;}
@@ -1830,7 +1838,7 @@ function pkParse(d,R){return (d.elements||[]).map(e=>{const t=e.tags||{};const l
       return {kind,name:t.name||({ph:t.parking==="underground"?"Tiefgarage":"Parkhaus",pr:"Park + Ride",bh:"Behindertenparkplatz",pp:"Parkplatz"})[kind],cap:t.capacity,dis:t["capacity:disabled"],
         fee:t.fee,max:t.maxstay,oh:t.opening_hours,access:t.access,addr:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),lat,lon,km:distKm(R.lat,R.lon,lat,lon)};})
       .filter(x=>isFinite(x.lat)&&!/^(private|no|customers)$/.test(x.access||"")).sort((a,b)=>a.km-b.km);}
-async function pkQuery(Z,r){const q='[out:json][timeout:25];(nwr["amenity"="parking"](around:'+r+','+Z.lat+','+Z.lon+');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:'+r+','+Z.lat+','+Z.lon+'););out center tags;';
+async function pkQuery(Z,r){const loc=await osmLocal("p",Z.lat,Z.lon,r/1000);if(loc)return loc;const q='[out:json][timeout:25];(nwr["amenity"="parking"](around:'+r+','+Z.lat+','+Z.lon+');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:'+r+','+Z.lat+','+Z.lon+'););out center tags;';
   return overpass(q);}
 async function loadPkDat(){const box=$("pk-dat");if(!box)return;
   const H=HOMES.datteln&&isFinite(HOMES.datteln.lat)?HOMES.datteln:null,Z={lat:51.6539,lon:7.3417};
