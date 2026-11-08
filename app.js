@@ -1710,6 +1710,8 @@ const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="M
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
 const gmView=(o,d,via)=>{const A=o.label||o.lat+","+o.lon,B=d.label||d.lat+","+d.lon;
   return IOS?"comgooglemaps://?saddr="+encodeURIComponent(A)+"&daddr="+(via?via[0].toFixed(5)+","+via[1].toFixed(5)+"+to:":"")+encodeURIComponent(B)+"&directionsmode=driving":gmUrl(o,d,via);};
+// Uber: Abholung am aktuellen Standort, Ziel = Adresse der Fahrt
+const uberUrl=d=>"https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]="+d.lat+"&dropoff[longitude]="+d.lon+"&dropoff[nickname]="+encodeURIComponent(d.label.split(",").slice(-1)[0].trim())+"&dropoff[formatted_address]="+encodeURIComponent(d.label);
 const hm=min=>min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0")+" min":min+" min";
 function rsEnds(k){const r=RSDIRS.find(x=>x[0]===k)||RSDIRS[0];return [FIXHOME[r[2]],FIXHOME[r[3]]];}
 const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon):"")+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
@@ -1776,7 +1778,7 @@ function renderReise(){const D=RS.data;setStauTitle();
     cur.alts.map(a=>{const m=(a.rw||[]).length;
       return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=15?"bad":a.dl>0?"warn":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
         '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
-        (a.i===RS.sel?'<span class="ag"><a href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>In Google Maps öffnen ↗</a></span>':'')+'</div>';}).join("")+
+        (a.i===RS.sel?'<span class="ag"><a href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>In Google Maps öffnen ↗</a><a class="sec" href="'+uberUrl(d)+'" target="_blank" rel="noopener">Uber bestellen ↗</a></span>':'')+'</div>';}).join("")+
     '<div class="muted small" style="margin:0 2px 8px">Google Maps öffnet die Route von '+esc(o.label)+' nach '+esc(d.label)+' zur Kontrolle. Die Navigation startest du dort selbst; Alternativen zeigt Google grau zum Antippen.</div>';
   const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;
   inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Behinderungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live, schon in der Fahrzeit eingerechnet)</span></div>'+(n?a.secs.map(incRow).join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>')+
