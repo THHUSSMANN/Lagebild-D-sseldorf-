@@ -1721,7 +1721,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.key
 const CITYN={dus:"Düsseldorf",datteln:"Datteln",dortmund:"Dortmund"};
 const TDIRS=[["r0","dus","nach Datteln","bis Recklinghausen Hbf"],["r2","dus","nach Dortmund","bis Dortmund Hbf"],["r1","datteln","nach Düsseldorf","ab Recklinghausen Hbf"],["r3","dortmund","nach Düsseldorf","ab Dortmund Hbf"],["r4","datteln","nach Dortmund","ab Recklinghausen Hbf"],["r5","dortmund","nach Datteln","bis Recklinghausen Hbf"]];
 function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
-  $("rs-city").innerHTML=Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="'+(c===k?"on":"")+'">'+n+'</button>').join("");
+  $("rs-city").innerHTML=Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===k?" on":"")+'">'+n+'</button>').join("");
   const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
   const tk=TDIRS.filter(x=>x[1]===k);if(!tk.some(x=>x[0]===RS.tdir))RS.tdir=tk[0][0];
   rsMode(RS.mode||"auto");}
@@ -1731,14 +1731,14 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");
   rsCity(k);});
 function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
-    $("rs-tdir").innerHTML=TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="'+(RS.tdir===k?"on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join("");
+    $("rs-tdir").innerHTML=TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(RSDIRS.find(x=>x[0]===k)||[])[3]+(RS.tdir===k?" on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join("");
     const t=RSTRIP[RS.tdir]||"";const st={"dus-re":"Düsseldorf Hbf → Recklinghausen Hbf","re-dus":"Recklinghausen Hbf → Düsseldorf Hbf","dus-do":"Düsseldorf Hbf → Dortmund Hbf","do-dus":"Dortmund Hbf → Düsseldorf Hbf","re-do":"Recklinghausen Hbf → Dortmund Hbf","do-re":"Dortmund Hbf → Recklinghausen Hbf"}[t]||"";
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=t.dataset.rstd;rsMode("bahn");}});
 function renderReise(){const D=RS.data;setStauTitle();
   if(!RS.city){rsCity(C.key==="datteln"?"datteln":"dus");return;}
-  $("rs-quick").innerHTML=Object.entries(CITYN).filter(([c])=>c!==RS.city).map(([c,n])=>'<a href="'+gmView(FIXHOME[RS.city],FIXHOME[c],null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>🧭 Nach '+n+'</a>').join("");
-  $("rs-dir").innerHTML=RSDIRS.filter(x=>x[2]===RS.city).map(([k,t])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="'+(RS.dir===k?"on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
+  $("rs-quick").innerHTML=Object.entries(CITYN).filter(([c])=>c!==RS.city).map(([c,n])=>'<a class="cc-'+c+'" href="'+gmView(FIXHOME[RS.city],FIXHOME[c],null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>🧭 Nach '+n+'</a>').join("");
+  $("rs-dir").innerHTML=RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
   if(cur.err){box.innerHTML=stateBox("Fahrzeit derzeit nicht verfügbar – "+cur.err+".");inc.innerHTML="";drawReise();return;}
