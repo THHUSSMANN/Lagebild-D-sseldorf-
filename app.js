@@ -1799,7 +1799,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Lage"],["staus/karte","Karte"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus","Aktuelle Lage"],["staus/karte","Karte"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
   if(["bezirke"].includes(v))return C.isDus;
