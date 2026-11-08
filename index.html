@@ -383,6 +383,36 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .route .rv{grid-column:1/-1;font-weight:600}
 .stau-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .stau-sum .fact{background:var(--panel-2);border-radius:6px;padding:8px 10px}
+
+/* Verkehr als Ampel-Tabelle */
+.ttab{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.ttab #car-routes{display:block;margin:0}
+.ttab #car-wrap{border-bottom:3px solid var(--line)}
+.carrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none;min-height:48px}
+.carrow:last-of-type{border-bottom:0}
+.carrow .cn{font:700 16px var(--f-display)}
+.carrow .cn small{display:block;font:400 12.5px var(--f-body);color:var(--muted)}
+.carrow .ct{font:700 17px var(--f-display);white-space:nowrap}
+.carrow .go{color:var(--muted)}
+.cs{font:600 13.5px var(--f-body);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.cs.ok{color:var(--ok)} .cs.warn{background:var(--warn);color:#000} .cs.bad{background:var(--bad);color:#fff}
+.ttab .car-incs{padding:0 12px}
+.ttab details.cr>summary.route-h{margin:0 0 8px;padding:6px 10px;font:600 14px var(--f-body);border-left-width:4px;border-left-color:var(--warn)}
+.ttab details.cr>summary.route-h b{font-weight:600}
+.ttab details.cr .route-n{font-size:12.5px;padding:1px 8px;background:var(--warn);color:#000}
+.ttab .prio{display:block}
+.ttab .route{display:grid;grid-template-columns:auto 1fr auto;border-radius:0;background:none;border-left:0;border-bottom:1px solid var(--line);padding:10px 12px;min-height:46px}
+.ttab .route:last-child{border-bottom:0}
+.ttab .route .rt::before{content:"●";margin-right:8px;color:var(--ok)}
+.ttab .route.warn .rt::before{color:var(--warn)} .ttab .route.bad .rt::before{color:var(--bad)} .ttab .route.crit .rt::before{color:var(--crit)} .ttab .route.unk .rt::before{color:var(--line)}
+.ttab .route.warn .rv{color:var(--fg)} .ttab .route.bad .rv,.ttab .route.crit .rv{color:var(--bad)}
+.ttab .route .rs{grid-column:2/-1}
+.tnote{margin:6px 2px 4px}
+details.fold.fbtnfold>summary{justify-content:center;border-left:0;background:var(--accent);color:var(--panel)}
+details.fold.fbtnfold>summary::after{color:var(--panel);margin-left:6px}
+details.fold.fbtnfold[open]>summary::after{content:"✕";transform:none}
+.sub2{font:700 15px var(--f-display);margin:14px 0 6px;color:var(--muted)}
+@media (min-width:900px){.ttab .prio{display:block}}
 /* Verkehr kompakt */
 .fold{margin-top:10px}
 .fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font:700 16.5px var(--f-display);color:var(--fg);padding:9px 12px;border-radius:8px;background:var(--panel-2);border-left:5px solid var(--accent);min-height:44px}
@@ -586,15 +616,13 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 <div class="subtabs" data-for="staus"></div>
 <section class="card wide" id="staus">
   <div class="card-head"><h2 id="stau-title">Verkehrslage</h2><span class="src" id="stau-src">TomTom · Autobahn GmbH</span></div>
-  <div id="car-wrap" style="margin-bottom:4px" hidden>
-    <h3 class="sublbl" style="margin-top:4px">Autofahrt Düsseldorf ⇄ Datteln <span class="muted small" style="font-weight:400">(live · antippen öffnet Google Maps)</span></h3>
-    <div class="segsw" id="car-routes"></div>
-  </div>
+  <div class="ttab">
+  <div id="car-wrap" hidden><div id="car-routes"></div></div>
   <div id="prio"></div>
-  <div class="muted small" style="margin:6px 0 4px">Strecke oder Kennzahl antippen für alle Meldungen dazu.</div>
-  <div class="stau-sum" id="stau-sum"></div>
+  </div>
   <div id="stau-detail" hidden></div>
-  <details class="fold" id="fold-map"><summary>Verkehrskarte</summary>
+  <div class="tnote muted small" id="tnote">Zeile antippen für Details · Fahrzeit: TomTom · Strecken: Autobahn GmbH, 60 km Umkreis</div>
+  <details class="fold fbtnfold" id="fold-map"><summary>Karte öffnen</summary>
   <div class="mapsw" id="mapsw" role="tablist" aria-label="Kartenquelle">
     <button type="button" data-mm="tomtom" role="tab">TomTom <small>Verkehr live</small></button>
     <button type="button" data-mm="osm" role="tab">OpenStreetMap <small>amtliche Meldungen</small></button>
@@ -604,13 +632,13 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
   <label class="muted small" style="display:inline-flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ttflow"> zusätzlich Verkehrsfluss aller Straßen einfärben</label>
   <div class="legend"><span class="tt-leg"><i style="background:linear-gradient(90deg,#f3c623,#f08a00,#d62d20,#8b0000)"></i>Stau leicht → schwer (alle Straßen)</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
   </details>
-  <details class="fold" id="fold-tt"><summary>Alle Straßen · TomTom Echtzeit <span class="fcnt" data-cnt="tt"></span></summary>
+  <details class="fold" id="fold-all"><summary>Alle Meldungen <span class="fcnt" id="fcnt-all"></span></summary>
+  <div class="stau-sum" id="stau-sum"></div>
+  <h3 class="sub2">Alle Straßen · TomTom Echtzeit</h3>
   <div id="tt"><div class="state">wird geladen …</div></div>
-  </details>
-  <details class="fold" id="fold-ab"><summary>Alle Autobahn-Meldungen im Umkreis <span class="fcnt" data-cnt="stau-list"></span></summary>
+  <h3 class="sub2">Autobahnen · Autobahn GmbH</h3>
   <div id="stau-list"><div class="state">Staus werden geladen …</div></div>
-  </details>
-  <details class="fold" id="fold-more"><summary>Weitere Autobahn-Meldungen &amp; Sperrungen <span class="fcnt" data-cnt="traffic"></span></summary>
+  <h3 class="sub2">Weitere Meldungen &amp; Sperrungen</h3>
   <div id="traffic"><div class="state">Verkehrsmeldungen werden geladen …</div></div>
   </details>
 </section>
@@ -870,6 +898,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=111"></script>
+<script src="app.js?v=112"></script>
 </body>
 </html>

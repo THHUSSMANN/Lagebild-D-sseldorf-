@@ -372,7 +372,7 @@ function applyPlaceUi(){
   document.title="Lagebild Thomas Hußmann · "+C.town;
   $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
   $("gmaps").href=gmapsUrl();
-  $("stau-title").textContent="Verkehr ab "+C.town+" – Autobahnen, Fahrten & Karte";
+  $("stau-title").textContent="Verkehr · "+C.town;
   $("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
   $("rhein-sec").textContent=C.isDus?"Rhein & Grundwasser":"Gewässer";
   $("efa-card").hidden=!C.efaDefault;
@@ -1144,7 +1144,7 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
   if(!A||!B){box.innerHTML='<div class="muted small" style="grid-column:1/-1">Für die Autofahrt Düsseldorf ⇄ Datteln einmal den Einrichtungslink mit deinen Adressen öffnen (oder unter Einstellungen „Meine Adresse“ für beide Orte eintragen).</div>';return;}
   const u=(o,d)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(o.label)+"&destination="+encodeURIComponent(d.label);
   const ab=[[A,B,"Düsseldorf → Datteln"],[B,A,"Datteln → Düsseldorf"]];if(C.key==="datteln")ab.reverse();
-  box.innerHTML=ab.map(([o,d,t],i)=>'<a class="carbtn" target="_blank" rel="noopener" href="'+u(o,d)+'">'+t+'<span class="cartime" id="cart-'+i+'">Fahrzeit wird berechnet …</span><small>Route in Google Maps öffnen ↗</small></a>').join("");
+  box.innerHTML=ab.map(([o,d,t],i)=>'<a class="carrow" target="_blank" rel="noopener" href="'+u(o,d)+'"><span class="cn">'+t+'<small id="cari-'+i+'">Autofahrt · Fahrzeit live</small></span><span class="ct" id="cart-'+i+'">…</span><span class="go">↗</span></a>').join("");
   if(!TTKEY)return;
   box.insertAdjacentHTML("beforeend",'<div id="car-incs" class="car-incs"></div>');
   CARR=ab.map(([,,t])=>({t,wait:1}));renderCarIncs();
@@ -1153,7 +1153,8 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
       let r;try{r=await getJSON(url);}catch(e){await new Promise(z=>setTimeout(z,1500));r=await getJSON(url);}
       const rt=r.routes[0],sm=rt.summary;const min=Math.round(sm.travelTimeInSeconds/60),dl=Math.round((sm.trafficDelayInSeconds||0)/60),km=sm.lengthInMeters/1000;
       const arr=new Date(Date.now()+sm.travelTimeInSeconds*1000);
-      el.innerHTML='<b>'+(min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0"):min)+' min</b>'+(dl>0?' · <span class="cardl">+'+dl+' Stau</span>':' · frei')+' · '+fmt(km)+' km · an '+hhmm(arr);
+      el.innerHTML=(min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0"):min)+' min '+(dl>0?'<span class="cs '+(dl>=15?"bad":"warn")+'">+'+dl+' Stau</span>':'<span class="cs ok">frei</span>');
+      {const ii=$("cari-"+i);if(ii)ii.textContent=fmt(km)+" km · Ankunft "+hhmm(arr);}
       const pts=(rt.legs||[]).flatMap(l=>l.points||[]);const ins=(rt.guidance&&rt.guidance.instructions)||[];
       const roadAt=idx=>{let best=null;for(const x of ins){if(x.pointIndex<=idx)best=x;else break;}return best?[(best.roadNumbers||[]).join("/"),best.street].filter(Boolean).join(" · "):"";};
       const CATS={JAM:"Stau",ROAD_WORK:"Baustelle",ROAD_CLOSURE:"Sperrung",OTHER:"Behinderung"};
@@ -1161,7 +1162,7 @@ function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];cons
         let len=0;for(let k=x.startPointIndex;k<x.endPointIndex&&k+1<pts.length;k++)len+=distKm(pts[k].latitude,pts[k].longitude,pts[k+1].latitude,pts[k+1].longitude);
         return {cat:CATS[x.simpleCategory]||"Behinderung",delay:Math.round((x.delayInSeconds||0)/60),speed:x.effectiveSpeedInKmh,len,road:roadAt(x.startPointIndex),lat:p.latitude,lon:p.longitude,cause:((x.tec&&x.tec.causes)||[]).map(c=>c.mainCauseCode).join(","),ort:null};});
       CARR[i]={t,secs,pts};renderCarIncs();
-    }catch(e){el.textContent="Fahrzeit derzeit nicht verfügbar";CARR[i]={t,err:1};renderCarIncs();}
+    }catch(e){el.innerHTML='<span class="cs">–</span>';{const ii=$("cari-"+i);if(ii)ii.textContent="Fahrzeit derzeit nicht verfügbar";}CARR[i]={t,err:1};renderCarIncs();}
     await new Promise(z=>setTimeout(z,400));}
     for(const r of CARR)for(const x of (r.secs||[]))if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);renderCarIncs();}})();}
 let CARR=[];
@@ -1203,7 +1204,7 @@ function renderPrio(rawW,rawC,okRoads){
   const box=$("prio");ROUTE_ITEMS=[];
   if(!ROUTES.length){box.innerHTML="";return;}
   const cards=ROUTES.map(r=>{
-    if(!okRoads.has(r.ab))return '<div class="route unk"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv muted">keine Daten</span></div>';
+    if(!okRoads.has(r.ab))return '<div class="route unk"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">→ '+esc(r.dir)+'</span><span class="rv muted">keine Daten</span></div>';
     const cl=rawC.filter(c=>routeHit(c,r));
     const ws=rawW.filter(w=>routeHit(w,r)).map(w=>({...w,jam:jamInfo(w)}));
     const jams=ws.filter(w=>w.jam).sort((a,b)=>(b.jam.delay||0)-(a.jam.delay||0));
@@ -1215,8 +1216,8 @@ function renderPrio(rawW,rawC,okRoads){
       sub=(j.subtitle||j.title||"")+" · "+fmt(j.km)+" km entfernt";}
     else if(ws.length){cls="warn";val="Behinderung";sub=(ws[0].subtitle||ws[0].title||"")+" · "+fmt(ws[0].km)+" km entfernt";}
     ROUTE_ITEMS[ROUTES.indexOf(r)]=[...cl.map(c=>({...c,_c:1})),...ws];
-    return '<div role="button" tabindex="0" data-route="'+ROUTES.indexOf(r)+'" class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">Richtung '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span>'+(cls==="ok"?'':'<span class="rs">'+esc(sub)+'</span>')+'</div>';});
-  box.innerHTML='<div class="sublbl" style="margin-top:4px">Meine Autobahn-Strecken · '+PRIO_RADIUS_KM+' km um '+esc(C.town)+' <span class="muted small" style="font-weight:400">(Autobahn GmbH)</span></div><div class="prio">'+cards.join("")+'</div>';
+    return '<div role="button" tabindex="0" data-route="'+ROUTES.indexOf(r)+'" class="route '+cls+'"><span class="tag ab">'+esc(r.ab)+'</span><span class="rt">→ '+esc(r.dir)+'</span><span class="rv">'+esc(val)+'</span>'+(cls==="ok"?'':'<span class="rs">'+esc(sub)+'</span>')+'</div>';});
+  box.innerHTML='<div class="prio">'+cards.join("")+'</div>';
 }
 // Detailliste hinter Kennzahlen und „Meine Strecken“
 function abItem(i){
@@ -1683,8 +1684,7 @@ function openMap(){const f=$("fold-map");if(f&&!f.open){f.open=true;}}
 document.querySelectorAll("details.fold").forEach(f=>{
   const k="fold_"+f.id,st=load(k);if(st===true)f.open=true;
   f.addEventListener("toggle",()=>{store(k,f.open);if(f.id==="fold-map"&&f.open)setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();fitMap();}}catch(e){}},60);});});
-function foldCount(id){const el=$(id),c=document.querySelector('.fcnt[data-cnt="'+id+'"]');if(!el||!c)return;
-  const n=el.querySelectorAll(".jam,.li,details.abd").length;c.textContent=n?String(n):"";}
+function foldCount(){const c=$("fcnt-all");if(!c)return;let n=0;["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(el)n+=el.querySelectorAll(".jam,.li,details.abd").length;});c.textContent=n?String(n):"";}
 ["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(!el)return;foldCount(id);new MutationObserver(()=>foldCount(id)).observe(el,{childList:true,subtree:true});});
 
 })();
