@@ -351,7 +351,10 @@ function buildFavs(){
   const dusSub=C.isDus?(C.short||""):"Oberkassel / Heerdt";
   const items=[["dus","Düsseldorf",dusSub],...FAVS.map(f=>[f.key,f.name,""])];
   setTimeout(renderAlarm,0);
-  $("favs").innerHTML=items.map(([k,n,sub])=>'<button type="button" class="fav'+(C.key===k?" on":"")+'" data-fav="'+k+'">'+esc(n)+(sub?' <small>'+esc(sub)+'</small>':'')+'</button>').join("");
+  const pick=document.querySelector("header .pick");if(pick&&selEl.parentNode!==pick)pick.appendChild(selEl);
+  $("favs").innerHTML=items.map(([k,n,sub])=>'<div role="button" tabindex="0" class="fav'+(C.key===k?" on":"")+(k==="dus"&&C.isDus?" hasPick":"")+'" data-fav="'+k+'">'+esc(n)+(sub?' <small>'+esc(sub)+'</small>':'')+(k==="dus"&&C.isDus?' <span class="pcaret">▾</span>':'')+'</div>').join("");
+  // Stadtteil-Auswahl direkt im Düsseldorf-Knopf (unsichtbares Auswahlfeld darüber)
+  const d=document.querySelector('#favs [data-fav="dus"].hasPick');if(d)d.appendChild(selEl);
 }
 $("favs").addEventListener("click",e=>{const b=e.target.closest("[data-fav]");if(!b)return;const k=b.dataset.fav;
   if(k==="dus"){if(!C.isDus)choose("dus-4");}else if(C.key!==k)choose("p-"+k);});
@@ -1441,7 +1444,7 @@ function stopMatch(v){const n=normStop(v);const I=STOPIDX||{available:[],all:[]}
 async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includes(ec().key))return;
   try{STOPIDX=(await getData("stops-"+ec().key+".json")).data;
   }catch(e){STOPIDX={available:[],all:[]};}}
-async function loadEFA(){
+async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
   const stop=STOPS[ec().key]||ec().efaDefault;const m=stopMatch(stop);
@@ -1453,7 +1456,7 @@ async function loadEFA(){
   const file=m.file||(stop===ec().efaDefault?"efa-"+ec().key+".json":null);
   if(!file||!EFAKEYS.includes(ec().key)){EFADATA=null;
     $("efa").innerHTML=stateBox("„"+esc(m.name||stop)+"“ wird noch nicht automatisch abgerufen.",(m.id?link("https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(m.id),"Live-Abfahrten öffnen")+" · ":"")+"Claude kann sie fest ergänzen.");return;}
-  try{if(!BUSF)BUSF=await getData("busfahrten.json").then(x=>x.data||[]).catch(()=>[]);EFADATA=await getData(file);renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));}
+  try{if(!BUSF)BUSF=await getData("busfahrten.json").then(x=>x.data||[]).catch(()=>[]);const ED=await getData(file);if(ec().key!==EK)return;EFADATA=ED;renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));}
   catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link(ec().isDus?"https://www.rheinbahn.de/":"https://www.vrr.de/",ec().isDus?"Rheinbahn":"VRR-Fahrplanauskunft"));}
 }
 function renderEFA(){const d=EFADATA;if(!d)return;
@@ -1723,24 +1726,36 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.key
 const CITYN={dus:"Düsseldorf",datteln:"Datteln",dortmund:"Dortmund"};
 const TDIRS=[["r0","dus","nach Datteln","bis Recklinghausen Hbf"],["r2","dus","nach Dortmund","bis Dortmund Hbf"],["r1","datteln","nach Düsseldorf","ab Recklinghausen Hbf"],["r3","dortmund","nach Düsseldorf","ab Dortmund Hbf"],["r4","datteln","nach Dortmund","ab Recklinghausen Hbf"],["r5","dortmund","nach Datteln","bis Recklinghausen Hbf"]];
 function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
-  $("rs-city").innerHTML=Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===k?" on":"")+'">'+n+'</button>').join("");
+  setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===k?" on":"")+'">'+n+'</button>').join(""));
   const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
   const tk=TDIRS.filter(x=>x[1]===k);if(!tk.some(x=>x[0]===RS.tdir))RS.tdir=tk[0][0];
   rsMode(RS.mode||"auto");}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(!b)return;const k=b.dataset.rscity;
   // oberen Ort mitziehen (Dortmund ist dort kein Ort)
+  const y=window.scrollY;const keep=()=>{if(Math.abs(window.scrollY-y)>4)window.scrollTo(0,y);};
+  const pn=document.querySelector('#staus [data-pane="reise"]');if(pn){pn.style.minHeight=pn.offsetHeight+"px";setTimeout(()=>pn.style.minHeight="",4000);}
+  EFAK=EFACITY[k];RS.city=k;
   RS.lock=1;try{if(k==="dus"&&!C.isDus)choose("dus-4");else if(k==="datteln"&&C.key!=="datteln")choose("p-datteln");}finally{RS.lock=0;}
-  rsCity(k);});
+  rsCity(k);keep();
+  // Seite bleibt, wo sie ist, solange die Daten neu geladen werden (außer man scrollt selbst)
+  let touched=false;const tt=()=>{touched=true;};addEventListener("touchstart",tt,{once:true,passive:true});addEventListener("wheel",tt,{once:true,passive:true});
+  const guard=()=>{if(!touched&&Math.abs(window.scrollY-y)>120)window.scrollTo(0,y);};addEventListener("scroll",guard,{passive:true});
+  [50,150,400,800,1500,2500,4000].forEach(t=>setTimeout(guard,t));setTimeout(()=>removeEventListener("scroll",guard),5000);});
+// Knöpfe aktualisieren, ohne sie neu zu erzeugen (sonst springt die Seite beim Antippen nach oben)
+function setBtns(box,html){if(!box)return;const t=document.createElement("div");t.innerHTML=html;const nw=[...t.children],old=[...box.children];
+  if(old.length===nw.length&&old.every((o,i)=>o.tagName===nw[i].tagName&&o.outerHTML.split(">")[0].replace(/class="[^"]*"/,"")===nw[i].outerHTML.split(">")[0].replace(/class="[^"]*"/,""))){
+    old.forEach((o,i)=>{if(o.className!==nw[i].className)o.className=nw[i].className;if(o.innerHTML!==nw[i].innerHTML)o.innerHTML=nw[i].innerHTML;});}
+  else box.innerHTML=html;}
 function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
-    $("rs-tdir").innerHTML=TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(RSDIRS.find(x=>x[0]===k)||[])[3]+(RS.tdir===k?" on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join("");
+    setBtns($("rs-tdir"),TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(RSDIRS.find(x=>x[0]===k)||[])[3]+(RS.tdir===k?" on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join(""));
     const t=RSTRIP[RS.tdir]||"";const st={"dus-re":"Düsseldorf Hbf → Recklinghausen Hbf","re-dus":"Recklinghausen Hbf → Düsseldorf Hbf","dus-do":"Düsseldorf Hbf → Dortmund Hbf","do-dus":"Dortmund Hbf → Düsseldorf Hbf","re-do":"Recklinghausen Hbf → Dortmund Hbf","do-re":"Dortmund Hbf → Recklinghausen Hbf"}[t]||"";
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=t.dataset.rstd;rsMode("bahn");}});
 function renderReise(){const D=RS.data;setStauTitle();
   if(!RS.city){rsCity(C.key==="datteln"?"datteln":"dus");return;}
   $("rs-quick").innerHTML="";
-  $("rs-dir").innerHTML=RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
+  setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
   if(cur.err){box.innerHTML=stateBox("Fahrzeit derzeit nicht verfügbar – "+cur.err+".");inc.innerHTML="";drawReise();return;}
@@ -1941,7 +1956,7 @@ function tileAvailable(v){
   if(v==="bahn"||v==="oepnv")return false; // jetzt unter Verkehr → Reise → Bus & Bahn
   return !!$("v-"+v);
 }
-const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].some(([x])=>x===v));
+const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].some(([x])=>x===v||x.split("/")[0]===v));
 function applyTileOrder(){
   let order=load("tile_order")||TILE_DEFAULT;const box=$("tiles");
   // „Bus & Bahn“ einmalig direkt hinter „Verkehr“ einsortieren
@@ -1955,7 +1970,10 @@ function buildViewbar(){
   const g=groupOf(cur);
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
-function route(){
+let ROUTEKEY=null;
+window.addEventListener("hashchange",route);
+function route(){try{route0();}finally{const h=location.hash.slice(1);ROUTEKEY=(h.split("/")[0]||"")+"/"+(h.split("/")[1]||"reise");}}
+function route0(){
   {const h=location.hash.slice(1);if(h==="verkehr"){history.replaceState(null,"","#staus/meld");}
   if(h==="stadtverkehr"||h==="stadtdatteln"){const k=h==="stadtverkehr"?"dus":"datteln";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
   let v=location.hash.slice(1);const pane=v.split("/")[1]||"reise";v=v.split("/")[0];
@@ -1973,10 +1991,10 @@ function route(){
   if(typeof foldCount==="function")foldCount();
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
   if(v==="parken")pkShow(PKS||"gps");
-  if(inView){window.scrollTo(0,0);requestAnimationFrame(()=>window.scrollTo(0,0));setTimeout(()=>window.scrollTo(0,0),80);if(v==="staus")setStauTitle();if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
+  if(inView){if(ROUTEKEY!==v+"/"+pane){window.scrollTo(0,0);requestAnimationFrame(()=>window.scrollTo(0,0));setTimeout(()=>window.scrollTo(0,0),80);}if(v==="staus")setStauTitle();if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
     if(v==="staus"&&pane==="karte"){if(!MAPGO)mapCity(C.key==="datteln"?"datteln":"dus");setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }
-window.addEventListener("hashchange",route);
+
 // interne Links ohne Sprung des Browsers zu gleichnamigen Abschnitten
 document.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey)return;const a=e.target.closest('a[href^="#"]');if(!a||a.target)return;
   const h=a.getAttribute("href");e.preventDefault();history.pushState(null,"",h.length>1?h:location.pathname+location.search);route();});

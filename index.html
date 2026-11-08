@@ -205,6 +205,10 @@ body.alarm header.top{box-shadow:inset 0 -4px 0 var(--bad)}
 header .favs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
 header .favs::-webkit-scrollbar{display:none}
 header .fav{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:6px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.06);color:var(--head-fg);font:600 15px var(--f-display);letter-spacing:.02em;cursor:pointer;white-space:nowrap}
+header .fav.hasPick{position:relative}
+header .fav.hasPick select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+header .pcaret{font-size:12px;opacity:.9}
+header .pick{display:none!important}
 header .fav small{font:500 12px var(--f-body);opacity:.75}
 header .fav:hover{border-color:var(--accent)}
 header .fav.on{background:var(--accent);border-color:var(--accent);color:#06222e}
@@ -564,6 +568,7 @@ header .fav,header .rtoggle,header .rlink,header .rbtn{color:#fff}
   background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%);box-shadow:0 4px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.35)}
 .alt.on{background-color:var(--panel-2);color:var(--fg);border:2px solid var(--accent)}
 .kpi.tile{border-radius:18px;background-image:linear-gradient(180deg,var(--glass-hi),rgba(255,255,255,0) 50%);box-shadow:var(--glass-sh);transition:transform .12s ease}
+html,body{overflow-anchor:none}
 </style>
 </head>
 <body>
@@ -743,7 +748,7 @@ header .fav,header .rtoggle,header .rlink,header .rbtn{color:#fff}
     <div class="efa-filter"><input id="efa-dir" type="search" autocomplete="off" placeholder="Richtung oder Linie filtern, z. B. Busbahnhof"></div>
     <div id="efa"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card">
+  <section class="card" hidden>
     <div class="card-head"><h2>Leihräder in der Nähe</h2><span class="src">nextbike</span></div>
     <div id="bike"><div class="state">wird geladen …</div></div>
   </section>
@@ -1024,6 +1029,6 @@ header .fav,header .rtoggle,header .rlink,header .rbtn{color:#fff}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=144"></script>
+<script src="app.js?v=145"></script>
 </body>
 </html>
