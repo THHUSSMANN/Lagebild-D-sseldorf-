@@ -1677,7 +1677,7 @@ let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
 const RSDIRS=[["r0","Düsseldorf → Datteln"],["r1","Datteln → Düsseldorf"]];
 const hm=min=>min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0")+" min":min+" min";
 function rsEnds(k){const A=homeOr("dus"),B=homeOr("datteln");return k==="r0"?[A,B]:[B,A];}
-const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon)+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
+const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(nav?"":"&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon))+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
 async function loadReise(force){if(!$("rs-alts"))return;if(!RS.dir)RS.dir=C.key==="datteln"?"r1":"r0";
   if(!force&&Date.now()-RS.at<3*60*1000&&RS.data.r0&&RS.data.r1){renderReise();return;}
   RS.at=Date.now();renderReise();
@@ -1704,8 +1704,8 @@ function renderReise(){const D=RS.data;
     cur.alts.map(a=>{const m=(a.rw||[]).length;
       return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=15?"bad":a.dl>0?"warn":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
         '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
-        (a.i===RS.sel?'<span class="ag"><a href="'+gmUrl(o,d,a.via,1)+'" target="_blank" rel="noopener">Navigation starten ↗</a><a class="sec" href="'+gmUrl(o,d,a.via)+'" target="_blank" rel="noopener">In Google Maps ansehen ↗</a></span>':'')+'</div>';}).join("")+
-    (cur.alts.some(a=>a.via)?'<div class="muted small" style="margin:0 2px 8px">Bei Route 2 und 3 gibt die App Google Maps einen Zwischenpunkt auf dieser Route mit, damit Google genau diesen Weg nimmt. Google zeigt ihn als Zwischenstopp an.</div>':'');
+        (a.i===RS.sel?'<span class="ag"><a href="'+gmUrl(o,d,null,1)+'" target="_blank" rel="noopener">Navigation starten ↗</a><a class="sec" href="'+gmUrl(o,d,a.via)+'" target="_blank" rel="noopener">'+(a.i?'Route '+(a.i+1)+' in Google Maps ansehen ↗':'In Google Maps ansehen ↗')+'</a></span>':'')+'</div>';}).join("")+
+    (cur.alts.some(a=>a.via)?'<div class="muted small" style="margin:0 2px 8px">„Navigation starten“ führt immer von deinem aktuellen Standort direkt zum Ziel. Google wählt dabei selbst die Route, die anderen Routen bietet Google zu Beginn grau zum Antippen an. „Route 2/3 ansehen“ zeigt die Route in Google Maps über einen Zwischenpunkt, nur zum Anschauen.</div>':'');
   const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;
   inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Behinderungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live, schon in der Fahrzeit eingerechnet)</span></div>'+(n?a.secs.map(incRow).join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>')+
     '<div class="sublbl" style="margin-top:12px;font-size:15px">Baustellen auf Route '+(a.i+1)+' <span class="muted small">(Autobahn GmbH, in Fahrtrichtung, km ab Start)</span></div>'+(a.rw?(m?a.rw.map(rwRow).join(""):'<div class="state good">Keine Autobahn-Baustellen auf dieser Route gemeldet.</div>'):'<div class="state">wird geladen …</div>');
