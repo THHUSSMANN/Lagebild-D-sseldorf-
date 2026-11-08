@@ -170,7 +170,12 @@ header .pick select{min-width:320px}
 header .pick span{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;opacity:.7}
 header .pick select{min-height:42px;padding:6px 36px 6px 14px;border-radius:999px;font:700 17px var(--f-display);border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;-webkit-appearance:none;appearance:none;max-width:100%}
 @media (max-width:700px){header .pick{width:100%;min-width:0}header .pick select{flex:1 1 auto;width:100%;min-width:0}}
-header .radio{display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none}
+header .radio{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+header .rtoggle{min-height:36px;padding:6px 14px;border-radius:999px;font:600 14.5px var(--f-display);border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer}
+header .rtoggle[aria-expanded="true"] .rcaret{display:inline-block;transform:rotate(180deg)}
+header #radio-now{font:500 12.5px var(--f-body);opacity:.85}
+header .rlist{display:flex;flex-wrap:wrap;gap:6px}
+header .rlist[hidden]{display:none}
 header .radio-lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;opacity:.7;margin-right:2px}
 header .rbtn{flex:0 0 auto;min-height:34px;padding:5px 12px;border-radius:999px;font:600 14px var(--f-display);white-space:nowrap}
 header .rbtn small{font:500 11.5px var(--f-body);opacity:.75}
@@ -436,16 +441,17 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .alt .ag a.sec{background:var(--panel-2);color:var(--fg);border:1px solid var(--line)}
 .vtseg{grid-template-columns:repeat(3,1fr)!important;margin-top:8px}
 .vtseg button{font-size:13.5px;line-height:1.2}
-/* Stadtfarben: Düsseldorf rot-weiß, Dortmund schwarz-gelb, Datteln schwarz-silber */
-:root{--c-dus:#d6001c;--c-do:#fde100;--c-dat:#c4c8ce}
-.cc-dus,[data-fav="dus"],[data-pks="dus"],[data-mapgo="dus"]{border:2px solid var(--c-dus)!important;box-shadow:inset 5px 0 0 var(--c-dus)}
-.cc-dus.on,[data-fav="dus"].on,[data-pks="dus"].on,[data-mapgo="dus"].on,a.cc-dus{background:var(--c-dus)!important;color:#fff!important}
-.cc-dortmund{border:2px solid var(--c-do)!important;box-shadow:inset 5px 0 0 var(--c-do)}
-.cc-dortmund.on,a.cc-dortmund{background:var(--c-do)!important;color:#111!important;box-shadow:inset 6px 0 0 #111}
-.cc-datteln,[data-fav="datteln"],[data-pks="datteln"],[data-mapgo="datteln"]{border:2px solid var(--c-dat)!important;box-shadow:inset 5px 0 0 var(--c-dat)}
-.cc-datteln.on,[data-fav="datteln"].on,[data-pks="datteln"].on,[data-mapgo="datteln"].on,a.cc-datteln{background:linear-gradient(90deg,#111 0 50%,#9ea3aa 50% 100%)!important;color:#fff!important;text-shadow:0 1px 2px #000,0 0 6px #000;box-shadow:none}
+/* Stadtfarben: ruhig im Normalzustand (nur farbiger Streifen), deutlich wenn gewählt (Vollfarbe, dicker Rahmen, Häkchen) */
+:root{--c-dus:#d6001c;--c-do:#f2d600;--c-dat:#aeb3ba}
+.cc-dus,[data-fav="dus"],[data-pks="dus"],[data-mapgo="dus"]{box-shadow:inset 5px 0 0 var(--c-dus)}
+.cc-dortmund{box-shadow:inset 5px 0 0 var(--c-do)}
+.cc-datteln,[data-fav="datteln"],[data-pks="datteln"],[data-mapgo="datteln"]{box-shadow:inset 5px 0 0 var(--c-dat)}
 [class*="cc-"]{padding-left:12px!important}
-.cc-datteln.on small,.cc-dortmund.on small,.cc-dus.on small{opacity:.95}
+.cc-dus.on,[data-fav="dus"].on,[data-pks="dus"].on,[data-mapgo="dus"].on{background:var(--c-dus)!important;color:#fff!important;border:3px solid #fff!important;box-shadow:0 0 0 2px var(--c-dus)}
+.cc-dortmund.on{background:var(--c-do)!important;color:#111!important;border:3px solid #111!important;box-shadow:0 0 0 2px var(--c-do)}
+.cc-datteln.on,[data-fav="datteln"].on,[data-pks="datteln"].on,[data-mapgo="datteln"].on{background:#151515!important;color:#fff!important;border:3px solid var(--c-dat)!important;box-shadow:0 0 0 2px #151515}
+:is(.cc-dus,.cc-dortmund,.cc-datteln).on::before,:is([data-fav],[data-pks],[data-mapgo]):is([data-fav="dus"],[data-fav="datteln"],[data-pks="dus"],[data-pks="datteln"],[data-mapgo="dus"],[data-mapgo="datteln"]).on::before{content:"✓ ";font-weight:800}
+a.cc-dus,a.cc-dortmund,a.cc-datteln{background:var(--panel-2)!important;color:var(--fg)!important;border:1px solid var(--line)}
 .carrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none;min-height:48px}
 .carrow:last-of-type{border-bottom:0}
 .carrow .cn{font:700 16px var(--f-display)}
@@ -559,12 +565,14 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
         <nav class="favs" id="favs" aria-label="Meine Städte"></nav>
         <label class="pick"><span>Bereich</span><select id="bezirk" aria-label="Bereich wählen"></select></label>
       </div>
-      <div class="radio" id="radio" aria-label="Radio"><span class="radio-lbl" aria-hidden="true">Radio</span>
+      <div class="radio" id="radio" aria-label="Radio"><button type="button" class="rtoggle" id="radio-toggle" aria-expanded="false">📻 Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
+        <div class="rlist" id="radio-list" hidden>
         <button type="button" class="rbtn" data-st="wdr2">WDR 2 <small>Rhein Ruhr</small></button>
         <button type="button" class="rbtn" data-st="wdr4">WDR 4</button>
         <button type="button" class="rbtn" data-st="antenne">Antenne Düsseldorf</button>
         <a class="rlink" href="https://www.ardaudiothek.de/" target="_blank" rel="noopener">ARD Sounds ↗</a>
         <a class="rlink" href="https://tunein.com/" target="_blank" rel="noopener">TuneIn ↗</a>
+        </div>
       </div>
     </div>
     <div class="alarmbar" id="alarmbar" role="alert" hidden></div>
@@ -994,6 +1002,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-c
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=140"></script>
+<script src="app.js?v=141"></script>
 </body>
 </html>

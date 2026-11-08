@@ -343,6 +343,8 @@ $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");
   all.forEach(x=>x.classList.remove("on","load"));b.classList.add("load");
   a.src=url;a.play().then(()=>{b.classList.remove("load");b.classList.add("on");}).catch(()=>{b.classList.remove("load");window.open(RADIO_SITE[k],"_blank","noopener");});
 });
+$("radio-toggle").addEventListener("click",()=>{const l=$("radio-list"),open=l.hidden;l.hidden=!open;$("radio-toggle").setAttribute("aria-expanded",open?"true":"false");});
+setInterval(()=>{const on=document.querySelector("#radio .rbtn.on");const t=on?"· "+on.textContent.replace(/\s+/g," ").trim()+" läuft":"";if($("radio-now").textContent!==t)$("radio-now").textContent=t;},1000);
 $("radio-audio").addEventListener("error",()=>document.querySelectorAll("#radio .rbtn").forEach(x=>x.classList.remove("on","load")));
 // Schnellwahl der Lieblingsstädte im Kopf
 function buildFavs(){
