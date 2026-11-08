@@ -1737,7 +1737,7 @@ function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=t.dataset.rstd;rsMode("bahn");}});
 function renderReise(){const D=RS.data;setStauTitle();
   if(!RS.city){rsCity(C.key==="datteln"?"datteln":"dus");return;}
-  $("rs-quick").innerHTML=Object.entries(CITYN).filter(([c])=>c!==RS.city).map(([c,n])=>'<a href="'+gmUrl(FIXHOME[RS.city],FIXHOME[c],null,1)+'" target="_blank" rel="noopener">🧭 Jetzt nach '+n+'</a>').join("");
+  $("rs-quick").innerHTML=Object.entries(CITYN).filter(([c])=>c!==RS.city).map(([c,n])=>'<a href="'+gmView(FIXHOME[RS.city],FIXHOME[c],null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>🧭 Nach '+n+'</a>').join("");
   $("rs-dir").innerHTML=RSDIRS.filter(x=>x[2]===RS.city).map(([k,t])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="'+(RS.dir===k?"on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
@@ -1747,8 +1747,8 @@ function renderReise(){const D=RS.data;setStauTitle();
     cur.alts.map(a=>{const m=(a.rw||[]).length;
       return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=15?"bad":a.dl>0?"warn":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
         '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
-        (a.i===RS.sel?'<span class="ag"><a href="'+gmUrl(o,d,null,1)+'" target="_blank" rel="noopener">Navigation starten ↗</a><a class="sec" href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>In Google Maps ansehen ↗</a></span>':'')+'</div>';}).join("")+
-    '<div class="muted small" style="margin:0 2px 8px">Beide Google-Knöpfe gehen ohne Zwischenziel von '+esc(o.label)+' nach '+esc(d.label)+'. Google wählt die Route selbst und bietet die Alternativen grau zum Antippen an.</div>';
+        (a.i===RS.sel?'<span class="ag"><a href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>In Google Maps öffnen ↗</a></span>':'')+'</div>';}).join("")+
+    '<div class="muted small" style="margin:0 2px 8px">Google Maps öffnet die Route von '+esc(o.label)+' nach '+esc(d.label)+' zur Kontrolle. Die Navigation startest du dort selbst; Alternativen zeigt Google grau zum Antippen.</div>';
   const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;
   inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Behinderungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live, schon in der Fahrzeit eingerechnet)</span></div>'+(n?a.secs.map(incRow).join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>')+
     '<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Sperrungen der Autobahn GmbH auf Route '+(a.i+1)+' <span class="muted small">(in Fahrtrichtung, km ab Start)</span></div>'+(a.ab?(a.ab.length?a.ab.map(abRow).join(""):'<div class="state good">Keine Staus oder Sperrungen der Autobahn GmbH auf dieser Route.</div>'):'<div class="state">wird geladen …</div>')+
