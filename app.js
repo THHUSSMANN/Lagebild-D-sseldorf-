@@ -1739,7 +1739,7 @@ function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=t.dataset.rstd;rsMode("bahn");}});
 function renderReise(){const D=RS.data;setStauTitle();
   if(!RS.city){rsCity(C.key==="datteln"?"datteln":"dus");return;}
-  $("rs-quick").innerHTML=Object.entries(CITYN).filter(([c])=>c!==RS.city).map(([c,n])=>'<a class="cc-'+c+'" href="'+gmView(FIXHOME[RS.city],FIXHOME[c],null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>🧭 Nach '+n+'</a>').join("");
+  $("rs-quick").innerHTML="";
   $("rs-dir").innerHTML=RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+'">'+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join("");
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
