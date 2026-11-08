@@ -1651,7 +1651,8 @@ document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)ret
 
 // ================= Karte: Orte und Strecken =================
 let MAPGO=null;
-function mapCity(k){if(k!=="dus"&&k!=="datteln")k=null;$("mapcity-dus").hidden=k!=="dus";$("mapcity-datteln").hidden=k!=="datteln";}
+function karteLbl(k){k=k||(MAPGO==="dus"||MAPGO==="datteln"?MAPGO:(C.key==="datteln"?"datteln":"dus"));return k==="datteln"?"Staus & Baustellen":"Sperrungen & Events";}
+function mapCity(k){if(k!=="dus"&&k!=="datteln")k=null;$("mapcity-dus").hidden=k!=="dus";$("mapcity-datteln").hidden=k!=="datteln";if(k)document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));}
 async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));mapCity(k);
   const info=$("mapgo-info");if(!MAP){try{ensureMap();}catch(e){}}if(!MAP)return;MAP.invalidateSize();
   if(MAP._route){MAP._route.remove();MAP._route=null;}
@@ -1835,7 +1836,7 @@ function route(){
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
     const tabs=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x));el.hidden=tabs.length<2;
     const cur=v+(pane!=="lage"?"/"+pane:"");el.classList.toggle("grid3",g==="verkehr");
-    el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'">'+esc(l)+(x==="staus/meld"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
+    el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'"'+(x==="staus/karte"?' data-karte':'')+'>'+esc(x==="staus/karte"?karteLbl():l)+(x==="staus/meld"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
   if(typeof foldCount==="function")foldCount();
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
   if(v==="parken")pkShow(PKS||"gps");
