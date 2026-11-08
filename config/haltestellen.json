@@ -20,6 +20,20 @@
         "Datteln Busbahnhof",
         "Datteln Lohstr."
       ]
+    ],
+    "dortmund": [
+      [
+        "Dortmund Stadion",
+        "Dortmund Hbf"
+      ],
+      [
+        "Dortmund Westfalenhallen",
+        "Dortmund Hbf"
+      ],
+      [
+        "Dortmund Hbf",
+        "Dortmund Stadion"
+      ]
     ]
   },
   "_hinweis_fahrten": "Direkte Busfahrten von – nach je Ort (ohne Umstieg), z. B. Lohstr. → Busbahnhof."

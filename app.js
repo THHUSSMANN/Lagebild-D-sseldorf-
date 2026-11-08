@@ -1465,16 +1465,16 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   const pairs=(BUSF||[]).filter(x=>x.key===ec().key);
   $("efa-dir").parentElement.hidden=pairs.length>0;$("efa-stops").hidden=false;
   if(pairs.length){const now=Date.now()-60e3;
-    const short=x=>x.replace(/^Datteln,?\s*/,"").replace(/^Bus Bf$/,"Busbahnhof").replace(/^Lohstr\.$/,"Lohstraße");
+    const short=x=>x.replace(/^(Datteln|Dortmund),?\s*/,"").replace(/^Bus Bf$/,"Busbahnhof").replace(/^Lohstr\.$/,"Lohstraße");
     const nx=pairs.map(x=>({x,r:x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now)}));
     const f=nx[0]&&nx[0].r[0];
     if(f){TILE_PARTS.mobil.bus="Bus "+esc(f.line)+" "+hhmm(f.depEst||f.dep)+" "+short(nx[0].x.from)+" → "+short(nx[0].x.to);composeTile("k-bahn","mobil");}
-    $("efa-title").textContent="Bus Lohstraße ⇄ Busbahnhof";
+    $("efa-title").textContent=ec().key==="dortmund"?"Stadion / Signal Iduna Park ⇄ Hauptbahnhof":"Bus Lohstraße ⇄ Busbahnhof";
     const di=Math.min(+(load("busdir_"+ec().key)||0),nx.length-1);
     $("efa-stops").innerHTML=nx.map(({x},i)=>'<button type="button" data-bdir="'+i+'" class="'+(i===di?"on":"")+'">'+esc(short(x.from))+' → '+esc(short(x.to))+'</button>').join("");
     $("efa").innerHTML=nx.filter((_,i)=>i===di).map(({x,r})=>'<div class="sublbl">'+esc(short(x.from))+' → '+esc(short(x.to))+'</div>'+(r.length?'<div class="list" style="margin-bottom:12px">'+r.slice(0,6).map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
       return '<div class="li"><span class="tag">'+esc(r.line)+'</span><div class="t"><b>'+hhmm(r.dep)+'</b>'+(dm>0?' <span style="color:var(--bad);font-weight:600">+'+dm+'</span>':'')+' → an '+hhmm(r.arrEst||r.arr)+'</div><div class="r muted small">'+(r.plat?'Steig '+esc(r.plat):'')+'</div><div class="d">Richtung '+esc(r.dir)+'</div></div>';}).join("")+'</div>':'<div class="muted small" style="margin-bottom:12px">Keine direkte Fahrt in den nächsten Stunden.</div>')).join("")+
-      '<div class="muted small">Nur Busse ohne Umstieg zwischen Lohstraße und Busbahnhof · Echtzeit abgerufen '+dataAge(d)+'</div>';
+      '<div class="muted small">Nur Verbindungen ohne Umstieg · Echtzeit abgerufen '+dataAge(d)+'</div>';
     return;}const now=Date.now()-60e3;const f=normStop(DIRF[ec().key]||"");
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
   if(f)rows=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);
