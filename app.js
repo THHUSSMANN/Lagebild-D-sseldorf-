@@ -164,7 +164,7 @@ let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
 let WINDY=load("windy")||"";let HOMES=load("homes")||{};
 // feste Adressen für die Fahrt Düsseldorf ⇄ Datteln
-const FIXHOME={dus:{label:"Alt-Heerdt 87, 40549 Düsseldorf",lat:51.22836,lon:6.72003},datteln:{label:"Helene-Weber-Straße 35, 45711 Datteln",lat:51.66458,lon:7.34213}};
+const FIXHOME={dus:{label:"Alt-Heerdt 87, 40549 Düsseldorf",lat:51.22836,lon:6.72003},datteln:{label:"Helene-Weber-Straße 35, 45711 Datteln",lat:51.66458,lon:7.34213},dortmund:{label:"Blankensteiner Straße 5, 44137 Dortmund",lat:51.50286,lon:7.44386}};
 for(const k of ["dus","datteln"])if(!HOMES[k]||!isFinite(HOMES[k].lat))HOMES[k]={q:FIXHOME[k].label,...FIXHOME[k]};
 async function geocodeHome(key,q){const r=await getJSON("https://api.tomtom.com/search/2/geocode/"+encodeURIComponent(q)+".json?limit=1&countrySet=DE&language=de-DE&key="+encodeURIComponent(TTKEY));
   const x=(r.results||[])[0];if(!x)throw new Error("nicht gefunden");HOMES[key]={q,label:x.address.freeformAddress,lat:x.position.lat,lon:x.position.lon};store("homes",HOMES);return HOMES[key];}
@@ -1181,13 +1181,16 @@ function routeParse(rt){const pts=(rt.legs||[]).flatMap(l=>l.points||[]);const i
     let len=0;for(let k=x.startPointIndex;k<x.endPointIndex&&k+1<pts.length;k++)len+=distKm(pts[k].latitude,pts[k].longitude,pts[k+1].latitude,pts[k+1].longitude);
     return {cat:CATS[x.simpleCategory]||"Behinderung",delay:Math.round((x.delayInSeconds||0)/60),speed:x.effectiveSpeedInKmh,len,road:roadAt(x.startPointIndex),lat:p.latitude,lon:p.longitude,cause:((x.tec&&x.tec.causes)||[]).map(c=>c.mainCauseCode).join(","),ort:null};});
   return {secs,pts,abs:[...new Set(ins.flatMap(x=>(x.roadNumbers||[]).filter(n=>/^A\s?\d+$/.test(n)).map(n=>n.replace(/\s/g,""))))]};}
-function rwFor(ab){if(!RWCACHE[ab])RWCACHE[ab]=getJSON("https://verkehr.autobahn.de/o/autobahn/"+encodeURIComponent(ab)+"/services/roadworks",20000)
-  .then(d=>(d.roadworks||[]).map(w=>({...w,ab,lat:parseFloat((w.coordinate||{}).lat),lon:parseFloat((w.coordinate||{}).long)})).filter(w=>isFinite(w.lat))).catch(()=>{delete RWCACHE[ab];return [];});return RWCACHE[ab];}
+function svcFor(ab,svc){const key=ab+"|"+svc,c=RWCACHE[key];if(c&&(svc==="roadworks"||Date.now()-c.at<3*60e3))return c.p;
+  const pr=getJSON("https://verkehr.autobahn.de/o/autobahn/"+encodeURIComponent(ab)+"/services/"+svc,20000)
+  .then(d=>(d[svc]||[]).map(w=>({...w,ab,_svc:svc,lat:parseFloat((w.coordinate||{}).lat),lon:parseFloat((w.coordinate||{}).long)})).filter(w=>isFinite(w.lat))).catch(()=>{delete RWCACHE[key];return [];});
+  RWCACHE[key]={p:pr,at:Date.now()};return pr;}
+const rwFor=ab=>svcFor(ab,"roadworks");
 // Baustellen der Autobahn GmbH, die auf der berechneten Strecke liegen (in Fahrtrichtung)
 async function carRW(i){const r=CARR[i];if(!r||!r.pts||!r.pts.length)return;const out=await routeRW(r);if(CARR[i]!==r)return;r.rw=out;renderCarIncs();if(MAPRT&&MAPRT.t===r.t&&!MAPRT.rw){MAPRT.rw=out;renderMapRoute();}
   const ii=$("cari-"+i);if(ii&&out.length&&!/Baustelle/.test(ii.textContent))ii.textContent+=" · 🚧 "+out.length+(out.length===1?" Baustelle":" Baustellen");}
-async function routeRW(r){const P=r.pts;
-  const lists=await Promise.all((r.abs||[]).map(rwFor));
+async function routeRW(r,svcs){const P=r.pts;svcs=svcs||["roadworks"];
+  const lists=await Promise.all((r.abs||[]).flatMap(ab=>svcs.map(sv=>svcFor(ab,sv))));
   let la0=90,la1=-90,lo0=180,lo1=-180;P.forEach(p=>{la0=Math.min(la0,p.latitude);la1=Math.max(la1,p.latitude);lo0=Math.min(lo0,p.longitude);lo1=Math.max(lo1,p.longitude);});
   const cum=[0];for(let k=1;k<P.length;k++)cum[k]=cum[k-1]+distKm(P[k-1].latitude,P[k-1].longitude,P[k].latitude,P[k].longitude);
   const out=[],seen=new Set();
@@ -1200,6 +1203,11 @@ async function routeRW(r){const P=r.pts;
     const key=w.identifier||w.title+"|"+w.subtitle;if(seen.has(key))return;seen.add(key);
     out.push({...w,at:cum[bk]});});
   return out.sort((a,b)=>a.at-b.at);}
+function abRow(x){const J=x.jam;const lines=(x.description||[]).map(v=>String(v).trim()).filter(Boolean);
+  const pill=x.cl?'<span class="pill p-bad" style="margin-right:6px"><i></i>Sperrung</span>':J&&J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>';
+  return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag ab">'+esc(x.ab)+'</span><div class="t">'+pill+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+esc(x.subtitle||x.title||"")+'</div>'+
+    '<div class="delay'+(J&&J.delay!=null&&J.delay<15?" mid":"")+'">'+(J&&J.delay!=null?"+"+J.delay+" min":fmt(x.at,0)+" km")+'<small>'+(J&&J.delay!=null?"Verzögerung":"ab Start")+'</small></div>'+
+    '<div class="d">'+esc([J&&J.len?fmt(J.len,1)+" km lang":"",J&&J.delay!=null?"nach "+fmt(x.at,0)+" km":"",lines.slice(0,2).join(" · ")].filter(Boolean).join(" · "))+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>';}
 function rwRow(x){const lines=(x.description||[]).map(v=>String(v).trim()).filter(Boolean);const lane=lines.find(l=>/fahrstreifen|spur|gesperrt|verengt|verschwenk|tempo|km\/h/i.test(l));const when=lines.filter(l=>/beginn|ende|bis|ab |\d{2}\.\d{2}\./i.test(l)).slice(0,2);
     return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag ab">'+esc(x.ab)+'</span><div class="t"><span class="pill" style="margin-right:6px"><i style="background:#8a9aa5"></i>Baustelle</span>'+(x.ort?'<b>'+esc(x.ort)+'</b> · ':'')+esc(x.subtitle||x.title||"")+'</div>'+
     '<div class="delay mid">'+fmt(x.at,0)+' km<small>ab Start</small></div>'+
@@ -1679,21 +1687,21 @@ document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)ret
 let MAPGO=null;
 // ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
 let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
-const RSDIRS=[["r0","Düsseldorf → Datteln"],["r1","Datteln → Düsseldorf"]];
-function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"lage");
-  el.textContent=pane==="reise"?"Reise · "+(RS.dir==="r1"?"Datteln → Düsseldorf":"Düsseldorf → Datteln"):"Verkehr · "+C.town;}
+const RSDIRS=[["r0","Düsseldorf → Datteln","dus","datteln"],["r1","Datteln → Düsseldorf","datteln","dus"],["r2","Düsseldorf → Dortmund","dus","dortmund"],["r3","Dortmund → Düsseldorf","dortmund","dus"]];
+function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
+  el.textContent=pane==="reise"?"Reise · "+((RSDIRS.find(x=>x[0]===RS.dir)||RSDIRS[0])[1]):"Verkehr · "+C.town;}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
 const gmView=(o,d,via)=>{const A=o.label||o.lat+","+o.lon,B=d.label||d.lat+","+d.lon;
   return IOS?"comgooglemaps://?saddr="+encodeURIComponent(A)+"&daddr="+(via?via[0].toFixed(5)+","+via[1].toFixed(5)+"+to:":"")+encodeURIComponent(B)+"&directionsmode=driving":gmUrl(o,d,via);};
 const hm=min=>min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0")+" min":min+" min";
-function rsEnds(k){const A=FIXHOME.dus,B=FIXHOME.datteln;return k==="r0"?[A,B]:[B,A];}
+function rsEnds(k){const r=RSDIRS.find(x=>x[0]===k)||RSDIRS[0];return [FIXHOME[r[2]],FIXHOME[r[3]]];}
 const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon)+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
 async function loadReise(force){if(!$("rs-alts"))return;if(!RS.dir)RS.dir=C.key==="datteln"?"r1":"r0";
-  if(!force&&Date.now()-RS.at<3*60*1000&&RS.data.r0&&RS.data.r1){renderReise();return;}
+  if(!force&&Date.now()-RS.at<3*60*1000&&RSDIRS.every(x=>RS.data[x[0]])){renderReise();return;}
   RS.at=Date.now();renderReise();
   if(!TTKEY){$("rs-alts").innerHTML=stateBox("Für die Fahrzeit den TomTom-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
-  for(const [k,t] of RSDIRS){const [o,d]=rsEnds(k);
+  for(const [k,t] of [...RSDIRS].sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){const [o,d]=rsEnds(k);
     try{const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&maxAlternatives=2&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
       let r;try{r=await getJSON(url,20000);}catch(e){await new Promise(z=>setTimeout(z,1200));r=await getJSON(url,20000);}
       const main=(r.routes[0].legs||[]).flatMap(l=>l.points||[]);
@@ -1701,6 +1709,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.dir)RS.dir=C.key=
         let via=null;if(i>0){let best=-1;for(let a=Math.floor(P.pts.length*.15);a<P.pts.length*.85;a+=3){const q=P.pts[a];let m=1e9;for(let b=0;b<main.length;b+=4){const dd=Math.abs(main[b].latitude-q.latitude)+Math.abs(main[b].longitude-q.longitude);if(dd<m)m=dd;}if(m>best){best=m;via=[q.latitude,q.longitude];}}}
         return {t,i,...P,min:Math.round(sm.travelTimeInSeconds/60),dl:Math.round((sm.trafficDelayInSeconds||0)/60),km:sm.lengthInMeters/1000,arr:new Date(Date.now()+sm.travelTimeInSeconds*1000),via,rw:null};});
       RS.data[k]={alts};
+      alts.forEach(a=>routeRW(a,["warning","closure"]).then(async l=>{a.ab=l.map(w=>({...w,jam:jamInfo(w),cl:w._svc==="closure"||w.isBlocked===true||w.isBlocked==="true"})).filter(w=>w.cl||w.jam);if(RS.dir===k)renderReise();for(const w of a.ab)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k)renderReise();}}));
       alts.forEach(a=>routeRW(a).then(async l=>{a.rw=l;if(RS.dir===k)renderReise();for(const w of l)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k&&RS.data[k]&&RS.data[k].alts&&RS.data[k].alts[RS.sel]===a)renderReise();}}));
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
     }catch(e){RS.data[k]={err:errText(e)};}
@@ -1714,11 +1723,12 @@ function renderReise(){const D=RS.data;setStauTitle();
   box.innerHTML='<div class="muted small" style="margin:2px 2px 6px">'+(cur.alts.length>1?cur.alts.length+" Routen, die schnellste zuerst. Route antippen zeigt sie in der Karte und ihre Störungen darunter.":"Eine Route gefunden.")+'</div>'+
     cur.alts.map(a=>{const m=(a.rw||[]).length;
       return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=15?"bad":a.dl>0?"warn":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
-        '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
+        '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
         (a.i===RS.sel?'<span class="ag"><a href="'+gmUrl(o,d,null,1)+'" target="_blank" rel="noopener">Navigation starten ↗</a><a class="sec" href="'+gmView(o,d,a.via)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>'+(a.i?'Route '+(a.i+1)+' in Google Maps ansehen ↗':'In Google Maps ansehen ↗')+'</a></span>':'')+'</div>';}).join("")+
     (cur.alts.some(a=>a.via)?'<div class="muted small" style="margin:0 2px 8px">„Navigation starten“ führt immer von '+esc(o.label)+' direkt nach '+esc(d.label)+'. Google wählt dabei selbst die Route, die anderen Routen bietet Google zu Beginn grau zum Antippen an. „Route 2/3 ansehen“ zeigt die Route in Google Maps über einen Zwischenpunkt, nur zum Anschauen.</div>':'');
   const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;
   inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Behinderungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live, schon in der Fahrzeit eingerechnet)</span></div>'+(n?a.secs.map(incRow).join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>')+
+    '<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Sperrungen der Autobahn GmbH auf Route '+(a.i+1)+' <span class="muted small">(in Fahrtrichtung, km ab Start)</span></div>'+(a.ab?(a.ab.length?a.ab.map(abRow).join(""):'<div class="state good">Keine Staus oder Sperrungen der Autobahn GmbH auf dieser Route.</div>'):'<div class="state">wird geladen …</div>')+
     '<div class="sublbl" style="margin-top:12px;font-size:15px">Baustellen auf Route '+(a.i+1)+' <span class="muted small">(Autobahn GmbH, in Fahrtrichtung, km ab Start)</span></div>'+(a.rw?(m?a.rw.map(rwRow).join(""):'<div class="state good">Keine Autobahn-Baustellen auf dieser Route gemeldet.</div>'):'<div class="state">wird geladen …</div>');
   drawReise();}
 function drawReise(){if(typeof L==="undefined"){$("rs-map").hidden=true;return;}const el=$("rs-map");el.hidden=false;if(!el.offsetWidth)return;
@@ -1898,7 +1908,7 @@ function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{..
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);
-const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus/reise","Reise"],["staus","Aktuelle Lage"],["staus/karte","Sperrungen & Events"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
+const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus/reise","Reise"],["staus/karte","Sperrungen & Events"],["staus/meld","Meldungen"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]],mobil:[["bahn","Deutsche Bahn"],["oepnv","Rheinbahn"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
   if(["bezirke"].includes(v))return C.isDus;
@@ -1923,7 +1933,7 @@ function buildViewbar(){
 function route(){
   {const h=location.hash.slice(1);if(h==="verkehr"){history.replaceState(null,"","#staus/meld");}
   if(h==="stadtverkehr"||h==="stadtdatteln"){const k=h==="stadtverkehr"?"dus":"datteln";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
-  let v=location.hash.slice(1);const pane=v.split("/")[1]||"lage";v=v.split("/")[0];
+  let v=location.hash.slice(1);const pane=v.split("/")[1]||"reise";v=v.split("/")[0];
   document.querySelectorAll("#staus [data-pane]").forEach(p=>p.hidden=p.dataset.pane!==pane);
   if(v&&!$("v-"+v))v="";
   if(v&&!tileAvailable(v))v="";
