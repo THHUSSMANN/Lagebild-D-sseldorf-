@@ -1911,8 +1911,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pks]");if(
 function pkParse(d,R){return (d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
       const kind=t.amenity==="parking_space"||(t.parking_space==="disabled")?"bh":t.park_ride&&t.park_ride!=="no"?"pr":/multi-storey|underground/.test(t.parking||"")?"ph":"pp";
       return {kind,name:t.name||({ph:t.parking==="underground"?"Tiefgarage":"Parkhaus",pr:"Park + Ride",bh:"Behindertenparkplatz",pp:"Parkplatz"})[kind],cap:t.capacity,dis:t["capacity:disabled"],
-        fee:t.fee,max:t.maxstay,oh:t.opening_hours,access:t.access,addr:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),lat,lon,km:distKm(R.lat,R.lon,lat,lon)};})
-      .filter(x=>isFinite(x.lat)&&!/^(private|no|customers)$/.test(x.access||"")).sort((a,b)=>a.km-b.km);}
+        fee:t.fee,max:t.maxstay,oh:t.opening_hours,access:t.access,pk:t.parking||"",addr:[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" "),lat,lon,km:distKm(R.lat,R.lon,lat,lon)};})
+      // nur öffentliche Anlagen: keine privaten, Kunden-, Anwohner- oder Mitarbeiterparkplätze, keine Garagenhöfe/Carports;
+      // einfache Parkplätze nur, wenn ausdrücklich öffentlich, gebührenpflichtig, benannt oder größer
+      .filter(x=>isFinite(x.lat)&&!/^(private|no|customers|delivery|residents|permit|employees|agricultural|forestry)$/.test(x.access||"")&&!/garage_boxes|carports|garage$/.test(x.pk)
+        &&(x.kind!=="pp"||/^(yes|public|permissive|destination)$/.test(x.access||"")||x.fee==="yes"||(x.name&&x.name!=="Parkplatz")||Number(x.cap)>=20)).sort((a,b)=>a.km-b.km);}
 async function pkQuery(Z,r){const loc=await osmLocal("p",Z.lat,Z.lon,r/1000);if(loc)return loc;const q='[out:json][timeout:25];(nwr["amenity"="parking"](around:'+r+','+Z.lat+','+Z.lon+');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:'+r+','+Z.lat+','+Z.lon+'););out center tags;';
   return overpass(q);}
 async function loadPkDat(){const box=$("pk-dat");if(!box)return;
