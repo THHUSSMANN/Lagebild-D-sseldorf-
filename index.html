@@ -1023,20 +1023,21 @@ body.harrange #toolgrid [data-tool="arrange"]{opacity:1;border-style:solid!impor
 
 <div class="view" id="v-alltag" data-view="alltag" hidden>
 <section id="alltag"><div class="sec-title"><h2>Kalender, Ferien &amp; Börse</h2></div></section>
-<div class="grid">
-  <section class="card">
+<div class="seg" id="al-seg" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px"><button type="button" data-al="tag" class="on">Tag &amp; Kalender</button><button type="button" data-al="fer">Schulferien NRW</button><button type="button" data-al="fin">Gold &amp; Börse</button></div>
+<div class="grid al-grid">
+  <section class="card wide" data-alp="tag">
     <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src" id="cal-src">Feiertage · Schulferien NRW</span></div>
     <div id="cal"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card wide">
+  <section class="card wide" data-alp="fer" hidden>
     <div class="card-head"><h2 id="fer-title">Schulferien bis 2028</h2><span class="src">OpenHolidays API</span></div>
     <div id="ferien"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card">
+  <section class="card" data-alp="fin" hidden>
     <div class="card-head"><h2>Gold</h2><span class="src">Yahoo Finance · verzögert</span></div>
     <div id="gold"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card">
+  <section class="card" data-alp="fin" hidden>
     <div class="card-head"><h2>Börse</h2><span class="src" id="mk-src">Yahoo Finance · verzögert</span></div>
     <div id="boerse"><div class="state">wird geladen …</div></div>
   </section>
@@ -1117,6 +1118,6 @@ body.harrange #toolgrid [data-tool="arrange"]{opacity:1;border-style:solid!impor
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=171"></script>
+<script src="app.js?v=172"></script>
 </body>
 </html>
