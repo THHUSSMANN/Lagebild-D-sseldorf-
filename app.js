@@ -2261,10 +2261,10 @@ if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderR
     store("bsicher",{a:$("bs-area").value,c:$("bs-cut").value,p:$("bs-pers").value,sel});
     if(isFinite(A)&&A>0){const k=isFinite(cut)?Math.min(Math.max(cut,0),100):20;const N=A*(1-k/100);
       $("bs-net").innerHTML='<span>Nettofläche (Fläche − '+f0(k)+' %)</span><b>'+f2(N)+' m²</b>';
-      $("bs-dens").innerHTML=[1,2,3,4].map(d=>'<button type="button" data-bsd="'+d+'" class="'+(d===sel?"on":"")+'"><span>'+d+(d===1?" Person":" Personen")+' / m²</span><b>'+f0(Math.floor(N*d))+'</b></button>').join("");}
+      $("bs-dens").innerHTML=[1,2,3,4].map(d=>'<button type="button" data-bsd="'+d+'" class="'+(d===sel?"on":"")+'"><span>'+d+(d===1?" Person":" Personen")+' / m²'+(d===1?' <small>(nur Vergleich)</small>':d===2?' <small>(Mindestansatz Stehflächen)</small>':'')+'</span><b>'+f0(Math.floor(N*d))+'</b></button>').join("");}
     else{$("bs-net").innerHTML="";$("bs-dens").innerHTML='<div class="muted small">Bitte eine Fläche eingeben.</div>';}
     if(isFinite(P0)&&P0>0){const w=P0/600*1.2,st6=Math.max(1.2,Math.ceil(P0/300)*0.6);
-      $("bs-rw").innerHTML='<span>Rechnerische Gesamtbreite der Rettungswege</span><b>'+f2(w)+' m</b><span>aufgerundet in 0,60-m-Schritten (mind. 1,20 m): <strong>'+f2(st6)+' m</strong></span>';}
+      $("bs-rw").innerHTML='<span>Erforderliche Gesamtbreite der Rettungswege</span><b>'+f2(w)+' m</b><span>Zwischenwerte zulässig · je Rettungswegteil mind. 1,20 m</span>';}
     else $("bs-rw").innerHTML="";}
   const dlg=$("bs-dlg");
   if(dlg){$("bs-area").value=st.a||"";$("bs-cut").value=st.c||"20";$("bs-pers").value=st.p||"";
