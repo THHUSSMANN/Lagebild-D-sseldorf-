@@ -1325,7 +1325,7 @@ function showAbDetail(k){
   if(/^r\d+$/.test(k)){const r=ROUTES[+k.slice(1)];const l=(ROUTE_ITEMS[+k.slice(1)]||[]).sort((a,b)=>a.km-b.km);set={t:"Meine Strecke: "+r.ab+" Richtung "+r.dir,l};}
   else set=AB_SETS[k];
   if(!set){box.hidden=true;return;}
-  {const an=/^r\d+$/.test(k)?$("tnote"):$("stau-sum");if(an&&an.nextElementSibling!==box)an.after(box);}
+  {if(/^r\d+$/.test(k)){const h=$("prio-h");if(h&&box.nextElementSibling!==h)h.before(box);}else{const an=$("stau-sum");if(an&&an.nextElementSibling!==box)an.after(box);}}
   box.hidden=false;
   box.innerHTML='<div class="abd-head"><h3>'+esc(set.t)+' <span class="muted small">('+set.l.length+')</span></h3><button type="button" class="btn sm" data-close="1">Schließen ✕</button></div>'+
     (set.l.length?'<div class="muted small" style="margin-bottom:6px">Eintrag antippen für alle Angaben (Abschnitt, Dauer, Umleitung).</div>'+set.l.map(abItem).join(""):'<div class="state good">Keine Meldungen auf dieser Strecke im Umkreis von '+PRIO_RADIUS_KM+' km.</div>');
@@ -1765,6 +1765,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");
   EFAK=EFACITY[k];RS.city=k;RS.at=0;
   RS.lock=1;try{if(k==="dus"){if(!C.isDus)choose("dus-4");}else if(C.key!==k)choose("p-"+k);}finally{RS.lock=0;}
   rsCity(k);keep();if(location.hash==="#staus/karte")mapGo(k);
+  {const h=location.hash.slice(1);if(h==="parken")pkShow(k);else if(h==="eladen"){ELP=null;loadEL();}else if(h==="tanken")loadFuel();}
   // Seite bleibt, wo sie ist, solange die Daten neu geladen werden (außer man scrollt selbst)
   let touched=false;const tt=()=>{touched=true;};addEventListener("touchstart",tt,{once:true,passive:true});addEventListener("wheel",tt,{once:true,passive:true});
   const guard=()=>{if(!touched&&Math.abs(window.scrollY-y)>120)window.scrollTo(0,y);};addEventListener("scroll",guard,{passive:true});
@@ -1869,13 +1870,13 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-mapgo]");i
 
 // ================= E-Ladesäulen (OpenStreetMap, ganz DE/AT) =================
 var ELKEY=null,ELR=load("el_rad")||2,ELF=load("el_f")||"all",ELD=null,ELP=null,ELMAP=null,ELLAY=null;
-function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],["datteln","Datteln",51.6539,7.3417],["alpen","Alpen-Menzelen",51.6449,6.5634],["salzhausen","Salzhausen",53.2236,10.1645]];
+function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],["datteln","Datteln",51.6539,7.3417],["dortmund","Dortmund",51.5136,7.4653],["alpen","Alpen-Menzelen",51.6449,6.5634],["salzhausen","Salzhausen",53.2236,10.1645]];
   return F.map(([k,n,la,lo])=>{const H=HOMES[k];return {k,name:n,lat:H&&isFinite(H.lat)?H.lat:la,lon:H&&isFinite(H.lon)?H.lon:lo};});}
-function renderELWhere(){$("el-where").innerHTML='<button type="button" data-elw="gps">📍 Mein Standort</button>'+elFavs().map(f=>'<button type="button" data-elw="'+f.k+'" class="'+(ELP&&ELP.k===f.k?"on":"")+'">'+esc(f.name)+'</button>').join("");}
+function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr";w.innerHTML='<button type="button" data-elw="gps" class="'+(ELP&&ELP.k==="gps"?"on":"")+'">📍 Stattdessen an meinem Standort suchen</button>';}
 function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
   [["all","Alle Ladesäulen"],["fast","Schnelllader (ab 50 kW)"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
-async function loadEL(){const box=$("el-list");if(!box)return;ELKEY=C.key;
-  if(!ELP){const f=elFavs().find(x=>x.k===C.key);ELP=f||{k:C.key,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon};}
+async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
+  if(!ELP){const f=elFavs().find(x=>x.k===ck);ELP=f||{k:C.key,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon};}
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
   const la=ELP.lat,lo=ELP.lon;box.innerHTML='<div class="state">wird geladen …</div>';
   const q='[out:json][timeout:25];nwr["amenity"="charging_station"](around:'+(ELR*1000)+','+la+','+lo+');out center tags;';
@@ -1935,8 +1936,13 @@ document.addEventListener("submit",async e=>{if(e.target.id!=="el-form")return;e
 
 // ================= Parken Datteln (OpenStreetMap) =================
 var PKS=null,PKDAT=null,PKGPS=null,PKPOS=null;
-function pkShow(k){PKS=k;document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
-  document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==k);if(k==="datteln"&&!PKDAT)loadPkDat();if(k==="gps")pkGPS();}
+function pkShow(k){PKS=k;const pane=k==="gps"||k==="dus"||k==="datteln"?k:"city";document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
+  document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==pane);if(k==="datteln"&&!PKDAT)loadPkDat();if(k==="gps")pkGPS();if(pane==="city")loadPkCity(k);}
+const PKC={};
+async function loadPkCity(k){const box=$("pk-city");if(!box)return;const Z=FIXHOME[k]||TOWNS[k];const n=CITYN[k]||k;$("pk-city-h").textContent="Parken in "+n;
+  if(PKC[k]){renderPk("pk-city",PKC[k],'Öffentliche Parkmöglichkeiten bis 3 km um deine Adresse in '+esc(n)+', die nächste zuerst. Antippen öffnet die Route in Google Maps.');return;}
+  box.innerHTML='<div class="state">wird geladen …</div>';
+  try{const d=await pkQuery(Z,3000);PKC[k]=pkParse(d,Z);if(PKS===k)loadPkCity(k);}catch(e){box.innerHTML=stateBox("Parkdaten für "+esc(n)+" nicht verfügbar – "+errText(e)+".");}}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pks]");if(b){e.preventDefault();pkShow(b.dataset.pks);}});
 function pkParse(d,R){return (d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
       const kind=t.amenity==="parking_space"||(t.parking_space==="disabled")?"bh":t.park_ride&&t.park_ride!=="no"?"pr":/multi-storey|underground/.test(t.parking||"")?"ph":"pp";
@@ -1958,7 +1964,7 @@ function pkGPS(){const box=$("pk-gps");if(!box)return;
   box.innerHTML='<div class="state">Standort wird ermittelt …</div>';
   const ok=async p=>{PKPOS={lat:p.coords.latitude,lon:p.coords.longitude};box.innerHTML='<div class="state">Parkplätze im Umkreis von 2 km werden geladen …</div>';
     try{const d=await pkQuery(PKPOS,2000);PKGPS=pkParse(d,PKPOS);
-      renderPk("pk-gps",PKGPS,'Öffentliche Parkmöglichkeiten bis 2 km um deinen Standort, die nächste zuerst. Antippen öffnet die Route in Google Maps. Live-Belegung gibt es hier nicht, für Düsseldorfer Parkhäuser oben „Düsseldorf“ wählen. <a href="#" data-pks="gps">Standort neu ermitteln ↻</a>');
+      renderPk("pk-gps",PKGPS,'Öffentliche Parkmöglichkeiten bis 2 km um deinen Standort, die nächste zuerst. Antippen öffnet die Route in Google Maps. Live-Belegung gibt es hier nicht, für Düsseldorfer Parkhäuser oben bei „Ich bin in …“ Düsseldorf wählen. <a href="#" data-pks="gps">Standort neu ermitteln ↻</a>');
     }catch(e){box.innerHTML=stateBox("Parkdaten nicht verfügbar – "+errText(e)+".");}};
   const fail=err=>{box.innerHTML=err&&err.code===1?stateBox("Standort nicht freigegeben.",'Auf dem iPhone: <b>Einstellungen → Datenschutz &amp; Sicherheit → Ortungsdienste → Safari-Websites</b> auf „Beim Verwenden der App“ und <b>Einstellungen → Apps → Safari → Standort</b> auf „Fragen“ oder „Erlauben“. Dann die App neu öffnen.')
     :stateBox("Standort konnte nicht ermittelt werden.",'<a href="#" data-pks="gps">Noch einmal versuchen ↻</a>');};
@@ -2037,8 +2043,11 @@ function route0(){
     const cur=v+(pane!=="lage"?"/"+pane:"");el.classList.toggle("grid3",g==="verkehr");
     el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'"'+(x==="staus/karte"?' data-karte':'')+'>'+esc(x==="staus/karte"?karteLbl():l)+(x==="staus/karte"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
   if(typeof foldCount==="function")foldCount();
-  if(v==="eladen"&&ELKEY!==C.key)loadEL();
-  if(v==="parken")pkShow(PKS||"gps");
+  // „Ich bin in …“ gilt für den ganzen Bereich Reise & Verkehr (Reise, Verkehrslage, Parken, Tanken, E-Laden)
+  if(["staus","parken","tanken","eladen"].includes(v)){const rc=document.querySelector(".rv-city"),vw=$("v-"+v);if(rc&&vw){const st=vw.querySelector(".subtabs");if(st&&rc.nextElementSibling!==st)st.before(rc);else if(!st&&rc.parentNode!==vw)vw.prepend(rc);}
+    if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}
+  if(v==="eladen"&&(ELKEY!==RS.city||!ELP)){if(ELP&&ELP.k!=="gps"&&ELP.k!==RS.city)ELP=null;loadEL();}
+  if(v==="parken")pkShow(PKS==="gps"?"gps":RS.city||"dus");
   if(inView){if(ROUTEKEY!==v+"/"+pane){const top=()=>{const m=document.querySelector("main");window.scrollTo(0,m?Math.max(0,m.getBoundingClientRect().top+window.scrollY-6):0);};top();requestAnimationFrame(top);setTimeout(top,80);}if(v==="staus"){setStauTitle();if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
     if(v==="staus"&&pane==="karte"){const vc=RS.city||(C.isDus?"dus":(TOWNS[C.key]?C.key:"dus"));if(MAPGO!==vc&&!/^r\d$/.test(MAPGO||""))setTimeout(()=>mapGo(vc),80);setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }

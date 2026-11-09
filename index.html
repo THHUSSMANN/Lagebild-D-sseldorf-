@@ -845,7 +845,7 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
   <div id="rs-alts"><div class="state">wird berechnet …</div></div>
   <div id="rs-map" class="map rsmap" role="img" aria-label="Karte der Fahrt"></div>
   <div id="rs-incs"></div>
-  <div class="sublbl" style="margin-top:16px;font-size:15px">Meine Autobahnstrecken <span class="muted small">(Autobahn GmbH, Zeile antippen für Details)</span></div>
+  <div class="sublbl" id="prio-h" style="margin-top:16px;font-size:15px">Meine Autobahnstrecken <span class="muted small">(Autobahn GmbH, Zeile antippen für Details)</span></div>
 
   <div class="ttab">
   <div id="prio"></div>
@@ -1039,7 +1039,7 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 
 <div class="view" id="v-parken" data-view="parken" hidden>
 <div class="subtabs" data-for="parken"></div>
-<div class="seg" id="pk-seg" style="grid-template-columns:1fr 1fr 1fr"><button type="button" data-pks="gps">📍 Mein Standort</button><button type="button" data-pks="dus">Düsseldorf</button><button type="button" data-pks="datteln">Datteln</button></div>
+<div class="seg" id="pk-seg" style="grid-template-columns:1fr"><button type="button" data-pks="gps">📍 Stattdessen an meinem Standort suchen (2 km)</button></div>
 <div data-pk="gps" hidden>
 <section class="card wide">
   <div class="card-head"><h2>Parken in der Nähe</h2><span class="src">OpenStreetMap · 2 km um deinen Standort</span></div>
@@ -1062,6 +1062,12 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
     <div id="park-bh"><div class="state">wird geladen …</div></div>
   </section>
 </div>
+</div>
+<div data-pk="city" hidden>
+<section class="card wide">
+  <div class="card-head"><h2 id="pk-city-h">Parken</h2><span class="src">OpenStreetMap · ca. 3 km um deine Adresse</span></div>
+  <div id="pk-city"><div class="state">wird geladen …</div></div>
+</section>
 </div>
 <div data-pk="datteln" hidden>
 <section class="card wide">
@@ -1168,6 +1174,6 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=175"></script>
+<script src="app.js?v=176"></script>
 </body>
 </html>
