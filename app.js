@@ -101,6 +101,8 @@ function errText(e){
   if(/Failed to fetch|NetworkError|Load failed|blocked|access control/i.test(m))return "nicht erreichbar oder vom Browser blockiert (CORS)";
   if(/abort/i.test(m))return "Zeitüberschreitung";
   if(/JSON/i.test(m))return "unerwartetes Datenformat";
+  if(/\b403\b/.test(m))return "Kontingent für heute aufgebraucht oder Schlüssel gesperrt (HTTP 403)";
+  if(/\b429\b/.test(m))return "zu viele Abfragen in kurzer Zeit (HTTP 429)";
   return m;
 }
 const FAVKEYS=["dus","datteln","dortmund","alpen","salzhausen"];const EFAKEYS=[...FAVKEYS,"dortmund"];
@@ -1377,7 +1379,7 @@ function renderAutoPrio(){const box=$("prio");if(!box||typeof RS==="undefined"||
   const dirs=RSDIRS.filter(x=>x[2]===RS.city);ROUTE_ITEMS=[];AUTOR=[];const O=FIXHOME[RS.city];
   {const h=$("prio-h");if(h)h.innerHTML='Meine Strecken ab '+esc(CITYN[RS.city])+' <span class="muted small">· Route TomTom, Meldungen Autobahn GmbH</span>';}
   const cards=dirs.map((d,i)=>{const D=RS.data[d[0]];const a=D&&D.alts&&D.alts[0];const to=CITYN[d[3]];
-    if(!a)return '<div class="route unk"><span class="tag">PKW</span><span class="rt">→ '+esc(to)+'</span><span class="rv muted">'+(D&&D.err?"nicht verfügbar":"wird berechnet …")+'</span></div>';
+    if(!a)return '<div class="route unk"><span class="tag">PKW</span><span class="rt">→ '+esc(to)+'</span><span class="rv muted">'+(D&&D.err?"nicht verfügbar"+(/HTTP 4(03|29)/.test(D.err)?" · TomTom-Kontingent":""):"wird berechnet …")+'</span></div>';
     const items=[...(a.ab||[]).map(w=>({...w,_c:w.cl?1:0})),...(a.rw||[]).map(w=>({...w,_rw:1}))].map(w=>({...w,km:distKm(O.lat,O.lon,w.lat,w.lon)}));
     const cl=items.filter(x=>x._c),jams=items.filter(x=>x.jam&&!x._c).sort((x,y)=>(y.jam.delay||0)-(x.jam.delay||0)),rws=items.filter(x=>x._rw);
     let cls="ok",val="freie Fahrt";
@@ -1845,7 +1847,7 @@ const hm=min=>min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0")+" 
 function rsEnds(k){const r=RSDIRS.find(x=>x[0]===k)||RSDIRS[0];return [FIXHOME[r[2]],FIXHOME[r[3]]];}
 const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon):"")+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
 async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));
-  if(!force&&Date.now()-RS.at<3*60*1000&&RSDIRS.filter(x=>x[2]===RS.city).every(x=>RS.data[x[0]])){renderReise();return;}
+  if(!force&&Date.now()-RS.at<10*60*1000&&RSDIRS.filter(x=>x[2]===RS.city).every(x=>RS.data[x[0]])){renderReise();return;}
   RS.at=Date.now();renderReise();
   if(!TTKEY){$("rs-alts").innerHTML=stateBox("Für die Fahrzeit den TomTom-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
   const city=RS.city;for(const [k,t] of RSDIRS.filter(x=>x[2]===city).sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){if(RS.city&&RS.city!==city)break; // nur bei echtem Ortswechsel abbrechenconst [o,d]=rsEnds(k);
