@@ -1557,7 +1557,8 @@ async function loadFuel(){
     const bE5=best("e5"),bE10=best("e10"),bD=best("diesel");
     const p=(v,b)=>typeof v!=="number"?"–":'<span style="'+(v===b?"color:var(--ok);font-weight:700":"")+'">'+v.toFixed(2).replace(".",",")+'<sup>9</sup></span>';
     let r='<table><thead><tr><th>Tankstelle</th><th class="num">km</th><th class="num">Super E5</th><th class="num">E10</th><th class="num">Diesel</th></tr></thead><tbody>';
-    st.forEach(s=>{r+='<tr><td class="wrap-txt"><b>'+esc(s.brand||s.name)+'</b><br><span class="muted small">'+esc((s.street||"")+" "+(s.houseNumber||"")+", "+(s.place||""))+'</span></td><td class="num">'+fmt(s.dist,1)+'</td><td class="num">'+p(s.e5,bE5)+'</td><td class="num">'+p(s.e10,bE10)+'</td><td class="num">'+p(s.diesel,bD)+'</td></tr>';});
+    st.forEach(s=>{const ad=((s.street||"")+" "+(s.houseNumber||"")).trim()+", "+(s.place||"");const nv=isFinite(s.lat)&&isFinite(s.lng)?(IOS?"comgooglemaps://?daddr="+s.lat+","+s.lng+"&directionsmode=driving":"https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination="+s.lat+","+s.lng):"";
+      r+='<tr><td class="wrap-txt">'+(nv?'<a class="fu-nav" href="'+nv+'"'+(IOS?'':' target="_blank" rel="noopener"')+' title="Mit Google Maps hinfahren">':'')+'<b>'+esc(s.brand||s.name)+'</b><br><span class="small">'+GMICON+esc(ad)+(nv?' ↗':'')+'</span>'+(nv?'</a>':'')+'</td><td class="num">'+fmt(s.dist,1)+'</td><td class="num">'+p(s.e5,bE5)+'</td><td class="num">'+p(s.e10,bE10)+'</td><td class="num">'+p(s.diesel,bD)+'</td></tr>';});
     box.innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">Geöffnete Tankstellen nahe '+esc(C.short)+', günstigster Preis grün.</div>';
     setStatus("fuel",true);
   }catch(e){setStatus("fuel",false,errText(e));box.innerHTML=stateBox("Spritpreise nicht verfügbar – "+errText(e)+".");}
@@ -2181,7 +2182,7 @@ function route0(){
   if(typeof foldCount==="function")foldCount();
   // „Ich bin in …“ gilt für den ganzen Bereich Reise & Verkehr (Reise, Verkehrslage, Parken, Tanken, E-Laden)
   if(["staus","parken","tanken","eladen"].includes(v)){const rc=document.querySelector(".rv-city"),vw=$("v-"+v);if(rc&&vw){const st=vw.querySelector(".subtabs");if(st&&rc.nextElementSibling!==st)st.before(rc);else if(!st&&rc.parentNode!==vw)vw.prepend(rc);}
-    if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}
+    if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));}if(EFAK!==EFACITY[RS.city]){EFAK=EFACITY[RS.city];STOPIDX=null;}if(RS.mode==="oepnv"&&v==="staus")rsOe();setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}
   if(v==="eladen"&&(ELKEY!==RS.city||!ELP)){if(ELP&&ELP.k!=="gps"&&ELP.k!==RS.city)ELP=null;loadEL();}
   if(v==="parken")pkShow(PKS==="gps"?"gps":RS.city||"dus");
   if(inView){if(ROUTEKEY!==v+"/"+pane){const top=()=>{const m=document.querySelector("main");window.scrollTo(0,m?Math.max(0,m.getBoundingClientRect().top+window.scrollY-6):0);};top();requestAnimationFrame(top);setTimeout(top,80);}if(v==="staus"){setStauTitle();if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
