@@ -813,8 +813,9 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
   </section>
   </div>
   <div data-rsp="oepnv" hidden>
-  <section class="card" hidden style="margin-bottom:12px"><div class="card-head"><h2>Bus &amp; Bahn Dortmund ⇄ Datteln</h2><span class="src">VRR · alle Verkehrsmittel · Echtzeit</span></div><div id="oe-trips" hidden></div></section>
-<div class="grid">
+  <div class="seg" id="oe-seg" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr)"></div>
+  <section class="card" hidden style="margin-bottom:12px"><div class="card-head"><h2 id="oe-title">Bus &amp; Bahn</h2><span class="src">VRR · alle Verkehrsmittel · Echtzeit</span></div><div id="oe-trips" hidden></div></section>
+<div class="grid" id="oe-dep">
   <section class="card" id="efa-card">
     <div class="card-head"><h2 id="efa-title">Abfahrten</h2><span class="src" id="efa-src">Echtzeit</span></div>
     <div class="stop-chips" id="efa-stops"></div>
@@ -1109,6 +1110,6 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=165"></script>
+<script src="app.js?v=166"></script>
 </body>
 </html>

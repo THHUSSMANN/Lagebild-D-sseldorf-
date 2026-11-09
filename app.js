@@ -1770,9 +1770,16 @@ function setBtns(box,html){if(!box)return;const t=document.createElement("div");
   if(old.length===nw.length&&old.every((o,i)=>o.tagName===nw[i].tagName&&o.outerHTML.split(">")[0].replace(/class="[^"]*"/,"")===nw[i].outerHTML.split(">")[0].replace(/class="[^"]*"/,""))){
     old.forEach((o,i)=>{if(o.className!==nw[i].className)o.className=nw[i].className;if(o.innerHTML!==nw[i].innerHTML)o.innerHTML=nw[i].innerHTML;});}
   else box.innerHTML=html;}
+// ÖPNV: Auswahl per Knopf statt langer Liste (Abfahrten vor Ort bzw. Verbindungen Dortmund ⇄ Datteln)
+const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln"],["o-dat-do","Datteln → Dortmund Hbf"],["dep","Stadion ⇄ Hbf"]],datteln:[["o-dat-do","Datteln → Dortmund Hbf"],["o-do-dat","Dortmund Stadion → Datteln"],["dep","Abfahrten Datteln"]]};
+function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opts.some(o=>o[0]===RS.oe))RS.oe=opts[0][0];
+  const seg=$("oe-seg");seg.hidden=opts.length<2;setBtns(seg,opts.map(([k,l])=>'<button type="button" data-oe="'+k+'" class="'+(RS.oe===k?"on":"")+'">'+l+'</button>').join(""));
+  const ob=$("oe-trips"),sec=ob.closest("section"),dep=$("oe-dep");
+  if(RS.oe==="dep"){sec.hidden=true;dep.hidden=false;}
+  else{dep.hidden=true;sec.hidden=false;ob.hidden=false;$("oe-title").textContent=(opts.find(o=>o[0]===RS.oe)||[])[1]||"Bus & Bahn";ob.innerHTML='<div class="state">wird geladen …</div>';loadTrips({keys:[RS.oe],box:ob});}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-oe]");if(!b)return;RS.oe=b.dataset.oe;rsOe();});
 function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();
-    const ob=$("oe-trips");if(ob){const ks=RS.city==="dortmund"?["o-do-dat","o-dat-do"]:RS.city==="datteln"?["o-dat-do","o-do-dat"]:[];
-      ob.closest("section").hidden=!ks.length;if(ks.length){ob.hidden=false;ob.innerHTML='<div class="state">wird geladen …</div>';loadTrips({keys:ks,box:ob});}else{ob.hidden=true;ob.innerHTML="";}}}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
+    rsOe();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
     setBtns($("rs-tdir"),TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(RSDIRS.find(x=>x[0]===k)||[])[3]+(RS.tdir===k?" on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join(""));
     const t=RSTRIP[RS.tdir]||"";const st=(()=>{const d=TDIRS.find(x=>x[0]===RS.tdir);return d?d[3]:"";})();
