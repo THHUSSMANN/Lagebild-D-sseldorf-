@@ -1805,7 +1805,7 @@ async function loadDatteln(){const box=$("sd-list");if(!box)return;
     fillOrte(box);
   }catch(e){box.innerHTML=stateBox("Verkehrslage Datteln nicht verfügbar – "+errText(e)+".");}}
 document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
-  MAPFOCUS=1;if(location.hash!=="#staus/karte")location.hash="staus/karte";setTimeout(()=>{if(!MAP)return;$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.invalidateSize();MAP.setView([la,lo],15);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);},250);});
+  MAPFOCUS=1;if(location.hash!=="#staus/karte")location.hash="staus/karte";setTimeout(()=>{if(!MAP)return;$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.invalidateSize();MAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent([...j.querySelector(".t").childNodes].map(n=>n.textContent.trim()).filter(Boolean).join(" · ")+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);},250);});
 
 // ================= Karte: Orte und Strecken =================
 let MAPGO=null;
@@ -2267,10 +2267,11 @@ document.addEventListener("click",e=>{const it=e.target.closest("#vl-body [data-
   const la=+it.dataset.lat,lo=+it.dataset.lon;if(!isFinite(la)||!isFinite(lo))return;e.stopImmediatePropagation();e.preventDefault();
   if(typeof MAP==="undefined"||!MAP)return;VLBACK=it;
   const el=$("stau-map");window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});
-  setTimeout(()=>{MAP.invalidateSize();MAP.setView([la,lo],16,{animate:true});
+  setTimeout(()=>{MAP.invalidateSize();MAP.setView([la,lo],14,{animate:true});
     if(VLRING)VLRING.remove();VLRING=L.circleMarker([la,lo],{radius:22,color:"#0b6e8a",weight:4,fill:false,className:"vlring"}).addTo(MAP);
     const t=it.querySelector(".t"),d=it.querySelector(".d");
-    L.popup({maxWidth:300}).setLatLng([la,lo]).setContent('<b>'+esc(t?t.innerText:"")+'</b>'+(d?"<br>"+esc(d.innerText.replace(" · in Karte zeigen ›","")):"")+'<br><a href="#" class="vlback">↓ zurück zur Liste</a>').openOn(MAP);},250);},true);
+    const tx=t?[...t.childNodes].map(n=>n.textContent.trim()).filter(Boolean).join(" · "):"";
+    L.popup({maxWidth:300}).setLatLng([la,lo]).setContent('<b>'+esc(tx)+'</b>'+(d?"<br>"+esc(d.innerText.replace(" · in Karte zeigen ›","")):"")+'<br><a href="#" class="vlback">↓ zurück zur Liste</a>').openOn(MAP);},250);},true);
 document.addEventListener("click",e=>{if(!e.target.closest(".vlback"))return;e.preventDefault();if(VLBACK&&VLBACK.isConnected)VLBACK.scrollIntoView({behavior:"smooth",block:"center"});});
 {let vlT=0;const mo=new MutationObserver(()=>{clearTimeout(vlT);vlT=setTimeout(vlCount,250);});const b=$("vl-body");if(b){mo.observe(b,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});setVL(VLK);}}
 
