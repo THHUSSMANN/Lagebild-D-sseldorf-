@@ -632,6 +632,9 @@ header .tools .ctrl{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 body.arranging #toolgrid .hbtn{outline:2px dashed var(--accent);outline-offset:2px;cursor:grab}
 header #toolgrid [data-tool="arrange"]{grid-column:1/-1;justify-self:center;width:auto;min-height:32px;padding:4px 16px;background:transparent!important;background-image:none!important;border:1px dashed rgba(255,255,255,.28)!important;box-shadow:none!important;font:500 13px var(--f-body);opacity:.75;border-radius:999px!important}
 header #toolgrid [data-tool="arrange"] .mi{width:16px;height:16px}
+.harrange-hint{margin:8px 2px 0;font-size:13.5px;color:var(--head-fg);opacity:.85}
+body.harrange #headnav a,body.harrange #toolgrid .hbtn:not([data-tool="arrange"]){outline:2px dashed rgba(255,255,255,.45);outline-offset:2px;cursor:grab;animation:wob .25s ease-in-out infinite alternate}
+body.harrange #toolgrid [data-tool="arrange"]{opacity:1;border-style:solid!important;background:var(--accent)!important;color:var(--panel)!important}
 </style>
 </head>
 <body>
@@ -648,6 +651,7 @@ header #toolgrid [data-tool="arrange"] .mi{width:16px;height:16px}
         <label class="pick"><span>Bereich</span><select id="bezirk" aria-label="Bereich wählen"></select></label>
       </div>
     <nav class="ctrl" id="headnav" aria-label="Themen"></nav>
+    <p class="harrange-hint" id="harrange-hint" hidden>Themen und Tools mit dem Finger verschieben (kurz gedrückt halten) – „Fertig“ unten speichert.</p>
     <button type="button" class="hbtn tools-toggle" id="tools-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-.6-.6-2.3z"/></svg>Tools <span class="rcaret">▾</span></button>
     <div class="tools" id="tools" hidden>
     <div class="ctrl" id="toolgrid">
@@ -1113,6 +1117,6 @@ header #toolgrid [data-tool="arrange"] .mi{width:16px;height:16px}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=170"></script>
+<script src="app.js?v=171"></script>
 </body>
 </html>

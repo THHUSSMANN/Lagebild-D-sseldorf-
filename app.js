@@ -2007,7 +2007,7 @@ function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tile
 function buildViewbar(){
   const cur=location.hash.slice(1).split("/")[0];
   const g=groupOf(cur);
-  {const hn=$("headnav");if(hn)hn.innerHTML=(cur?'<a class="hbtn back" href="#">‹ Übersicht</a>':'')+[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("");}
+  {const hn=$("headnav");if(hn&&!(typeof HEDIT!=="undefined"&&HEDIT))hn.innerHTML=(cur?'<a class="hbtn back" href="#">‹ Übersicht</a>':'')+[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("");}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 let ROUTEKEY=null;
@@ -2068,8 +2068,16 @@ $("arrange").addEventListener("click",()=>{
 let TSORT=null;
 {const ord=load("tool_order");const g=$("toolgrid");if(Array.isArray(ord)&&g){ord.forEach(k=>{const el=g.querySelector('[data-tool="'+k+'"]');if(el)g.appendChild(el);});}}
 document.addEventListener("click",e=>{if(!document.body.classList.contains("arranging"))return;const t=e.target.closest("#toolgrid [data-tool]");if(t&&t.dataset.tool!=="arrange"){e.preventDefault();e.stopImmediatePropagation();}},true);
-$("arrange-tool").addEventListener("click",()=>{if(location.hash.length>1){history.pushState(null,"",location.pathname+location.search);route();}
-  if(!EDITING)$("arrange").click();setTimeout(()=>$("home").scrollIntoView({behavior:"smooth",block:"start"}),80);});
+// Anordnen direkt im Kopf: Themen-Knöpfe und Tools an Ort und Stelle verschieben
+let HEDIT=false,HSORT=null;
+$("arrange-tool").addEventListener("click",()=>{HEDIT=!HEDIT;document.body.classList.toggle("harrange",HEDIT);
+  const at=$("arrange-tool");at.lastChild.textContent=HEDIT?"Fertig":"Anordnen";$("harrange-hint").hidden=!HEDIT;
+  if(HEDIT){$("tools").hidden=false;$("tools-toggle").setAttribute("aria-expanded","true");}
+  if(window.Sortable){const opt={animation:150,delay:120,delayOnTouchOnly:true,ghostClass:"tile-ghost",filter:".back,[data-tool='arrange']",preventOnFilter:false};
+    if(!HSORT)HSORT=Sortable.create($("headnav"),opt);if(!TSORT)TSORT=Sortable.create($("toolgrid"),opt);HSORT.option("disabled",!HEDIT);TSORT.option("disabled",!HEDIT);}
+  if(!HEDIT){const tiles=$("tiles");[...$("headnav").querySelectorAll("[data-v]")].forEach(x=>{const t=tiles.querySelector('.tile[data-view="'+x.dataset.v+'"]');if(t)tiles.appendChild(t);});
+    saveTileOrder();store("tool_order",[...$("toolgrid").children].map(x=>x.dataset.tool));}});
+document.addEventListener("click",e=>{if(!HEDIT)return;const t=e.target.closest("#headnav a,#toolgrid [data-tool]");if(t&&!(t.dataset&&t.dataset.tool==="arrange")){e.preventDefault();e.stopImmediatePropagation();}},true);
 $("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});
 applyTileOrder();{const kb=$("k-bahn");if(kb)kb.hidden=true;}route();
 applyPlaceUi();renderSources();tick();setInterval(tick,1000);
