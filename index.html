@@ -608,6 +608,20 @@ header #headnav a.on{background-color:var(--accent)!important;color:var(--panel)
 header #headnav a.back{background-color:rgba(255,255,255,.18)}
 body.alarm header #headnav a[href="#warnungen"]{animation:alarm 1.1s ease-in-out infinite;color:#fff!important;border-color:#ff6b5e}
 header .tools .hbtn,header .tools-toggle{border-radius:16px!important;background-color:rgba(255,255,255,.08);background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%);border:1px solid rgba(255,255,255,.18);box-shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25)}
+
+/* ---------- Info-Knöpfe statt Kacheln, Städte im Raster ---------- */
+#home .home-head,#home #arrange-hint,#home .tiles{display:none!important}
+header #headnav a.hbtn{flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;padding:8px 12px;min-height:56px;text-align:left}
+header #headnav .hn-l{font:700 15px var(--f-display);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+header #headnav .hn-v{font:500 13px var(--f-body);opacity:.85;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+header #headnav .hn-v:empty{display:none}
+header #headnav a.back{align-items:center;min-height:44px}
+header .favs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;overflow:visible!important}
+header .favs .fav{min-width:0;justify-content:center;text-align:center;white-space:normal;line-height:1.15;padding:8px 8px;min-height:46px}
+header .favs .fav[data-fav="dus"]{grid-column:span 2;display:block}
+header .favs .fav{border-radius:16px!important}
+header .favs .fav[data-fav="dus"] small{display:inline;margin-left:6px}
+header .favs .fav small{font-size:12px;opacity:.9}
 </style>
 </head>
 <body>
@@ -1080,6 +1094,6 @@ header .tools .hbtn,header .tools-toggle{border-radius:16px!important;background
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=161"></script>
+<script src="app.js?v=162"></script>
 </body>
 </html>

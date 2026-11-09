@@ -1985,7 +1985,7 @@ function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tile
 function buildViewbar(){
   const cur=location.hash.slice(1).split("/")[0];
   const g=groupOf(cur);
-  {const hn=$("headnav");if(hn)hn.innerHTML=(cur?'<a class="hbtn back" href="#">‹ Übersicht</a>':'')+[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");}
+  {const hn=$("headnav");if(hn)hn.innerHTML=(cur?'<a class="hbtn back" href="#">‹ Übersicht</a>':'')+[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("");}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 let ROUTEKEY=null;
