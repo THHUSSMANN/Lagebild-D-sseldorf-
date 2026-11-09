@@ -905,7 +905,7 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
     <a id="gmaps" href="https://www.google.com/maps/@51.2254,6.7763,12z/data=!5m1!1e1" target="_blank" rel="noopener">Google Maps <small>öffnen ↗</small></a>
   </div>
   <div id="stau-map" class="map vl-map" role="img" aria-label="Verkehrskarte"></div>
-  <label class="muted small vl-map" style="display:inline-flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ttflow"> zusätzlich Verkehrsfluss aller Straßen einfärben</label>
+  <label class="muted small vl-map" style="display:inline-flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ttflow"> Verkehrsfluss aller Straßen einfärben (grün = frei, gelb/rot = Stau)</label>
   <div class="legend vl-map"><span class="tt-leg"><i style="background:linear-gradient(90deg,#f3c623,#f08a00,#d62d20,#8b0000)"></i>Stau leicht → schwer (alle Straßen)</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
   <div id="mapcity-route" class="mapcity vl-map" hidden></div>
   <div id="mapcity-dus" class="mapcity vl-sec" hidden>
@@ -1180,6 +1180,6 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=182"></script>
+<script src="app.js?v=183"></script>
 </body>
 </html>

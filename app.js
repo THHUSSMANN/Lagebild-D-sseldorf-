@@ -1176,7 +1176,7 @@ let MAPMODE=load("mapmode")||"tomtom";
 const MAP_BOUNDS={dus:[51.12,6.66,51.36,6.96],datteln:[51.60,7.24,51.72,7.46],alpen:[51.50,6.40,51.70,6.70],salzhausen:[53.15,10.04,53.30,10.30]};
 function mapBounds(){const b=MAP_BOUNDS[C.key];if(b)return b;const la=C.center.lat,lo=C.center.lon;return [la-.2,lo-.32,la+.2,lo+.32];}
 function gmapsUrl(){const [s,w,n,e]=mapBounds();const span=Math.max(n-s,(e-w)*0.62);const z=span>0.45?10:span>0.22?11:12;return "https://www.google.com/maps/@"+((s+n)/2).toFixed(4)+","+((w+e)/2).toFixed(4)+","+z+"z/data=!5m1!1e1";}
-let TTFLOW=load("ttflow")===true;
+let TTFLOW=load("ttflow2")!==false; // Verkehrsfluss (grün/gelb/rot auf allen Straßen) standardmäßig an
 function applyMapMode(){
   if(!MAP)return;const tt=MAPMODE==="tomtom"&&!!TTKEY;const k=encodeURIComponent(TTKEY||"");
   if(!MAP._osm)MAP._osm=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'});
@@ -1193,7 +1193,7 @@ function applyMapMode(){
   document.querySelectorAll("#mapsw [data-mm]").forEach(b=>b.classList.toggle("on",b.dataset.mm===(tt?"tomtom":"osm")));
   $("stau-src").textContent=tt?"Karte & Verkehr: TomTom Echtzeit":"Karte © OpenStreetMap · Meldungen: Autobahn GmbH"+(C.isDus?", Verkehrszentrale Düsseldorf":"");
 }
-document.addEventListener("change",e=>{if(e.target.id==="ttflow"){TTFLOW=e.target.checked;store("ttflow",TTFLOW);applyMapMode();}});
+document.addEventListener("change",e=>{if(e.target.id==="ttflow"){TTFLOW=e.target.checked;store("ttflow2",TTFLOW);applyMapMode();}});
 document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]");if(!b)return;
   if(b.dataset.mm==="tomtom"&&!TTKEY){location.hash="einstellungen";return;}
   MAPMODE=b.dataset.mm;store("mapmode",MAPMODE);applyMapMode();});
@@ -1277,6 +1277,8 @@ function renderCarIncs(){const box=$("car-incs");if(!box)return;
 document.addEventListener("click",e=>{const j=e.target.closest(".carinc");if(!j||!MAP)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
   openMap();setTimeout(()=>$("stau-map").scrollIntoView({behavior:"smooth",block:"center"}),150);MAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);});
 function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
+// Karte war ausgeblendet (Kategorie-Ansicht) → Größe neu messen und Linien/Punkte neu zeichnen
+function mapRefresh(){if(!MAP)return;MAP.invalidateSize({pan:false});MAP.setView(MAP.getCenter(),MAP.getZoom(),{reset:true});}
 function ensureMap(){
   if(typeof L==="undefined")return null;
   if(!MAP){MAP=L.map("stau-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile}).setView([C.center.lat,C.center.lon],10);MAPLAYER=L.layerGroup().addTo(MAP);}
@@ -2166,7 +2168,7 @@ function vlCount(){const body=$("vl-body");if(!body)return;
 function setVL(k){VLK=VLN[k]||k==="karte"?k:"karte";store("vl_k",VLK);const body=$("vl-body");if(!body)return;
   body.dataset.k=VLK;body.classList.toggle("flt",VLK!=="karte"&&VLK!=="meld");
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>b.classList.toggle("on",b.dataset.vl===VLK));
-  if(VLK==="karte"&&typeof MAP!=="undefined"&&MAP)setTimeout(()=>MAP.invalidateSize(),30);vlCount();}
+  if(VLK==="karte"&&typeof MAP!=="undefined"&&MAP)setTimeout(mapRefresh,40);vlCount();}
 document.addEventListener("click",e=>{const b=e.target.closest("#vl-cat [data-vl]");if(!b)return;e.preventDefault();setVL(b.dataset.vl);
   const c=$("vl-cat");if(c&&c.getBoundingClientRect().top<0)c.scrollIntoView({block:"start"});});
 /* Eintrag in einer Liste antippen: zur Karte wechseln und Stelle zeigen */
