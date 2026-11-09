@@ -472,6 +472,9 @@ $("fin-btn").addEventListener("click",()=>{let l=finNorm(load("fin_link"));
   if(!l){const raw=prompt("iCloud-Link zu deiner Finanztabelle einfügen (beginnt mit https://www.icloud.com/…; wird nur auf diesem Gerät gespeichert):")||"";l=finNorm(raw);
     if(!l){if(raw.trim())alert("Das ist kein gültiger Link. Bitte in der Dateien-App „Link kopieren“ verwenden – der Link beginnt mit https://www.icloud.com/");return;}
     store("fin_link",l);const fi=$("fin");if(fi)fi.value=l;}
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  // OneDrive/SharePoint-Link: direkt in Excel öffnen (ohne Umweg über Kurzbefehle)
+  if(ios&&/onedrive\.live\.com|sharepoint\.com|1drv\.ms/i.test(l)){location.href="ms-excel:ofe|u|"+l;return;}
   if(/^https?:/i.test(l))window.open(l,"_blank","noopener");else location.href=l;});
 $("tk-save").addEventListener("click",()=>{TK=$("tk").value.trim();store("tk",TK);loadFuel();});
 $("theme").addEventListener("change",e=>{const v=e.target.value;store("theme",v);
