@@ -1923,8 +1923,12 @@ function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catc
         (a.i===RS.sel?'<span class="ag"><a href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>'+GMICON+'In Google Maps öffnen ↗</a><a class="sec" href="'+uberUrl(d)+'" target="_blank" rel="noopener">Uber bestellen ↗</a></span>':'')+'</div>';}).join("")+
     '<div class="muted small" style="margin:0 2px 8px">Google Maps öffnet die Route von '+esc(o.label)+' nach '+esc(d.label)+' zur Kontrolle. Die Navigation startest du dort selbst; Alternativen zeigt Google grau zum Antippen.</div>';
   const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;
-  inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Behinderungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live, schon in der Fahrzeit eingerechnet)</span></div>'+(n?a.secs.map(incRow).join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>')+
-    '<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Sperrungen der Autobahn GmbH auf Route '+(a.i+1)+' <span class="muted small">(in Fahrtrichtung, km ab Start)</span></div>'+(a.ab?(a.ab.length?a.ab.map(abRow).join(""):'<div class="state good">Keine Staus oder Sperrungen der Autobahn GmbH auf dieser Route.</div>'):'<div class="state">wird geladen …</div>')+
+  // TomTom und Autobahn GmbH zusammen: gleiche Stelle (< 3 km) nur einmal, Sperrungen immer
+  const near=(w)=>a.secs.some(x=>{if(!isFinite(x.lat)||!isFinite(w.lat))return false;const L=+x.len||0;return distKm(x.lat,x.lon,w.lat,w.lon)<3+(L>50?L/1000:L);});
+  const abx=a.ab?a.ab.filter(w=>w.cl||!near(w)):null;
+  inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Sperrungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live und Autobahn GmbH · gleiche Meldungen nur einmal)</span></div>'+
+    (n?a.secs.map(incRow).join(""):"")+(abx?abx.map(abRow).join(""):"")+
+    (!n&&abx&&!abx.length?'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>':"")+(!a.ab?'<div class="state">Meldungen der Autobahn GmbH werden geladen …</div>':"")+
     '<div class="sublbl" style="margin-top:12px;font-size:15px">Baustellen auf Route '+(a.i+1)+' <span class="muted small">(Autobahn GmbH, in Fahrtrichtung, km ab Start)</span></div>'+(a.rw?(m?a.rw.map(rwRow).join(""):'<div class="state good">Keine Autobahn-Baustellen auf dieser Route gemeldet.</div>'):'<div class="state">wird geladen …</div>');
   drawReise();}
 function drawReise(){if(typeof L==="undefined"){$("rs-map").hidden=true;return;}const el=$("rs-map");el.hidden=false;if(!el.offsetWidth)return;
