@@ -1292,8 +1292,9 @@ function routeParse(rt){const pts=(rt.legs||[]).flatMap(l=>l.points||[]);const i
   return {secs,pts,abs:[...new Set(ins.flatMap(x=>(x.roadNumbers||[]).filter(n=>/^A\s?\d+$/.test(n)).map(n=>n.replace(/\s/g,""))))]};}
 function svcFor(ab,svc){const key=ab+"|"+svc,c=RWCACHE[key];if(c&&(svc==="roadworks"||Date.now()-c.at<3*60e3))return c.p;
   const pr=getJSON("https://verkehr.autobahn.de/o/autobahn/"+encodeURIComponent(ab)+"/services/"+svc,20000)
-  .then(d=>(d[svc]||[]).map(w=>({...w,ab,_svc:svc,lat:parseFloat((w.coordinate||{}).lat),lon:parseFloat((w.coordinate||{}).long)})).filter(w=>isFinite(w.lat))).catch(()=>{delete RWCACHE[key];return [];});
+  .then(d=>(d[svc]||[]).map(w=>({...w,ab,_svc:svc,lat:parseFloat((w.coordinate||{}).lat),lon:parseFloat((w.coordinate||{}).long)})).filter(w=>isFinite(w.lat))).then(l=>{RWGOOD[key]=l;return l;}).catch(()=>{delete RWCACHE[key];return RWGOOD[key]||[];});
   RWCACHE[key]={p:pr,at:Date.now()};return pr;}
+const RWGOOD={};
 const rwFor=ab=>svcFor(ab,"roadworks");
 // Baustellen der Autobahn GmbH, die auf der berechneten Strecke liegen (in Fahrtrichtung)
 async function carRW(i){const r=CARR[i];if(!r||!r.pts||!r.pts.length)return;const out=await routeRW(r);if(CARR[i]!==r)return;r.rw=out;renderCarIncs();if(MAPRT&&MAPRT.t===r.t&&!MAPRT.rw){MAPRT.rw=out;renderMapRoute();}
@@ -1824,7 +1825,12 @@ document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)ret
 // ================= Karte: Orte und Strecken =================
 let MAPGO=null;
 // ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
-let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
+let RS={dir:null,data:{},sel:0,at:0,sv:{}},RSMAP=null,RSLAY=null;
+// Stabile Ampel je Strecke: Verschärfung sofort, Entwarnung erst nach 2 Bestätigungen (kein Flackern)
+function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=cl?3:a.dl>=25?2:a.dl>=10?1:0;const s=RS.sv[k];
+  const mk=()=>({lv,cl,sv:lv>=2?"dl-bad":lv?"dl-warn":"",n:0,cand:-1});
+  if(!s||lv>=s.lv){RS.sv[k]=mk();return;}
+  s.n=(s.cand===lv?s.n:0)+1;s.cand=lv;if(s.n>=2)RS.sv[k]=mk();}
 const RSDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,CITYN[a]+" → "+CITYN[b],a,b]);
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
   let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise ab "+(CITYN[(typeof RS!=="undefined"&&RS.city)||""]||C.town):"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
@@ -1848,8 +1854,9 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
       const alts=r.routes.map((rt,i)=>{const P=routeParse(rt);const sm=rt.summary;
         let via=null;if(i>0){let best=-1;for(let a=Math.floor(P.pts.length*.15);a<P.pts.length*.85;a+=3){const q=P.pts[a];let m=1e9;for(let b=0;b<main.length;b+=4){const dd=Math.abs(main[b].latitude-q.latitude)+Math.abs(main[b].longitude-q.longitude);if(dd<m)m=dd;}if(m>best){best=m;via=[q.latitude,q.longitude];}}}
         return {t,i,...P,min:Math.round(sm.travelTimeInSeconds/60),dl:Math.round((sm.trafficDelayInSeconds||0)/60),km:sm.lengthInMeters/1000,arr:new Date(Date.now()+sm.travelTimeInSeconds*1000),via,rw:null};});
+      {const pv=RS.data[k]&&RS.data[k].alts;if(pv&&pv[0]&&pv[0].ab)alts[0].ab=pv[0].ab;}
       RS.data[k]={alts};
-      alts.forEach(a=>routeRW(a,["warning","closure"]).then(async l=>{a.ab=l.map(w=>({...w,jam:jamInfo(w),cl:w._svc==="closure"||w.isBlocked===true||w.isBlocked==="true"})).filter(w=>w.cl||w.jam);if(RS.dir===k)renderReise();for(const w of a.ab)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k)renderReise();}}));
+      alts.forEach(a=>routeRW(a,["warning","closure"]).then(async l=>{a.ab=l.map(w=>({...w,jam:jamInfo(w),cl:w._svc==="closure"||w.isBlocked===true||w.isBlocked==="true"})).filter(w=>w.cl||w.jam);if(a.i===0&&RS.data[k]&&RS.data[k].alts===alts){svUpd(k,a);renderReise();}else if(RS.dir===k)renderReise();for(const w of a.ab)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k)renderReise();}}));
       alts.forEach(a=>routeRW(a).then(async l=>{a.rw=l;if(RS.dir===k)renderReise();for(const w of l)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k&&RS.data[k]&&RS.data[k].alts&&RS.data[k].alts[RS.sel]===a)renderReise();}}));
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
     }catch(e){RS.data[k]={err:errText(e)};}
@@ -1902,7 +1909,7 @@ function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catc
   // Verzögerung farbig: ab 10 min orange, ab 25 min oder Sperrung rot pulsierend
   const sev=a=>{if(!a)return "";const cl=(a.ab||[]).some(w=>w.cl);return cl||a.dl>=25?"dl-bad":a.dl>=10?"dl-warn":"";};
   let worst="";
-  setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const sv=sev(a);if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=a&&(a.ab||[]).some(w=>w.cl);
+  setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const st=RS.sv[k];const sv=st?st.sv:(a&&a.dl>=25?"dl-bad":a&&a.dl>=10?"dl-warn":"");if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=st?st.cl:false;
     return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+(sv?" "+sv:"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(cl?" · Sperrung":a.dl>0?" · +"+a.dl+" min":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
   {const P=TILE_PARTS.traffic;const all=RSDIRS.filter(x=>x[2]===RS.city).every(x=>D[x[0]]&&D[x[0]].alts);const nc=worst==="dl-bad"?"bad":worst==="dl-warn"?"warn":all?"ok":null;if(P._rcls!==nc){P._rcls=nc;composeTile("k-traffic","traffic");}}
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
@@ -2257,10 +2264,9 @@ if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderR
 {const num=v=>{v=String(v||"").trim().replace(/\s/g,"");if(/,/.test(v))v=v.replace(/\./g,"").replace(",",".");else if(/^\d{1,3}(\.\d{3})+$/.test(v))v=v.replace(/\./g,"");const n=parseFloat(v);return isFinite(n)?n:NaN;};
   const f0=n=>Math.round(n).toLocaleString("de-DE"),f2=n=>n.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
   const st=load("bsicher")||{};let sel=st.sel||2,mode=st.mode===200?200:600;
-  function calc(){const A=num($("bs-area").value),cut=num($("bs-cut").value);const P0=num($("bs-pers").value);
-    store("bsicher",{a:$("bs-area").value,c:$("bs-cut").value,p:$("bs-pers").value,sel});
-    if(isFinite(A)&&A>0){const k=isFinite(cut)?Math.min(Math.max(cut,0),100):20;const N=A*(1-k/100);
-      $("bs-net").innerHTML='<span>Nettofläche (Fläche − '+f0(k)+' %)</span><b>'+f2(N)+' m²</b>';
+  function calc(){const A=num($("bs-area").value),cut=num($("bs-cut").value);const P0=num($("bs-pers").value);const AU=num($("bs-auf").value);
+    if(isFinite(A)&&A>0){const k=isFinite(cut)?Math.min(Math.max(cut,0),100):20;const u=AU>0?AU:0;const N=Math.max(0,A*(1-k/100)-u);
+      $("bs-net").innerHTML='<span>Nettofläche für Besucher</span><b>'+f2(N)+' m²</b><span>'+f0(A)+' m² − '+String(k).replace(".",",")+' % ('+f0(A*k/100)+' m²)'+(u?' − '+f0(u)+' m² Aufbauten':'')+'</span>';
       $("bs-dens").innerHTML=[1,2,3,4].map(d=>'<button type="button" data-bsd="'+d+'" class="'+(d===sel?"on":"")+'"><span>'+d+(d===1?" Person":" Personen")+' / m²'+(d===1?' <small>(nur Vergleich)</small>':d===2?' <small>(Mindestansatz Stehflächen)</small>':'')+'</span><b>'+f0(Math.floor(N*d))+'</b></button>').join("");}
     else{$("bs-net").innerHTML="";$("bs-dens").innerHTML='<div class="muted small">Bitte eine Fläche eingeben.</div>';}
     const div=mode;const W0=num($("bs-wid").value);
@@ -2271,10 +2277,10 @@ if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderR
     // Tabelle wie in der Excel-Vorlage: 1,20 m bis 18 m in 0,60-m-Schritten
     let rows="";for(let k=2;k<=30;k++){const w=k*0.6,p=Math.round(w/1.2*div);const hit=isFinite(P0)&&P0>0&&P0<=p&&P0>Math.round((w-0.6)/1.2*div);rows+='<tr'+(hit?' class="hit"':'')+'><td>'+f2(w)+' m</td><td>'+f0(p)+'</td></tr>';}
     $("bs-tab").innerHTML='<table><thead><tr><th>Rettungswegbreite</th><th>Anzahl Personen</th></tr></thead><tbody>'+rows+'</tbody></table>';
-    store("bsicher",{a:$("bs-area").value,c:$("bs-cut").value,p:$("bs-pers").value,w:$("bs-wid").value,sel,mode});}
+    store("bsicher",{a:$("bs-area").value,c:$("bs-cut").value,u:$("bs-auf").value,p:$("bs-pers").value,w:$("bs-wid").value,sel,mode});}
   const dlg=$("bs-dlg");
   if(dlg){$("bs-area").value=st.a||"";$("bs-cut").value=st.c||"20";$("bs-pers").value=st.p||"";
-    $("bs-wid").value=st.w||"";["bs-area","bs-cut","bs-pers","bs-wid"].forEach(id=>$(id).addEventListener("input",calc));
+    $("bs-wid").value=st.w||"";$("bs-auf").value=st.u||"";["bs-area","bs-cut","bs-auf","bs-pers","bs-wid"].forEach(id=>$(id).addEventListener("input",calc));
     document.querySelectorAll("#bs-mode [data-bsm]").forEach(b=>b.classList.toggle("on",+b.dataset.bsm===mode));
     $("bs-mode").addEventListener("click",e=>{const b=e.target.closest("[data-bsm]");if(!b)return;mode=+b.dataset.bsm;document.querySelectorAll("#bs-mode [data-bsm]").forEach(x=>x.classList.toggle("on",x===b));calc();});
     $("bs-dens").addEventListener("click",e=>{const b=e.target.closest("[data-bsd]");if(!b)return;sel=+b.dataset.bsd;$("bs-pers").value=b.querySelector("b").textContent.replace(/\./g,"");calc();});
@@ -2287,29 +2293,32 @@ if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderR
   let S=load("fl_state")||{};S.inc=S.inc||{};S.abz=S.abz||{};S.br=S.br||{};S.note=S.note||{};
   const save=()=>store("fl_state",S);
   const par=()=>{const div=num(S.div??600),w=num(S.w??"1,2");const d=String(S.d??"1; 2; 3; 4").split(/[;\s]+/).map(num).filter(x=>x>0).slice(0,6);return {div:div>0?div:600,w:w>0?w:1.2,d:d.length?d:[1,2,3,4]};};
-  function sums(){const P=par();let br=0,ab=0,ne=0,n=0;const per=P.d.map(()=>0);
-    FL.forEach((f,i)=>{if(S.inc[i]===false)return;const b=num(S.br[i]??f[1]),a=num(S.abz[i]);const N=Math.max(0,(b||0)-(a>0?a:0));br+=b||0;ab+=a>0?a:0;ne+=N;n++;P.d.forEach((d,k)=>per[k]+=N*d);});
-    $("fl-sum").innerHTML='<h3>Gesamtkapazität der einbezogenen Flächen <span class="muted small">('+n+' von '+FL.length+')</span></h3><div class="muted small" style="margin-bottom:6px">Brutto '+f0(br)+' m² · Abzug '+f0(ab)+' m² · <b>Netto '+f0(ne)+' m²</b></div>'+
-      '<table><thead><tr><th>Dichte</th><th>Personen</th><th class="rw">Rettungsweg</th></tr></thead><tbody>'+P.d.map((d,k)=>'<tr><td>'+String(d).replace(".",",")+' P/m²</td><td><b>'+f0(per[k])+'</b></td><td class="rw">'+f2(per[k]/P.div*P.w)+' m</td></tr>').join("")+'</tbody></table>';}
-  function card(f,i){const P=par();const b=num(S.br[i]??f[1]),a=num(S.abz[i]);const N=Math.max(0,(b||0)-(a>0?a:0));
-    return '<table><thead><tr><th>Dichte</th><th>Personen</th><th class="rw">Rettungsweg</th></tr></thead><tbody>'+P.d.map(d=>'<tr><td>'+String(d).replace(".",",")+' P/m²</td><td>'+f0(N*d)+'</td><td class="rw">'+f2(N*d/P.div*P.w)+' m</td></tr>').join("")+'</tbody></table>';}
-  function render(){const P=par();$("fl-div").value=S.div??"600";$("fl-w").value=S.w??"1,20";$("fl-d").value=S.d??"1; 2; 3; 4";
-    $("fl-list").innerHTML=FL.map((f,i)=>{const on=S.inc[i]!==false;const b=S.br[i]??f[1];const a=S.abz[i]??"";const N=Math.max(0,(num(b)||0)-(num(a)>0?num(a):0));
+  const pz=()=>{const v=num(S.pz??20);return isFinite(v)?Math.min(Math.max(v,0),100):20;};
+  const netOf=i=>{const b=num(S.br[i]??FL[i][1]),a=num(S.abz[i]);return Math.max(0,(b||0)*(1-pz()/100)-(a>0?a:0));};
+  const calcTxt=i=>{const b=num(S.br[i]??FL[i][1])||0,a=num(S.abz[i]);return f0(b)+' m² − '+String(pz()).replace(".",",")+' % ('+f0(b*pz()/100)+' m²)'+(a>0?' − '+f0(a)+' m² Aufbauten':'')+' = <b>'+f0(netOf(i))+' m² netto</b>';};
+  function sums(){const P=par();let br=0,ab=0,ne=0,n=0,pa=0;const per=P.d.map(()=>0);
+    FL.forEach((f,i)=>{if(S.inc[i]===false)return;const b=num(S.br[i]??f[1]),a=num(S.abz[i]);const N=netOf(i);br+=b||0;pa+=(b||0)*pz()/100;ab+=a>0?a:0;ne+=N;n++;P.d.forEach((d,k)=>per[k]+=N*d);});
+    $("fl-sum").innerHTML='<h3>Gesamtkapazität der einbezogenen Flächen <span class="muted small">('+n+' von '+FL.length+')</span></h3><div class="muted small" style="margin-bottom:6px">Gesamtfläche '+f0(br)+' m² − '+String(pz()).replace(".",",")+' % Pauschale '+f0(pa)+' m² − Aufbauten '+f0(ab)+' m² = <b>Netto '+f0(ne)+' m²</b></div>'+
+      '<table><thead><tr><th>Dichte</th><th>Personen</th><th class="rw">Rettungsweg</th></tr></thead><tbody>'+P.d.map((d,k)=>'<tr><td>'+String(d).replace(".",",")+' P/m²</td><td><b>'+f0(Math.floor(per[k]))+'</b></td><td class="rw">'+f2(per[k]/P.div*P.w)+' m</td></tr>').join("")+'</tbody></table>';}
+  function card(f,i){const P=par();const N=netOf(i);
+    return '<table><thead><tr><th>Dichte</th><th>Personen</th><th class="rw">Rettungsweg</th></tr></thead><tbody>'+P.d.map(d=>'<tr><td>'+String(d).replace(".",",")+' P/m²</td><td>'+f0(Math.floor(N*d))+'</td><td class="rw">'+f2(N*d/P.div*P.w)+' m</td></tr>').join("")+'</tbody></table>';}
+  function render(){const P=par();$("fl-div").value=S.div??"600";$("fl-w").value=S.w??"1,20";$("fl-d").value=S.d??"1; 2; 3; 4";$("fl-pz").value=S.pz??"20";
+    $("fl-list").innerHTML=FL.map((f,i)=>{const on=S.inc[i]!==false;const b=S.br[i]??f[1];const a=S.abz[i]??"";const N=netOf(i);
       return '<div class="fa'+(on?"":" off")+'" data-fi="'+i+'"><div class="fa-h"><span class="fa-nr">'+(i+1)+'</span><span class="fa-n">'+esc(f[0])+'</span><label class="fa-sw"><input type="checkbox" data-fk="inc"'+(on?" checked":"")+'>einbeziehen</label></div>'+
-        '<div class="fa-in"><label>Bruttofläche (m²)<input type="text" inputmode="decimal" data-fk="br" value="'+esc(String(b).replace(".",","))+'"></label>'+
-        '<label>Abzugsflächen (m²)<span class="fa-ab"><input type="text" inputmode="decimal" data-fk="abz" placeholder="0" value="'+esc(String(a))+'"><button type="button" data-f20>20 %</button></span></label>'+
-        '<label>Nettofläche<span class="net" data-net>'+f0(N)+' m²</span></label></div>'+
+        '<div class="fa-in"><label>Gesamtfläche (m²)<input type="text" inputmode="decimal" data-fk="br" value="'+esc(String(b).replace(".",","))+'"></label>'+
+        '<label class="fa-y">Bühnen, Gastro, Aufbauten (m²)<span class="fa-ab"><input type="text" inputmode="decimal" data-fk="abz" placeholder="0" value="'+esc(String(a))+'"></span></label>'+
+        '<label>Nettofläche<span class="net" data-net>'+f0(N)+' m²</span></label></div><small class="fa-calc" data-calc>'+calcTxt(i)+'</small>'+
         '<div data-tab>'+card(f,i)+'</div>'+
         '<textarea data-fk="note" placeholder="Maßnahmen (nur auf diesem Gerät gespeichert)">'+esc(S.note[i]||"")+'</textarea>'+
         '<div class="fa-l"><a href="'+esc(f[2])+'" target="_blank" rel="noopener">Düsseldorf Maps ↗</a><a href="'+esc(f[3])+'" target="_blank" rel="noopener">OpenStreetMap ↗</a></div></div>';}).join("");
     sums();}
-  function upd(i){const el=document.querySelector('#fl-list [data-fi="'+i+'"]');if(!el)return;const f=FL[i];const b=num(S.br[i]??f[1]),a=num(S.abz[i]);const N=Math.max(0,(b||0)-(a>0?a:0));
-    el.querySelector("[data-net]").textContent=f0(N)+" m²";el.querySelector("[data-tab]").innerHTML=card(f,i);el.classList.toggle("off",S.inc[i]===false);sums();}
-  document.addEventListener("input",e=>{const t=e.target;if(t.closest("#v-flaechen .fl-set")){S.div=$("fl-div").value;S.w=$("fl-w").value;S.d=$("fl-d").value;save();document.querySelectorAll("#fl-list [data-fi]").forEach(x=>upd(+x.dataset.fi));return;}
+  function upd(i){const el=document.querySelector('#fl-list [data-fi="'+i+'"]');if(!el)return;const f=FL[i];const N=netOf(i);
+    el.querySelector("[data-net]").textContent=f0(N)+" m²";el.querySelector("[data-calc]").innerHTML=calcTxt(i);el.querySelector("[data-tab]").innerHTML=card(f,i);el.classList.toggle("off",S.inc[i]===false);sums();}
+  document.addEventListener("input",e=>{const t=e.target;if(t.closest("#v-flaechen .fl-set")){S.pz=$("fl-pz").value;S.div=$("fl-div").value;S.w=$("fl-w").value;S.d=$("fl-d").value;save();document.querySelectorAll("#fl-list [data-fi]").forEach(x=>upd(+x.dataset.fi));return;}
     const c=t.closest("#fl-list [data-fi]");if(!c||!t.dataset.fk)return;const i=+c.dataset.fi;
     if(t.dataset.fk==="inc")S.inc[i]=t.checked;else if(t.dataset.fk==="br")S.br[i]=t.value;else if(t.dataset.fk==="abz")S.abz[i]=t.value;else if(t.dataset.fk==="note")S.note[i]=t.value;save();if(t.dataset.fk!=="note")upd(i);});
   document.addEventListener("change",e=>{const t=e.target;if(t.matches("#fl-list [data-fk=inc]")){const i=+t.closest("[data-fi]").dataset.fi;S.inc[i]=t.checked;save();upd(i);}});
-  document.addEventListener("click",e=>{const b=e.target.closest("#fl-list [data-f20]");if(b){const c=b.closest("[data-fi]"),i=+c.dataset.fi;const br=num(S.br[i]??FL[i][1]);S.abz[i]=String(Math.round(br*0.2));c.querySelector("[data-fk=abz]").value=S.abz[i];save();upd(i);return;}
+  document.addEventListener("click",e=>{
     if(e.target.closest("#fl-reset")&&confirm("Alle Abzüge, Notizen und Einstellungen der Veranstaltungsflächen zurücksetzen?")){S={inc:{},abz:{},br:{},note:{}};save();render();}});
   if($("fl-list"))render();}
 // Neue Dashboard-Version automatisch laden: beim Zurückkehren in die App und alle 10 Minuten nachsehen

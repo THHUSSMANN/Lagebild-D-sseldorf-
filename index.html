@@ -799,7 +799,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 .bs .bs-tab td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}.bs .bs-tab tr.hit td{background:var(--accent-soft);font-weight:700}
 
 /* Veranstaltungsflächen */
-.fl .fl-set{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fl .fl-set{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .fl .fl-set label{font:600 12px var(--f-body);color:var(--muted);display:flex;flex-direction:column;gap:4px}
 .fl input{min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:700 17px var(--f-display);padding:4px 10px;min-width:0;box-sizing:border-box}
 .fl .fl-sum{border-radius:16px;background:var(--accent-soft);padding:12px 14px}
@@ -824,7 +824,11 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 .fl .fa-l{display:flex;gap:12px;margin-top:6px;font-size:13.5px}
 .fl .fa-l a{color:var(--accent)}
 .fl textarea{width:100%;box-sizing:border-box;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:14px var(--f-body);padding:8px 10px;margin-top:6px}
-@media (max-width:600px){.fl .fa-in{grid-template-columns:repeat(2,minmax(0,1fr))}.fl .fa-in label:last-child{grid-column:1/-1}.fl .fl-set{grid-template-columns:1fr 1fr}.fl .fl-set label:last-child{grid-column:1/-1}.fl .fl-set{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.fl .fa-in{grid-template-columns:repeat(2,minmax(0,1fr))}.fl .fa-in label:last-child{grid-column:1/-1}.fl .fl-set{grid-template-columns:1fr 1fr}.fl .fl-set{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Gelbes Eingabefeld wie in der Excel-Vorlage */
+.fl .fa-y input,#bs-auf{background:color-mix(in srgb,#f5c518 22%,var(--panel))!important;border-color:color-mix(in srgb,#d4a300 60%,var(--line))!important}
+.fl .fa-calc{display:block;margin:-2px 2px 8px;font:500 12.5px var(--f-body);color:var(--muted)}.fl .fa-calc b{color:var(--fg)}
+#bs-net span:last-child{font:500 12.5px var(--f-body);color:var(--muted)}
 </style>
 </head>
 <body>
@@ -891,9 +895,10 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 <dialog id="bs-dlg" class="tooldlg" aria-label="Besuchersicherheit">
   <div class="td-head"><h2>Besuchersicherheit</h2><button type="button" class="td-x" data-close aria-label="Schließen">✕</button></div>
   <div class="td-body bs">
-    <label class="bs-l" for="bs-area">Fläche (m²)</label>
+    <label class="bs-l" for="bs-area">Gesamtfläche (z. B. in Google Maps gemessen)</label>
     <div class="bs-row"><input id="bs-area" type="text" inputmode="decimal" placeholder="z. B. 12500" autocomplete="off"><span class="bs-u">m²</span></div>
-    <div class="bs-row bs-sm"><span>Abzug für Aufbauten, Bühnen, Wege</span><input id="bs-cut" type="text" inputmode="decimal" value="20"><span class="bs-u">%</span></div>
+    <div class="bs-row bs-sm"><span>Pauschalabzug (Bäume, Fahrradständer, Werbeanlagen, Brunnen …)</span><input id="bs-cut" type="text" inputmode="decimal" value="20"><span class="bs-u">%</span></div>
+    <div class="bs-row bs-sm bs-yel"><span>Bühnen, Gastrostände, Aufbauten</span><input id="bs-auf" type="text" inputmode="decimal" placeholder="0" autocomplete="off"><span class="bs-u">m²</span></div>
     <div class="bs-res" id="bs-net"></div>
     <h3 class="sub2 vl-h">Besucher auf der Nettofläche</h3>
     <div class="bs-grid" id="bs-dens"></div>
@@ -1116,12 +1121,13 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 <section class="card wide fl">
   <div class="card-head"><h2>Veranstaltungsflächen Düsseldorf</h2><span class="src">Flächen- und Personenberechnung nach SBauVO NRW · © Thomas Hußmann</span></div>
   <div class="fl-set">
+    <label>Pauschalabzug (%)<input id="fl-pz" type="text" inputmode="decimal"></label>
     <label>Personen je Einheit<input id="fl-div" type="text" inputmode="numeric"></label>
     <label>Breite je Einheit (m)<input id="fl-w" type="text" inputmode="decimal"></label>
     <label>Dichten (P/m²)<input id="fl-d" type="text" inputmode="text" placeholder="1; 2; 3; 4"></label>
   </div>
   <div class="fl-sum" id="fl-sum"></div>
-  <div class="muted small">Eingeben musst du nur die <b>Abzugsflächen</b> (Bühnen, Stände usw.) – oder „20 %“ antippen. Mit dem Schalter legst du fest, ob eine Fläche in die Gesamtkapazität einfließt. Alle Eingaben bleiben nur auf diesem Gerät gespeichert.</div>
+  <div class="muted small">Rechnung: <b>Gesamtfläche − 20 % Pauschale</b> (Bäume, Fahrradständer, Werbeanlagen, Brunnen …) <b>− Bühnen, Gastro, Aufbauten</b> (gelbes Feld) = Nettofläche für Besucher. Eintragen musst du nur das gelbe Feld. Mit dem Schalter legst du fest, ob eine Fläche in die Gesamtkapazität einfließt. Alle Eingaben bleiben nur auf diesem Gerät gespeichert.</div>
   <div id="fl-list"></div>
   <div class="muted small" style="margin-top:8px">Bemessung nach § 7 Abs. 4 SBauVO NRW: im Freien 1,20 m je 600 Personen, Zwischenwerte zulässig, je Rettungswegteil mind. 1,20 m. Stehflächen nach § 1 Abs. 2: mind. 2 Personen/m². Rettungswegbreiten gelten je Fläche; die Summe dient nur als Orientierung.</div>
   <button type="button" class="btn sm" id="fl-reset" style="margin-top:8px">Alle Eingaben zurücksetzen</button>
@@ -1372,6 +1378,6 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=229"></script>
+<script src="app.js?v=230"></script>
 </body>
 </html>
