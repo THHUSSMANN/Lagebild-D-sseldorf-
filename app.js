@@ -2064,13 +2064,14 @@ function buildViewbar(){
   const cur=location.hash.slice(1).split("/")[0];
   const g=groupOf(cur);
   // Warnleiste: immer über alle Lieblingsorte (Düsseldorf, Datteln, Dortmund, Alpen-Menzelen, Salzhausen)
+  {const sv=$("tool-src-v"),ks=$("k-src");if(sv&&ks)sv.textContent=((ks.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"");}
   if(WARN_SUM&&WARN_SUM.loaded&&$("warnpill")){const wp=$("warnpill"),L=WARN_SUM.list,tot=L.reduce((t,x)=>t+x.n,0);
     const short=t=>String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"");
     wp.className="warnpill wp-"+(tot?"bad":"ok")+(cur==="warnungen"?" on":"");
     $("warnpill-v").textContent=tot?tot+(tot===1?" Warnung":" Warnungen")+" · "+L.map(x=>x.name+": "+short(x.title)).join(" · ").slice(0,90):"Keine Warnungen · alle 5 Orte ruhig";}
   else{const wt=$("k-warn"),wp=$("warnpill");if(wt&&wp){const st=(["ok","warn","bad","crit","info"].find(c=>wt.classList.contains("s-"+c)))||"info";wp.className="warnpill wp-"+st+(cur==="warnungen"?" on":"");
     $("warnpill-v").textContent=[((wt.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim(),((wt.querySelector(".note")||{}).textContent||"").trim()].filter(x=>x&&x!=="–").join(" · ").slice(0,60)||"…";}}
-  {const hn=$("headnav");if(hn&&!(typeof HEDIT!=="undefined"&&HEDIT))hn.innerHTML=(cur?'<a class="hbtn back" href="#">‹ Übersicht</a>':'')+[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden&&t.dataset.view!=="warnungen").map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("");}
+  {const hn=$("headnav");if(hn&&!(typeof HEDIT!=="undefined"&&HEDIT))hn.innerHTML=(cur?'<a class="hbtn back" href="#">‹ Übersicht</a>':'')+[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden&&!["warnungen","quellen","einstellungen"].includes(t.dataset.view)).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("");}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 let ROUTEKEY=null;
@@ -2132,7 +2133,9 @@ $("arrange").addEventListener("click",()=>{
   if(!EDITING)store("tool_order",[...$("toolgrid").children].map(x=>x.dataset.tool));
 });
 let TSORT=null;
-{const ord=load("tool_order");const g=$("toolgrid");if(Array.isArray(ord)&&g){ord.forEach(k=>{const el=g.querySelector('[data-tool="'+k+'"]');if(el)g.appendChild(el);});}}
+{const ord=load("tool_order");const g=$("toolgrid");if(Array.isArray(ord)&&g){ord.forEach(k=>{const el=g.querySelector('[data-tool="'+k+'"]');if(el)g.appendChild(el);});
+  // neu hinzugekommene Tools (z. B. Einstellungen, Schnittstellen) vor „Anordnen“ einreihen
+  const ar=g.querySelector('[data-tool="arrange"]');[...g.children].filter(x=>!ord.includes(x.dataset.tool)&&x!==ar).forEach(x=>g.insertBefore(x,ar));if(ar)g.appendChild(ar);}}
 document.addEventListener("click",e=>{if(!document.body.classList.contains("arranging"))return;const t=e.target.closest("#toolgrid [data-tool]");if(t&&t.dataset.tool!=="arrange"){e.preventDefault();e.stopImmediatePropagation();}},true);
 // Eigenes Verschieben per Finger (ohne Fremdbibliothek): kurz gedrückt halten, dann ziehen
 function reorder(box,sel){if(!box)return null;let drag=null,tm=0,sx=0,sy=0,moved=false;
