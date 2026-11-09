@@ -1155,7 +1155,7 @@ async function loadTomTom(){
       .filter(x=>{const H=HOMES[C.key];const nearHome=H&&isFinite(x.lat)&&distKm(H.lat,H.lon,x.lat,x.lon)<=3;return x.delay>0||x.cat===1||((x.cat===6||x.cat===7)&&x.mag>=2)||(x.cat===8&&(/(^|, )[AB]\d/.test(x.road)||x.km<=4||nearHome));}).map(x=>{const H=HOMES[C.key];x.home=H&&isFinite(x.lat)?distKm(H.lat,H.lon,x.lat,x.lon):null;x.grp=/(^|, )A\d/.test(x.road)?0:x.home!=null&&x.home<=3?1:2;return x;})
       .sort((a,b)=>a.grp-b.grp||(a.grp===1?a.home-b.home:0)||(b.delay||0)-(a.delay||0)||b.mag-a.mag||a.km-b.km);
     if(MAP){if(!MAP._ttinc)MAP._ttinc=L.layerGroup();MAP._ttinc.clearLayers();
-      const col=x=>x.cat===8?"#7d1f6b":x.mag>=4?"#8b0000":x.mag>=3||x.delay>=25?"#d62d20":x.delay>=10?"#f08a00":"#f3c623";
+      const col=x=>x.cat===8?"#7d1f6b":x.mag>=4?"#8b0000":x.mag>=3||x.delay>=20?"#d62d20":x.delay>=10?"#f08a00":"#f3c623";
       list.slice().reverse().forEach(x=>{const g=x.geo;if(!g)return;const pop='<b>'+esc(x.road||"Straße")+' · '+esc(x.desc||"")+'</b><br>'+esc([x.from,x.to].filter(Boolean).join(" → "))+(x.delay?'<br><b>+'+x.delay+' min</b>':'')+(x.len?' · '+fmt(x.len,1)+' km':'');
         if(g.type==="LineString"&&g.coordinates.length>1){const ll=g.coordinates.map(c=>[c[1],c[0]]);L.polyline(ll,{color:"#fff",weight:9,opacity:.85,interactive:false,kat:ttKat(x.cat)}).addTo(MAP._ttinc);L.polyline(ll,{color:col(x),weight:6,opacity:1,dashArray:x.cat===8?"8 6":null,kat:ttKat(x.cat)}).bindPopup(pop).addTo(MAP._ttinc);}
         else if(isFinite(x.lat))L.circleMarker([x.lat,x.lon],{radius:7,color:"#fff",weight:2,fillColor:col(x),fillOpacity:1,kat:ttKat(x.cat)}).bindPopup(pop).addTo(MAP._ttinc);});
@@ -1219,7 +1219,7 @@ function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");con
   box.innerHTML='<div class="stau-sum" style="margin-bottom:8px">'+fb("stau",String(jams.length),"Staus / zäh",jams.length)+fb("unfall",String(nU),"Unfälle",nU)+fb("sperr",String(nS),"Sperrungen",nS)+fb("delay",mx?"+"+mx+" min":"–","größte Verzögerung",mx)+'</div>'+
     '<div class="muted small" style="margin-bottom:6px">'+(TTF?'Gefiltert – Kennzahl erneut antippen zeigt wieder alles. ':'Kennzahl antippen filtert die Liste. ')+'Eintrag antippen zeigt ihn in der Karte.</div>'+
     (l.length?'<div>'+l.slice(0,80).map((x,i)=>(!TTF&&(i===0||l[i-1].grp!==x.grp)?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam ttj" role="button" tabindex="0" data-kat="'+ttKat(x.cat)+'" data-i="'+list.indexOf(x)+'"'+(isFinite(x.lat)?' data-lat="'+x.lat+'" data-lon="'+x.lon+'"':'')+'><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
-      '<div class="delay'+(x.delay!=null&&x.delay>=25?"":x.delay>=10?" mid":" low")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
+      '<div class="delay'+(x.delay!=null&&x.delay>=20?"":x.delay>=10?" mid":" low")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
       '<div class="d">'+(x.ort?'<span class=\"ortc\">'+esc(x.ort)+'</span>':'')+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",x.grp===1?" · "+fmt(x.home,1)+" km von meiner Adresse":isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join("")+'</div>'
     :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
   const missing=l.slice(0,80).filter(x=>!x.ort&&isFinite(x.lat));if(missing.length)setTimeout(()=>fillPlaces(missing),50);
@@ -1316,14 +1316,14 @@ async function routeRW(r,svcs){const P=r.pts;svcs=svcs||["roadworks"];
 function abRow(x){const J=x.jam;const lines=(x.description||[]).map(v=>String(v).trim()).filter(Boolean);
   const pill=x.cl?'<span class="pill p-bad" style="margin-right:6px"><i></i>Sperrung</span>':J&&J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>';
   return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag ab">'+esc(x.ab)+'</span><div class="t">'+pill+(x.ort?'<span class=\"ortc\">'+esc(x.ort)+'</span>':'')+esc(x.subtitle||x.title||"")+'</div>'+
-    '<div class="delay'+(J&&J.delay!=null&&J.delay>=25?"":J.delay>=10?" mid":" low")+'">'+(J&&J.delay!=null?"+"+J.delay+" min":fmt(x.at,0)+" km")+'<small>'+(J&&J.delay!=null?"Verzögerung":"ab Start")+'</small></div>'+
+    '<div class="delay'+(J&&J.delay!=null&&J.delay>=20?"":J.delay>=10?" mid":" low")+'">'+(J&&J.delay!=null?"+"+J.delay+" min":fmt(x.at,0)+" km")+'<small>'+(J&&J.delay!=null?"Verzögerung":"ab Start")+'</small></div>'+
     '<div class="d">'+esc([J&&J.len?fmt(J.len,1)+" km lang":"",J&&J.delay!=null?"nach "+fmt(x.at,0)+" km":"",lines.slice(0,2).join(" · ")].filter(Boolean).join(" · "))+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>';}
 function rwRow(x){const lines=(x.description||[]).map(v=>String(v).trim()).filter(Boolean);const lane=lines.find(l=>/fahrstreifen|spur|gesperrt|verengt|verschwenk|tempo|km\/h/i.test(l));const when=lines.filter(l=>/beginn|ende|bis|ab |\d{2}\.\d{2}\./i.test(l)).slice(0,2);
     return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag ab">'+esc(x.ab)+'</span><div class="t"><span class="pill" style="margin-right:6px"><i style="background:#8a9aa5"></i>Baustelle</span>'+(x.ort?'<span class=\"ortc\">'+esc(x.ort)+'</span>':'')+esc(x.subtitle||x.title||"")+'</div>'+
     '<div class="delay mid">'+fmt(x.at,0)+' km<small>ab Start</small></div>'+
     '<div class="d">'+esc([lane,...when].filter(Boolean).join(" · ")||x.title||"")+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>';}
-function incRow(x){return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road.split(" · ")[0]||"Straße")+'</span><div class="t"><span class="pill '+(x.cat==="Sperrung"||x.delay>=25?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(x.cat)+'</span>'+(x.ort?'<span class=\"ortc\">'+esc(x.ort)+'</span>':"")+esc(x.road.split(" · ")[1]||"")+'</div>'+
-    '<div class="delay'+(x.delay>=25?"":x.delay>=10?" mid":" low")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
+function incRow(x){return '<div class="jam ttj carinc" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road.split(" · ")[0]||"Straße")+'</span><div class="t"><span class="pill '+(x.cat==="Sperrung"||x.delay>=20?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(x.cat)+'</span>'+(x.ort?'<span class=\"ortc\">'+esc(x.ort)+'</span>':"")+esc(x.road.split(" · ")[1]||"")+'</div>'+
+    '<div class="delay'+(x.delay>=20?"":x.delay>=10?" mid":" low")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
     '<div class="d">'+fmt(x.len,1)+' km'+(x.speed?' · Ø '+x.speed+' km/h':'')+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>';}
 let MAPRT=null;
 function renderMapRoute(){const box=$("mapcity-route");if(!box)return;const r=MAPRT;if(!r){box.innerHTML="";return;}
@@ -1382,8 +1382,8 @@ function renderAutoPrio(){const box=$("prio");if(!box||typeof RS==="undefined"||
     const cl=items.filter(x=>x._c),jams=items.filter(x=>x.jam&&!x._c).sort((x,y)=>(y.jam.delay||0)-(x.jam.delay||0)),rws=items.filter(x=>x._rw);
     let cls="ok",val="freie Fahrt";
     if(cl.length){cls="crit";val="Sperrung";}
-    else if(jams.length){const j=jams[0];const st=jams.some(x=>x.jam.kind==="stau");cls=st&&(j.jam.delay||0)>=25?"bad":(j.jam.delay||0)>=10?"warn":"info";val=(st?"Stau":"stockend")+(j.jam.delay!=null?" · +"+j.jam.delay+" min":"");}
-    else if(a.dl>=10){cls=a.dl>=25?"bad":"warn";val="+"+a.dl+" min Verzögerung";}
+    else if(jams.length){const j=jams[0];const st=jams.some(x=>x.jam.kind==="stau");cls=st&&(j.jam.delay||0)>=20?"bad":(j.jam.delay||0)>=10?"warn":"info";val=(st?"Stau":"stockend")+(j.jam.delay!=null?" · +"+j.jam.delay+" min":"");}
+    else if(a.dl>=10){cls=a.dl>=20?"bad":"warn";val="+"+a.dl+" min Verzögerung";}
     const via=(a.abs||[]).length?"über "+a.abs.join(", "):"ohne Autobahn";
     const sub=[via,hm(a.min)+(a.dl>0?" (davon +"+a.dl+" min Stau)":""),cl.length?"⛔ "+(cl[0].subtitle||cl[0].title||""):"",rws.length?"🚧 "+rws.length+(rws.length===1?" Baustelle":" Baustellen"):""].filter(Boolean).join(" · ");
     ROUTE_ITEMS[i]=items;AUTOR[i]={t:CITYN[RS.city]+" → "+to+" ("+via+")"};
@@ -1401,7 +1401,7 @@ function renderPrio(rawW,rawC,okRoads,rawR){if(renderAutoPrio())return;rawR=rawR
     const blocked=cl.length?cl[0]:ws.find(w=>w.isBlocked==="true"||w.isBlocked===true);
     let cls="ok",val="freie Fahrt",sub="keine Meldungen der Autobahn GmbH";
     if(blocked){cls="crit";val="Sperrung";sub=(blocked.subtitle||blocked.title||"")+" · "+fmt(blocked.km)+" km entfernt";}
-    else if(jams.length){const j=jams[0];const st=jams.some(x=>x.jam.kind==="stau");cls=st&&(j.jam.delay||0)>=25?"bad":(j.jam.delay||0)>=10?"warn":"info";
+    else if(jams.length){const j=jams[0];const st=jams.some(x=>x.jam.kind==="stau");cls=st&&(j.jam.delay||0)>=20?"bad":(j.jam.delay||0)>=10?"warn":"info";
       val=(st?"Stau":"stockend")+(j.jam.delay!=null?" · +"+j.jam.delay+" min":"")+(j.jam.len?" · "+fmt(j.jam.len,1)+" km":"")+(jams.length>1?" ("+jams.length+" Meldungen)":"");
       sub=(j.subtitle||j.title||"")+" · "+fmt(j.km)+" km entfernt";}
     else if(ws.length){cls="warn";val="Behinderung";sub=(ws[0].subtitle||ws[0].title||"")+" · "+fmt(ws[0].km)+" km entfernt";}
@@ -1509,7 +1509,7 @@ async function loadAutobahn(){
   $("stau-list").innerHTML=jams.length?'<div>'+jams.map(j=>{const J=j.jam;
       const det=[J.len?fmt(J.len,1)+" km":"",J.speed!=null?"Ø "+J.speed+" km/h":"",fmt(j.km)+" km entfernt"].filter(Boolean).join(" · ");
       return '<div class="jam" data-kat="stau" data-lat="'+j.lat+'" data-lon="'+j.lon+'"><span class="tag ab">'+esc(j.ab)+'</span><div class="t"><b class="ortp"></b>'+(j.pr<99?'<span class="pill" style="margin-right:6px">Meine Strecke</span>':'')+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
-        '<div class="delay'+(J.delay!=null&&J.delay>=25?"":J.delay>=10?" mid":" low")+'">'+(J.delay!=null?"+"+J.delay+" min":"")+'<small>'+(J.delay!=null?"Verzögerung":"")+'</small></div>'+
+        '<div class="delay'+(J.delay!=null&&J.delay>=20?"":J.delay>=10?" mid":" low")+'">'+(J.delay!=null?"+"+J.delay+" min":"")+'<small>'+(J.delay!=null?"Verzögerung":"")+'</small></div>'+
         '<div class="d">'+esc(j.subtitle||"")+(det?" · "+esc(det):"")+(desc(j)?'<br>'+esc(desc(j)):"")+'</div></div>';}).join("")+'</div>'
     :'<div class="state good">Derzeit keine Staus auf '+esc(roads.join(", "))+' im Umkreis von '+JAM_RADIUS_KM+' km.</div>';
   if(ensureMap()){
@@ -1814,7 +1814,7 @@ async function loadDatteln(){const box=$("sd-list");if(!box)return;
     box.innerHTML=l.length?'<div class="stau-sum" style="margin-bottom:8px">'+order.map(g=>'<div class="fact"><b>'+l.filter(x=>grp(x)===g).length+'</b><span>'+g+'</span></div>').join("")+'</div>'+
       order.map(g=>{const a=l.filter(x=>grp(x)===g);return a.length?'<div class="sublbl" style="margin-top:10px">'+g+'</div>'+a.slice(0,25).map(x=>
         '<div class="jam sdj" role="button" tabindex="0" data-kat="'+ttKat(x.cat)+'" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
-        '<div class="delay'+(x.delay>=25?"":x.delay>=10?" mid":" low")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
+        '<div class="delay'+(x.delay>=20?"":x.delay>=10?" mid":" low")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
         '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+(x.len?" · "+fmt(x.len,1)+" km":"")+" · "+fmt(x.km,1)+' km vom Zentrum · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):"";}).join("")
       :'<div class="state good">Keine Staus, Sperrungen oder Baustellen in und um Datteln gemeldet.</div>';
     fillOrte(box);
@@ -1827,7 +1827,7 @@ let MAPGO=null;
 // ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
 let RS={dir:null,data:{},sel:0,at:0,sv:{}},RSMAP=null,RSLAY=null;
 // Stabile Ampel je Strecke: Verschärfung sofort, Entwarnung erst nach 2 Bestätigungen (kein Flackern)
-function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=25?2:a.dl>=10?1:0; // nur echte Verzögerung zählt, Sperrungen ohne Zeitverlust nichtconst s=RS.sv[k];
+function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=20?2:a.dl>=10?1:0; // nur echte Verzögerung zählt, Sperrungen ohne Zeitverlust nichtconst s=RS.sv[k];
   const mk=()=>({lv,cl,sv:lv>=2?"dl-bad":lv?"dl-warn":"",n:0,cand:-1});
   if(!s||lv>=s.lv){RS.sv[k]=mk();return;}
   s.n=(s.cand===lv?s.n:0)+1;s.cand=lv;if(s.n>=2)RS.sv[k]=mk();}
@@ -1907,10 +1907,10 @@ function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catc
   if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));return;}
   {const ok=RSDIRS.filter(x=>x[2]===RS.city);if(ok.length&&!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}if(RS.tdir&&!tdirsOf(RS.city).some(x=>x[0]===RS.tdir))RS.tdir=null;}
   $("rs-quick").innerHTML="";
-  // Verzögerung farbig: ab 10 min orange, ab 25 min rot pulsierend
-  const sev=a=>{if(!a)return "";const cl=(a.ab||[]).some(w=>w.cl);return cl||a.dl>=25?"dl-bad":a.dl>=10?"dl-warn":"";};
+  // Verzögerung farbig: ab 10 min gelb, ab 20 min rot pulsierend
+  const sev=a=>{if(!a)return "";const cl=(a.ab||[]).some(w=>w.cl);return cl||a.dl>=20?"dl-bad":a.dl>=10?"dl-warn":"";};
   let worst="";
-  setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const st=RS.sv[k];const sv=st?st.sv:(a&&a.dl>=25?"dl-bad":a&&a.dl>=10?"dl-warn":"");if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=st?st.cl:false;
+  setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const st=RS.sv[k];const sv=st?st.sv:(a&&a.dl>=20?"dl-bad":a&&a.dl>=10?"dl-warn":"");if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=st?st.cl:false;
     return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+(sv?" "+sv:"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" min":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
   {const P=TILE_PARTS.traffic;const all=RSDIRS.filter(x=>x[2]===RS.city).every(x=>D[x[0]]&&D[x[0]].alts);const nc=worst==="dl-bad"?"bad":worst==="dl-warn"?"warn":all?"ok":null;if(P._rcls!==nc){P._rcls=nc;composeTile("k-traffic","traffic");}}
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
@@ -1919,7 +1919,7 @@ function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catc
   if(RS.sel>=cur.alts.length)RS.sel=0;const [o,d]=rsEnds(RS.dir);
   box.innerHTML='<h3 class="sub2 vl-h rs-h">'+GMICON+esc((RSDIRS.find(x=>x[0]===RS.dir)||[,""])[1])+'</h3><div class="muted small" style="margin:2px 2px 6px">'+(cur.alts.length>1?cur.alts.length+" Routen, die schnellste zuerst. Route antippen zeigt sie in der Karte und ihre Störungen darunter.":"Eine Route gefunden.")+'</div>'+
     cur.alts.map(a=>{const m=(a.rw||[]).length;
-      return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=25?"bad":a.dl>=10?"warn":a.dl>0?"lo":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
+      return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=20?"bad":a.dl>=10?"warn":a.dl>0?"lo":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
         '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
         (a.i===RS.sel?'<span class="ag"><a href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>'+GMICON+'In Google Maps öffnen ↗</a><a class="sec" href="'+uberUrl(d)+'" target="_blank" rel="noopener">Uber bestellen ↗</a></span>':'')+'</div>';}).join("")+
     '<div class="muted small" style="margin:0 2px 8px">Google Maps öffnet die Route von '+esc(o.label)+' nach '+esc(d.label)+' zur Kontrolle. Die Navigation startest du dort selbst; Alternativen zeigt Google grau zum Antippen.</div>';
@@ -1939,7 +1939,7 @@ function drawReise(){if(typeof L==="undefined"){$("rs-map").hidden=true;return;}
   const ord=cur.alts.filter(a=>a.i!==RS.sel).concat(cur.alts.filter(a=>a.i===RS.sel));let bounds=null;
   ord.forEach(a=>{const ll=a.pts.map(p=>[p.latitude,p.longitude]);if(ll.length<2)return;const on=a.i===RS.sel;
     if(on){L.polyline(ll,{color:"#fff",weight:10,opacity:.9,interactive:false}).addTo(RSLAY);L.polyline(ll,{color:"#0b6e8a",weight:6}).bindTooltip("Route "+(a.i+1)).addTo(RSLAY);
-      a.secs.forEach(x=>{if(isFinite(x.lat))L.circleMarker([x.lat,x.lon],{radius:8,color:"#fff",weight:2,fillColor:x.cat==="Sperrung"?"#7d1f6b":x.delay>=25?"#d62d20":x.delay>=10?"#f08a00":"#f3c623",fillOpacity:1}).bindPopup("<b>"+esc(x.cat)+"</b>"+(x.delay?"<br>+"+x.delay+" min":"")).addTo(RSLAY);});
+      a.secs.forEach(x=>{if(isFinite(x.lat))L.circleMarker([x.lat,x.lon],{radius:8,color:"#fff",weight:2,fillColor:x.cat==="Sperrung"?"#7d1f6b":x.delay>=20?"#d62d20":x.delay>=10?"#f08a00":"#f3c623",fillOpacity:1}).bindPopup("<b>"+esc(x.cat)+"</b>"+(x.delay?"<br>+"+x.delay+" min":"")).addTo(RSLAY);});
       (a.rw||[]).forEach(w=>L.circleMarker([w.lat,w.lon],{radius:6,color:"#fff",weight:2,fillColor:"#8a9aa5",fillOpacity:1}).bindPopup(popupHtml(w,"Baustelle")).addTo(RSLAY));
       L.marker(ll[0],{icon:L.divIcon({className:"homeic",html:"🏠",iconSize:[26,26]})}).bindTooltip("Start").addTo(RSLAY);
       L.circleMarker(ll[ll.length-1],{radius:7,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip("Ziel").addTo(RSLAY);}
@@ -1996,7 +1996,7 @@ function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr"
 function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
   [["all","Alle Ladesäulen"],["fast","Schnelllader (ab 50 kW)"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
-  if(!ELP){const f=elFavs().find(x=>x.k===ck);ELP=f||{k:C.key,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon};}
+  if(!ELP||(ELP.auto&&ELP.k!==ck)){const f=elFavs().find(x=>x.k===ck);ELP={...(f||{k:ck,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon}),auto:1};}
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
   const la=ELP.lat,lo=ELP.lon;box.innerHTML='<div class="state">wird geladen …</div>';
   const q='[out:json][timeout:25];nwr["amenity"="charging_station"](around:'+(ELR*1000)+','+la+','+lo+');out center tags;';
