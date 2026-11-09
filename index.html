@@ -704,6 +704,27 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 
 .ag a .gmi{width:18px;height:18px;vertical-align:-4px;margin-right:6px;fill:#e0302b;stroke:#fff;stroke-width:1.2}
 .ag a .gmi circle{fill:#fff;stroke:none}
+
+/* ===== Einheitliche Gestaltung (finaler Abgleich) ===== */
+/* Kopf: Warnleiste und Städte über die ganze Breite wie die Themen-Knöpfe */
+header .brand{flex:1 1 100%}
+header .titlerow{justify-content:flex-start!important;gap:14px}
+header .warnpill{width:100%;box-sizing:border-box}
+header .places{width:100%}
+header #favs{flex:1 1 100%;width:100%}
+@media (min-width:700px){header .favs{grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+/* Seitentitel einheitlich */
+.sec-title h2,.home-head h2{font-size:24px!important;font-weight:700}
+.card-head h2{font-size:22px}
+/* Unter-Reiter überall gleich hoch */
+.subtabs a{min-height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:14.5px!important;border-radius:999px}
+/* Umschalter und Auswahlknöpfe: gleiche Höhe, Rundung, Schrift */
+.segsw button,.mapsw button,.mapsw a,.vlcat button,.seg button,.gpsbtn{min-height:44px;border-radius:16px!important;font-family:var(--f-display);font-size:15px!important;font-weight:600!important}
+.segsw button{background:var(--panel-2);border:1px solid var(--line)}
+.segsw button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Eingabefelder und Speichern-Knöpfe (Einstellungen, Suche) */
+.settings input,.settings select,.elsearch input{min-height:44px;border-radius:12px!important;box-sizing:border-box}
+.settings button,.inline button,.elsearch button{min-height:44px;border-radius:12px!important;font-weight:600}
 </style>
 </head>
 <body>
@@ -1202,6 +1223,6 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=197"></script>
+<script src="app.js?v=198"></script>
 </body>
 </html>
