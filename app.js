@@ -1156,7 +1156,7 @@ async function loadTomTom(){
 }
 let TT=null,TTF=null;const PLACECACHE=Object.fromEntries(Object.entries(load("placecache")||{}).filter(([,v])=>v));
 // Ort (Stadt/Stadtteil) vor Stau- und Baustellenmeldungen setzen
-async function fillOrte(box,again){if(!box||!TTKEY)return;let miss=0;
+async function fillOrte(box,again){if(!box)return;let miss=0;
   await Promise.all([...box.querySelectorAll("[data-lat] .ortp:empty")].slice(0,90).map(async el=>{const r=el.closest("[data-lat]");const la=+r.dataset.lat,lo=+r.dataset.lon;if(!isFinite(la)||!isFinite(lo))return;const o=await placeOf(la,lo);if(o&&!el.textContent){el.textContent=o;el.classList.add("ortc");}else if(!o)miss++;}));
   // was nicht klappte, nach einer Pause noch einmal versuchen
   if(miss&&!again)setTimeout(()=>fillOrte(box,true),15000);}
@@ -1165,19 +1165,34 @@ const PQ={run:0,q:[],inflight:{}};
 function pqNext(){while(PQ.run<2&&PQ.q.length){const j=PQ.q.shift();PQ.run++;j().finally(()=>{setTimeout(()=>{PQ.run--;pqNext();},220);});}}
 function placeOf(lat,lon){if(!isFinite(lat)||!isFinite(lon))return Promise.resolve("");const k=(+lat).toFixed(3)+","+(+lon).toFixed(3);if(PLACECACHE[k]!==undefined)return Promise.resolve(PLACECACHE[k]);
   if(PQ.inflight[k])return PQ.inflight[k];
-  const p=new Promise(res=>{PQ.q.push(async()=>{let v="";for(let t=0;t<3&&!v;t++){if(t)await new Promise(r=>setTimeout(r,900*t));v=await placeOf0(+lat,+lon);}delete PQ.inflight[k];res(v);});pqNext();});
+  const p=new Promise(res=>{PQ.q.push(async()=>{let v="";for(let t=0;t<2&&!v;t++){if(t)await new Promise(r=>setTimeout(r,1500));v=await placeOf0(+lat,+lon);}delete PQ.inflight[k];res(v);});pqNext();});
   PQ.inflight[k]=p;return p;}
 // Straße + Ort zu einer Koordinate (für Parkplätze ohne Adresse in OpenStreetMap)
 const ADDRC=load("addrcache")||{};
-function addrOf(lat,lon){const k=(+lat).toFixed(4)+","+(+lon).toFixed(4);if(ADDRC[k])return Promise.resolve(ADDRC[k]);if(!TTKEY)return Promise.resolve("");
-  return new Promise(res=>{PQ.q.push(async()=>{let v="";try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
+function addrOf(lat,lon){const k=(+lat).toFixed(4)+","+(+lon).toFixed(4);if(ADDRC[k])return Promise.resolve(ADDRC[k]);
+  return new Promise(res=>{PQ.q.push(async()=>{let v="";try{if(!TTKEY||Date.now()<TTGEO_OFF)throw 0;const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
     const a=((r.addresses||[])[0]||{}).address||{};v=[[a.streetName,a.streetNumber].filter(Boolean).join(" "),a.municipalitySubdivision&&a.municipalitySubdivision!==a.municipality?a.municipalitySubdivision:a.municipality].filter(Boolean).join(", ");
+    }catch(e){if(e&&/40[03]|429/.test(String(e.message||e)))TTGEO_OFF=Date.now()+15*60000;}if(!v)v=await nomiAddr(lat,lon);try{
     if(v){ADDRC[k]=v;const ks=Object.keys(ADDRC);if(ks.length>800)ks.slice(0,300).forEach(x=>delete ADDRC[x]);store("addrcache",ADDRC);}}catch(e){}res(v);});pqNext();});}
-async function placeOf0(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLACECACHE[k]!==undefined)return PLACECACHE[k];
-  try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
+// Ortsname zu Koordinate: erst TomTom; ist dessen Kontingent erschöpft oder gibt es keinen Treffer → OpenStreetMap (Nominatim, max. 1 Abfrage/Sekunde)
+let TTGEO_OFF=0;
+const NQ={q:[],busy:false};
+function nomi(lat,lon,zoom){return new Promise(res=>{NQ.q.push({lat,lon,zoom,res});nqNext();});}
+async function nqNext(){if(NQ.busy||!NQ.q.length)return;NQ.busy=true;const j=NQ.q.shift();let a=null;
+  try{const r=await getJSON("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom="+j.zoom+"&accept-language=de&lat="+j.lat+"&lon="+j.lon,12000);a=r.address||null;}catch(e){}
+  j.res(a);setTimeout(()=>{NQ.busy=false;nqNext();},1100);}
+async function nomiPlace(lat,lon){const a=await nomi(lat,lon,14);if(!a)return "";const city=a.city||a.town||a.village||a.municipality||"",sub=a.suburb||a.city_district||a.borough||"";
+  return city&&sub&&sub!==city?city+"-"+sub:city||sub||a.county||"";}
+async function nomiAddr(lat,lon){const a=await nomi(lat,lon,18);if(!a)return "";const city=a.city||a.town||a.village||a.municipality||"",sub=a.suburb||a.city_district||"";
+  return [[a.road,a.house_number].filter(Boolean).join(" "),sub&&sub!==city?sub:city].filter(Boolean).join(", ");}
+async function placeOf0(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLACECACHE[k]!==undefined)return PLACECACHE[k];let v="";
+  if(Date.now()>TTGEO_OFF&&TTKEY){try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
     const a=((r.addresses||[])[0]||{}).address||{};const city=a.municipality||"",sub=a.municipalitySubdivision||"";
-    const v=city&&sub&&sub!==city?city+"-"+sub:city||sub||a.countrySecondarySubdivision||a.countrySubdivisionName||"";if(!v)return "";PLACECACHE[k]=v;}catch(e){return "";}
-  const ks=Object.keys(PLACECACHE);if(ks.length>600)ks.slice(0,200).forEach(x=>delete PLACECACHE[x]);store("placecache",PLACECACHE);return PLACECACHE[k];}
+    v=city&&sub&&sub!==city?city+"-"+sub:city||sub||a.countrySecondarySubdivision||a.countrySubdivisionName||"";}
+    catch(e){if(/40[03]|429|403|limit|quota/i.test(String(e&&e.message||e)))TTGEO_OFF=Date.now()+15*60000;}}
+  if(!v)v=await nomiPlace(lat,lon);
+  if(!v)return "";PLACECACHE[k]=v;
+  const ks=Object.keys(PLACECACHE);if(ks.length>1500)ks.slice(0,500).forEach(x=>delete PLACECACHE[x]);store("placecache",PLACECACHE);return v;}
 let FILLING=false,FILLNEXT=null;
 async function fillPlaces(only){if(!TT)return;if(FILLING){FILLNEXT=only||null;return;}FILLING=true;try{const l=(only||TT.list.slice(0,60)).filter(x=>!x.ort&&isFinite(x.lat));
   for(let i=0;i<l.length;i+=3){await Promise.all(l.slice(i,i+3).map(async x=>{let v=await placeOf(x.lat,x.lon);if(!v){await new Promise(r=>setTimeout(r,700));v=await placeOf(x.lat,x.lon);}x.ort=v||null;}));renderTT();if(FILLNEXT)break;await new Promise(r=>setTimeout(r,250));}}finally{FILLING=false;const n=FILLNEXT;FILLNEXT=null;if(n)fillPlaces(n);}}
