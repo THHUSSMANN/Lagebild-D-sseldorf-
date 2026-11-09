@@ -1829,7 +1829,7 @@ let MAPGO=null;
 // ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
 let RS={dir:null,data:{},sel:0,at:0,sv:{}},RSMAP=null,RSLAY=null;
 // Stabile Ampel je Strecke: Verschärfung sofort, Entwarnung erst nach 2 Bestätigungen (kein Flackern)
-function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=20?2:a.dl>=10?1:0; // nur echte Verzögerung zählt, Sperrungen ohne Zeitverlust nichtconst s=RS.sv[k];
+function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=20?2:a.dl>=10?1:0;/* nur echte Verzögerung zählt, Sperrungen ohne Zeitverlust nicht */const s=RS.sv[k];
   const mk=()=>({lv,cl,sv:lv>=2?"dl-bad":lv?"dl-warn":"",n:0,cand:-1});
   if(!s||lv>=s.lv){RS.sv[k]=mk();return;}
   s.n=(s.cand===lv?s.n:0)+1;s.cand=lv;if(s.n>=2)RS.sv[k]=mk();}
@@ -1850,7 +1850,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
   if(!force&&Date.now()-RS.at<10*60*1000&&RSDIRS.filter(x=>x[2]===RS.city).every(x=>RS.data[x[0]])){renderReise();return;}
   RS.at=Date.now();renderReise();
   if(!TTKEY){$("rs-alts").innerHTML=stateBox("Für die Fahrzeit den TomTom-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
-  const city=RS.city;for(const [k,t] of RSDIRS.filter(x=>x[2]===city).sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){if(RS.city&&RS.city!==city)break; // nur bei echtem Ortswechsel abbrechenconst [o,d]=rsEnds(k);
+  const city=RS.city;for(const [k,t] of RSDIRS.filter(x=>x[2]===city).sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){if(RS.city&&RS.city!==city)break;/* nur bei echtem Ortswechsel abbrechen */const [o,d]=rsEnds(k);
     try{const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&maxAlternatives=2&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
       let r;try{r=await getJSON(url,20000);}catch(e){await new Promise(z=>setTimeout(z,1200));r=await getJSON(url,20000);}
       const main=(r.routes[0].legs||[]).flatMap(l=>l.points||[]);
