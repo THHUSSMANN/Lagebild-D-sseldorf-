@@ -953,7 +953,8 @@ function composeTile(id,group,main,cls){
   const parts=TILE_PARTS[group];const el=$(id);if(!el)return;
   if(main)parts._main=main;if(cls)parts._cls=cls;
   const ORD=["bahn","bus","ab","vt"];const notes=Object.entries(parts).filter(([k])=>!k.startsWith("_")).sort((a,b)=>(ORD.indexOf(a[0])+99)%199-(ORD.indexOf(b[0])+99)%199).map(([,v])=>v).filter(Boolean);
-  setKpi(id,parts._main||"–",notes.join(" · "),parts._cls||"info");
+  const RK=["ok","info","warn","bad","crit"];let cl2=parts._cls||"info";if(parts._rcls&&RK.indexOf(parts._rcls)>RK.indexOf(cl2))cl2=parts._rcls;
+  setKpi(id,parts._main||"–",notes.join(" · "),cl2);
 }
 // ================= Bahn-Verbindungen =================
 const TRIP_KEYS={dus:["dus-re","re-dus"],datteln:["re-dus","dus-re"]};
@@ -1898,7 +1899,12 @@ const GMICON='<svg class="gmi" viewBox="0 0 24 24" aria-hidden="true"><path d="M
 function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catch(e){}
   if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));return;}
   $("rs-quick").innerHTML="";
-  setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
+  // Verzögerung farbig: ab 10 min orange, ab 25 min oder Sperrung rot pulsierend
+  const sev=a=>{if(!a)return "";const cl=(a.ab||[]).some(w=>w.cl);return cl||a.dl>=25?"dl-bad":a.dl>=10?"dl-warn":"";};
+  let worst="";
+  setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const sv=sev(a);if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=a&&(a.ab||[]).some(w=>w.cl);
+    return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+(sv?" "+sv:"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(cl?" · Sperrung":a.dl>0?" · +"+a.dl+" min":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
+  {const P=TILE_PARTS.traffic;const nc=worst==="dl-bad"?"bad":worst==="dl-warn"?"warn":null;if(P._rcls!==nc){P._rcls=nc;composeTile("k-traffic","traffic");}}
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
   if(cur.err){box.innerHTML=stateBox("Fahrzeit derzeit nicht verfügbar – "+cur.err+".");inc.innerHTML="";drawReise();return;}
@@ -2088,7 +2094,7 @@ function renderPk(id,data,intro){const box=$(id);if(!data)return;
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;
   const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
-  tasks.push(loadVT(),loadDatteln());if(location.hash==="#staus/reise")tasks.push(loadReise(true));else RS.at=0;if(ELKEY)tasks.push(loadEL());tasks.push(loadGarages());if(PKDAT)tasks.push(loadPkDat());
+  tasks.push(loadVT(),loadDatteln());if(location.hash==="#staus/reise")tasks.push(loadReise(true));else{RS.at=0;if(TTKEY)setTimeout(()=>{try{loadReise(false);}catch(e){}},4000);}if(ELKEY)tasks.push(loadEL());tasks.push(loadGarages());if(PKDAT)tasks.push(loadPkDat());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
@@ -2245,6 +2251,7 @@ setInterval(()=>{if(!document.hidden)refreshAll(false);},10*60*1000);
 setInterval(()=>{if(!document.hidden&&!busy){loadAutobahn();loadTomTom();}},3*60*1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastRun>5*60*1000)refreshAll(false);});
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderReise,TILE_PARTS};
 // Neue Dashboard-Version automatisch laden: beim Zurückkehren in die App und alle 10 Minuten nachsehen
 {const myV=((document.querySelector('script[src*="app.js?v="]')||{}).src||"").split("v=")[1]||"";let chk=0;
   const check=async()=>{if(!myV||Date.now()-chk<60000)return;chk=Date.now();
