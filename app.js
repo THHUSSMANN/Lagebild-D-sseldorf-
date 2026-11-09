@@ -2111,7 +2111,10 @@ document.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.metaKey
   const h=a.getAttribute("href");e.preventDefault();history.pushState(null,"",h.length>1?h:location.pathname+location.search);route();});
 try{history.scrollRestoration="manual";}catch(e){}window.scrollTo(0,0);
 // Schließen führt zur übergeordneten Ansicht zurück (Schnittstellen → Einstellungen), sonst zur Übersicht
-const VIEWPARENT={quellen:["einstellungen","‹ Zurück zu Einstellungen"]};
+const VIEWPARENT={quellen:["einstellungen","‹ Zurück zu Einstellungen"],einstellungen:["","‹ Zurück zu Tools"]};
+// Einstellungen schließen → Übersicht mit geöffneten Tools, Knopf im Blick
+document.addEventListener("click",e=>{const x=e.target.closest("#v-einstellungen .view-x");if(!x)return;
+  setTimeout(()=>{$("tools").hidden=false;$("tools-toggle").setAttribute("aria-expanded","true");const t=document.querySelector('#toolgrid [data-tool="settings"]')||$("tools-toggle");t.scrollIntoView({behavior:"smooth",block:"center"});},120);});
 document.querySelectorAll(".view").forEach(v=>{const p=VIEWPARENT[v.dataset.view];const x=document.createElement("a");x.href="#"+(p?p[0]:"");x.className="view-x";x.setAttribute("aria-label",p?p[1]:"Schließen, zurück zur Übersicht");x.innerHTML=p?p[1]:"✕ Schließen";v.prepend(x);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
 let EDITING=false,SORT=null;
