@@ -1512,7 +1512,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;
     const nx=pairs.map(x=>({x,r:x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now)}));
     const f=nx[0]&&nx[0].r[0];
     if(f){TILE_PARTS.mobil.bus="Bus "+esc(f.line)+" "+hhmm(f.depEst||f.dep)+" "+short(nx[0].x.from)+" → "+short(nx[0].x.to);composeTile("k-bahn","mobil");}
-    $("efa-title").textContent=ec().key==="dortmund"?"Stadion / Signal Iduna Park ⇄ Hauptbahnhof":"Bus Lohstraße ⇄ Busbahnhof";
+    $("efa-title").textContent=ec().key==="dortmund"?"Westfalenstadion → Hauptbahnhof":"Bus Lohstraße ⇄ Busbahnhof";
     const di=Math.min(+(load("busdir_"+ec().key)||0),nx.length-1);
     $("efa-stops").innerHTML=nx.map(({x},i)=>'<button type="button" data-bdir="'+i+'" class="'+(i===di?"on":"")+'">'+esc(short(x.from))+' → '+esc(short(x.to))+'</button>').join("");
     $("efa").innerHTML=nx.filter((_,i)=>i===di).map(({x,r})=>'<div class="sublbl">'+esc(short(x.from))+' → '+esc(short(x.to))+'</div>'+(r.length?'<div class="list" style="margin-bottom:12px">'+r.slice(0,6).map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
@@ -1958,8 +1958,8 @@ var PKS=null,PKDAT=null,PKGPS=null,PKPOS=null;
 function pkShow(k){PKS=k;{const gb=document.querySelector('#pk-seg [data-pks="gps"]');if(gb){const n=CITYN[(typeof RS!=="undefined"&&RS.city)||"dus"]||"Ort";gb.lastChild.textContent=k==="gps"?"Zurück zu "+n:"Stattdessen an meinem Standort suchen (2 km)";}}const pane=k==="gps"||k==="dus"||k==="datteln"?k:"city";document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
   document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==pane);if(k==="datteln"&&!PKDAT)loadPkDat();if(k==="gps")pkGPS();if(pane==="city")loadPkCity(k);}
 const PKC={};
-const PKCENTER={dortmund:{lat:51.4926,lon:7.4519,lbl:"um den Signal Iduna Park"}};
-async function loadPkCity(k){const box=$("pk-city");if(!box)return;const Z=PKCENTER[k]||FIXHOME[k]||TOWNS[k];const n=CITYN[k]||k;$("pk-city-h").textContent="Parken in "+n+(PKCENTER[k]?" · Signal Iduna Park":"");
+const PKCENTER={dortmund:{lat:51.4926,lon:7.4519,lbl:"um das Westfalenstadion"}};
+async function loadPkCity(k){const box=$("pk-city");if(!box)return;const Z=PKCENTER[k]||FIXHOME[k]||TOWNS[k];const n=CITYN[k]||k;$("pk-city-h").textContent="Parken in "+n+(PKCENTER[k]?" · Westfalenstadion":"");
   if(PKC[k]){renderPk("pk-city",PKC[k],'Öffentliche Parkmöglichkeiten bis 3 km '+(PKCENTER[k]?PKCENTER[k].lbl:'um deine Adresse in '+esc(n))+', die nächste zuerst. Antippen öffnet die Route in Google Maps.');return;}
   box.innerHTML='<div class="state">wird geladen …</div>';
   try{const d=await pkQuery(Z,3000);PKC[k]=pkParse(d,Z);if(PKS===k)loadPkCity(k);}catch(e){box.innerHTML=stateBox("Parkdaten für "+esc(n)+" nicht verfügbar – "+errText(e)+".");}}
