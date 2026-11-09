@@ -1136,7 +1136,10 @@ async function loadTomTom(){
 }
 let TT=null,TTF=null;const PLACECACHE=Object.fromEntries(Object.entries(load("placecache")||{}).filter(([,v])=>v));
 // Ort (Stadt/Stadtteil) vor Stau- und Baustellenmeldungen setzen
-async function fillOrte(box){if(!box||!TTKEY)return;for(const el of [...box.querySelectorAll("[data-lat] .ortp:empty")].slice(0,90)){const r=el.closest("[data-lat]");const la=+r.dataset.lat,lo=+r.dataset.lon;if(!isFinite(la))continue;const o=await placeOf(la,lo);if(o&&!el.textContent){el.textContent=o;el.classList.add("ortc");}}}
+async function fillOrte(box,again){if(!box||!TTKEY)return;let miss=0;
+  await Promise.all([...box.querySelectorAll("[data-lat] .ortp:empty")].slice(0,90).map(async el=>{const r=el.closest("[data-lat]");const la=+r.dataset.lat,lo=+r.dataset.lon;if(!isFinite(la)||!isFinite(lo))return;const o=await placeOf(la,lo);if(o&&!el.textContent){el.textContent=o;el.classList.add("ortc");}else if(!o)miss++;}));
+  // was nicht klappte, nach einer Pause noch einmal versuchen
+  if(miss&&!again)setTimeout(()=>fillOrte(box,true),15000);}
 // Ortsabfragen in einer Warteschlange (TomTom erlaubt nur wenige Abfragen pro Sekunde – sonst fehlen Ortsnamen)
 const PQ={run:0,q:[],inflight:{}};
 function pqNext(){while(PQ.run<2&&PQ.q.length){const j=PQ.q.shift();PQ.run++;j().finally(()=>{setTimeout(()=>{PQ.run--;pqNext();},220);});}}
