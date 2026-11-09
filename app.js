@@ -1323,6 +1323,10 @@ document.addEventListener("click",e=>{const j=e.target.closest(".carinc");if(!j|
 function fitMap(){if(!MAP)return;const el=$("stau-map");if(!el.offsetWidth)return;const [s,w,n,e]=mapBounds();MAP.invalidateSize();MAP.fitBounds([[s,w],[n,e]],{padding:[4,4]});}
 // Karte war ausgeblendet (Kategorie-Ansicht) → Größe neu messen und Linien/Punkte neu zeichnen
 function mapRefresh(){if(!MAP)return;MAP.invalidateSize({pan:false});MAP.setView(MAP.getCenter(),MAP.getZoom(),{reset:true});}
+// Einheitliche Grundkarte: TomTom (mit Verkehrsfluss, wenn gewünscht); ohne Schlüssel einfache Grundkarte
+function baseTiles(flow){const k=encodeURIComponent(TTKEY||"");if(!TTKEY)return [L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"})];
+  const o=[L.tileLayer("https://api.tomtom.com/maps/orbis/map-display/tile/{z}/{x}/{y}.png?apiVersion=1&style=street-light&key="+k,{maxZoom:20,attribution:"Karte & Verkehr © TomTom"})];
+  if(flow)o.push(L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?thickness=5&key="+k,{opacity:.8,maxZoom:18,zIndex:5}));return o;}
 function ensureMap(){
   if(typeof L==="undefined")return null;
   if(!MAP){MAP=L.map("stau-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile}).setView([C.center.lat,C.center.lon],10);MAPLAYER=L.layerGroup().addTo(MAP);}
@@ -1875,7 +1879,7 @@ function renderReise(){const D=RS.data;setStauTitle();
     '<div class="sublbl" style="margin-top:12px;font-size:15px">Baustellen auf Route '+(a.i+1)+' <span class="muted small">(Autobahn GmbH, in Fahrtrichtung, km ab Start)</span></div>'+(a.rw?(m?a.rw.map(rwRow).join(""):'<div class="state good">Keine Autobahn-Baustellen auf dieser Route gemeldet.</div>'):'<div class="state">wird geladen …</div>');
   drawReise();}
 function drawReise(){if(typeof L==="undefined"){$("rs-map").hidden=true;return;}const el=$("rs-map");el.hidden=false;if(!el.offsetWidth)return;
-  if(!RSMAP){RSMAP=L.map("rs-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile});L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(RSMAP);RSLAY=L.layerGroup().addTo(RSMAP);}
+  if(!RSMAP){RSMAP=L.map("rs-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile});baseTiles(true).forEach(l=>l.addTo(RSMAP));RSLAY=L.layerGroup().addTo(RSMAP);}
   RSMAP.invalidateSize();RSLAY.clearLayers();const cur=RS.data[RS.dir];
   if(!cur||!cur.alts){const [o,d]=rsEnds(RS.dir);RSMAP.fitBounds([[o.lat,o.lon],[d.lat,d.lon]],{padding:[20,20]});return;}
   const ord=cur.alts.filter(a=>a.i!==RS.sel).concat(cur.alts.filter(a=>a.i===RS.sel));let bounds=null;
@@ -1957,7 +1961,7 @@ async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof R
 function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?ELD.filter(x=>x.kw>=50):ELD;
   const nav=x=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+x.lat+","+x.lon;
   const info=x=>esc([x.so.join(", "),x.cap?x.cap+" Ladepunkte":"",x.fee==="no"?"kostenlos":"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "));
-  if(typeof L!=="undefined"){$("el-map").hidden=false;if(!ELMAP){ELMAP=L.map("el-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile});L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(ELMAP);ELLAY=L.layerGroup().addTo(ELMAP);}
+  if(typeof L!=="undefined"){$("el-map").hidden=false;if(!ELMAP){ELMAP=L.map("el-map",{scrollWheelZoom:false,dragging:!L.Browser.mobile,tap:!L.Browser.mobile});baseTiles(false).forEach(l=>l.addTo(ELMAP));ELLAY=L.layerGroup().addTo(ELMAP);}
     ELMAP.invalidateSize();ELLAY.clearLayers();
     L.circleMarker([ELP.lat,ELP.lon],{radius:6,color:"#14212b",weight:2,fillColor:"#fff",fillOpacity:1}).bindTooltip(ELP.name).addTo(ELLAY);
     l.slice(0,300).forEach(x=>L.circleMarker([x.lat,x.lon],{radius:7,color:"#fff",weight:2,fillColor:x.kw>=50?"#0b6e8a":"#2e9d5b",fillOpacity:1}).bindPopup('<b>'+esc(x.name)+'</b><br>'+(x.kw?fmt(x.kw,0)+' kW · ':'')+info(x)+(x.addr?'<br>'+esc(x.addr):'')+'<br><a href="'+nav(x)+'" target="_blank" rel="noopener">Route in Google Maps ↗</a>').addTo(ELLAY));
