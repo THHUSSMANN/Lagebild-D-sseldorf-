@@ -321,7 +321,7 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
       catch(e){a.push=false;$("al-msg").textContent="Gestellt – Push konnte nicht vorgemerkt werden ("+e.message+").";}}}
     else $("al-msg").textContent="Gestellt für "+hm(at)+" Uhr ("+dayLbl(at)+").";
     const l=list();l.push(a);save(l);render();}
-  $("alarm-btn").addEventListener("click",()=>{const d=new Date(Date.now()+30*60000);$("al-time").value=d.toTimeString().slice(0,5);$("al-date").value=d.toLocaleDateString("sv-SE");$("al-msg").textContent="";render();dlg.showModal();});
+  $("alarm-btn").addEventListener("click",()=>{if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)){if(document.body.classList.contains("harrange"))return;location.href="shortcuts://run-shortcut?name="+encodeURIComponent("ClockPhone");return;}const d=new Date(Date.now()+30*60000);$("al-time").value=d.toTimeString().slice(0,5);$("al-date").value=d.toLocaleDateString("sv-SE");$("al-msg").textContent="";render();dlg.showModal();});
   $("al-quick").addEventListener("click",e=>{const b=e.target.closest("[data-min]");if(!b)return;const m=+b.dataset.min;add(Date.now()+m*60000,$("al-text").value||("Kurzzeitwecker "+b.textContent),$("al-push").checked);});
   $("al-set").addEventListener("click",()=>{const t=$("al-time").value,d=$("al-date").value;if(!t){$("al-msg").textContent="Bitte eine Uhrzeit wählen.";return;}
     let at=new Date((d||new Date().toLocaleDateString("sv-SE"))+"T"+t).getTime();if(!d&&at<Date.now())at+=864e5;add(at,$("al-text").value,$("al-push").checked);});
