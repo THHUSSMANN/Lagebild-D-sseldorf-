@@ -1356,7 +1356,26 @@ function routeHit(w,r){
   return new RegExp("(→|->|>|(?<!aus )Richtung|(?<!aus )Ri\\.|nach|in Fahrtrichtung)[^|→>()]{0,40}?"+escRe(r.dir),"i").test(t.replace(/\(?aus Richtung [^)|]*\)?/gi,""));
 }
 let ROUTE_ITEMS=[],AB_SETS={},AB_SEL=null;
-function renderPrio(rawW,rawC,okRoads,rawR){rawR=rawR||[];
+// „Meine Autobahnstrecken“ automatisch aus den PKW-Routen (TomTom) ab dem gewählten Ort
+let AUTOR=[];
+function renderAutoPrio(){const box=$("prio");if(!box||typeof RS==="undefined"||!RS.city)return false;
+  const dirs=RSDIRS.filter(x=>x[2]===RS.city);ROUTE_ITEMS=[];AUTOR=[];const O=FIXHOME[RS.city];
+  {const h=$("prio-h");if(h)h.innerHTML='Meine Autobahnstrecken ab '+esc(CITYN[RS.city])+' <span class="muted small">(Route: TomTom · Meldungen: Autobahn GmbH · Zeile antippen für Details)</span>';}
+  const cards=dirs.map((d,i)=>{const D=RS.data[d[0]];const a=D&&D.alts&&D.alts[0];const to=CITYN[d[3]];
+    if(!a)return '<div class="route unk"><span class="tag">PKW</span><span class="rt">→ '+esc(to)+'</span><span class="rv muted">'+(D&&D.err?"nicht verfügbar":"wird berechnet …")+'</span></div>';
+    const items=[...(a.ab||[]).map(w=>({...w,_c:w.cl?1:0})),...(a.rw||[]).map(w=>({...w,_rw:1}))].map(w=>({...w,km:distKm(O.lat,O.lon,w.lat,w.lon)}));
+    const cl=items.filter(x=>x._c),jams=items.filter(x=>x.jam&&!x._c).sort((x,y)=>(y.jam.delay||0)-(x.jam.delay||0)),rws=items.filter(x=>x._rw);
+    let cls="ok",val="freie Fahrt";
+    if(cl.length){cls="crit";val="Sperrung";}
+    else if(jams.length){const j=jams[0];const st=jams.some(x=>x.jam.kind==="stau");cls=st&&(j.jam.delay||0)>=15?"bad":"warn";val=(st?"Stau":"stockend")+(j.jam.delay!=null?" · +"+j.jam.delay+" min":"");}
+    else if(a.dl>=10){cls="warn";val="+"+a.dl+" min Verzögerung";}
+    const via=(a.abs||[]).length?"über "+a.abs.join(", "):"ohne Autobahn";
+    const sub=[via,hm(a.min)+(a.dl>0?" (davon +"+a.dl+" min Stau)":""),cl.length?"⛔ "+(cl[0].subtitle||cl[0].title||""):"",rws.length?"🚧 "+rws.length+(rws.length===1?" Baustelle":" Baustellen"):""].filter(Boolean).join(" · ");
+    ROUTE_ITEMS[i]=items;AUTOR[i]={t:CITYN[RS.city]+" → "+to+" ("+via+")"};
+    return '<div role="button" tabindex="0" data-route="'+i+'" class="route '+cls+'"><span class="tag ab">'+esc((a.abs||[])[0]||"PKW")+'</span><span class="rt">→ '+esc(to)+'</span><span class="rv">'+esc(val)+'</span><span class="rs">'+esc(sub)+'</span></div>';});
+  box.innerHTML='<div class="prio">'+cards.join("")+'</div>';
+  return true;}
+function renderPrio(rawW,rawC,okRoads,rawR){if(renderAutoPrio())return;rawR=rawR||[];
   const box=$("prio");ROUTE_ITEMS=[];
   if(!ROUTES.length){box.innerHTML="";return;}
   const cards=ROUTES.map(r=>{
@@ -1390,7 +1409,7 @@ function abItem(i){
 function showAbDetail(k){
   const box=$("stau-detail");if(!box)return;
   let set=null;
-  if(/^r\d+$/.test(k)){const r=ROUTES[+k.slice(1)];const l=(ROUTE_ITEMS[+k.slice(1)]||[]).sort((a,b)=>a.km-b.km);set={t:"Meine Strecke: "+r.ab+" Richtung "+r.dir,l};}
+  if(/^r\d+$/.test(k)){const n=+k.slice(1),r=ROUTES[n],A=AUTOR[n];const l=(ROUTE_ITEMS[n]||[]).slice().sort((a,b)=>a.km-b.km);set={t:"Meine Strecke: "+(A?A.t:(r?r.ab+" Richtung "+r.dir:"")),l};}
   else set=AB_SETS[k];
   if(!set){box.hidden=true;return;}
   {if(/^r\d+$/.test(k)){const h=$("prio-h");if(h&&box.nextElementSibling!==h)h.before(box);}else{const an=$("stau-sum");if(an&&an.nextElementSibling!==box)an.after(box);}}
@@ -1437,7 +1456,7 @@ async function loadAutobahn(){
   if(!roads.length){
     const msg='<div class="state">Für '+esc(C.town)+' sind keine weiteren Autobahnen hinterlegt. <a href="#einstellungen">Unter Einstellungen → Meine Orte eintragen</a>.</div>';
     ["stau-list","traffic","roadworks","webcams","charging"].forEach(id=>$(id).innerHTML=msg);$("stau-sum").innerHTML="";
-    const bad=ROUTES.length&&$("prio").querySelector(".route.bad,.route.crit");setKpi("k-traffic",bad?"!":"–",bad?"Störung auf Meinen Strecken":"Meine Strecken frei",bad?"bad":"ok");
+    const bad=$("prio").querySelector(".route.bad,.route.crit");setKpi("k-traffic",bad?"!":"–",bad?"Störung auf Meinen Strecken":"Meine Strecken frei",bad?"bad":"ok");
     if(ensureMap())MAPLAYER.clearLayers();setStatus("ab",ok>0,ok?"":"nicht erreichbar");return;}
   if(!ok){setStatus("ab",false,"nicht erreichbar oder vom Browser blockiert (CORS)");
     const fb=stateBox("Die Autobahn-Schnittstelle antwortet nicht.",link("https://www.autobahn.de/","autobahn.de"));
@@ -1863,7 +1882,7 @@ function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=RS.tdir===t.dataset.rstd?null:t.dataset.rstd;rsMode("bahn");if(RS.tdir)setTimeout(()=>{const c=$("trips-card");if(c&&c.getBoundingClientRect().top>innerHeight*.7)c.scrollIntoView({behavior:"smooth",block:"start"});},60);}});
 const GMICON='<svg class="gmi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.5s-7-6-7-11.6a7 7 0 0 1 14 0c0 5.6-7 11.6-7 11.6z"/><circle cx="12" cy="9.8" r="2.6"/></svg>';
-function renderReise(){const D=RS.data;setStauTitle();
+function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catch(e){}
   if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));return;}
   $("rs-quick").innerHTML="";
   setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" Stau":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
