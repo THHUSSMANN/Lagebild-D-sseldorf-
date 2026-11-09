@@ -835,6 +835,16 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 .fl .fa-y input,#bs-auf{background:color-mix(in srgb,#f5c518 22%,var(--panel))!important;border-color:color-mix(in srgb,#d4a300 60%,var(--line))!important}
 .fl .fa-calc{display:block;margin:-2px 2px 8px;font:500 12.5px var(--f-body);color:var(--muted)}.fl .fa-calc b{color:var(--fg)}
 #bs-net span:last-child{font:500 12.5px var(--f-body);color:var(--muted)}
+/* Schiebeschalter */
+.tgl{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer;font:600 13.5px var(--f-body);color:var(--muted);-webkit-tap-highlight-color:transparent}
+.tgl input{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;min-height:0!important;margin:0!important;pointer-events:none}
+.tgl-s{position:relative;flex:0 0 48px;width:48px;height:28px;border-radius:14px;background:color-mix(in srgb,var(--muted) 35%,var(--panel));transition:background .2s}
+.tgl-s::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.tgl input:checked+.tgl-s{background:var(--accent)}.tgl input:checked+.tgl-s::after{transform:translateX(20px)}
+.tgl input:focus-visible+.tgl-s{outline:2px solid var(--accent);outline-offset:2px}
+.fl .fa-tg{margin:2px 2px 6px}
+#bs-cut:disabled{opacity:.4}
+.bs .bs-hint{display:block;font:500 12px var(--f-body);color:var(--muted);line-height:1.3;margin-top:2px}.bs .bs-sm .tgl{flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -903,7 +913,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
   <div class="td-body bs">
     <label class="bs-l" for="bs-area">Gesamtfläche (z. B. in Google Maps gemessen)</label>
     <div class="bs-row"><input id="bs-area" type="text" inputmode="decimal" placeholder="z. B. 12500" autocomplete="off"><span class="bs-u">m²</span></div>
-    <div class="bs-row bs-sm"><span>Pauschalabzug (Bäume, Fahrradständer, Werbeanlagen, Brunnen …)</span><input id="bs-cut" type="text" inputmode="decimal" value="20"><span class="bs-u">%</span></div>
+    <div class="bs-row bs-sm"><label class="tgl"><input type="checkbox" id="bs-p20" checked><span class="tgl-s"></span></label><span>Pauschalabzug<small class="bs-hint">Bäume, Fahrradständer, Werbeanlagen, Brunnen …</small></span><input id="bs-cut" type="text" inputmode="decimal" value="20"><span class="bs-u">%</span></div>
     <div class="bs-row bs-sm bs-yel"><span>Bühnen, Gastrostände, Aufbauten</span><input id="bs-auf" type="text" inputmode="decimal" placeholder="0" autocomplete="off"><span class="bs-u">m²</span></div>
     <div class="bs-res" id="bs-net"></div>
     <h3 class="sub2 vl-h">Besucher auf der Nettofläche</h3>
@@ -1133,7 +1143,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
     <label>Dichten (P/m²)<input id="fl-d" type="text" inputmode="text" placeholder="1; 2; 3; 4"></label>
   </div>
   <div class="fl-sum" id="fl-sum"></div>
-  <div class="muted small">Rechnung: <b>Gesamtfläche − 20 % Pauschale</b> (Bäume, Fahrradständer, Werbeanlagen, Brunnen …) <b>− Bühnen, Gastro, Aufbauten</b> (gelbes Feld) = Nettofläche für Besucher. Eintragen musst du nur das gelbe Feld. Mit dem Schalter legst du fest, ob eine Fläche in die Gesamtkapazität einfließt. Alle Eingaben bleiben nur auf diesem Gerät gespeichert.</div>
+  <div class="muted small">Rechnung: <b>Gesamtfläche − 20 % Pauschale</b> (Bäume, Fahrradständer, Werbeanlagen, Brunnen …) <b>− Bühnen, Gastro, Aufbauten</b> (gelbes Feld) = Nettofläche für Besucher. Eintragen musst du nur das gelbe Feld. Bei freien Flächen wie Wiesen die Pauschale mit dem Schalter je Fläche abschalten. Mit dem Schalter legst du fest, ob eine Fläche in die Gesamtkapazität einfließt. Alle Eingaben bleiben nur auf diesem Gerät gespeichert.</div>
   <div id="fl-list"></div>
   <div class="muted small" style="margin-top:8px">Bemessung nach § 7 Abs. 4 SBauVO NRW: im Freien 1,20 m je 600 Personen, Zwischenwerte zulässig, je Rettungswegteil mind. 1,20 m. Stehflächen nach § 1 Abs. 2: mind. 2 Personen/m². Rettungswegbreiten gelten je Fläche; die Summe dient nur als Orientierung.</div>
   <button type="button" class="btn sm" id="fl-reset" style="margin-top:8px">Alle Eingaben zurücksetzen</button>
@@ -1384,6 +1394,6 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=231"></script>
+<script src="app.js?v=232"></script>
 </body>
 </html>
