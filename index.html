@@ -688,6 +688,14 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 .gpsbtn .pin{width:24px;height:24px;flex:none;fill:#e0302b;stroke:#fff;stroke-width:1.4}
 .gpsbtn .pin circle{fill:#fff;stroke:none}
 .gpsbtn.on{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
+
+#warn-all-list .wa{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:12px 14px;margin:0 0 8px;border-radius:14px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:inherit;cursor:pointer}
+#warn-all-list .wa b{min-width:150px;font-size:16px}
+#warn-all-list .wa .wt{flex:1;font-size:14.5px;line-height:1.4}
+#warn-all-list .wa .dot{width:12px;height:12px;border-radius:50%;margin-top:5px;flex:none;background:#2e9d5b}
+#warn-all-list .wa.hot{border-color:#d62d20;box-shadow:inset 4px 0 0 #d62d20}
+#warn-all-list .wa.hot .dot{background:#d62d20}
+#warn-all-list .wa.cur{outline:2px solid var(--accent);outline-offset:1px}
 </style>
 </head>
 <body>
@@ -804,6 +812,10 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 </section>
 
 <div class="view" id="v-warnungen" data-view="warnungen" hidden>
+<section class="card wide" id="warn-all">
+  <div class="card-head"><h2>Warnungen · alle fünf Orte</h2><span class="src">NINA · DWD · Ort antippen zeigt alle Einzelheiten</span></div>
+  <div id="warn-all-list"><div class="state">wird geladen …</div></div>
+</section>
 <section class="card wide" id="warnungen">
   <div class="card-head"><h2 id="warn-title">Warnungen für Düsseldorf</h2><span class="src">NINA-Warn-App (MoWaS, KATWARN, BIWAPP, Hochwasser, Polizei) · DWD-Unwetter</span></div>
   <div class="alerts" id="alerts"><div class="state">Warnungen werden geladen …</div></div>
@@ -1180,6 +1192,6 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=187"></script>
+<script src="app.js?v=188"></script>
 </body>
 </html>

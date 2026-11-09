@@ -238,9 +238,16 @@ async function scanFavAlarms(){
   renderAlarm();
 }
 var WARN_SUM=null;
+// Übersicht aller fünf Orte in der Ansicht „Warnungen“
+function renderWarnAll(){const box=$("warn-all-list");if(!box)return;const short=t=>String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"");
+  box.innerHTML=favPlaces().map(p=>{const a=FAV_ALARM[p.key];const n=a?a.n:null;const cur=p.key===C.key;
+    return '<button type="button" class="wa'+(n?" hot":"")+(cur?" cur":"")+'" data-wsel="'+esc(p.sel)+'"><i class="dot"'+(n==null?' style="background:#8a9aa5"':'')+'></i><b>'+esc(p.name)+'</b><span class="wt">'+
+      (n==null?"wird geladen …":n?[...new Set(a.all)].map(t=>esc(short(t))).join("<br>"):"keine Warnungen")+'</span></button>';}).join("");}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-wsel]");if(!b)return;if(b.dataset.wsel!==sel)choose(b.dataset.wsel);setTimeout(()=>{const w=$("warnungen");if(w)w.scrollIntoView({behavior:"smooth",block:"start"});},300);});
 function renderAlarm(){
   const list=favPlaces().filter(p=>FAV_ALARM[p.key]&&FAV_ALARM[p.key].n>0).map(p=>({...FAV_ALARM[p.key],key:p.key,sel:p.sel}));
   if(!FAVKEYS.includes(C.key)&&LOCAL_ALARM.n>0)list.unshift({n:LOCAL_ALARM.n,title:LOCAL_ALARM.title,name:C.town,key:C.key,sel:sel});
+  renderWarnAll();
   WARN_SUM={list,names:favPlaces().map(p=>p.name),loaded:Object.keys(FAV_ALARM).length};clearTimeout(HNT);HNT=setTimeout(()=>{try{buildViewbar();}catch(e){}},300);
   ALARM_SIG=list.map(x=>x.key+":"+(x.all&&x.all.length?x.all:[x.title]).slice().sort().join("|")).sort().join("#");
   const seen=list.length&&load("alarm_seen")===ALARM_SIG;
@@ -397,7 +404,7 @@ function applyPlaceUi(){
   $("wx-h").innerHTML="Wetter <strong>"+esc(C.name)+"</strong>";
   if(typeof route==="function")route();
   document.title="Lagebild Thomas Hußmann · "+C.town;
-  $("warn-title").textContent="Warnungen für "+C.town+(C.isDus?"":" · "+(C.detail||""));
+  $("warn-title").textContent="Einzelheiten: "+C.town+(C.isDus?"":" · "+(C.detail||""));
   $("gmaps").href=gmapsUrl();
   setStauTitle();
   if($("ab-list"))$("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
@@ -1147,6 +1154,12 @@ function placeOf(lat,lon){if(!isFinite(lat)||!isFinite(lon))return Promise.resol
   if(PQ.inflight[k])return PQ.inflight[k];
   const p=new Promise(res=>{PQ.q.push(async()=>{let v="";for(let t=0;t<3&&!v;t++){if(t)await new Promise(r=>setTimeout(r,900*t));v=await placeOf0(+lat,+lon);}delete PQ.inflight[k];res(v);});pqNext();});
   PQ.inflight[k]=p;return p;}
+// Straße + Ort zu einer Koordinate (für Parkplätze ohne Adresse in OpenStreetMap)
+const ADDRC=load("addrcache")||{};
+function addrOf(lat,lon){const k=(+lat).toFixed(4)+","+(+lon).toFixed(4);if(ADDRC[k])return Promise.resolve(ADDRC[k]);if(!TTKEY)return Promise.resolve("");
+  return new Promise(res=>{PQ.q.push(async()=>{let v="";try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
+    const a=((r.addresses||[])[0]||{}).address||{};v=[[a.streetName,a.streetNumber].filter(Boolean).join(" "),a.municipalitySubdivision&&a.municipalitySubdivision!==a.municipality?a.municipalitySubdivision:a.municipality].filter(Boolean).join(", ");
+    if(v){ADDRC[k]=v;const ks=Object.keys(ADDRC);if(ks.length>800)ks.slice(0,300).forEach(x=>delete ADDRC[x]);store("addrcache",ADDRC);}}catch(e){}res(v);});pqNext();});}
 async function placeOf0(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLACECACHE[k]!==undefined)return PLACECACHE[k];
   try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
     const a=((r.addresses||[])[0]||{}).address||{};const city=a.municipality||"",sub=a.municipalitySubdivision||"";
@@ -1998,8 +2011,10 @@ function renderPk(id,data,intro){const box=$(id);if(!data)return;
   box.innerHTML='<div class="muted small" style="margin-bottom:4px">'+intro+'</div>'+
     (G.map(([k,l,n])=>{const a=k==="bh"?bh:data.filter(x=>x.kind===k);if(!a.length)return"";return '<div class="sublbl" style="margin-top:12px">'+l+' <span class="muted small" style="font-weight:400">('+a.length+')</span></div>'+a.slice(0,n).map(x=>
       '<a class="el" href="'+nav(x)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="t">'+esc(x.name)+'</span><span class="k">'+fmt(x.km,1)+' km</span><span class="d">'+
-      esc([x.addr,x.cap?x.cap+" Plätze":"",Number(x.dis)>0?x.dis+" Behindertenplätze":"",x.fee==="yes"?"gebührenpflichtig":x.fee==="no"?"kostenlos":"",x.max?"max. "+x.max:"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "))+'</span></a>').join("");}).join("")
-    ||'<div class="state">Keine öffentlichen Parkplätze gefunden.</div>')+'<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende.</div>';}
+      (x.addr?'':'<span class="pka" data-lat="'+x.lat+'" data-lon="'+x.lon+'"></span>')+esc([x.addr,x.cap?x.cap+" Plätze":"",Number(x.dis)>0?x.dis+" Behindertenplätze":"",x.fee==="yes"?"gebührenpflichtig":x.fee==="no"?"kostenlos":"",x.max?"max. "+x.max:"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "))+'</span></a>').join("");}).join("")
+    ||'<div class="state">Keine öffentlichen Parkplätze gefunden.</div>')+'<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende, Adressen: TomTom.</div>';
+  // fehlende Adressen nachladen (Straße, Ortsteil)
+  [...box.querySelectorAll(".pka:empty")].forEach(async el=>{const v=await addrOf(+el.dataset.lat,+el.dataset.lon);if(v&&el.isConnected){el.textContent=v;const d=el.parentNode;if(d&&d.childNodes.length>1&&d.lastChild.textContent)el.after(" · ");const it=data.find(x=>Math.abs(x.lat-el.dataset.lat)<1e-6&&Math.abs(x.lon-el.dataset.lon)<1e-6);if(it)it.addr=v;}});}
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;
   const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
