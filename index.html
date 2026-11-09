@@ -762,13 +762,15 @@ input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;vertical-
 #vl-body[data-k="meld"] [data-vts="events"]{display:none!important}
 .vlfacts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}.vlfacts:empty{display:none}.vlfacts span{font:600 14px var(--f-body);padding:6px 12px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)}.vlfacts b{font-family:var(--f-display)}
 footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var(--muted);opacity:.7;border-top:0!important;padding:18px 0 28px!important;margin:0!important}
+.updmini{font:500 12.5px/1.3 var(--f-body);color:var(--head-fg);opacity:.75;white-space:nowrap;align-self:center}.updmini b{font-weight:600}
+@media (max-width:600px){header .titlerow{flex-wrap:wrap;row-gap:2px}.updmini{flex-basis:100%;order:3;font-size:12px}}
 </style>
 </head>
 <body>
 <header class="top pad">
   <div class="wrap">
     <div class="brand">
-      <div class="titlerow"><h1 id="app-title">Lagebild Thomas Hußmann</h1><button id="refresh" type="button" class="refresh" aria-label="Aktualisieren" title="Aktualisieren"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.5"/></svg></button></div>
+      <div class="titlerow"><h1 id="app-title">Lagebild Thomas Hußmann</h1><button id="refresh" type="button" class="refresh" aria-label="Aktualisieren" title="Aktualisieren"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.5"/></svg></button><span class="updmini" id="upd-mini"></span></div>
       <div class="dt"><span class="clock" id="clock">--:--:--</span><span class="sub" id="sub"></span></div>
       <a class="warnpill wp-info" id="warnpill" href="#warnungen"><span class="wp-dot"></span><span class="wp-t">Warnungen</span><span class="wp-v" id="warnpill-v">…</span><span class="wp-go">›</span></a>
     </div>
@@ -1258,6 +1260,6 @@ footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=217"></script>
+<script src="app.js?v=218"></script>
 </body>
 </html>

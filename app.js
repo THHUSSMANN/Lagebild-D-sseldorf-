@@ -2087,6 +2087,7 @@ async function refreshAll(force){
     tasks.push(loadWindy(),loadParking());
   }
   await Promise.allSettled(tasks);
+  {const um=$("upd-mini");if(um)um.innerHTML="<b>"+esc(C.isDus?"Düsseldorf":C.town)+"</b><span> · zuletzt aktualisiert "+new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"})+" Uhr</span>";}
   $("updated").textContent=C.name+" · zuletzt aktualisiert "+new Date().toLocaleString("de-DE",{...TZ,dateStyle:"medium",timeStyle:"short"})+" · Staus alle 3, Rest alle 10 Minuten";
   btn.disabled=false;busy=false;lastRun=Date.now();
   if(pending){pending=false;refreshAll(true);}
