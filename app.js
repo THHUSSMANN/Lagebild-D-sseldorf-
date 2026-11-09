@@ -261,6 +261,8 @@ function renderAlarm(){
     el.querySelector(".note").innerHTML=list.map(x=>'<span class="wl"><b>'+esc(x.name)+(x.n>1?" ("+x.n+")":"")+':</b> '+esc(short(x.title))+'</span>').join("");}
   document.querySelectorAll("#favs .fav").forEach(f=>f.classList.toggle("alarm-on",!!(FAV_ALARM[f.dataset.fav]&&FAV_ALARM[f.dataset.fav].n)));
 }
+// Warnleiste antippen = Warnung gesehen (Blinken stoppt bis zur nächsten neuen Warnung)
+document.addEventListener("click",e=>{if(!e.target.closest("#warnpill"))return;if(ALARM_SIG){store("alarm_seen",ALARM_SIG);renderAlarm();}});
 $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){store("alarm_seen",ALARM_SIG);renderAlarm();return;}const c=e.target.closest(".ab-c");if(!c)return;if(c.dataset.sel!==sel)choose(c.dataset.sel);location.hash="warnungen";});
 // ================= Taschenrechner =================
 (function(){
