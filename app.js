@@ -2110,7 +2110,7 @@ const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.datas
 const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],verkehr:[["staus/reise","Reise"],["staus/karte","Verkehrslage"],["parken","Parken"],["tanken","Tanken"],["eladen","E-Laden"]]};
 function tileAvailable(v){
   v=String(v).split("/")[0];
-  if(["bezirke"].includes(v))return C.isDus;
+  if(["bezirke","events"].includes(v))return C.isDus; // Veranstaltungen gibt es nur für Düsseldorf
   if(v==="einsaetze")return C.key==="datteln";
   if(v==="bahn"||v==="oepnv")return false; // jetzt unter Verkehr → Reise → Bus & Bahn
   return !!$("v-"+v);
