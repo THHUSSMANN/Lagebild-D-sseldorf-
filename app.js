@@ -2256,19 +2256,27 @@ if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderR
 // ================= Besuchersicherheit: Fläche, Besucherzahl, Rettungswegbreite =================
 {const num=v=>{v=String(v||"").trim().replace(/\s/g,"");if(/,/.test(v))v=v.replace(/\./g,"").replace(",",".");else if(/^\d{1,3}(\.\d{3})+$/.test(v))v=v.replace(/\./g,"");const n=parseFloat(v);return isFinite(n)?n:NaN;};
   const f0=n=>Math.round(n).toLocaleString("de-DE"),f2=n=>n.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
-  const st=load("bsicher")||{};let sel=st.sel||2;
+  const st=load("bsicher")||{};let sel=st.sel||2,mode=st.mode===200?200:600;
   function calc(){const A=num($("bs-area").value),cut=num($("bs-cut").value);const P0=num($("bs-pers").value);
     store("bsicher",{a:$("bs-area").value,c:$("bs-cut").value,p:$("bs-pers").value,sel});
     if(isFinite(A)&&A>0){const k=isFinite(cut)?Math.min(Math.max(cut,0),100):20;const N=A*(1-k/100);
       $("bs-net").innerHTML='<span>Nettofläche (Fläche − '+f0(k)+' %)</span><b>'+f2(N)+' m²</b>';
       $("bs-dens").innerHTML=[1,2,3,4].map(d=>'<button type="button" data-bsd="'+d+'" class="'+(d===sel?"on":"")+'"><span>'+d+(d===1?" Person":" Personen")+' / m²'+(d===1?' <small>(nur Vergleich)</small>':d===2?' <small>(Mindestansatz Stehflächen)</small>':'')+'</span><b>'+f0(Math.floor(N*d))+'</b></button>').join("");}
     else{$("bs-net").innerHTML="";$("bs-dens").innerHTML='<div class="muted small">Bitte eine Fläche eingeben.</div>';}
-    if(isFinite(P0)&&P0>0){const w=P0/600*1.2,st6=Math.max(1.2,Math.ceil(P0/300)*0.6);
-      $("bs-rw").innerHTML='<span>Erforderliche Gesamtbreite der Rettungswege</span><b>'+f2(w)+' m</b><span>Zwischenwerte zulässig · je Rettungswegteil mind. 1,20 m</span>';}
-    else $("bs-rw").innerHTML="";}
+    const div=mode;const W0=num($("bs-wid").value);
+    if(isFinite(P0)&&P0>0){const w=P0/div*1.2;
+      $("bs-rw").innerHTML='<span>Erforderliche Gesamtbreite ('+(div===600?"im Freien":"in Gebäuden")+')</span><b>'+f2(w)+' m</b><span>je Rettungswegteil mind. 1,20 m</span>';}
+    else $("bs-rw").innerHTML="";
+    if(isFinite(W0)&&W0>0)$("bs-wp").innerHTML='<span>Zulässige Personen bei '+f2(W0)+' m ('+(div===600?"im Freien":"in Gebäuden")+')</span><b>'+f0(Math.floor(W0/1.2*div+1e-9))+' Personen</b>';else $("bs-wp").innerHTML="";
+    // Tabelle wie in der Excel-Vorlage: 1,20 m bis 18 m in 0,60-m-Schritten
+    let rows="";for(let k=2;k<=30;k++){const w=k*0.6,p=Math.round(w/1.2*div);const hit=isFinite(P0)&&P0>0&&P0<=p&&P0>Math.round((w-0.6)/1.2*div);rows+='<tr'+(hit?' class="hit"':'')+'><td>'+f2(w)+' m</td><td>'+f0(p)+'</td></tr>';}
+    $("bs-tab").innerHTML='<table><thead><tr><th>Rettungswegbreite</th><th>Anzahl Personen</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    store("bsicher",{a:$("bs-area").value,c:$("bs-cut").value,p:$("bs-pers").value,w:$("bs-wid").value,sel,mode});}
   const dlg=$("bs-dlg");
   if(dlg){$("bs-area").value=st.a||"";$("bs-cut").value=st.c||"20";$("bs-pers").value=st.p||"";
-    ["bs-area","bs-cut","bs-pers"].forEach(id=>$(id).addEventListener("input",calc));
+    $("bs-wid").value=st.w||"";["bs-area","bs-cut","bs-pers","bs-wid"].forEach(id=>$(id).addEventListener("input",calc));
+    document.querySelectorAll("#bs-mode [data-bsm]").forEach(b=>b.classList.toggle("on",+b.dataset.bsm===mode));
+    $("bs-mode").addEventListener("click",e=>{const b=e.target.closest("[data-bsm]");if(!b)return;mode=+b.dataset.bsm;document.querySelectorAll("#bs-mode [data-bsm]").forEach(x=>x.classList.toggle("on",x===b));calc();});
     $("bs-dens").addEventListener("click",e=>{const b=e.target.closest("[data-bsd]");if(!b)return;sel=+b.dataset.bsd;$("bs-pers").value=b.querySelector("b").textContent.replace(/\./g,"");calc();});
     $("bs-btn").addEventListener("click",()=>{if(document.body.classList.contains("harrange"))return;calc();dlg.showModal();});}}
 // Neue Dashboard-Version automatisch laden: beim Zurückkehren in die App und alle 10 Minuten nachsehen
