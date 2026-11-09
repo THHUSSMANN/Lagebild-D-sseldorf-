@@ -2199,7 +2199,11 @@ const VIEWPARENT={quellen:["einstellungen","‹ Zurück zu Einstellungen"],einst
 // Einstellungen schließen → Übersicht mit geöffneten Tools, Knopf im Blick
 document.addEventListener("click",e=>{const x=e.target.closest("#v-einstellungen .view-x,#v-flaechen .view-x");if(!x)return;
   setTimeout(()=>{$("tools").hidden=false;$("tools-toggle").setAttribute("aria-expanded","true");const t=document.querySelector('#toolgrid [data-tool="'+(x.closest("#v-flaechen")?"flaechen":"settings")+'"]')||$("tools-toggle");t.scrollIntoView({behavior:"smooth",block:"center"});},120);});
-document.querySelectorAll(".view").forEach(v=>{const p=VIEWPARENT[v.dataset.view];const x=document.createElement("a");x.href="#"+(p?p[0]:"");x.className="view-x";x.setAttribute("aria-label",p?p[1]:"Schließen, zurück zur Übersicht");x.innerHTML=p?p[1]:"✕ Schließen";v.prepend(x);});
+document.querySelectorAll(".view").forEach(v=>{const p=VIEWPARENT[v.dataset.view];const x=document.createElement("a");x.href="#"+(p?p[0]:"");x.className="view-x";x.setAttribute("aria-label",p?p[1]:"Schließen, zurück zur Übersicht");x.innerHTML=p?p[1]:"✕ Schließen";v.prepend(x);
+  // iOS-26-Leiste: Unterreiter + runder Schließen-Knopf in einer Zeile
+  const st=v.querySelector(":scope > .subtabs");if(st&&!p){const bar=document.createElement("div");bar.className="vtop";x.after(bar);bar.append(st,x);x.classList.add("round");x.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';}});
+// aktiven Unterreiter in der Leiste sichtbar halten
+new MutationObserver(()=>{document.querySelectorAll(".vtop .subtabs a.on").forEach(a=>{const b=a.parentNode;if(a.offsetLeft<b.scrollLeft||a.offsetLeft+a.offsetWidth>b.scrollLeft+b.clientWidth)b.scrollTo({left:a.offsetLeft-12,behavior:"smooth"});});}).observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
 let EDITING=false,SORT=null;
 document.querySelectorAll("#tiles .tile").forEach(t=>{
