@@ -635,15 +635,38 @@ header #toolgrid [data-tool="arrange"] .mi{width:16px;height:16px}
 .harrange-hint{margin:8px 2px 0;font-size:13.5px;color:var(--head-fg);opacity:.85}
 body.harrange #headnav a,body.harrange #toolgrid .hbtn:not([data-tool="arrange"]){outline:2px dashed rgba(255,255,255,.45);outline-offset:2px;cursor:grab;animation:wob .25s ease-in-out infinite alternate}
 body.harrange #toolgrid [data-tool="arrange"]{opacity:1;border-style:solid!important;background:var(--accent)!important;color:var(--panel)!important}
+
+/* ---------- Kopf: Titel mit Aktualisieren-Symbol, Warnungen als eigene Leiste ---------- */
+.titlerow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand .refresh{align-self:auto;margin:0;flex:0 0 auto;width:40px;height:40px;min-height:40px;padding:0;display:inline-grid;place-items:center;border-radius:50%;
+  background-color:rgba(255,255,255,.1);background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 60%);border:1px solid rgba(255,255,255,.22);
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25);color:var(--head-fg);font-size:0}
+.brand .refresh .mi{width:20px;height:20px}
+.brand .refresh:active{transform:scale(.92)}
+.brand .refresh:disabled .mi{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.warnpill{display:flex;align-items:center;gap:10px;margin:12px 0 4px;padding:12px 16px;border-radius:18px;text-decoration:none;color:var(--head-fg);
+  background-color:rgba(255,255,255,.08);background-image:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 60%);border:1px solid rgba(255,255,255,.18);
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 1px 2px rgba(0,0,0,.3),0 8px 20px rgba(0,0,0,.28)}
+.warnpill:active{transform:scale(.98)}
+.warnpill .wp-dot{width:12px;height:12px;border-radius:50%;background:var(--accent);flex:0 0 auto;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 25%,transparent)}
+.warnpill .wp-t{font:700 17px var(--f-display)}
+.warnpill .wp-v{flex:1;font:500 15px var(--f-body);opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.warnpill .wp-go{font-size:22px;opacity:.7}
+.warnpill.wp-ok{background-color:color-mix(in srgb,var(--ok) 20%,transparent)} .warnpill.wp-ok .wp-dot{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 25%,transparent)}
+.warnpill.wp-warn{background-color:color-mix(in srgb,var(--warn) 24%,transparent)} .warnpill.wp-warn .wp-dot{background:var(--warn);box-shadow:0 0 0 4px color-mix(in srgb,var(--warn) 25%,transparent)}
+.warnpill.wp-bad,.warnpill.wp-crit{background-color:color-mix(in srgb,var(--bad) 30%,transparent)} .warnpill.wp-bad .wp-dot,.warnpill.wp-crit .wp-dot{background:var(--bad);animation:dot 1.1s ease-in-out infinite}
+body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border-color:#ff6b5e}
+.warnpill.on{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
 <body>
 <header class="top pad">
   <div class="wrap">
     <div class="brand">
-      <h1 id="app-title">Lagebild Thomas Hußmann</h1>
+      <div class="titlerow"><h1 id="app-title">Lagebild Thomas Hußmann</h1><button id="refresh" type="button" class="refresh" aria-label="Aktualisieren" title="Aktualisieren"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.5"/></svg></button></div>
       <div class="dt"><span class="clock" id="clock">--:--:--</span><span class="sub" id="sub"></span></div>
-      <button id="refresh" type="button" class="refresh">↻ Aktualisieren</button>
+      <a class="warnpill wp-info" id="warnpill" href="#warnungen"><span class="wp-dot"></span><span class="wp-t">Warnungen</span><span class="wp-v" id="warnpill-v">…</span><span class="wp-go">›</span></a>
     </div>
     <div class="hrow">
       <div class="places">
@@ -1118,6 +1141,6 @@ body.harrange #toolgrid [data-tool="arrange"]{opacity:1;border-style:solid!impor
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=172"></script>
+<script src="app.js?v=173"></script>
 </body>
 </html>
