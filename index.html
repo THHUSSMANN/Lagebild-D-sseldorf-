@@ -880,6 +880,10 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 #rs-dir button.on::before,#rs-tdir button.on::before{color:var(--accent)!important}
 #rs-dir button.on.dl-warn{border-color:var(--warn)!important}#rs-dir button.on.dl-bad{border-color:var(--bad)!important}
 #rs-dir button.on.dl-warn small{color:var(--warn)!important}#rs-dir button.on.dl-bad small{color:var(--bad)!important}
+/* Bahn: Reisezeit immer in eigener Zeile, Pfeil rechts mittig */
+.trip summary{position:relative;padding-right:36px}.trip summary .tt{flex-basis:100%}.trip summary .jd{flex-basis:100%}
+.trip summary::after{position:absolute;right:12px;top:50%;transform:translateY(-50%);margin:0}
+.trip[open] summary::after{transform:translateY(-50%) rotate(90deg)}
 </style>
 </head>
 <body>
@@ -1437,6 +1441,6 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=248"></script>
+<script src="app.js?v=249"></script>
 </body>
 </html>

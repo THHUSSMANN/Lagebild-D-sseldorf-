@@ -994,7 +994,7 @@ async function loadTrips(opt){opt=opt||{};
         const plat=p=>p?'<span class="pl">Gl. '+esc(p)+'</span>':'';
         const tm=(p,e)=>'<b>'+t2(p)+'</b>'+del(p,e);
         const summary='<summary><span class="tt">'+tm(j.dep,j.depEst)+' → '+tm(j.arr,j.arrEst)+'</span>'+
-          '<span class="muted small">'+(dur!=null?Math.floor(dur/60)+":"+String(dur%60).padStart(2,"0")+" h":"")+' · '+j.changes+' Umst.'+(ride[0]&&ride[0].plat?' · ab Gl. '+esc(ride[0].plat):'')+'</span>'+
+          '<span class="muted small jd">'+(dur!=null?Math.floor(dur/60)+":"+String(dur%60).padStart(2,"0")+" h":"")+' · '+j.changes+' Umst.'+(ride[0]&&ride[0].plat?' · ab Gl. '+esc(ride[0].plat):'')+'</span>'+
           (cancelled?'<span class="pill p-bad"><i></i>Ausfall</span>':risk?'<span class="pill p-warn"><i></i>Anschluss gefährdet</span>':'')+
           '<span class="lines">'+ride.map(l=>'<span class="tag" style="font-size:13px">'+esc(l.line)+'</span>').join(' › ')+'</span></summary>';
         const steps=ride.map((l,i)=>{
