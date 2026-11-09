@@ -263,6 +263,10 @@ function renderAlarm(){
 }
 // Aktiven Themen-Knopf erneut antippen = Bereich schließen (zurück zur Übersicht)
 document.addEventListener("click",e=>{const a=e.target.closest("#headnav a.on[data-v]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();e.stopImmediatePropagation();history.pushState(null,"","#");route();window.scrollTo({top:0,behavior:"smooth"});},true);
+// Veranstaltung antippen → in der Verkehrslage-Karte zeigen
+document.addEventListener("click",e=>{const it=e.target.closest("#v-events [data-lat]");if(!it||e.target.closest("a,summary,details"))return;e.preventDefault();
+  const la=it.dataset.lat,lo=it.dataset.lon,ev=!!it.closest("#ev-list");if(!C.isDus)choose("dus-4");history.pushState(null,"","#staus/karte");route();
+  setTimeout(()=>{setVL(ev?"event":"next");const t=document.querySelector('#'+(ev?"vt-events":"vt-next")+' [data-lat="'+la+'"][data-lon="'+lo+'"]');if(t)t.click();},700);});
 // Warnleiste antippen = Warnung gesehen (Blinken stoppt bis zur nächsten neuen Warnung)
 document.addEventListener("click",e=>{if(!e.target.closest("#warnpill"))return;if(ALARM_SIG){store("alarm_seen",ALARM_SIG);renderAlarm();}});
 $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){store("alarm_seen",ALARM_SIG);renderAlarm();return;}const c=e.target.closest(".ab-c");if(!c)return;if(c.dataset.sel!==sel)choose(c.dataset.sel);location.hash="warnungen";});
@@ -908,6 +912,9 @@ async function loadVT(){
     $("vt-now").innerHTML=active.length?'<div class="list">'+active.slice(0,60).map(x=>item(x)).join("")+'</div>'+(active.length>60?'<div class="muted small">+ '+(active.length-60)+' weitere</div>':''):'<div class="state good">Keine aktiven Sperrungen.</div>';
     $("vt-events").innerHTML=ev.length?'<div class="list">'+ev.slice(0,8).map(x=>item(x,"Event")).join("")+'</div>':'<div class="state good">Keine angekündigten Veranstaltungen.</div>';
     $("vt-next").innerHTML=soon.length?'<div class="list">'+soon.slice(0,8).map(x=>item(x)).join("")+'</div>':'<div class="state good">Nichts Neues angekündigt.</div>';
+    {const el=$("ev-list"),en=$("ev-next");if(el){el.innerHTML=ev.length?'<div class="list">'+ev.slice(0,30).map(x=>item(x,"Event")).join("")+'</div>':'<div class="state good">Keine angekündigten Veranstaltungen.</div>';fillOrte(el);}
+      if(en){en.innerHTML=soon.length?'<div class="list">'+soon.slice(0,20).map(x=>item(x)).join("")+'</div>':'<div class="state good">Nichts Neues angekündigt.</div>';fillOrte(en);}
+      const td=ev.filter(x=>new Date(x.from)<=now).length;setKpi("k-events",String(ev.length)+"<small> angekündigt</small>",td?td+" laufen gerade":(ev[0]?"nächste: "+dateTime(ev[0].from):"keine"),ev.length?"info":"ok");}
     setStatus("vt",true);drawVTOnMap();fillOrte($("vt-now")).then(()=>fillOrte($("vt-next"))).then(()=>fillOrte($("vt-events")));
   }catch(e){setStatus("vt",false,errText(e));["vt-now","vt-events","vt-next"].forEach(id=>$(id).innerHTML=stateBox("Nicht verfügbar – "+errText(e)+".",link("https://vtmanager.duesseldorf.de/info/","Verkehrszentrale")));}
 }

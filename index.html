@@ -872,6 +872,7 @@ footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var
     <div role="button" tabindex="0" class="kpi tile" data-view="warnungen" id="k-warn"><div class="lbl">Warnungen</div><div class="val">–</div><div class="note">NINA &amp; DWD</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="wetter" id="k-temp"><div class="lbl">Wetter</div><div class="val">–</div><div class="note">wird geladen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="staus" id="k-traffic"><div class="lbl">Reise &amp; Verkehr</div><div class="val">–</div><div class="note">Auto, Bahn, Bus, Parken</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="events" id="k-events"><div class="lbl">Veranstaltungen</div><div class="val">–</div><div class="note">Düsseldorf</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="bahn" id="k-bahn"><div class="lbl">Bus &amp; Bahn</div><div class="val">–</div><div class="note">Abfahrten &amp; Verbindungen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einsaetze" id="k-ein" hidden><div class="lbl">Feuerwehreinsätze</div><div class="val">–</div><div class="note">Kreisleitstelle</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="blaulicht" id="k-bl"><div class="lbl">Pressemitteilungen</div><div class="val">–</div><div class="note">Pressemeldungen</div></div>
@@ -1019,6 +1020,16 @@ footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var
 </section>
 </div>
 
+
+<div class="view" id="v-events" data-view="events" hidden>
+<section class="card wide">
+  <div class="card-head"><h2>Veranstaltungen Düsseldorf</h2><span class="src">Verkehrszentrale der Landeshauptstadt · verkehrsrelevante Veranstaltungen</span></div>
+  <div class="muted small">Eintrag antippen zeigt die Stelle in der Verkehrslage-Karte.</div>
+  <div id="ev-list"><div class="state">wird geladen …</div></div>
+  <div class="sublbl">Demnächst (7 Tage) · neue Sperrungen und Meldungen</div>
+  <div id="ev-next"><div class="state">wird geladen …</div></div>
+</section>
+</div>
 <div class="view" id="v-einsaetze" data-view="einsaetze" hidden>
 <section class="card wide" id="einsaetze-card">
   <div class="card-head"><h2>Feuerwehreinsätze Datteln</h2><span class="src">Kreisleitstelle Recklinghausen · alle 10 Minuten</span></div>
@@ -1264,6 +1275,6 @@ footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=220"></script>
+<script src="app.js?v=221"></script>
 </body>
 </html>
