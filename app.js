@@ -468,7 +468,7 @@ $("fin-save").addEventListener("click",()=>{const raw=$("fin").value.trim();cons
 {const fi=$("fin");if(fi)fi.addEventListener("paste",()=>setTimeout(()=>$("fin-save").click(),50));}
 $("fin-btn").addEventListener("click",()=>{let l=finNorm(load("fin_link"));
   // Auf iPhone/iPad ohne gespeicherten Link: Kurzbefehl „Kontostand“ öffnet die Datei direkt (kein Link nötig)
-  if(!l&&(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))){location.href="shortcuts://run-shortcut?name="+encodeURIComponent("Kontostand");return;}
+  if(!/^https?:/i.test(l||"")&&(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))){location.href="shortcuts://run-shortcut?name="+encodeURIComponent("Kontostand");return;}
   if(!l){const raw=prompt("iCloud-Link zu deiner Finanztabelle einfügen (beginnt mit https://www.icloud.com/…; wird nur auf diesem Gerät gespeichert):")||"";l=finNorm(raw);
     if(!l){if(raw.trim())alert("Das ist kein gültiger Link. Bitte in der Dateien-App „Link kopieren“ verwenden – der Link beginnt mit https://www.icloud.com/");return;}
     store("fin_link",l);const fi=$("fin");if(fi)fi.value=l;}
