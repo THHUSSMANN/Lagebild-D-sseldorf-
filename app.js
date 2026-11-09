@@ -2352,6 +2352,11 @@ if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderR
 // Verkehr: aufklappbare Bereiche, Zustand merken, Anzahl im Titel
 function openMap(){if(location.hash!=="#staus/karte"){MAPFOCUS=1;location.hash="staus/karte";route();}if(MAP)MAP.invalidateSize();}
 function foldCount(){const c=$("fcnt-all");if(!c)return;let n=0;["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(el)n+=el.querySelectorAll(".jam,.li,details.abd").length;});c.textContent=n?String(n):"";}
+// Verkehrslage: Staus der Autobahn GmbH, die TomTom an gleicher Stelle (< 3 km + Staulänge) schon meldet, nur einmal zeigen
+function dedupVL(){const box=$("stau-list");if(!box)return;const T=(typeof TT!=="undefined"&&TT&&TT.list)?TT.list.filter(x=>(x.delay>0||x.cat===6)&&isFinite(x.lat)):[];
+  box.querySelectorAll(".jam[data-lat]").forEach(el=>{const la=+el.dataset.lat,lo=+el.dataset.lon;const d=T.some(x=>{const L=+x.len||0;return distKm(x.lat,x.lon,la,lo)<3+(L>50?L/1000:L);});
+    if(el.hidden!==d)el.hidden=d;});try{vlCount();}catch(e){}}
+["tt","stau-list"].forEach(id=>{const el=$(id);if(el)new MutationObserver(()=>setTimeout(dedupVL,0)).observe(el,{childList:true});});
 ["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(!el)return;foldCount(id);new MutationObserver(()=>foldCount(id)).observe(el,{childList:true,subtree:true});});
 
 /* Verkehrslage: Kategorie-Knöpfe statt langer Liste */
