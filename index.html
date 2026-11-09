@@ -585,7 +585,9 @@ header .fav,header .rtoggle,header .rlink,header .rbtn{color:#fff}
 .alt.on{background-color:var(--panel-2);color:var(--fg);border:2px solid var(--accent)}
 .kpi.tile{border-radius:18px;background-image:linear-gradient(180deg,var(--glass-hi),rgba(255,255,255,0) 50%);box-shadow:var(--glass-sh);transition:transform .12s ease}
 html,body{overflow-anchor:none}
-.ortp{font-weight:700}
+.ortp:empty{display:none}
+.ortc{display:inline-flex;align-items:center;gap:5px;padding:1px 9px 1px 7px;margin:0 6px 2px 0;border-radius:999px;background:color-mix(in srgb,var(--accent) 22%,transparent);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);color:var(--fg);font-weight:800;font-size:.92em;white-space:nowrap;vertical-align:middle}
+.ortc::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
 
 /* ---------- Feinschliff ---------- */
 #viewbar{display:none!important}
@@ -1078,6 +1080,6 @@ header .tools .hbtn,header .tools-toggle{border-radius:16px!important;background
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=160"></script>
+<script src="app.js?v=161"></script>
 </body>
 </html>
