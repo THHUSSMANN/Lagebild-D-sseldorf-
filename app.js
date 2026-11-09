@@ -237,9 +237,11 @@ async function scanFavAlarms(){
   }));
   renderAlarm();
 }
+var WARN_SUM=null;
 function renderAlarm(){
   const list=favPlaces().filter(p=>FAV_ALARM[p.key]&&FAV_ALARM[p.key].n>0).map(p=>({...FAV_ALARM[p.key],key:p.key,sel:p.sel}));
   if(!FAVKEYS.includes(C.key)&&LOCAL_ALARM.n>0)list.unshift({n:LOCAL_ALARM.n,title:LOCAL_ALARM.title,name:C.town,key:C.key,sel:sel});
+  WARN_SUM={list,names:favPlaces().map(p=>p.name),loaded:Object.keys(FAV_ALARM).length};clearTimeout(HNT);HNT=setTimeout(()=>{try{buildViewbar();}catch(e){}},300);
   ALARM_SIG=list.map(x=>x.key+":"+(x.all&&x.all.length?x.all:[x.title]).slice().sort().join("|")).sort().join("#");
   const seen=list.length&&load("alarm_seen")===ALARM_SIG;
   document.body.classList.toggle("alarm",list.length>0&&!seen);document.body.classList.toggle("alarm-seen",!!seen);
@@ -1754,7 +1756,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
     renderReise();}}
 const TDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,a,"nach "+CITYN[b],STN[a][1]+" → "+STN[b][1],b]);
 // Bahn: je Ort Hin- und Rückfahrt zu jedem anderen Ort als eigener Knopf; Fahrten erst nach Antippen
-function tdirsOf(k){const o=[];TDIRS.filter(x=>x[1]===k).forEach(x=>{o.push(x);const r=TDIRS.find(y=>y[1]===x[4]&&y[4]===k);if(r)o.push(r);});return o;}
+function tdirsOf(k){return TDIRS.filter(x=>x[1]===k);} // nur Fahrten ab dem gewählten Ort
 function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
   setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===k?" on":"")+'">'+n+'</button>').join(""));
   const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
@@ -1776,7 +1778,7 @@ function setBtns(box,html){if(!box)return;const t=document.createElement("div");
     old.forEach((o,i)=>{if(o.className!==nw[i].className)o.className=nw[i].className;if(o.innerHTML!==nw[i].innerHTML)o.innerHTML=nw[i].innerHTML;});}
   else box.innerHTML=html;}
 // ÖPNV: Auswahl per Knopf statt langer Liste (Abfahrten vor Ort bzw. Verbindungen Dortmund ⇄ Datteln)
-const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln"],["o-dat-do","Datteln → Dortmund Hbf"],["dep","Stadion ⇄ Hbf"]],datteln:[["dep","Bus Lohstraße ⇄ Busbahnhof"],["o-dat-do,o-do-dat","Bus & Bahn Datteln ⇄ Dortmund"]]};
+const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln Busbahnhof"],["dep","Stadion → Hauptbahnhof"]],datteln:[["dep","Bus Lohstraße ⇄ Busbahnhof"],["o-dat-do","Datteln Busbahnhof → Dortmund Hbf"]]};
 function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opts.some(o=>o[0]===RS.oe))RS.oe=opts.length>1?null:opts[0][0];
   const seg=$("oe-seg");seg.hidden=opts.length<2;seg.style.gridTemplateColumns="repeat("+opts.length+",1fr)";setBtns(seg,opts.map(([k,l])=>'<button type="button" data-oe="'+k+'" class="'+(RS.oe===k?"on":"")+'">'+l+'</button>').join(""));
   const ob=$("oe-trips"),sec=ob.closest("section"),dep=$("oe-dep");
@@ -2019,7 +2021,12 @@ function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tile
 function buildViewbar(){
   const cur=location.hash.slice(1).split("/")[0];
   const g=groupOf(cur);
-  {const wt=$("k-warn"),wp=$("warnpill");if(wt&&wp){const st=(["ok","warn","bad","crit","info"].find(c=>wt.classList.contains("s-"+c)))||"info";wp.className="warnpill wp-"+st+(cur==="warnungen"?" on":"");
+  // Warnleiste: immer über alle Lieblingsorte (Düsseldorf, Datteln, Dortmund, Alpen-Menzelen, Salzhausen)
+  if(WARN_SUM&&WARN_SUM.loaded&&$("warnpill")){const wp=$("warnpill"),L=WARN_SUM.list,tot=L.reduce((t,x)=>t+x.n,0);
+    const short=t=>String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"");
+    wp.className="warnpill wp-"+(tot?"bad":"ok")+(cur==="warnungen"?" on":"");
+    $("warnpill-v").textContent=tot?tot+(tot===1?" Warnung":" Warnungen")+" · "+L.map(x=>x.name+": "+short(x.title)).join(" · ").slice(0,90):"Keine Warnungen · alle 5 Orte ruhig";}
+  else{const wt=$("k-warn"),wp=$("warnpill");if(wt&&wp){const st=(["ok","warn","bad","crit","info"].find(c=>wt.classList.contains("s-"+c)))||"info";wp.className="warnpill wp-"+st+(cur==="warnungen"?" on":"");
     $("warnpill-v").textContent=[((wt.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim(),((wt.querySelector(".note")||{}).textContent||"").trim()].filter(x=>x&&x!=="–").join(" · ").slice(0,60)||"…";}}
   {const hn=$("headnav");if(hn&&!(typeof HEDIT!=="undefined"&&HEDIT))hn.innerHTML=(cur?'<a class="hbtn back" href="#">‹ Übersicht</a>':'')+[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden&&t.dataset.view!=="warnungen").map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("");}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
