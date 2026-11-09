@@ -1694,7 +1694,7 @@ function renderSources(){
 // ================= Ablauf =================
 let busy=false,lastSlow=0,slowKey="";
 // ================= Stadtverkehr Datteln (TomTom) =================
-const TOWNS={dus:{lat:51.2254,lon:6.7763,z:12,name:"Düsseldorf"},datteln:{lat:51.6539,lon:7.3417,z:13,name:"Datteln"}};
+const TOWNS={dus:{lat:51.2254,lon:6.7763,z:12,name:"Düsseldorf"},datteln:{lat:51.6539,lon:7.3417,z:13,name:"Datteln"},dortmund:{lat:51.5136,lon:7.4653,z:12,name:"Dortmund"},alpen:{lat:51.6,lon:6.52,z:12,name:"Alpen-Menzelen"},salzhausen:{lat:53.2231,lon:10.1658,z:12,name:"Salzhausen"}};
 const homeOr=k=>HOMES[k]&&isFinite(HOMES[k].lat)?HOMES[k]:{...TOWNS[k],label:TOWNS[k].name};
 async function loadDatteln(){const box=$("sd-list");if(!box)return;
   if(!TTKEY){box.innerHTML=stateBox("Für den Stadtverkehr Datteln unter Einstellungen den kostenlosen TomTom-Schlüssel eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
@@ -1725,7 +1725,7 @@ let MAPGO=null;
 let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
 const RSDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,CITYN[a]+" → "+CITYN[b],a,b]);
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
-  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise":"Verkehrslage · "+(pane==="karte"?(mk==="datteln"?"Datteln":"Düsseldorf"):C.town);}
+  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise":"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
 const gmView=(o,d,via)=>{const A=o.label||o.lat+","+o.lon,B=d.label||d.lat+","+d.lon;
@@ -1764,7 +1764,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");
   const y=window.scrollY;const keep=()=>{if(Math.abs(window.scrollY-y)>4)window.scrollTo(0,y);};
   EFAK=EFACITY[k];RS.city=k;RS.at=0;
   RS.lock=1;try{if(k==="dus"){if(!C.isDus)choose("dus-4");}else if(C.key!==k)choose("p-"+k);}finally{RS.lock=0;}
-  rsCity(k);keep();
+  rsCity(k);keep();if(location.hash==="#staus/karte")mapGo(k);
   // Seite bleibt, wo sie ist, solange die Daten neu geladen werden (außer man scrollt selbst)
   let touched=false;const tt=()=>{touched=true;};addEventListener("touchstart",tt,{once:true,passive:true});addEventListener("wheel",tt,{once:true,passive:true});
   const guard=()=>{if(!touched&&Math.abs(window.scrollY-y)>120)window.scrollTo(0,y);};addEventListener("scroll",guard,{passive:true});
@@ -1839,7 +1839,7 @@ function mapCity(k){const rr=k==="r0"||k==="r1";if(rr){const p=$("mapcity-route"
 async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));mapCity(k);
   const info=$("mapgo-info");if(!MAP){try{ensureMap();}catch(e){}}
   if(MAP){MAP.invalidateSize();if(MAP._route){MAP._route.remove();MAP._route=null;}}
-  if(k==="dus"||k==="datteln"){const T=TOWNS[k];if(MAP)MAP.setView([T.lat,T.lon],T.z);info.textContent="Live-Verkehr rund um "+T.name+(MAPMODE!=="tomtom"&&TTKEY?" · für alle Straßen oben „TomTom“ wählen":"");return;}
+  if(TOWNS[k]){const T=TOWNS[k];if(MAP)MAP.setView([T.lat,T.lon],T.z);info.textContent="Live-Verkehr rund um "+T.name+(MAPMODE!=="tomtom"&&TTKEY?" · für alle Straßen oben „TomTom“ wählen":"");return;}
   const A=homeOr("dus"),B=homeOr("datteln");const [o,d,t]=k==="r0"?[A,B,"Düsseldorf → Datteln"]:[B,A,"Datteln → Düsseldorf"];
   if(!TTKEY){info.textContent="Für die Strecke den TomTom-Schlüssel unter Einstellungen eintragen.";if(MAP)MAP.fitBounds([[o.lat,o.lon],[d.lat,d.lon]],{padding:[20,20]});return;}
   info.textContent=t+" · Strecke wird berechnet …";
@@ -2040,7 +2040,7 @@ function route0(){
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
   if(v==="parken")pkShow(PKS||"gps");
   if(inView){if(ROUTEKEY!==v+"/"+pane){const top=()=>{const m=document.querySelector("main");window.scrollTo(0,m?Math.max(0,m.getBoundingClientRect().top+window.scrollY-6):0);};top();requestAnimationFrame(top);setTimeout(top,80);}if(v==="staus"){setStauTitle();if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
-    if(v==="staus"&&pane==="karte"){if(!MAPGO)mapCity(C.key==="datteln"?"datteln":"dus");setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
+    if(v==="staus"&&pane==="karte"){const vc=RS.city||(C.isDus?"dus":(TOWNS[C.key]?C.key:"dus"));if(MAPGO!==vc&&!/^r\d$/.test(MAPGO||""))setTimeout(()=>mapGo(vc),80);setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }
 
 // interne Links ohne Sprung des Browsers zu gleichnamigen Abschnitten
@@ -2127,7 +2127,7 @@ let VLK=load("vl_k")||"karte";
 const vlVis=el=>!el.closest("[hidden]");
 function vlCount(){const body=$("vl-body");if(!body)return;
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>{const k=b.dataset.vl,n=b.querySelector(".n");if(!n)return;
-    let c;if(k==="meld"){const d=$("mapcity-dus");c=d&&!d.hidden?d.querySelectorAll(".li").length:0;}
+    let c;if(k==="meld"){const d=$("mapcity-dus");const on=!!(d&&!d.hidden);b.hidden=!on;if(!on&&VLK==="meld")setTimeout(()=>setVL("karte"),0);c=on?d.querySelectorAll(".li").length:0;}
     else c=[...body.querySelectorAll('[data-kat~="'+k+'"]')].filter(vlVis).length;
     n.textContent=c?String(c):"";b.classList.toggle("none",!c);});
   const em=$("vl-empty");if(!em)return;
