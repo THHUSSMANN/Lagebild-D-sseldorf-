@@ -2235,6 +2235,12 @@ setInterval(()=>{if(!document.hidden)refreshAll(false);},10*60*1000);
 setInterval(()=>{if(!document.hidden&&!busy){loadAutobahn();loadTomTom();}},3*60*1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastRun>5*60*1000)refreshAll(false);});
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+// Neue Dashboard-Version automatisch laden: beim Zurückkehren in die App und alle 10 Minuten nachsehen
+{const myV=((document.querySelector('script[src*="app.js?v="]')||{}).src||"").split("v=")[1]||"";let chk=0;
+  const check=async()=>{if(!myV||Date.now()-chk<60000)return;chk=Date.now();
+    try{const t=await (await fetch("index.html?nv="+Date.now(),{cache:"no-store"})).text();const m=t.match(/app\.js\?v=(\d+)/);
+      if(m&&m[1]!==myV&&!document.body.classList.contains("harrange"))location.reload();}catch(e){}};
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)check();});setInterval(()=>{if(!document.hidden)check();},10*60000);setTimeout(check,15000);}
 
 // Verkehr: aufklappbare Bereiche, Zustand merken, Anzahl im Titel
 function openMap(){if(location.hash!=="#staus/karte"){MAPFOCUS=1;location.hash="staus/karte";route();}if(MAP)MAP.invalidateSize();}
