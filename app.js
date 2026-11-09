@@ -2109,7 +2109,9 @@ function route0(){
 document.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey)return;const a=e.target.closest('a[href^="#"]');if(!a||a.target)return;
   const h=a.getAttribute("href");e.preventDefault();history.pushState(null,"",h.length>1?h:location.pathname+location.search);route();});
 try{history.scrollRestoration="manual";}catch(e){}window.scrollTo(0,0);
-document.querySelectorAll(".view").forEach(v=>{const x=document.createElement("a");x.href="#";x.className="view-x";x.setAttribute("aria-label","Schließen, zurück zur Übersicht");x.innerHTML="✕ Schließen";v.prepend(x);});
+// Schließen führt zur übergeordneten Ansicht zurück (Schnittstellen → Einstellungen), sonst zur Übersicht
+const VIEWPARENT={quellen:["einstellungen","‹ Zurück zu Einstellungen"]};
+document.querySelectorAll(".view").forEach(v=>{const p=VIEWPARENT[v.dataset.view];const x=document.createElement("a");x.href="#"+(p?p[0]:"");x.className="view-x";x.setAttribute("aria-label",p?p[1]:"Schließen, zurück zur Übersicht");x.innerHTML=p?p[1]:"✕ Schließen";v.prepend(x);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
 let EDITING=false,SORT=null;
 document.querySelectorAll("#tiles .tile").forEach(t=>{
