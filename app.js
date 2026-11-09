@@ -1836,6 +1836,7 @@ function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="
     const t=RSTRIP[RS.tdir]||"";const st=(()=>{const d=TDIRS.find(x=>x[0]===RS.tdir);return d?d[3]:"";})();
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=RS.tdir===t.dataset.rstd?null:t.dataset.rstd;rsMode("bahn");if(RS.tdir)setTimeout(()=>{const c=$("trips-card");if(c&&c.getBoundingClientRect().top>innerHeight*.7)c.scrollIntoView({behavior:"smooth",block:"start"});},60);}});
+const GMICON='<svg class="gmi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.5s-7-6-7-11.6a7 7 0 0 1 14 0c0 5.6-7 11.6-7 11.6z"/><circle cx="12" cy="9.8" r="2.6"/></svg>';
 function renderReise(){const D=RS.data;setStauTitle();
   if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));return;}
   $("rs-quick").innerHTML="";
@@ -1848,7 +1849,7 @@ function renderReise(){const D=RS.data;setStauTitle();
     cur.alts.map(a=>{const m=(a.rw||[]).length;
       return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=15?"bad":a.dl>0?"warn":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
         '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
-        (a.i===RS.sel?'<span class="ag"><a href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>In Google Maps öffnen ↗</a><a class="sec" href="'+uberUrl(d)+'" target="_blank" rel="noopener">Uber bestellen ↗</a></span>':'')+'</div>';}).join("")+
+        (a.i===RS.sel?'<span class="ag"><a href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>'+GMICON+'In Google Maps öffnen ↗</a><a class="sec" href="'+uberUrl(d)+'" target="_blank" rel="noopener">Uber bestellen ↗</a></span>':'')+'</div>';}).join("")+
     '<div class="muted small" style="margin:0 2px 8px">Google Maps öffnet die Route von '+esc(o.label)+' nach '+esc(d.label)+' zur Kontrolle. Die Navigation startest du dort selbst; Alternativen zeigt Google grau zum Antippen.</div>';
   const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;
   inc.innerHTML='<div class="sublbl" style="margin-top:12px;font-size:15px">Staus &amp; Behinderungen auf Route '+(a.i+1)+' <span class="muted small">(TomTom live, schon in der Fahrzeit eingerechnet)</span></div>'+(n?a.secs.map(incRow).join(""):'<div class="state good">Keine Staus oder Sperrungen auf dieser Route.</div>')+
