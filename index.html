@@ -874,6 +874,12 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 #bs-btn .hb2{display:inline-block;text-align:left;line-height:1.1;font-size:.9em}
 /* Einheitliche Ampel: < 10 min neutral, ab 10 min gelb, ab 20 min rot */
 .delay.low{color:var(--muted)}.cs.lo{color:var(--muted);background:none;border:1px solid var(--line)}
+/* Reise: Auswahl neutral (Häkchen + Rand in Akzentfarbe), Rot/Gelb nur für echte Verzögerung */
+#rs-dir button.on,#rs-tdir button.on{background:var(--panel)!important;background-image:none!important;color:var(--fg)!important;text-shadow:none!important;border:3px solid var(--accent)!important}
+#rs-dir button.on small,#rs-tdir button.on small{color:var(--muted)!important}
+#rs-dir button.on::before,#rs-tdir button.on::before{color:var(--accent)!important}
+#rs-dir button.on.dl-warn{border-color:var(--warn)!important}#rs-dir button.on.dl-bad{border-color:var(--bad)!important}
+#rs-dir button.on.dl-warn small{color:var(--warn)!important}#rs-dir button.on.dl-bad small{color:var(--bad)!important}
 </style>
 </head>
 <body>
@@ -1431,6 +1437,6 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=245"></script>
+<script src="app.js?v=246"></script>
 </body>
 </html>

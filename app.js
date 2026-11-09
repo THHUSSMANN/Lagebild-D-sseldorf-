@@ -1848,7 +1848,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
   if(!force&&Date.now()-RS.at<3*60*1000&&RSDIRS.filter(x=>x[2]===RS.city).every(x=>RS.data[x[0]])){renderReise();return;}
   RS.at=Date.now();renderReise();
   if(!TTKEY){$("rs-alts").innerHTML=stateBox("Für die Fahrzeit den TomTom-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
-  const city=RS.city;for(const [k,t] of RSDIRS.filter(x=>x[2]===city).sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){if(RS.city!==city)break;const [o,d]=rsEnds(k);
+  const city=RS.city;for(const [k,t] of RSDIRS.filter(x=>x[2]===city).sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){if(RS.city&&RS.city!==city)break; // nur bei echtem Ortswechsel abbrechenconst [o,d]=rsEnds(k);
     try{const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&maxAlternatives=2&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
       let r;try{r=await getJSON(url,20000);}catch(e){await new Promise(z=>setTimeout(z,1200));r=await getJSON(url,20000);}
       const main=(r.routes[0].legs||[]).flatMap(l=>l.points||[]);
@@ -1861,7 +1861,8 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
       alts.forEach(a=>routeRW(a).then(async l=>{a.rw=l;if(RS.dir===k)renderReise();for(const w of l)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k&&RS.data[k]&&RS.data[k].alts&&RS.data[k].alts[RS.sel]===a)renderReise();}}));
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
     }catch(e){RS.data[k]={err:errText(e)};}
-    renderReise();}}
+    renderReise();}
+  if(RS.city&&RS.city!==city){RS.at=0;loadReise(false);}}
 const TDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,a,"nach "+CITYN[b],STN[a][1]+" → "+STN[b][1],b]);
 // Bahn: je Ort Hin- und Rückfahrt zu jedem anderen Ort als eigener Knopf; Fahrten erst nach Antippen
 function tdirsOf(k){return TDIRS.filter(x=>x[1]===k);} // nur Fahrten ab dem gewählten Ort
