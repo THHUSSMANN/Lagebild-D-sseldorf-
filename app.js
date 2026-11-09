@@ -1958,8 +1958,9 @@ var PKS=null,PKDAT=null,PKGPS=null,PKPOS=null;
 function pkShow(k){PKS=k;{const gb=document.querySelector('#pk-seg [data-pks="gps"]');if(gb){const n=CITYN[(typeof RS!=="undefined"&&RS.city)||"dus"]||"Ort";gb.lastChild.textContent=k==="gps"?"Zurück zu "+n:"Stattdessen an meinem Standort suchen (2 km)";}}const pane=k==="gps"||k==="dus"||k==="datteln"?k:"city";document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
   document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==pane);if(k==="datteln"&&!PKDAT)loadPkDat();if(k==="gps")pkGPS();if(pane==="city")loadPkCity(k);}
 const PKC={};
-async function loadPkCity(k){const box=$("pk-city");if(!box)return;const Z=FIXHOME[k]||TOWNS[k];const n=CITYN[k]||k;$("pk-city-h").textContent="Parken in "+n;
-  if(PKC[k]){renderPk("pk-city",PKC[k],'Öffentliche Parkmöglichkeiten bis 3 km um deine Adresse in '+esc(n)+', die nächste zuerst. Antippen öffnet die Route in Google Maps.');return;}
+const PKCENTER={dortmund:{lat:51.4926,lon:7.4519,lbl:"um den Signal Iduna Park"}};
+async function loadPkCity(k){const box=$("pk-city");if(!box)return;const Z=PKCENTER[k]||FIXHOME[k]||TOWNS[k];const n=CITYN[k]||k;$("pk-city-h").textContent="Parken in "+n+(PKCENTER[k]?" · Signal Iduna Park":"");
+  if(PKC[k]){renderPk("pk-city",PKC[k],'Öffentliche Parkmöglichkeiten bis 3 km '+(PKCENTER[k]?PKCENTER[k].lbl:'um deine Adresse in '+esc(n))+', die nächste zuerst. Antippen öffnet die Route in Google Maps.');return;}
   box.innerHTML='<div class="state">wird geladen …</div>';
   try{const d=await pkQuery(Z,3000);PKC[k]=pkParse(d,Z);if(PKS===k)loadPkCity(k);}catch(e){box.innerHTML=stateBox("Parkdaten für "+esc(n)+" nicht verfügbar – "+errText(e)+".");}}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pks]");if(b){e.preventDefault();

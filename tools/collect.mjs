@@ -542,7 +542,7 @@ async function bnetza(RC) {
 }
 async function osmPoi() {
   try { const prev = await get(LIVE + "osm-poi.json", { ms: 20000 });
-    if (prev && prev.data && prev.data.c && Date.now() - new Date(prev.generated) < 20 * 3600e3 && !prev.stale) { await fs.writeFile(path.join(OUT, "osm-poi.json"), JSON.stringify(prev)); return "ok (vom " + prev.generated.slice(0, 16) + ")"; } } catch {}
+    if (prev && prev.data && prev.data.c && Date.now() - new Date(prev.generated) < 20 * 3600e3 && !prev.stale && Object.keys(PLACES).every(k => prev.data.places && prev.data.places[k])) { await fs.writeFile(path.join(OUT, "osm-poi.json"), JSON.stringify(prev)); return "ok (vom " + prev.generated.slice(0, 16) + ")"; } } catch {}
   const SERVERS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
   const op = async q => { let err; for (const u of SERVERS) { try { const r = await fetch(u, { method: "POST", headers: { ...UA, "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q), signal: AbortSignal.timeout(150000) });
     if (!r.ok) throw new Error("HTTP " + r.status); const d = JSON.parse(await r.text()); if (!Array.isArray(d.elements)) throw new Error("Format"); return d.elements; } catch (e) { err = e; await sleep(2000); } } throw err; };
