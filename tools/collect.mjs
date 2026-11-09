@@ -199,7 +199,9 @@ const TRIPS = [
   ["o-dat-do", "Datteln Busbahnhof", "Dortmund Hbf", true],
   // Alpen-Menzelen und Salzhausen (Winsen/Luhe) – alle 30 Minuten neu, sonst letzter Stand
   ...[["al", "Alpen Bahnhof"], ["wl", "Winsen(Luhe)"]].flatMap(([c, n]) => [["dus", "Düsseldorf Hbf"], ["re", "Recklinghausen Hbf"], ["do", "Dortmund Hbf"]]
-    .flatMap(([c2, n2]) => [[c + "-" + c2, n, n2, false, true], [c2 + "-" + c, n2, n, false, true]]))
+    .flatMap(([c2, n2]) => [[c + "-" + c2, n, n2, false, true], [c2 + "-" + c, n2, n, false, true]])),
+  ["al-wl", "Alpen Bahnhof", "Winsen(Luhe)", false, true],
+  ["wl-al", "Winsen(Luhe)", "Alpen Bahnhof", false, true]
 ];
 // Haltestellenname ohne Gleis; „Recklinghausen, Recklinghausen Hbf“ → „Recklinghausen Hbf“
 function stopName(x) {

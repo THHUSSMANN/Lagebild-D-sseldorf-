@@ -927,7 +927,7 @@ const TRIP_KEYS={dus:["dus-re","re-dus"],datteln:["re-dus","dus-re"]};
 // Bahnhöfe je Ort und Kürzel für die Bahnverbindungen
 const STN={dus:["dus","Düsseldorf Hbf"],datteln:["re","Recklinghausen Hbf"],dortmund:["do","Dortmund Hbf"],alpen:["al","Alpen"],salzhausen:["wl","Winsen (Luhe)"]};
 const CITYN={dus:"Düsseldorf",datteln:"Datteln",dortmund:"Dortmund",alpen:"Alpen-Menzelen",salzhausen:"Salzhausen"};
-const CITYPAIRS=(()=>{const core=["dus","datteln","dortmund"],o=[];for(const a of core)for(const b of core)if(a!==b)o.push([a,b]);for(const x of ["alpen","salzhausen"])for(const b of core){o.push([x,b]);o.push([b,x]);}return o;})();
+const CITYPAIRS=(()=>{const core=["dus","datteln","dortmund"],o=[];for(const a of core)for(const b of core)if(a!==b)o.push([a,b]);for(const x of ["alpen","salzhausen"])for(const b of core){o.push([x,b]);o.push([b,x]);}o.push(["alpen","salzhausen"],["salzhausen","alpen"]);return o;})();
 const RSTRIP=Object.fromEntries(CITYPAIRS.map(([a,b])=>[a+">"+b,STN[a][0]+"-"+STN[b][0]]));
 async function loadTrips(opt){opt=opt||{};
   const keys=opt.keys||(typeof RS!=="undefined"&&RS.tdir?[RSTRIP[RS.tdir]]:(TRIP_KEYS[C.key]||[]));const box=opt.box||$("trips");
