@@ -1773,12 +1773,13 @@ function setBtns(box,html){if(!box)return;const t=document.createElement("div");
   else box.innerHTML=html;}
 // ÖPNV: Auswahl per Knopf statt langer Liste (Abfahrten vor Ort bzw. Verbindungen Dortmund ⇄ Datteln)
 const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln"],["o-dat-do","Datteln → Dortmund Hbf"],["dep","Stadion ⇄ Hbf"]],datteln:[["dep","Bus Lohstraße ⇄ Busbahnhof"],["o-dat-do,o-do-dat","Bus & Bahn Datteln ⇄ Dortmund"]]};
-function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opts.some(o=>o[0]===RS.oe))RS.oe=opts[0][0];
+function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opts.some(o=>o[0]===RS.oe))RS.oe=opts.length>1?null:opts[0][0];
   const seg=$("oe-seg");seg.hidden=opts.length<2;seg.style.gridTemplateColumns="repeat("+opts.length+",1fr)";setBtns(seg,opts.map(([k,l])=>'<button type="button" data-oe="'+k+'" class="'+(RS.oe===k?"on":"")+'">'+l+'</button>').join(""));
   const ob=$("oe-trips"),sec=ob.closest("section"),dep=$("oe-dep");
-  if(RS.oe==="dep"){sec.hidden=true;dep.hidden=false;}
+  if(!RS.oe){sec.hidden=true;dep.hidden=true;}
+  else if(RS.oe==="dep"){sec.hidden=true;dep.hidden=false;}
   else{dep.hidden=true;sec.hidden=false;ob.hidden=false;$("oe-title").textContent=(opts.find(o=>o[0]===RS.oe)||[])[1]||"Bus & Bahn";ob.innerHTML='<div class="state">wird geladen …</div>';loadTrips({keys:RS.oe.split(","),box:ob});}}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-oe]");if(!b)return;RS.oe=b.dataset.oe;rsOe();});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-oe]");if(!b)return;RS.oe=RS.oe===b.dataset.oe?null:b.dataset.oe;rsOe();});
 function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();
     rsOe();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
