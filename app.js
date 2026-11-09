@@ -437,6 +437,12 @@ $("stop").addEventListener("input",()=>{const q=normStop($("stop").value);const 
 $("stop-sug").addEventListener("click",e=>{const b=e.target.closest("[data-sug]");if(!b)return;$("stop").value=b.dataset.sug;$("stop-sug").innerHTML="";$("stop-save").click();});
 $("routes-save").addEventListener("click",()=>{ROUTES_TXT=$("routes").value.trim();store("routes_"+C.key,ROUTES_TXT);ROUTES=parseRoutes(ROUTES_TXT);loadAutobahn();});
 $("routes").addEventListener("keydown",e=>{if(e.key==="Enter")$("routes-save").click();});
+// Kontostand: öffnet die Finanztabelle in iCloud (Link nur lokal auf dem Gerät gespeichert)
+{const fi=$("fin");if(fi)fi.value=load("fin_link")||"";}
+$("fin-save").addEventListener("click",()=>{const v=$("fin").value.trim();store("fin_link",v||null);$("fin-save").textContent=v?"Gespeichert ✓":"Gelöscht";setTimeout(()=>$("fin-save").textContent="Speichern",1800);});
+$("fin-btn").addEventListener("click",()=>{let l=load("fin_link");
+  if(!l){l=(prompt("Link zu deiner Finanztabelle in iCloud einfügen (wird nur auf diesem Gerät gespeichert):")||"").trim();if(!/^https?:\/\//.test(l))return;store("fin_link",l);const fi=$("fin");if(fi)fi.value=l;}
+  window.open(l,"_blank","noopener");});
 $("tk-save").addEventListener("click",()=>{TK=$("tk").value.trim();store("tk",TK);loadFuel();});
 $("theme").addEventListener("change",e=>{const v=e.target.value;store("theme",v);
   if(v)document.documentElement.setAttribute("data-theme",v);else document.documentElement.removeAttribute("data-theme");});
@@ -2036,7 +2042,10 @@ $("arrange").addEventListener("click",()=>{
   if(window.Sortable&&!SORT)SORT=Sortable.create($("tiles"),{animation:150,forceFallback:true,fallbackOnBody:true,fallbackTolerance:4,delay:0,filter:".ctl button",preventOnFilter:false,ghostClass:"tile-ghost",chosenClass:"tile-chosen",dragClass:"tile-drag",onStart:()=>$("tiles").classList.add("dragging"),onEnd:()=>{$("tiles").classList.remove("dragging");saveTileOrder();}});
   if(SORT)SORT.option("disabled",!EDITING);
   if(!EDITING)saveTileOrder();
+  document.body.classList.toggle("arranging",EDITING);if(!EDITING)buildViewbar();
 });
+$("arrange-tool").addEventListener("click",()=>{if(location.hash.length>1){history.pushState(null,"",location.pathname+location.search);route();}
+  if(!EDITING)$("arrange").click();setTimeout(()=>$("home").scrollIntoView({behavior:"smooth",block:"start"}),80);});
 $("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});
 applyTileOrder();{const kb=$("k-bahn");if(kb)kb.hidden=true;}route();
 applyPlaceUi();renderSources();tick();setInterval(tick,1000);

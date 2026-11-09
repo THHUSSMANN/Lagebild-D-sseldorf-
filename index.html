@@ -610,7 +610,7 @@ body.alarm header #headnav a[href="#warnungen"]{animation:alarm 1.1s ease-in-out
 header .tools .hbtn,header .tools-toggle{border-radius:16px!important;background-color:rgba(255,255,255,.08);background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%);border:1px solid rgba(255,255,255,.18);box-shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25)}
 
 /* ---------- Info-Knöpfe statt Kacheln, Städte im Raster ---------- */
-#home .home-head,#home #arrange-hint,#home .tiles{display:none!important}
+body:not(.arranging) #home .home-head,body:not(.arranging) #home .tiles{display:none!important}
 header #headnav a.hbtn{flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;padding:8px 12px;min-height:56px;text-align:left}
 header #headnav .hn-l{font:700 15px var(--f-display);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 header #headnav .hn-v{font:500 13px var(--f-body);opacity:.85;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -647,6 +647,8 @@ header .favs .fav small{font-size:12px;opacity:.9}
       <a class="hbtn" href="https://maps.duesseldorf.de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5 9 4l6 2.5 5.5-2.5v13.5L15 20l-6-2.5-5.5 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>Düsseldorf Maps</a>
       <button type="button" class="hbtn" id="calc-btn" aria-label="Taschenrechner"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>Rechner</button>
       <button type="button" class="hbtn" id="alarm-btn" aria-label="Wecker"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>Wecker</button>
+      <button type="button" class="hbtn" id="fin-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="7.5" width="16" height="12" rx="2.5"/><path d="M20 11.5h-4a2 2 0 0 0 0 4h4"/><circle cx="16.3" cy="13.5" r=".6"/></svg>Kontostand</button>
+      <button type="button" class="hbtn" id="arrange-tool"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><path d="M16.75 13.5v6.5M13.5 16.75H20"/></svg>Anordnen</button>
     </div>
       <div class="radio" id="radio" aria-label="Radio"><button type="button" class="rtoggle" id="radio-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
         <div class="rlist" id="radio-list" hidden>
@@ -1058,6 +1060,11 @@ header .favs .fav small{font-size:12px;opacity:.9}
       <span class="hint">Gilt für den gerade gewählten Ort. Autobahn und Fahrtrichtung, getrennt mit Semikolon, z. B. „A43 Münster; A2 Oberhausen“.</span>
     </div>
     <div class="field">
+      <label for="fin">Link zur Finanztabelle (iCloud)</label>
+      <div class="inline"><input id="fin" type="url" autocomplete="off" spellcheck="false" placeholder="https://www.icloud.com/iclouddrive/…"><button type="button" id="fin-save">Speichern</button></div>
+      <span class="hint">Wird nur auf diesem Gerät gespeichert, nie im Internet veröffentlicht. Link in der Dateien-App: Datei lange drücken → Teilen → „Mitarbeit“ → Zugriff „Nur eingeladene Personen“ → „Link kopieren“.</span>
+    </div>
+    <div class="field">
       <label for="tk">Tankerkönig-API-Schlüssel</label>
       <div class="inline"><input id="tk" type="text" autocomplete="off" spellcheck="false" placeholder="00000000-0000-0000-0000-000000000000"><button type="button" id="tk-save">Speichern</button></div>
       <span class="hint">Kostenlos beantragen unter <a href="https://onboarding.tankerkoenig.de/" target="_blank" rel="noopener">onboarding.tankerkoenig.de</a> (Vorname, Name, E-Mail). Die Freischaltung erfolgt von Hand und kann einige Tage dauern; der Schlüssel kommt per E-Mail.</span>
@@ -1094,6 +1101,6 @@ header .favs .fav small{font-size:12px;opacity:.9}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=162"></script>
+<script src="app.js?v=163"></script>
 </body>
 </html>
