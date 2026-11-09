@@ -1200,7 +1200,7 @@ document.addEventListener("click",e=>{const f=e.target.closest("#tt [data-ttf]")
     if(MAPMODE!=="tomtom"&&TTKEY){MAPMODE="tomtom";store("mapmode",MAPMODE);applyMapMode();}
     openMap();setTimeout(()=>$("stau-map").scrollIntoView({behavior:"smooth",block:"center"}),150);MAP.setView([x.lat,x.lon],14);
     if(MAP._ttinc)MAP._ttinc.eachLayer(l=>{if(l.getPopup&&l.getPopup()&&(l.getLatLng?Math.abs(l.getLatLng().lat-x.lat)<1e-5:l.getLatLngs().flat().some(p=>Math.abs(p.lat-x.lat)<1e-5&&Math.abs(p.lng-x.lon)<1e-5)))l.openPopup([x.lat,x.lon]);});}});
-let MAPMODE=load("mapmode")||"tomtom";
+let MAPMODE="tomtom"; // OpenStreetMap-Ansicht entfernt – Karte immer TomTom (ohne Schlüssel automatisch einfache Grundkarte)
 // Fester Kartenausschnitt je Ort: [Süd, West, Nord, Ost]
 const MAP_BOUNDS={dus:[51.12,6.66,51.36,6.96],datteln:[51.60,7.24,51.72,7.46],alpen:[51.50,6.40,51.70,6.70],salzhausen:[53.15,10.04,53.30,10.30]};
 function mapBounds(){const b=MAP_BOUNDS[C.key];if(b)return b;const la=C.center.lat,lo=C.center.lon;return [la-.2,lo-.32,la+.2,lo+.32];}

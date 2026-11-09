@@ -728,6 +728,7 @@ header #favs{flex:1 1 100%;width:100%}
 @media (max-width:700px){.srcgo small{display:none}#rs-city button{font-size:14px!important;padding-left:6px;padding-right:6px}}
 @media (min-width:900px){#rs-city{grid-template-columns:repeat(5,1fr)!important}.subtabs.grid3{grid-template-columns:repeat(5,1fr)!important}.subtabs.grid3 a:last-child:nth-child(3n+1){grid-column:auto}}
 #rs-dir .gmi{width:18px;height:18px;vertical-align:-3px;margin-right:6px;fill:#e0302b;stroke:#fff;stroke-width:1.2}#rs-dir .gmi circle{fill:#fff;stroke:none}
+#mapsw{grid-template-columns:1fr 1fr!important}
 </style>
 </head>
 <body>
@@ -943,8 +944,7 @@ header #favs{flex:1 1 100%;width:100%}
   <div id="vl-body" data-k="stau" class="flt">
   <div class="mapsw vl-map" id="mapsw" role="tablist" aria-label="Kartenquelle">
     <button type="button" data-mm="tomtom" role="tab">TomTom <small>Verkehr live</small></button>
-    <button type="button" data-mm="osm" role="tab">OpenStreetMap <small>amtliche Meldungen</small></button>
-    <a id="gmaps" href="https://www.google.com/maps/@51.2254,6.7763,12z/data=!5m1!1e1" target="_blank" rel="noopener">Google Maps <small>öffnen ↗</small></a>
+    <a id="gmaps" href="https://www.google.com/maps/@51.2254,6.7763,12z/data=!5m1!1e1" target="_blank" rel="noopener">Google Maps <small>mit Verkehr öffnen ↗</small></a>
   </div>
   <div id="stau-map" class="map vl-map" role="img" aria-label="Verkehrskarte"></div>
   <label class="muted small vl-map" style="display:inline-flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ttflow"> Verkehrsfluss aller Straßen einfärben (grün = frei, gelb/rot = Stau)</label>
@@ -1226,6 +1226,6 @@ header #favs{flex:1 1 100%;width:100%}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=201"></script>
+<script src="app.js?v=202"></script>
 </body>
 </html>
