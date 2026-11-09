@@ -871,6 +871,7 @@ async function loadVT(){
     TILE_PARTS.traffic.vt=nSp+" Sperrungen in der Stadt";composeTile("k-traffic","traffic");
     if(false)setKpi("k-vt",String(nSp)+"<small> Sperrungen</small>",ev.length?ev.length+" Veranstaltung(en) angekündigt":"keine Veranstaltungen",nSp>30?"warn":"info");
     $("vt-sum").innerHTML=fact(String(nSp),"Sperrungen aktiv")+fact(String(active.length-nSp),"Meldungen / Baustellen")+fact(String(ev.length),"Veranstaltungen angekündigt")+fact(String(soon.length),"neu in 7 Tagen");
+    [...$("vt-sum").children].forEach((f,i)=>{f.dataset.vtgo=["now","now","events","next"][i];f.setAttribute("role","button");f.style.cursor="pointer";});
     $("vt-now").innerHTML=active.length?'<div class="list">'+active.slice(0,15).map(x=>item(x)).join("")+'</div>'+(active.length>15?'<div class="muted small">+ '+(active.length-15)+' weitere</div>':''):'<div class="state good">Keine aktiven Sperrungen.</div>';
     $("vt-events").innerHTML=ev.length?'<div class="list">'+ev.slice(0,8).map(x=>item(x,"Event")).join("")+'</div>':'<div class="state good">Keine angekündigten Veranstaltungen.</div>';
     $("vt-next").innerHTML=soon.length?'<div class="list">'+soon.slice(0,8).map(x=>item(x)).join("")+'</div>':'<div class="state good">Nichts Neues angekündigt.</div>';
@@ -1128,7 +1129,7 @@ async function loadTomTom(){
 }
 let TT=null,TTF=null;const PLACECACHE=Object.fromEntries(Object.entries(load("placecache")||{}).filter(([,v])=>v));
 // Ort (Stadt/Stadtteil) vor Stau- und Baustellenmeldungen setzen
-async function fillOrte(box){if(!box||!TTKEY)return;for(const el of [...box.querySelectorAll("[data-lat] .ortp:empty")].slice(0,40)){const r=el.closest("[data-lat]");const la=+r.dataset.lat,lo=+r.dataset.lon;if(!isFinite(la))continue;const o=await placeOf(la,lo);if(o&&!el.textContent){el.textContent=o;el.classList.add("ortc");}}}
+async function fillOrte(box){if(!box||!TTKEY)return;for(const el of [...box.querySelectorAll("[data-lat] .ortp:empty")].slice(0,90)){const r=el.closest("[data-lat]");const la=+r.dataset.lat,lo=+r.dataset.lon;if(!isFinite(la))continue;const o=await placeOf(la,lo);if(o&&!el.textContent){el.textContent=o;el.classList.add("ortc");}}}
 async function placeOf(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLACECACHE[k]!==undefined)return PLACECACHE[k];
   try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
     const a=((r.addresses||[])[0]||{}).address||{};const city=a.municipality||"",sub=a.municipalitySubdivision||"";
@@ -1771,12 +1772,12 @@ function setBtns(box,html){if(!box)return;const t=document.createElement("div");
     old.forEach((o,i)=>{if(o.className!==nw[i].className)o.className=nw[i].className;if(o.innerHTML!==nw[i].innerHTML)o.innerHTML=nw[i].innerHTML;});}
   else box.innerHTML=html;}
 // ÖPNV: Auswahl per Knopf statt langer Liste (Abfahrten vor Ort bzw. Verbindungen Dortmund ⇄ Datteln)
-const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln"],["o-dat-do","Datteln → Dortmund Hbf"],["dep","Stadion ⇄ Hbf"]],datteln:[["o-dat-do","Datteln → Dortmund Hbf"],["o-do-dat","Dortmund Stadion → Datteln"],["dep","Abfahrten Datteln"]]};
+const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln"],["o-dat-do","Datteln → Dortmund Hbf"],["dep","Stadion ⇄ Hbf"]],datteln:[["o-dat-do,o-do-dat","Datteln ⇄ Dortmund"],["dep","Bus Lohstraße ⇄ Busbahnhof"]]};
 function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opts.some(o=>o[0]===RS.oe))RS.oe=opts[0][0];
-  const seg=$("oe-seg");seg.hidden=opts.length<2;setBtns(seg,opts.map(([k,l])=>'<button type="button" data-oe="'+k+'" class="'+(RS.oe===k?"on":"")+'">'+l+'</button>').join(""));
+  const seg=$("oe-seg");seg.hidden=opts.length<2;seg.style.gridTemplateColumns="repeat("+opts.length+",1fr)";setBtns(seg,opts.map(([k,l])=>'<button type="button" data-oe="'+k+'" class="'+(RS.oe===k?"on":"")+'">'+l+'</button>').join(""));
   const ob=$("oe-trips"),sec=ob.closest("section"),dep=$("oe-dep");
   if(RS.oe==="dep"){sec.hidden=true;dep.hidden=false;}
-  else{dep.hidden=true;sec.hidden=false;ob.hidden=false;$("oe-title").textContent=(opts.find(o=>o[0]===RS.oe)||[])[1]||"Bus & Bahn";ob.innerHTML='<div class="state">wird geladen …</div>';loadTrips({keys:[RS.oe],box:ob});}}
+  else{dep.hidden=true;sec.hidden=false;ob.hidden=false;$("oe-title").textContent=(opts.find(o=>o[0]===RS.oe)||[])[1]||"Bus & Bahn";ob.innerHTML='<div class="state">wird geladen …</div>';loadTrips({keys:RS.oe.split(","),box:ob});}}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-oe]");if(!b)return;RS.oe=b.dataset.oe;rsOe();});
 function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();
     rsOe();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
@@ -1822,6 +1823,7 @@ document.addEventListener("click",e=>{const d=e.target.closest("[data-rsdir]");i
   const a=e.target.closest("[data-rsalt]");if(a&&!e.target.closest("a")){RS.sel=+a.dataset.rsalt;renderReise();}});
 document.addEventListener("click",e=>{const j=e.target.closest("#rs-incs .carinc");if(!j||!RSMAP)return;e.stopImmediatePropagation();const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
   $("rs-map").scrollIntoView({behavior:"smooth",block:"center"});RSMAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText).openOn(RSMAP);},true);
+document.addEventListener("click",e=>{const g=e.target.closest("[data-vtgo]");if(g){const b=document.querySelector('#vt-seg [data-vts="'+g.dataset.vtgo+'"]');if(b){b.click();setTimeout(()=>$("vt-seg").scrollIntoView({behavior:"smooth",block:"start"}),30);}}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-vts]");if(!b)return;const k=b.dataset.vts;
   document.querySelectorAll("#vt-seg [data-vts]").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll("[data-vtp]").forEach(p=>p.hidden=p.dataset.vtp!==k);});
 function karteLbl(k){return "Verkehrslage";k=k||(MAPGO==="dus"||MAPGO==="datteln"?MAPGO:(C.key==="datteln"?"datteln":"dus"));return k==="datteln"?"Staus & Baustellen":"Sperrungen & Events";}
@@ -2056,7 +2058,15 @@ $("arrange").addEventListener("click",()=>{
   if(SORT)SORT.option("disabled",!EDITING);
   if(!EDITING)saveTileOrder();
   document.body.classList.toggle("arranging",EDITING);if(!EDITING)buildViewbar();
+  // Tools lassen sich im selben Modus verschieben
+  if(EDITING){$("tools").hidden=false;$("tools-toggle").setAttribute("aria-expanded","true");}
+  if(window.Sortable&&!TSORT)TSORT=Sortable.create($("toolgrid"),{animation:150,forceFallback:true,fallbackOnBody:true,fallbackTolerance:4,ghostClass:"tile-ghost"});
+  if(TSORT)TSORT.option("disabled",!EDITING);
+  if(!EDITING)store("tool_order",[...$("toolgrid").children].map(x=>x.dataset.tool));
 });
+let TSORT=null;
+{const ord=load("tool_order");const g=$("toolgrid");if(Array.isArray(ord)&&g){ord.forEach(k=>{const el=g.querySelector('[data-tool="'+k+'"]');if(el)g.appendChild(el);});}}
+document.addEventListener("click",e=>{if(!document.body.classList.contains("arranging"))return;const t=e.target.closest("#toolgrid [data-tool]");if(t&&t.dataset.tool!=="arrange"){e.preventDefault();e.stopImmediatePropagation();}},true);
 $("arrange-tool").addEventListener("click",()=>{if(location.hash.length>1){history.pushState(null,"",location.pathname+location.search);route();}
   if(!EDITING)$("arrange").click();setTimeout(()=>$("home").scrollIntoView({behavior:"smooth",block:"start"}),80);});
 $("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});

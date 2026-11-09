@@ -426,13 +426,11 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .ttab #car-wrap{border-bottom:3px solid var(--line)}
 #rs-city{grid-template-columns:repeat(3,1fr)!important}
 .rv-city{margin:0 0 10px}
-.cc-alpen,[data-fav="alpen"]{box-shadow:inset 5px 0 0 #e8b400}
-.cc-alpen::after,[data-fav="alpen"]:not(.on)::after{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:repeating-linear-gradient(180deg,#e8b400 0 4px,#c8102e 4px 8px);border-radius:16px 0 0 16px}
-.cc-alpen,[data-fav="alpen"]{position:relative;overflow:hidden}
-.cc-alpen.on,[data-fav="alpen"].on{background:linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.28)),repeating-linear-gradient(180deg,#e8b400 0 9.09%,#c8102e 9.09% 18.18%)!important;color:#fff!important;text-shadow:0 1px 2px #000,0 0 8px rgba(0,0,0,.9);border:3px solid #fff!important;box-shadow:0 0 0 2px #c8102e}
-.cc-salzhausen,[data-fav="salzhausen"]{position:relative;overflow:hidden;box-shadow:none}
-.cc-salzhausen::after,[data-fav="salzhausen"]:not(.on)::after{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#c8102e 0 33.3%,#f2c500 33.3% 66.6%,#c8102e 66.6%);border-radius:16px 0 0 16px}
-.cc-salzhausen.on,[data-fav="salzhausen"].on{background:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.18)),linear-gradient(180deg,#c8102e 0 33.3%,#f2c500 33.3% 66.6%,#c8102e 66.6%)!important;color:#fff!important;text-shadow:0 1px 2px #000,0 0 8px rgba(0,0,0,.9);border:3px solid #fff!important;box-shadow:0 0 0 2px #c8102e}
+/* Alpen (Gold/Rot) und Salzhausen (Rot/Gelb): moderne Verläufe */
+.cc-alpen,[data-fav="alpen"]{box-shadow:inset 5px 0 0 #f0b400}
+.cc-salzhausen,[data-fav="salzhausen"]{box-shadow:inset 5px 0 0 #d81f3a}
+.cc-alpen.on,[data-fav="alpen"].on{background:linear-gradient(135deg,#f6c445 0%,#ef8a1f 45%,#d0213c 100%)!important;color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.85)!important;box-shadow:0 6px 18px rgba(208,33,60,.45),inset 0 1px 0 rgba(255,255,255,.5)}
+.cc-salzhausen.on,[data-fav="salzhausen"].on{background:linear-gradient(135deg,#d0213c 0%,#f2a900 50%,#d0213c 100%)!important;color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.85)!important;box-shadow:0 6px 18px rgba(208,33,60,.45),inset 0 1px 0 rgba(255,255,255,.5)}
 [data-fav="dortmund"]{box-shadow:inset 5px 0 0 var(--c-do)}
 
 .cc-alpen.on::before,.cc-salzhausen.on::before{content:"✓ ";font-weight:800}
@@ -627,9 +625,11 @@ header .favs .fav[data-fav="dus"]{grid-column:span 2;display:block}
 header .favs .fav{border-radius:16px!important}
 header .favs .fav[data-fav="dus"] small{display:inline;margin-left:6px}
 header .favs .fav small{font-size:12px;opacity:.9}
-header .tools #radio{display:contents}
-header .tools #radio-list{grid-column:1/-1}
+header .tools #radio-list{margin-top:2px}
 header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
+header .tools .ctrl{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+@media (min-width:700px){header .tools .ctrl,header #headnav{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+body.arranging #toolgrid .hbtn{outline:2px dashed var(--accent);outline-offset:2px;cursor:grab}
 </style>
 </head>
 <body>
@@ -648,15 +648,18 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
     <nav class="ctrl" id="headnav" aria-label="Themen"></nav>
     <button type="button" class="hbtn tools-toggle" id="tools-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-.6-.6-2.3z"/></svg>Tools <span class="rcaret">▾</span></button>
     <div class="tools" id="tools" hidden>
-    <div class="ctrl">
-      <a class="hbtn" href="https://dus.eventcal.io" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2"/></svg>EventCal</a>
-      <a class="hbtn" href="https://dus.eventdoc.io/de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M9 12h6M9 15.5h6M9 9h2"/></svg>EventDoc</a>
-      <a class="hbtn" id="gmaps-btn" href="https://www.google.com/maps" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Google Maps</a>
-      <a class="hbtn" href="https://maps.duesseldorf.de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5 9 4l6 2.5 5.5-2.5v13.5L15 20l-6-2.5-5.5 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>Düsseldorf Maps</a>
-      <button type="button" class="hbtn" id="calc-btn" aria-label="Taschenrechner"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>Rechner</button>
-      <button type="button" class="hbtn" id="alarm-btn" aria-label="Wecker"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>Wecker</button>
-      <button type="button" class="hbtn" id="fin-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="7.5" width="16" height="12" rx="2.5"/><path d="M20 11.5h-4a2 2 0 0 0 0 4h4"/><circle cx="16.3" cy="13.5" r=".6"/></svg>Kontostand</button>
-      <div class="radio" id="radio" aria-label="Radio"><button type="button" class="hbtn rtoggle" id="radio-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
+    <div class="ctrl" id="toolgrid">
+      <a data-tool="eventcal" class="hbtn" href="https://dus.eventcal.io" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2"/></svg>EventCal</a>
+      <a data-tool="eventdoc" class="hbtn" href="https://dus.eventdoc.io/de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M9 12h6M9 15.5h6M9 9h2"/></svg>EventDoc</a>
+      <a data-tool="gmaps" class="hbtn" id="gmaps-btn" href="https://www.google.com/maps" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Google Maps</a>
+      <a data-tool="dusmaps" class="hbtn" href="https://maps.duesseldorf.de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5 9 4l6 2.5 5.5-2.5v13.5L15 20l-6-2.5-5.5 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>Düsseldorf Maps</a>
+      <button type="button" data-tool="calc" class="hbtn" id="calc-btn" aria-label="Taschenrechner"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>Rechner</button>
+      <button type="button" data-tool="alarm" class="hbtn" id="alarm-btn" aria-label="Wecker"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>Wecker</button>
+      <button type="button" data-tool="fin" class="hbtn" id="fin-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="7.5" width="16" height="12" rx="2.5"/><path d="M20 11.5h-4a2 2 0 0 0 0 4h4"/><circle cx="16.3" cy="13.5" r=".6"/></svg>Kontostand</button>
+      <button type="button" data-tool="radio" class="hbtn rtoggle" id="radio-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
+      <button type="button" data-tool="arrange" class="hbtn" id="arrange-tool"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><path d="M16.75 13.5v6.5M13.5 16.75H20"/></svg>Anordnen</button>
+    </div>
+    <div class="radio" id="radio" aria-label="Radio">
         <div class="rlist" id="radio-list" hidden>
         <button type="button" class="rbtn" data-st="wdr2">WDR 2 <small>Rhein Ruhr</small></button>
         <button type="button" class="rbtn" data-st="wdr4">WDR 4</button>
@@ -665,8 +668,6 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
         <a class="rlink" href="https://tunein.com/" target="_blank" rel="noopener">TuneIn ↗</a>
         </div>
       </div>
-      <button type="button" class="hbtn" id="arrange-tool"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><path d="M16.75 13.5v6.5M13.5 16.75H20"/></svg>Anordnen</button>
-    </div>
     </div>
     </div>
     <div class="alarmbar" id="alarmbar" role="alert" hidden></div>
@@ -726,7 +727,7 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
 <div class="wrap">
 <section id="home" aria-label="Übersicht">
   <div class="home-head"><h2>Übersicht</h2><div class="row" style="gap:8px"><button type="button" id="arrange">Anordnen</button><button type="button" id="arrange-reset" hidden>Zurücksetzen</button></div></div>
-  <p class="muted small" id="arrange-hint" hidden>Kacheln mit dem Finger verschieben (kurz gedrückt halten) oder mit den Pfeilen. „Fertig“ speichert die Reihenfolge auf diesem Gerät.</p>
+  <p class="muted small" id="arrange-hint" hidden>Kacheln und Tools mit dem Finger verschieben (kurz gedrückt halten) oder mit den Pfeilen. „Fertig“ speichert die Reihenfolge auf diesem Gerät.</p>
   <div class="tiles" id="tiles">
     <div role="button" tabindex="0" class="kpi tile" data-view="warnungen" id="k-warn"><div class="lbl">Warnungen</div><div class="val">–</div><div class="note">NINA &amp; DWD</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="wetter" id="k-temp"><div class="lbl">Wetter</div><div class="val">–</div><div class="note">wird geladen</div></div>
@@ -813,7 +814,7 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
   </section>
   </div>
   <div data-rsp="oepnv" hidden>
-  <div class="seg" id="oe-seg" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr)"></div>
+  <div class="seg" id="oe-seg" style="margin-bottom:10px"></div>
   <section class="card" hidden style="margin-bottom:12px"><div class="card-head"><h2 id="oe-title">Bus &amp; Bahn</h2><span class="src">VRR · alle Verkehrsmittel · Echtzeit</span></div><div id="oe-trips" hidden></div></section>
 <div class="grid" id="oe-dep">
   <section class="card" id="efa-card">
@@ -1110,6 +1111,6 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=166"></script>
+<script src="app.js?v=167"></script>
 </body>
 </html>
