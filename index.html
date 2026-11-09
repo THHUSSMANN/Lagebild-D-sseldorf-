@@ -426,10 +426,15 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .ttab #car-wrap{border-bottom:3px solid var(--line)}
 #rs-city{grid-template-columns:repeat(3,1fr)!important}
 .rv-city{margin:0 0 10px}
-.cc-alpen,[data-fav="alpen"]{box-shadow:inset 5px 0 0 #3f8f4a}
-.cc-salzhausen,[data-fav="salzhausen"]{box-shadow:inset 5px 0 0 #2f6db5}
+.cc-alpen,[data-fav="alpen"]{box-shadow:inset 5px 0 0 #e8b400}
+.cc-alpen::after,[data-fav="alpen"]:not(.on)::after{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:repeating-linear-gradient(180deg,#e8b400 0 4px,#c8102e 4px 8px);border-radius:16px 0 0 16px}
+.cc-alpen,[data-fav="alpen"]{position:relative;overflow:hidden}
+.cc-alpen.on,[data-fav="alpen"].on{background:linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.28)),repeating-linear-gradient(180deg,#e8b400 0 9.09%,#c8102e 9.09% 18.18%)!important;color:#fff!important;text-shadow:0 1px 2px #000,0 0 8px rgba(0,0,0,.9);border:3px solid #fff!important;box-shadow:0 0 0 2px #c8102e}
+.cc-salzhausen,[data-fav="salzhausen"]{position:relative;overflow:hidden;box-shadow:none}
+.cc-salzhausen::after,[data-fav="salzhausen"]:not(.on)::after{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#c8102e 0 33.3%,#f2c500 33.3% 66.6%,#c8102e 66.6%);border-radius:16px 0 0 16px}
+.cc-salzhausen.on,[data-fav="salzhausen"].on{background:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.18)),linear-gradient(180deg,#c8102e 0 33.3%,#f2c500 33.3% 66.6%,#c8102e 66.6%)!important;color:#fff!important;text-shadow:0 1px 2px #000,0 0 8px rgba(0,0,0,.9);border:3px solid #fff!important;box-shadow:0 0 0 2px #c8102e}
 [data-fav="dortmund"]{box-shadow:inset 5px 0 0 var(--c-do)}
-.cc-alpen.on,.cc-salzhausen.on{background:var(--accent)!important;color:var(--panel)!important;border:3px solid #fff!important}
+
 .cc-alpen.on::before,.cc-salzhausen.on::before{content:"✓ ";font-weight:800}
 [data-fav="dortmund"].on{background:var(--c-do)!important;color:#111!important}
 #rs-city button{font-size:15px}
@@ -1104,6 +1109,6 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=164"></script>
+<script src="app.js?v=165"></script>
 </body>
 </html>

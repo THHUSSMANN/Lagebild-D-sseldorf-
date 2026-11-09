@@ -439,9 +439,15 @@ $("routes-save").addEventListener("click",()=>{ROUTES_TXT=$("routes").value.trim
 $("routes").addEventListener("keydown",e=>{if(e.key==="Enter")$("routes-save").click();});
 // Kontostand: öffnet die Finanztabelle in iCloud (Link nur lokal auf dem Gerät gespeichert)
 {const fi=$("fin");if(fi)fi.value=load("fin_link")||"";}
-$("fin-save").addEventListener("click",()=>{const v=$("fin").value.trim();store("fin_link",v||null);$("fin-save").textContent=v?"Gespeichert ✓":"Gelöscht";setTimeout(()=>$("fin-save").textContent="Speichern",1800);});
-$("fin-btn").addEventListener("click",()=>{let l=load("fin_link");
-  if(!l){l=(prompt("Link zu deiner Finanztabelle in iCloud einfügen (wird nur auf diesem Gerät gespeichert):")||"").trim();if(!/^https?:\/\//.test(l))return;store("fin_link",l);const fi=$("fin");if(fi)fi.value=l;}
+// Link prüfen und vervollständigen (z. B. „icloud.com/…“ ohne https)
+const finNorm=v=>{v=(v||"").trim().replace(/^<|>$/g,"");const m=v.match(/https?:\/\/\S+/i);if(m)return m[0];if(/^(www\.)?icloud\.com\//i.test(v))return "https://"+v.replace(/^\/+/,"");return "";};
+$("fin-save").addEventListener("click",()=>{const raw=$("fin").value.trim();const v=finNorm(raw);
+  if(raw&&!v){$("fin-save").textContent="Kein gültiger Link";setTimeout(()=>$("fin-save").textContent="Speichern",2500);return;}
+  $("fin").value=v;store("fin_link",v||null);$("fin-save").textContent=v?"Gespeichert ✓":"Gelöscht";setTimeout(()=>$("fin-save").textContent="Speichern",1800);});
+$("fin-btn").addEventListener("click",()=>{let l=finNorm(load("fin_link"));
+  if(!l){const raw=prompt("iCloud-Link zu deiner Finanztabelle einfügen (beginnt mit https://www.icloud.com/…; wird nur auf diesem Gerät gespeichert):")||"";l=finNorm(raw);
+    if(!l){if(raw.trim())alert("Das ist kein gültiger Link. Bitte in der Dateien-App „Link kopieren“ verwenden – der Link beginnt mit https://www.icloud.com/");return;}
+    store("fin_link",l);const fi=$("fin");if(fi)fi.value=l;}
   window.open(l,"_blank","noopener");});
 $("tk-save").addEventListener("click",()=>{TK=$("tk").value.trim();store("tk",TK);loadFuel();});
 $("theme").addEventListener("change",e=>{const v=e.target.value;store("theme",v);
