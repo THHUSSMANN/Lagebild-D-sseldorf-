@@ -630,6 +630,8 @@ header .tools .rtoggle{width:100%;min-height:44px;border-radius:16px!important}
 header .tools .ctrl{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 @media (min-width:700px){header .tools .ctrl,header #headnav{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 body.arranging #toolgrid .hbtn{outline:2px dashed var(--accent);outline-offset:2px;cursor:grab}
+header #toolgrid [data-tool="arrange"]{grid-column:1/-1;justify-self:center;width:auto;min-height:32px;padding:4px 16px;background:transparent!important;background-image:none!important;border:1px dashed rgba(255,255,255,.28)!important;box-shadow:none!important;font:500 13px var(--f-body);opacity:.75;border-radius:999px!important}
+header #toolgrid [data-tool="arrange"] .mi{width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -1111,6 +1113,6 @@ body.arranging #toolgrid .hbtn{outline:2px dashed var(--accent);outline-offset:2
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=169"></script>
+<script src="app.js?v=170"></script>
 </body>
 </html>
