@@ -22,7 +22,7 @@
 :root{
   --bg:#eef1f3; --panel:#ffffff; --panel-2:#f6f8f9; --fg:#14212b; --muted:#5b6a75; --line:#d6dde2;
   --accent:#0b6e8a; --accent-soft:#d9eef4; --head:#14212b; --head-fg:#ffffff;
-  --ok:#2f8f4e; --warn:#c98a00; --bad:#c2402b; --crit:#7d1f6b;
+  --ok:#2e9d5b; --warn:#e8890c; --bad:#d62d20; --crit:#a3160c;
   --f-display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -30,10 +30,10 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e1519; --panel:#152027; --panel-2:#1a2730; --fg:#e4ecf0; --muted:#93a4ae; --line:#2a3a44;
-  --accent:#4fb6d3; --accent-soft:#163846; --head:#0a1014; --head-fg:#e4ecf0; --ok:#5cc07a; --warn:#e3b13c; --bad:#ef6f5a; --crit:#d77cc3; color-scheme:dark}}
+  --accent:#4fb6d3; --accent-soft:#163846; --head:#0a1014; --head-fg:#e4ecf0; --ok:#4cc27a; --warn:#f5a43a; --bad:#ef5b4c; --crit:#e0352a; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e1519; --panel:#152027; --panel-2:#1a2730; --fg:#e4ecf0; --muted:#93a4ae; --line:#2a3a44;
-  --accent:#4fb6d3; --accent-soft:#163846; --head:#0a1014; --head-fg:#e4ecf0; --ok:#5cc07a; --warn:#e3b13c; --bad:#ef6f5a; --crit:#d77cc3; color-scheme:dark}
+  --accent:#4fb6d3; --accent-soft:#163846; --head:#0a1014; --head-fg:#e4ecf0; --ok:#4cc27a; --warn:#f5a43a; --bad:#ef5b4c; --crit:#e0352a; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 .view{min-height:calc(100vh - 60px);position:relative}
@@ -691,9 +691,9 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 #warn-all-list .wa{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:12px 14px;margin:0 0 8px;border-radius:14px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:inherit;cursor:pointer}
 #warn-all-list .wa b{min-width:150px;font-size:16px}
 #warn-all-list .wa .wt{flex:1;font-size:14.5px;line-height:1.4}
-#warn-all-list .wa .dot{width:12px;height:12px;border-radius:50%;margin-top:5px;flex:none;background:#2e9d5b}
-#warn-all-list .wa.hot{border-color:#d62d20;box-shadow:inset 4px 0 0 #d62d20}
-#warn-all-list .wa.hot .dot{background:#d62d20}
+#warn-all-list .wa .dot{width:12px;height:12px;border-radius:50%;margin-top:5px;flex:none;background:var(--ok)}
+#warn-all-list .wa.hot{border-color:var(--bad);box-shadow:inset 4px 0 0 var(--bad)}
+#warn-all-list .wa.hot .dot{background:var(--bad)}
 #warn-all-list .wa.cur{outline:2px solid var(--accent);outline-offset:1px}
 
 .srcgo{display:flex;align-items:center;gap:12px;padding:12px 14px;margin:4px 0 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);text-decoration:none}
@@ -770,10 +770,10 @@ footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var
 #vt-seg,#vt-sum{display:none!important} /* Stadt-Kennzahlen stecken jetzt in den Kategorie-Knöpfen */
 h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;padding:0 0 6px;border-bottom:1px solid var(--line)}h3.sub2.vl-h .muted{font:500 13px var(--f-body)}
 /* Fahrten mit Verzögerung: dicker Rand, passend zum Glas-Stil */
-#rs-dir button.dl-warn{border:3px solid #f08a00!important;box-shadow:0 0 0 1px rgba(240,138,0,.25),0 6px 18px rgba(240,138,0,.22)!important}
-#rs-dir button.dl-warn small{color:#c86f00;font-weight:700}
-#rs-dir button.dl-bad{border:3px solid #d62d20!important;animation:dlpulse 1.8s ease-in-out infinite}
-#rs-dir button.dl-bad small{color:#d62d20;font-weight:700}
+#rs-dir button.dl-warn{border:3px solid var(--warn)!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--warn) 25%,transparent),0 6px 18px color-mix(in srgb,var(--warn) 22%,transparent)!important}
+#rs-dir button.dl-warn small{color:var(--warn);font-weight:700}
+#rs-dir button.dl-bad{border:3px solid var(--bad)!important;animation:dlpulse 1.8s ease-in-out infinite}
+#rs-dir button.dl-bad small{color:var(--bad);font-weight:700}
 #rs-dir button.on.dl-warn small,#rs-dir button.on.dl-bad small{color:inherit}
 @keyframes dlpulse{0%,100%{box-shadow:0 0 0 0 rgba(214,45,32,.45),0 6px 18px rgba(214,45,32,.25)}50%{box-shadow:0 0 0 7px rgba(214,45,32,0),0 6px 22px rgba(214,45,32,.4)}}
 @media (prefers-reduced-motion:reduce){#rs-dir button.dl-bad{animation:none}}
@@ -946,7 +946,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
   <div id="rs-alts"><div class="state">wird berechnet …</div></div>
   <div id="rs-map" class="map rsmap" role="img" aria-label="Karte der Fahrt"></div>
   <div id="rs-incs"></div>
-  <div class="sublbl" id="prio-h" style="margin-top:16px;font-size:15px">Meine Autobahnstrecken <span class="muted small">(Autobahn GmbH, Zeile antippen für Details)</span></div>
+  <h3 class="sub2 vl-h" id="prio-h">Meine Autobahnstrecken</h3>
 
   <div class="ttab">
   <div id="prio"></div>
@@ -1035,7 +1035,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
   <div class="card-head"><h2>Veranstaltungen Düsseldorf</h2><span class="src">Verkehrszentrale der Landeshauptstadt · verkehrsrelevante Veranstaltungen</span></div>
   <div class="muted small">Eintrag antippen zeigt die Stelle in der Verkehrslage-Karte.</div>
   <div id="ev-list"><div class="state">wird geladen …</div></div>
-  <div class="sublbl">Demnächst (7 Tage) · neue Sperrungen und Meldungen</div>
+  <h3 class="sub2 vl-h">Demnächst <span class="muted small">· neue Sperrungen und Meldungen in 7 Tagen</span></h3>
   <div id="ev-next"><div class="state">wird geladen …</div></div>
 </section>
 </div>
@@ -1150,7 +1150,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 
 <div class="view" id="v-parken" data-view="parken" hidden>
 <div class="subtabs" data-for="parken"></div>
-<div class="seg" id="pk-seg" style="grid-template-columns:1fr"><button type="button" data-pks="gps" class="gpsbtn"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Stattdessen an meinem Standort suchen (2 km)</button></div>
+<div class="seg" id="pk-seg" style="grid-template-columns:1fr"><button type="button" data-pks="gps" class="gpsbtn"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>An meinem Standort suchen (2 km)</button></div>
 <div data-pk="gps" hidden>
 <section class="card wide">
   <div class="card-head"><h2>Parken in der Nähe</h2><span class="src">OpenStreetMap · 2 km um deinen Standort</span></div>
@@ -1158,7 +1158,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 </section>
 </div>
 <div data-pk="dus">
-<div class="muted small" style="margin:0 2px 8px">Parkhäuser live aus der Verkehrszentrale, übrige Standorte aus Open Data Düsseldorf, nach Nähe sortiert</div>
+<h3 class="sub2 vl-h" style="margin-top:6px">Parken in Düsseldorf <span class="muted small">· Parkhäuser live (Verkehrszentrale), übrige aus Open Data</span></h3>
 <div class="grid">
   <section class="card">
     <div class="card-head"><h2>Parkhäuser</h2><a class="src" href="https://vtmanager.duesseldorf.de/info/?parkquartier#main" target="_blank" rel="noopener">Live-Belegung öffnen ↗</a></div>
@@ -1284,6 +1284,6 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=224"></script>
+<script src="app.js?v=225"></script>
 </body>
 </html>

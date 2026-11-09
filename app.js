@@ -953,7 +953,7 @@ function composeTile(id,group,main,cls){
   const parts=TILE_PARTS[group];const el=$(id);if(!el)return;
   if(main)parts._main=main;if(cls)parts._cls=cls;
   const ORD=["bahn","bus","ab","vt"];const notes=Object.entries(parts).filter(([k])=>!k.startsWith("_")).sort((a,b)=>(ORD.indexOf(a[0])+99)%199-(ORD.indexOf(b[0])+99)%199).map(([,v])=>v).filter(Boolean);
-  const RK=["ok","info","warn","bad","crit"];let cl2=parts._cls||"info";if(parts._rcls&&RK.indexOf(parts._rcls)>RK.indexOf(cl2))cl2=parts._rcls;
+  const RK=["ok","info","warn","bad","crit"];let cl2=parts._cls||"info";if(parts._rcls&&(group==="traffic"||RK.indexOf(parts._rcls)>RK.indexOf(cl2)))cl2=parts._rcls;
   setKpi(id,parts._main||"–",notes.join(" · "),cl2);
 }
 // ================= Bahn-Verbindungen =================
@@ -1022,7 +1022,7 @@ async function loadBlaulicht(){
     const bday=x=>new Date(x).toLocaleDateString("sv-SE",{timeZone:"Europe/Berlin"});const td=bday(Date.now()),yd=bday(Date.now()-864e5);
     const day=list.filter(x=>bday(x.date)===td).length;
     const when=x=>{const d=bday(x.date);return (d===td?"heute":d===yd?"gestern":new Date(x.date).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}))+" "+hhmm(x.date);};
-    setKpi("k-bl",String(day)+"<small> heute</small>",list[0]?"Neueste "+when(list[0])+": "+list[0].title.replace(/^(POL|FW)[-\w ]*:\s*/,"").slice(0,60):"",day?"warn":"info");
+    setKpi("k-bl",String(day)+"<small> heute</small>",list[0]?"Neueste "+when(list[0])+": "+list[0].title.replace(/^(POL|FW)[-\w ]*:\s*/,"").slice(0,60):"","info");
     const tag=s=>/feuerwehr|^fw/i.test(s)?["FW","bad"]:/polizei|^pol/i.test(s)?["POL","ab"]:["INFO","alt"];
     const orte=[...new Set(list.map(x=>x.ort).filter(Boolean))];const sel=orte.includes(BLORT[C.key])?BLORT[C.key]:"";
     const shown=sel?list.filter(x=>x.ort===sel):list;
@@ -1163,7 +1163,7 @@ async function loadTomTom(){
     const jams=list.filter(x=>x.cat===6||x.delay>0);
     {const mx=jams.length?Math.max(0,...jams.map(x=>x.delay||0)):0,nA=jams.filter(x=>/(^|, )A\d/.test(x.road)).length;
       TILE_PARTS.traffic.tt=jams.length?(mx?"größte Verzögerung +"+mx+" min · ":"")+nA+" davon auf Autobahnen":"alle Straßen frei";TILE_PARTS.traffic._tt=1;
-      composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>",mx>=20?"bad":jams.length?"warn":"ok");}
+      composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>","info");}
     TT={list,jams,CAT};TTF=null;renderTT();fillPlaces();
     setStatus("tomtom",true);
   }catch(e){setStatus("tomtom",false,errText(e));box.innerHTML=stateBox("TomTom-Verkehrslage nicht verfügbar – "+errText(e)+".",'<a href="#einstellungen">Schlüssel prüfen</a>');}
@@ -1374,7 +1374,7 @@ let ROUTE_ITEMS=[],AB_SETS={},AB_SEL=null;
 let AUTOR=[];
 function renderAutoPrio(){const box=$("prio");if(!box||typeof RS==="undefined"||!RS.city)return false;
   const dirs=RSDIRS.filter(x=>x[2]===RS.city);ROUTE_ITEMS=[];AUTOR=[];const O=FIXHOME[RS.city];
-  {const h=$("prio-h");if(h)h.innerHTML='Meine Autobahnstrecken ab '+esc(CITYN[RS.city])+' <span class="muted small">(Route: TomTom · Meldungen: Autobahn GmbH · Zeile antippen für Details)</span>';}
+  {const h=$("prio-h");if(h)h.innerHTML='Meine Strecken ab '+esc(CITYN[RS.city])+' <span class="muted small">· Route TomTom, Meldungen Autobahn GmbH</span>';}
   const cards=dirs.map((d,i)=>{const D=RS.data[d[0]];const a=D&&D.alts&&D.alts[0];const to=CITYN[d[3]];
     if(!a)return '<div class="route unk"><span class="tag">PKW</span><span class="rt">→ '+esc(to)+'</span><span class="rv muted">'+(D&&D.err?"nicht verfügbar":"wird berechnet …")+'</span></div>';
     const items=[...(a.ab||[]).map(w=>({...w,_c:w.cl?1:0})),...(a.rw||[]).map(w=>({...w,_rw:1}))].map(w=>({...w,km:distKm(O.lat,O.lon,w.lat,w.lon)}));
@@ -1489,7 +1489,7 @@ async function loadAutobahn(){
   const nStau=jams.filter(j=>j.jam.kind==="stau").length;
   const others=warnings.filter(w=>!w.jam&&!jamInfo(w)).length;
   TILE_PARTS.traffic.ab=TILE_PARTS.traffic._tt?"":(jams.length?jams.length+" Staus/stockend":"Autobahn frei")+(maxDelay?" bis +"+maxDelay+" min":"");
-  if(!TILE_PARTS.traffic._tt)composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>",nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");else composeTile("k-traffic","traffic");
+  if(!TILE_PARTS.traffic._tt)composeTile("k-traffic","traffic",String(jams.length)+"<small> Staus</small>","info");else composeTile("k-traffic","traffic");
   if(false)setKpi("k-traffic",String(jams.length),jams.length?(maxDelay?"bis +"+maxDelay+" min":"")+(totLen?" · "+fmt(totLen,1)+" km":"")+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""):"freie Fahrt"+(closuresAll.length?" · "+closuresAll.length+" Sperrung(en)":""),
     nStau?(maxDelay>=20?"bad":"warn"):jams.length?"warn":"ok");
   const otherList=warnings.filter(w=>!jamInfo(w)&&!isClosed(w)).sort((a,b)=>a.km-b.km);
@@ -1904,7 +1904,7 @@ function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catc
   let worst="";
   setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const sv=sev(a);if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=a&&(a.ab||[]).some(w=>w.cl);
     return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+(sv?" "+sv:"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(cl?" · Sperrung":a.dl>0?" · +"+a.dl+" min":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
-  {const P=TILE_PARTS.traffic;const nc=worst==="dl-bad"?"bad":worst==="dl-warn"?"warn":null;if(P._rcls!==nc){P._rcls=nc;composeTile("k-traffic","traffic");}}
+  {const P=TILE_PARTS.traffic;const all=RSDIRS.filter(x=>x[2]===RS.city).every(x=>D[x[0]]&&D[x[0]].alts);const nc=worst==="dl-bad"?"bad":worst==="dl-warn"?"warn":all?"ok":null;if(P._rcls!==nc){P._rcls=nc;composeTile("k-traffic","traffic");}}
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
   if(cur.err){box.innerHTML=stateBox("Fahrzeit derzeit nicht verfügbar – "+cur.err+".");inc.innerHTML="";drawReise();return;}
@@ -1980,7 +1980,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-mapgo]");i
 var ELKEY=null,ELR=load("el_rad")||2,ELF=load("el_f")||"all",ELD=null,ELP=null,ELMAP=null,ELLAY=null;
 function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],["datteln","Datteln",51.6539,7.3417],["dortmund","Dortmund",51.5136,7.4653],["alpen","Alpen-Menzelen",51.6449,6.5634],["salzhausen","Salzhausen",53.2236,10.1645]];
   return F.map(([k,n,la,lo])=>{const H=HOMES[k];return {k,name:n,lat:H&&isFinite(H.lat)?H.lat:la,lon:H&&isFinite(H.lon)?H.lon:lo};});}
-function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr";w.innerHTML='<button type="button" data-elw="gps" class="gpsbtn'+(ELP&&ELP.k==="gps"?" on":"")+'"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Stattdessen an meinem Standort suchen</button>';}
+function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr";w.innerHTML='<button type="button" data-elw="gps" class="gpsbtn'+(ELP&&ELP.k==="gps"?" on":"")+'"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>An meinem Standort suchen</button>';}
 function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
   [["all","Alle Ladesäulen"],["fast","Schnelllader (ab 50 kW)"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
@@ -2044,7 +2044,7 @@ document.addEventListener("submit",async e=>{if(e.target.id!=="el-form")return;e
 
 // ================= Parken Datteln (OpenStreetMap) =================
 var PKS=null,PKDAT=null,PKGPS=null,PKPOS=null;
-function pkShow(k){PKS=k;{const gb=document.querySelector('#pk-seg [data-pks="gps"]');if(gb){const n=CITYN[(typeof RS!=="undefined"&&RS.city)||"dus"]||"Ort";gb.lastChild.textContent=k==="gps"?"Zurück zu "+n:"Stattdessen an meinem Standort suchen (2 km)";}}const pane=k==="gps"||k==="dus"||k==="datteln"?k:"city";document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
+function pkShow(k){PKS=k;{const gb=document.querySelector('#pk-seg [data-pks="gps"]');if(gb){const n=CITYN[(typeof RS!=="undefined"&&RS.city)||"dus"]||"Ort";gb.lastChild.textContent=k==="gps"?"Zurück zu "+n:"An meinem Standort suchen (2 km)";}}const pane=k==="gps"||k==="dus"||k==="datteln"?k:"city";document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
   document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==pane);if(k==="datteln"&&!PKDAT)loadPkDat();if(k==="gps")pkGPS();if(pane==="city")loadPkCity(k);}
 const PKC={};
 const PKCENTER={dortmund:{lat:51.4926,lon:7.4519,lbl:"um das Westfalenstadion"}};
