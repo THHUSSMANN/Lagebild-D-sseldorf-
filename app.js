@@ -1827,7 +1827,7 @@ let MAPGO=null;
 // ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
 let RS={dir:null,data:{},sel:0,at:0,sv:{}},RSMAP=null,RSLAY=null;
 // Stabile Ampel je Strecke: Verschärfung sofort, Entwarnung erst nach 2 Bestätigungen (kein Flackern)
-function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=cl?3:a.dl>=25?2:a.dl>=10?1:0;const s=RS.sv[k];
+function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=25?2:a.dl>=10?1:0; // nur echte Verzögerung zählt, Sperrungen ohne Zeitverlust nichtconst s=RS.sv[k];
   const mk=()=>({lv,cl,sv:lv>=2?"dl-bad":lv?"dl-warn":"",n:0,cand:-1});
   if(!s||lv>=s.lv){RS.sv[k]=mk();return;}
   s.n=(s.cand===lv?s.n:0)+1;s.cand=lv;if(s.n>=2)RS.sv[k]=mk();}
@@ -1905,12 +1905,13 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(
 const GMICON='<svg class="gmi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.5s-7-6-7-11.6a7 7 0 0 1 14 0c0 5.6-7 11.6-7 11.6z"/><circle cx="12" cy="9.8" r="2.6"/></svg>';
 function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catch(e){}
   if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));return;}
+  {const ok=RSDIRS.filter(x=>x[2]===RS.city);if(ok.length&&!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}}
   $("rs-quick").innerHTML="";
-  // Verzögerung farbig: ab 10 min orange, ab 25 min oder Sperrung rot pulsierend
+  // Verzögerung farbig: ab 10 min orange, ab 25 min rot pulsierend
   const sev=a=>{if(!a)return "";const cl=(a.ab||[]).some(w=>w.cl);return cl||a.dl>=25?"dl-bad":a.dl>=10?"dl-warn":"";};
   let worst="";
   setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const st=RS.sv[k];const sv=st?st.sv:(a&&a.dl>=25?"dl-bad":a&&a.dl>=10?"dl-warn":"");if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=st?st.cl:false;
-    return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+(sv?" "+sv:"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(cl?" · Sperrung":a.dl>0?" · +"+a.dl+" min":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
+    return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+(sv?" "+sv:"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" min":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
   {const P=TILE_PARTS.traffic;const all=RSDIRS.filter(x=>x[2]===RS.city).every(x=>D[x[0]]&&D[x[0]].alts);const nc=worst==="dl-bad"?"bad":worst==="dl-warn"?"warn":all?"ok":null;if(P._rcls!==nc){P._rcls=nc;composeTile("k-traffic","traffic");}}
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
