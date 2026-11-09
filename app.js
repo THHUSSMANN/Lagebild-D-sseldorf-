@@ -1204,7 +1204,7 @@ function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");con
   const nU=list.filter(F.unfall).length,nS=list.filter(F.sperr).length,mx=jams.length?Math.max(0,...jams.map(x=>x.delay||0)):0;
   box.innerHTML='<div class="stau-sum" style="margin-bottom:8px">'+fb("stau",String(jams.length),"Staus / zäh",jams.length)+fb("unfall",String(nU),"Unfälle",nU)+fb("sperr",String(nS),"Sperrungen",nS)+fb("delay",mx?"+"+mx+" min":"–","größte Verzögerung",mx)+'</div>'+
     '<div class="muted small" style="margin-bottom:6px">'+(TTF?'Gefiltert – Kennzahl erneut antippen zeigt wieder alles. ':'Kennzahl antippen filtert die Liste. ')+'Eintrag antippen zeigt ihn in der Karte.</div>'+
-    (l.length?'<div>'+l.slice(0,80).map((x,i)=>(!TTF&&(i===0||l[i-1].grp!==x.grp)?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam ttj" role="button" tabindex="0" data-kat="'+ttKat(x.cat)+'" data-i="'+list.indexOf(x)+'"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
+    (l.length?'<div>'+l.slice(0,80).map((x,i)=>(!TTF&&(i===0||l[i-1].grp!==x.grp)?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam ttj" role="button" tabindex="0" data-kat="'+ttKat(x.cat)+'" data-i="'+list.indexOf(x)+'"'+(isFinite(x.lat)?' data-lat="'+x.lat+'" data-lon="'+x.lon+'"':'')+'><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
       '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
       '<div class="d">'+(x.ort?'<span class=\"ortc\">'+esc(x.ort)+'</span>':'')+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",x.grp===1?" · "+fmt(x.home,1)+" km von meiner Adresse":isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join("")+'</div>'
     :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
@@ -2243,11 +2243,16 @@ function vlMapFilter(){if(typeof MAP==="undefined"||!MAP)return;const k=VLK;
 document.addEventListener("click",e=>{const b=e.target.closest("#vl-cat [data-vl]");if(!b)return;e.preventDefault();setVL(b.dataset.vl);
   const c=$("vl-cat");if(c&&c.getBoundingClientRect().top<0)c.scrollIntoView({block:"start"});});
 /* Eintrag in einer Liste antippen: zur Karte wechseln und Stelle zeigen */
+let VLRING=null,VLBACK=null;
 document.addEventListener("click",e=>{const it=e.target.closest("#vl-body [data-kat][data-lat]");if(!it||e.target.closest("a,summary,details"))return;
-  const la=+it.dataset.lat,lo=+it.dataset.lon;if(!isFinite(la))return;
-  if(it.matches(".ttj,.sdj"))return;
-  setTimeout(()=>{if(!MAP)return;$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.invalidateSize();MAP.setView([la,lo],15);
-    const t=it.querySelector(".t"),d=it.querySelector(".d");L.popup().setLatLng([la,lo]).setContent(esc(t?t.innerText:"")+(d?"<br>"+esc(d.innerText.replace(" · in Karte zeigen ›","")):"")).openOn(MAP);},120);},true);
+  const la=+it.dataset.lat,lo=+it.dataset.lon;if(!isFinite(la)||!isFinite(lo))return;e.stopImmediatePropagation();e.preventDefault();
+  if(typeof MAP==="undefined"||!MAP)return;VLBACK=it;
+  const el=$("stau-map");window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});
+  setTimeout(()=>{MAP.invalidateSize();MAP.setView([la,lo],16,{animate:true});
+    if(VLRING)VLRING.remove();VLRING=L.circleMarker([la,lo],{radius:22,color:"#0b6e8a",weight:4,fill:false,className:"vlring"}).addTo(MAP);
+    const t=it.querySelector(".t"),d=it.querySelector(".d");
+    L.popup({maxWidth:300}).setLatLng([la,lo]).setContent('<b>'+esc(t?t.innerText:"")+'</b>'+(d?"<br>"+esc(d.innerText.replace(" · in Karte zeigen ›","")):"")+'<br><a href="#" class="vlback">↓ zurück zur Liste</a>').openOn(MAP);},250);},true);
+document.addEventListener("click",e=>{if(!e.target.closest(".vlback"))return;e.preventDefault();if(VLBACK&&VLBACK.isConnected)VLBACK.scrollIntoView({behavior:"smooth",block:"center"});});
 {let vlT=0;const mo=new MutationObserver(()=>{clearTimeout(vlT);vlT=setTimeout(vlCount,250);});const b=$("vl-body");if(b){mo.observe(b,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});setVL(VLK);}}
 
 })();
