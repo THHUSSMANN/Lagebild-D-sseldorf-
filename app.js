@@ -449,6 +449,7 @@ $("routes").addEventListener("keydown",e=>{if(e.key==="Enter")$("routes-save").c
 // Kontostand: öffnet die Finanztabelle in iCloud (Link nur lokal auf dem Gerät gespeichert)
 {const fi=$("fin");if(fi){const l=load("fin_link")||"";fi.value=/^shareddocuments:/.test(l)?decodeURIComponent(l.split("com~apple~CloudDocs/")[1]||""):l;}}
 // Link prüfen und vervollständigen (z. B. „icloud.com/…“ ohne https)
+{const o=load("fin_link");if(o&&/^https?:\/\/[^./]+\/?$/i.test(o))store("fin_link",null);} // kaputten Alt-Eintrag wie „https://iCloud“ entfernen
 const finNorm=v=>{v=String(v||"").trim().replace(/^<|>$/g,"");if(!v)return "";
   // echter Freigabe-Link (Rechnername mit Punkt, z. B. www.icloud.com/iclouddrive/…)
   const m=v.match(/(https?):\/\/[a-z0-9-]+(\.[a-z0-9-]+)+(\/[^\s<>"]*)?/i);if(m)return m[0].replace(/[),.;]+$/,"");
