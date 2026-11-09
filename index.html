@@ -777,6 +777,22 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 #rs-dir button.on.dl-warn small,#rs-dir button.on.dl-bad small{color:inherit}
 @keyframes dlpulse{0%,100%{box-shadow:0 0 0 0 rgba(214,45,32,.45),0 6px 18px rgba(214,45,32,.25)}50%{box-shadow:0 0 0 7px rgba(214,45,32,0),0 6px 22px rgba(214,45,32,.4)}}
 @media (prefers-reduced-motion:reduce){#rs-dir button.dl-bad{animation:none}}
+
+/* Besuchersicherheit */
+.bs .bs-l{display:block;font:600 13px var(--f-body);color:var(--muted);margin:2px 2px 6px;text-transform:uppercase;letter-spacing:.04em}
+.bs .bs-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.bs .bs-row input{flex:1;min-width:0;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:700 22px var(--f-display);padding:6px 12px}
+.bs .bs-sm{font-size:14px;color:var(--muted)}.bs .bs-sm span:first-child{flex:1}
+.bs .bs-sm input{flex:0 0 70px;min-height:40px;font-size:17px;text-align:center}
+.bs .bs-u{font:600 15px var(--f-body);color:var(--muted);min-width:34px}
+.bs .bs-res{border-radius:14px;background:var(--accent-soft);padding:12px 14px;margin:4px 0 6px}
+.bs .bs-res:empty{display:none}
+.bs .bs-res b{display:block;font:700 28px var(--f-display);color:var(--fg)}
+.bs .bs-res span{font-size:13.5px;color:var(--muted)}
+.bs .bs-grid{display:grid;gap:6px;margin-bottom:6px}
+.bs .bs-grid button{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;min-height:48px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:600 15px var(--f-body);text-align:left;cursor:pointer}
+.bs .bs-grid button b{font:700 20px var(--f-display)}
+.bs .bs-grid button.on{border:2px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -805,6 +821,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
       <button type="button" data-tool="alarm" class="hbtn" id="alarm-btn" aria-label="Wecker"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>Wecker</button>
       <button type="button" data-tool="fin" class="hbtn" id="fin-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="7.5" width="16" height="12" rx="2.5"/><path d="M20 11.5h-4a2 2 0 0 0 0 4h4"/><circle cx="16.3" cy="13.5" r=".6"/></svg>Kontostand</button>
       <button type="button" data-tool="radio" class="hbtn rtoggle" id="radio-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
+      <button type="button" data-tool="bsicher" class="hbtn" id="bs-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><circle cx="9.5" cy="11" r="1.6"/><circle cx="14.5" cy="11" r="1.6"/><path d="M7 16.2c.6-1.4 1.5-2 2.5-2s1.9.6 2.5 2M12 16.2c.6-1.4 1.5-2 2.5-2s1.9.6 2.5 2"/></svg>Besuchersicherheit</button>
       <a data-tool="settings" class="hbtn" href="#einstellungen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>Einstellungen</a>
       <button type="button" data-tool="arrange" class="hbtn" id="arrange-tool"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><path d="M16.75 13.5v6.5M13.5 16.75H20"/></svg>Anordnen</button>
     </div>
@@ -836,6 +853,23 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
     <button data-k="=" class="ck-eq">=</button>
   </div>
   <div class="muted small" id="calc-hist"></div>
+  </div>
+</dialog>
+<dialog id="bs-dlg" class="tooldlg" aria-label="Besuchersicherheit">
+  <div class="td-head"><h2>Besuchersicherheit</h2><button type="button" class="td-x" data-close aria-label="Schließen">✕</button></div>
+  <div class="td-body bs">
+    <label class="bs-l" for="bs-area">Fläche (m²)</label>
+    <div class="bs-row"><input id="bs-area" type="text" inputmode="decimal" placeholder="z. B. 12500" autocomplete="off"><span class="bs-u">m²</span></div>
+    <div class="bs-row bs-sm"><span>Abzug für Aufbauten, Bühnen, Wege</span><input id="bs-cut" type="text" inputmode="decimal" value="20"><span class="bs-u">%</span></div>
+    <div class="bs-res" id="bs-net"></div>
+    <h3 class="sub2 vl-h">Besucher auf der Nettofläche</h3>
+    <div class="bs-grid" id="bs-dens"></div>
+    <div class="muted small">Zeile antippen übernimmt die Besucherzahl unten in die Rettungswegberechnung.</div>
+    <h3 class="sub2 vl-h">Rettungswegbreite</h3>
+    <label class="bs-l" for="bs-pers">Gesamtpersonenzahl</label>
+    <div class="bs-row"><input id="bs-pers" type="text" inputmode="numeric" placeholder="z. B. 20000" autocomplete="off"><span class="bs-u">Pers.</span></div>
+    <div class="bs-res" id="bs-rw"></div>
+    <div class="muted small">Formel: Personen ÷ 600 × 1,20 m. Rechenhilfe – maßgeblich sind Sicherheitskonzept und Genehmigung.</div>
   </div>
 </dialog>
 <dialog id="alarm-dlg" class="tooldlg" aria-label="Wecker">
@@ -1284,6 +1318,6 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=225"></script>
+<script src="app.js?v=226"></script>
 </body>
 </html>

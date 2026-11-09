@@ -2252,6 +2252,25 @@ setInterval(()=>{if(!document.hidden&&!busy){loadAutobahn();loadTomTom();}},3*60
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastRun>5*60*1000)refreshAll(false);});
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderReise,TILE_PARTS};
+
+// ================= Besuchersicherheit: Fläche, Besucherzahl, Rettungswegbreite =================
+{const num=v=>{v=String(v||"").trim().replace(/\s/g,"");if(/,/.test(v))v=v.replace(/\./g,"").replace(",",".");else if(/^\d{1,3}(\.\d{3})+$/.test(v))v=v.replace(/\./g,"");const n=parseFloat(v);return isFinite(n)?n:NaN;};
+  const f0=n=>Math.round(n).toLocaleString("de-DE"),f2=n=>n.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const st=load("bsicher")||{};let sel=st.sel||2;
+  function calc(){const A=num($("bs-area").value),cut=num($("bs-cut").value);const P0=num($("bs-pers").value);
+    store("bsicher",{a:$("bs-area").value,c:$("bs-cut").value,p:$("bs-pers").value,sel});
+    if(isFinite(A)&&A>0){const k=isFinite(cut)?Math.min(Math.max(cut,0),100):20;const N=A*(1-k/100);
+      $("bs-net").innerHTML='<span>Nettofläche (Fläche − '+f0(k)+' %)</span><b>'+f2(N)+' m²</b>';
+      $("bs-dens").innerHTML=[1,2,3,4].map(d=>'<button type="button" data-bsd="'+d+'" class="'+(d===sel?"on":"")+'"><span>'+d+(d===1?" Person":" Personen")+' / m²</span><b>'+f0(Math.floor(N*d))+'</b></button>').join("");}
+    else{$("bs-net").innerHTML="";$("bs-dens").innerHTML='<div class="muted small">Bitte eine Fläche eingeben.</div>';}
+    if(isFinite(P0)&&P0>0){const w=P0/600*1.2,st6=Math.max(1.2,Math.ceil(P0/300)*0.6);
+      $("bs-rw").innerHTML='<span>Rechnerische Gesamtbreite der Rettungswege</span><b>'+f2(w)+' m</b><span>aufgerundet in 0,60-m-Schritten (mind. 1,20 m): <strong>'+f2(st6)+' m</strong></span>';}
+    else $("bs-rw").innerHTML="";}
+  const dlg=$("bs-dlg");
+  if(dlg){$("bs-area").value=st.a||"";$("bs-cut").value=st.c||"20";$("bs-pers").value=st.p||"";
+    ["bs-area","bs-cut","bs-pers"].forEach(id=>$(id).addEventListener("input",calc));
+    $("bs-dens").addEventListener("click",e=>{const b=e.target.closest("[data-bsd]");if(!b)return;sel=+b.dataset.bsd;$("bs-pers").value=b.querySelector("b").textContent.replace(/\./g,"");calc();});
+    $("bs-btn").addEventListener("click",()=>{if(document.body.classList.contains("harrange"))return;calc();dlg.showModal();});}}
 // Neue Dashboard-Version automatisch laden: beim Zurückkehren in die App und alle 10 Minuten nachsehen
 {const myV=((document.querySelector('script[src*="app.js?v="]')||{}).src||"").split("v=")[1]||"";let chk=0;
   const check=async()=>{if(!myV||Date.now()-chk<60000)return;chk=Date.now();
