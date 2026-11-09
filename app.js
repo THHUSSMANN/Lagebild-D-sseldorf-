@@ -447,22 +447,29 @@ $("stop-sug").addEventListener("click",e=>{const b=e.target.closest("[data-sug]"
 $("routes-save").addEventListener("click",()=>{ROUTES_TXT=$("routes").value.trim();store("routes_"+C.key,ROUTES_TXT);ROUTES=parseRoutes(ROUTES_TXT);loadAutobahn();});
 $("routes").addEventListener("keydown",e=>{if(e.key==="Enter")$("routes-save").click();});
 // Kontostand: öffnet die Finanztabelle in iCloud (Link nur lokal auf dem Gerät gespeichert)
-{const fi=$("fin");if(fi)fi.value=load("fin_link")||"";}
+{const fi=$("fin");if(fi){const l=load("fin_link")||"";fi.value=/^shareddocuments:/.test(l)?decodeURIComponent(l.split("com~apple~CloudDocs/")[1]||""):l;}}
 // Link prüfen und vervollständigen (z. B. „icloud.com/…“ ohne https)
-const finNorm=v=>{v=String(v||"").trim().replace(/^<|>$/g,"");const m=v.match(/(https?|ms-excel|numbers):\/\/[^\s<>"]+/i);if(m)return m[0].replace(/[),.;]+$/,"");
-  const d=v.match(/(?:^|\s)((?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s<>"]+)/i);if(d)return "https://"+d[1];return "";};
+const finNorm=v=>{v=String(v||"").trim().replace(/^<|>$/g,"");if(!v)return "";
+  // echter Freigabe-Link (Rechnername mit Punkt, z. B. www.icloud.com/iclouddrive/…)
+  const m=v.match(/(https?):\/\/[a-z0-9-]+(\.[a-z0-9-]+)+(\/[^\s<>"]*)?/i);if(m)return m[0].replace(/[),.;]+$/,"");
+  if(/^(shareddocuments|ms-excel|numbers):/i.test(v))return v;
+  const d=v.match(/(?:^|\s)((?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s<>"]+)/i);if(d&&!/\s/.test(v.slice(v.indexOf(d[1]))))return "https://"+d[1];
+  // Dateipfad in iCloud Drive (z. B. „iCloud Drive/Finanzen/Datei.xlsx“) → öffnet die Datei in der Dateien-App
+  if(v.includes("/")){let p=v.replace(/^https?:\/\//i,"").replace(/^\/+/,"").replace(/^(iCloud( Drive)?)\//i,"");
+    return "shareddocuments:///private/var/mobile/Library/Mobile%20Documents/com~apple~CloudDocs/"+p.split("/").map(encodeURIComponent).join("/");}
+  return "";};
 function finMsg(t,ok){const m=$("fin-msg");if(m){m.textContent=t;m.style.color=ok?"var(--ok, #2e9d5b)":"#d62d20";}}
 $("fin-save").addEventListener("click",()=>{const raw=$("fin").value.trim();const v=finNorm(raw);
   if(raw&&!v){finMsg("Darin ist kein Link zu erkennen. In der Dateien-App die Datei lange drücken → Teilen → „Link kopieren“ und hier einfügen.",false);return;}
   store("fin_link",v||null);
   if(v&&load("fin_link")!==v){finMsg("Der Browser lässt das Speichern nicht zu (privates Surfen aktiv?). Bitte normal in Safari bzw. über das Symbol auf dem Home-Bildschirm öffnen.",false);return;}
-  $("fin").value=v;finMsg(v?"Gespeichert ✓ – „Kontostand“ unter Tools öffnet jetzt diese Datei. Hinweis: Safari und das Home-Bildschirm-Symbol speichern getrennt.":"Link gelöscht.",true);});
+  $("fin").value=/^shareddocuments:/.test(v)?raw:v;finMsg(v?(/^shareddocuments:/.test(v)?"Als Dateipfad gespeichert ✓ – „Kontostand“ öffnet die Datei in der Dateien-App. ":"")+"Gespeichert ✓ – „Kontostand“ unter Tools öffnet jetzt diese Datei. Hinweis: Safari und das Home-Bildschirm-Symbol speichern getrennt.":"Link gelöscht.",true);});
 {const fi=$("fin");if(fi)fi.addEventListener("paste",()=>setTimeout(()=>$("fin-save").click(),50));}
 $("fin-btn").addEventListener("click",()=>{let l=finNorm(load("fin_link"));
   if(!l){const raw=prompt("iCloud-Link zu deiner Finanztabelle einfügen (beginnt mit https://www.icloud.com/…; wird nur auf diesem Gerät gespeichert):")||"";l=finNorm(raw);
     if(!l){if(raw.trim())alert("Das ist kein gültiger Link. Bitte in der Dateien-App „Link kopieren“ verwenden – der Link beginnt mit https://www.icloud.com/");return;}
     store("fin_link",l);const fi=$("fin");if(fi)fi.value=l;}
-  window.open(l,"_blank","noopener");});
+  if(/^https?:/i.test(l))window.open(l,"_blank","noopener");else location.href=l;});
 $("tk-save").addEventListener("click",()=>{TK=$("tk").value.trim();store("tk",TK);loadFuel();});
 $("theme").addEventListener("change",e=>{const v=e.target.value;store("theme",v);
   if(v)document.documentElement.setAttribute("data-theme",v);else document.documentElement.removeAttribute("data-theme");});
