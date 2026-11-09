@@ -1223,10 +1223,10 @@ const MAP_BOUNDS={dus:[51.12,6.66,51.36,6.96],datteln:[51.60,7.24,51.72,7.46],al
 function mapBounds(){const b=MAP_BOUNDS[C.key];if(b)return b;const la=C.center.lat,lo=C.center.lon;return [la-.2,lo-.32,la+.2,lo+.32];}
 function gmapsUrl(){const [s,w,n,e]=mapBounds();const span=Math.max(n-s,(e-w)*0.62);const z=span>0.45?10:span>0.22?11:12;return "https://www.google.com/maps/@"+((s+n)/2).toFixed(4)+","+((w+e)/2).toFixed(4)+","+z+"z/data=!5m1!1e1";}
 let TTFLOW=load("ttflow2")!==false; // Verkehrsfluss (grün/gelb/rot auf allen Straßen) standardmäßig an
-// TomTom-Kacheln scharf (512 px, für Retina-Displays) und im Dunkelmodus mit dunklem TomTom-Stil statt Farbumkehr
+// TomTom-Kacheln scharf: 512-px-Bild auf 256 px Fläche (Retina), Beschriftung in normaler Größe und im Dunkelmodus mit dunklem TomTom-Stil statt Farbumkehr
 const isDark=()=>{const t=document.documentElement.getAttribute("data-theme");return t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;};
-function ttBase(){const k=encodeURIComponent(TTKEY||"");return L.tileLayer("https://api.tomtom.com/maps/orbis/map-display/tile/{z}/{x}/{y}.png?apiVersion=1&tileSize=512&style="+(isDark()?"street-dark":"street-light")+"&key="+k,{tileSize:512,zoomOffset:-1,maxZoom:20,attribution:"Karte & Verkehr © TomTom"});}
-function ttFlow(){const k=encodeURIComponent(TTKEY||"");return L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?tileSize=512&thickness=8&key="+k,{tileSize:512,zoomOffset:-1,opacity:.85,maxZoom:18,zIndex:5});}
+function ttBase(){const k=encodeURIComponent(TTKEY||"");return L.tileLayer("https://api.tomtom.com/maps/orbis/map-display/tile/{z}/{x}/{y}.png?apiVersion=1&tileSize=512&style="+(isDark()?"street-dark":"street-light")+"&key="+k,{tileSize:256,maxZoom:20,attribution:"Karte & Verkehr © TomTom"});}
+function ttFlow(){const k=encodeURIComponent(TTKEY||"");return L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?tileSize=512&thickness=8&key="+k,{tileSize:256,opacity:.85,maxZoom:18,zIndex:5});}
 function applyMapMode(){
   if(!MAP)return;const tt=MAPMODE==="tomtom"&&!!TTKEY;const k=encodeURIComponent(TTKEY||"");
   if(!MAP._osm)MAP._osm=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'});
