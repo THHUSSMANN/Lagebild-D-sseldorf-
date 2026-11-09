@@ -1228,7 +1228,7 @@ let TTFLOW=load("ttflow2")!==false; // Verkehrsfluss (grün/gelb/rot auf allen S
 // TomTom-Kacheln scharf: 512-px-Bild auf 256 px Fläche (Retina), Beschriftung in normaler Größe und im Dunkelmodus mit dunklem TomTom-Stil statt Farbumkehr
 const isDark=()=>{const t=document.documentElement.getAttribute("data-theme");return t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;};
 function ttBase(){const k=encodeURIComponent(TTKEY||"");return L.tileLayer("https://api.tomtom.com/maps/orbis/map-display/tile/{z}/{x}/{y}.png?apiVersion=1&tileSize=512&style="+(isDark()?"street-dark":"street-light")+"&key="+k,{tileSize:256,maxZoom:20,attribution:"Karte & Verkehr © TomTom"});}
-function ttFlow(){const k=encodeURIComponent(TTKEY||"");return L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?tileSize=512&thickness=8&key="+k,{tileSize:256,opacity:.85,maxZoom:18,zIndex:5});}
+function ttFlow(){const k=encodeURIComponent(TTKEY||"");return L.tileLayer("https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?tileSize=512&thickness=6&key="+k,{tileSize:256,opacity:.8,minZoom:11,maxZoom:18,zIndex:5});}
 function applyMapMode(){
   if(!MAP)return;const tt=MAPMODE==="tomtom"&&!!TTKEY;const k=encodeURIComponent(TTKEY||"");
   if(!MAP._osm)MAP._osm=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,subdomains:"abc",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'});
@@ -2248,24 +2248,25 @@ function foldCount(){const c=$("fcnt-all");if(!c)return;let n=0;["tt","stau-list
 ["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(!el)return;foldCount(id);new MutationObserver(()=>foldCount(id)).observe(el,{childList:true,subtree:true});});
 
 /* Verkehrslage: Kategorie-Knöpfe statt langer Liste */
-const VLN={stau:"Staus",unfall:"Unfälle oder Behinderungen",sperr:"Sperrungen",bau:"Baustellen",meld:"Meldungen der Stadt"};
+const VLN={stau:"Staus",unfall:"Unfälle oder Behinderungen",sperr:"Sperrungen",bau:"Baustellen",event:"Veranstaltungen",meld:"Meldungen der Stadt"};
 let VLK=load("vl_k");if(!VLK||VLK==="karte")VLK="stau";
 const vlVis=el=>!el.closest("[hidden]");
 function vlCount(){const body=$("vl-body");if(!body)return;
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>{const k=b.dataset.vl,n=b.querySelector(".n");if(!n)return;
-    let c;if(k==="meld"){const d=$("mapcity-dus");const on=!!(d&&!d.hidden);b.hidden=!on;if(!on&&VLK==="meld")setTimeout(()=>setVL("stau"),0);c=on?d.querySelectorAll(".li").length:0;}
+    let c;if(k==="meld"||k==="event"){const d=$("mapcity-dus");const on=!!(d&&!d.hidden);b.hidden=!on;if(!on&&VLK===k)setTimeout(()=>setVL("stau"),0);c=on?(k==="event"?$("vt-events").querySelectorAll(".li").length:$("vt-now").querySelectorAll(".li").length):0;}
     else c=[...body.querySelectorAll('[data-kat~="'+k+'"]')].filter(vlVis).length;
     n.textContent=c?String(c):"";b.classList.toggle("none",!c);});
   const em=$("vl-empty");if(!em)return;
-  if(VLK==="karte"||VLK==="meld"){em.hidden=true;if(VLK==="meld"){const d=$("mapcity-dus");em.hidden=!!(d&&!d.hidden);em.textContent="Städtische Meldungen gibt es nur für Düsseldorf. Für "+(C.name||"diesen Ort")+" stehen Staus, Sperrungen und Baustellen in den anderen Knöpfen.";if(!em.hidden)em.style.display="block";else em.style.display="";}else em.style.display="";return;}
+  if(VLK==="karte"||VLK==="meld"||VLK==="event"){em.hidden=true;if(VLK==="meld"||VLK==="event"){const d=$("mapcity-dus");em.hidden=!!(d&&!d.hidden);em.textContent="Städtische Meldungen gibt es nur für Düsseldorf. Für "+(C.name||"diesen Ort")+" stehen Staus, Sperrungen und Baustellen in den anderen Knöpfen.";if(!em.hidden)em.style.display="block";else em.style.display="";}else em.style.display="";return;}
   em.style.display="";const has=[...body.querySelectorAll('[data-kat~="'+VLK+'"]')].some(vlVis);em.hidden=has;em.textContent="Derzeit keine "+VLN[VLK]+" gemeldet.";}
 function setVL(k){VLK=VLN[k]?k:"stau";store("vl_k",VLK);const body=$("vl-body");if(!body)return;
-  body.dataset.k=VLK;body.classList.toggle("flt",VLK!=="karte"&&VLK!=="meld");
+  body.dataset.k=VLK;body.classList.toggle("flt",VLK!=="karte"&&VLK!=="meld"&&VLK!=="event");
+  if(VLK==="meld"){const nb=document.querySelector('#vt-seg [data-vts="now"]');if(nb&&!nb.classList.contains("on"))nb.click();}
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>b.classList.toggle("on",b.dataset.vl===VLK));
   vlMapFilter();vlCount();}
 // Karte: Meldungen der gewählten Kategorie kräftig, die übrigen blass
 function vlMapFilter(){if(typeof MAP==="undefined"||!MAP)return;const k=VLK;
-  const apply=g=>g&&g.eachLayer(l=>{const kt=l.options&&l.options.kat;if(!kt||!l.setStyle)return;const on=k==="meld"||kt===k;
+  const apply=g=>g&&g.eachLayer(l=>{const kt=l.options&&l.options.kat;if(!kt||!l.setStyle)return;const on=k==="meld"||k==="event"||kt===k;
     if(l.options._op==null){l.options._op=l.options.opacity;l.options._fop=l.options.fillOpacity;}
     l.setStyle({opacity:on?l.options._op:.12,fillOpacity:on?l.options._fop:.1});if(on&&l.bringToFront)l.bringToFront();});
   apply(MAP._ttinc);apply(typeof MAPLAYER!=="undefined"?MAPLAYER:null);}

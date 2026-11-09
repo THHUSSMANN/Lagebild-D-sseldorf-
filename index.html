@@ -756,6 +756,10 @@ input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;vertical-
 @media (max-width:700px){.jam{grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px}.jam .delay{font-size:17px}.jam .delay small{font-size:10px;letter-spacing:.02em}.jam .delay small{display:none}.legend{font-size:12px;gap:4px 10px}}
 #alarmbar{display:none!important} /* Warnung nur oben in der Warnleiste */
 .rv-city{display:none!important} /* Ort wird nur noch oben im Kopf gewählt */
+#vl-body[data-k="event"] .vl-sec:not(#mapcity-dus){display:none!important}
+#vl-body[data-k="event"] #vt-seg,#vl-body[data-k="event"] #vt-sum,#vl-body[data-k="event"] [data-vtp="now"],#vl-body[data-k="event"] [data-vtp="next"]{display:none!important}
+#vl-body[data-k="event"] [data-vtp="events"]{display:block!important}
+#vl-body[data-k="meld"] [data-vts="events"]{display:none!important}
 </style>
 </head>
 <body>
@@ -990,7 +994,7 @@ input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;vertical-
   <div id="sd-list"><div class="state">wird geladen …</div></div>
   </div>
   <div class="vlcat" id="vl-cat" role="tablist" aria-label="Verkehrslage">
-    <button type="button" data-vl="stau">Staus<b class="n"></b></button><button type="button" data-vl="unfall">Unfälle &amp; Behinderungen<b class="n"></b></button><button type="button" data-vl="sperr">Sperrungen<b class="n"></b></button><button type="button" data-vl="bau">Baustellen<b class="n"></b></button><button type="button" data-vl="meld">Meldungen Düsseldorf<b class="n"></b></button>
+    <button type="button" data-vl="stau">Staus<b class="n"></b></button><button type="button" data-vl="unfall">Unfälle &amp; Behinderungen<b class="n"></b></button><button type="button" data-vl="sperr">Sperrungen<b class="n"></b></button><button type="button" data-vl="bau">Baustellen<b class="n"></b></button><button type="button" data-vl="event">Veranstaltungen<b class="n"></b></button><button type="button" data-vl="meld">Meldungen Stadt<b class="n"></b></button>
   </div>
   <div class="muted small" style="margin:-4px 2px 8px">Knopf antippen zeigt die Liste darunter und hebt die Meldungen in der Karte hervor. Eintrag antippen zeigt seine Stelle in der Karte.</div>
   <div class="vl-sec" id="vl-tt"><h3 class="sub2 vl-h">Alle Straßen · TomTom Echtzeit</h3>
@@ -1253,6 +1257,6 @@ input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;vertical-
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=214"></script>
+<script src="app.js?v=215"></script>
 </body>
 </html>
