@@ -664,14 +664,13 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 .warnpill.on{outline:2px solid var(--accent);outline-offset:2px}
 
 /* Verkehrslage: Kategorie-Knöpfe */
-.vlcat{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+@media (min-width:701px){#stau-map{height:min(52vh,520px)!important;min-height:360px!important}}
+.vlcat{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 10px}
 .vlcat button{flex:1 1 auto;min-height:44px;padding:8px 14px;border-radius:14px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:inherit;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 .vlcat button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .vlcat .n{font-size:12.5px;min-width:22px;padding:1px 7px;border-radius:10px;background:rgba(127,127,127,.22)}
 .vlcat .n:empty{display:none}
 .vlcat button.on .n{background:rgba(255,255,255,.28)}
-#vl-body:not([data-k="karte"]) .vl-map{display:none!important}
-#vl-body[data-k="karte"] .vl-sec,#vl-body[data-k="karte"] #vl-empty{display:none!important}
 #vl-body[data-k="meld"] .vl-sec:not(#mapcity-dus){display:none!important}
 #vl-body.flt :is(#tt,#sd-list,#traffic,#vt-now,#roadworks,#stau-list)>.muted.small,#vl-body.flt :is(#tt,#sd-list)>.stau-sum,#vl-body.flt #stau-sum,#vl-body.flt #stau-detail,#vl-body.flt :is(#tt,#sd-list) .sublbl,#vl-body.flt #vt-seg,#vl-body.flt #vt-sum,#vl-body.flt [data-vtp="events"],#vl-body.flt [data-vtp="next"],#vl-body.flt .state{display:none!important}
 #vl-body.flt [data-vtp="now"]{display:block!important}
@@ -914,10 +913,7 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
     <button type="button" data-mapgo="dus">Düsseldorf</button><button type="button" data-mapgo="datteln">Datteln</button>
   </div>
   <div class="muted small" id="mapgo-info" style="margin:-2px 0 8px"></div>
-  <div class="vlcat" id="vl-cat" role="tablist" aria-label="Verkehrslage">
-    <button type="button" data-vl="karte">Karte</button><button type="button" data-vl="stau">Staus<b class="n"></b></button><button type="button" data-vl="unfall">Unfälle &amp; Behinderungen<b class="n"></b></button><button type="button" data-vl="sperr">Sperrungen<b class="n"></b></button><button type="button" data-vl="bau">Baustellen<b class="n"></b></button><button type="button" data-vl="meld">Meldungen Düsseldorf<b class="n"></b></button>
-  </div>
-  <div id="vl-body" data-k="karte">
+  <div id="vl-body" data-k="stau" class="flt">
   <div class="mapsw vl-map" id="mapsw" role="tablist" aria-label="Kartenquelle">
     <button type="button" data-mm="tomtom" role="tab">TomTom <small>Verkehr live</small></button>
     <button type="button" data-mm="osm" role="tab">OpenStreetMap <small>amtliche Meldungen</small></button>
@@ -939,7 +935,10 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
   <div class="sublbl vl-h" style="margin-top:14px;font-size:15px">Stadtverkehr Datteln <span class="muted small">· TomTom Echtzeit, Datteln und ca. 8 km Umgebung · Eintrag antippen zeigt ihn in der Karte</span></div>
   <div id="sd-list"><div class="state">wird geladen …</div></div>
   </div>
-  <div class="muted small vl-map vl-hint">Oben eine Kategorie antippen – dann erscheint nur diese Liste. Ein Eintrag in der Liste zeigt seine Stelle in der Karte.</div>
+  <div class="vlcat" id="vl-cat" role="tablist" aria-label="Verkehrslage">
+    <button type="button" data-vl="stau">Staus<b class="n"></b></button><button type="button" data-vl="unfall">Unfälle &amp; Behinderungen<b class="n"></b></button><button type="button" data-vl="sperr">Sperrungen<b class="n"></b></button><button type="button" data-vl="bau">Baustellen<b class="n"></b></button><button type="button" data-vl="meld">Meldungen Düsseldorf<b class="n"></b></button>
+  </div>
+  <div class="muted small" style="margin:-4px 2px 8px">Knopf antippen zeigt die Liste darunter und hebt die Meldungen in der Karte hervor. Eintrag antippen zeigt seine Stelle in der Karte.</div>
   <div class="vl-sec" id="vl-tt"><h3 class="sub2 vl-h">Alle Straßen · TomTom Echtzeit</h3>
   <div id="tt"><div class="state">wird geladen …</div></div></div>
   <div class="vl-sec" id="vl-ab"><h3 class="sub2 vl-h">Autobahnen · Autobahn GmbH</h3>
@@ -1200,6 +1199,6 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=193"></script>
+<script src="app.js?v=194"></script>
 </body>
 </html>

@@ -1140,9 +1140,9 @@ async function loadTomTom(){
     if(MAP){if(!MAP._ttinc)MAP._ttinc=L.layerGroup();MAP._ttinc.clearLayers();
       const col=x=>x.cat===8?"#7d1f6b":x.mag>=4?"#8b0000":x.mag>=3||x.delay>=10?"#d62d20":x.mag>=2||x.delay>=3?"#f08a00":"#f3c623";
       list.slice().reverse().forEach(x=>{const g=x.geo;if(!g)return;const pop='<b>'+esc(x.road||"Straße")+' · '+esc(x.desc||"")+'</b><br>'+esc([x.from,x.to].filter(Boolean).join(" → "))+(x.delay?'<br><b>+'+x.delay+' min</b>':'')+(x.len?' · '+fmt(x.len,1)+' km':'');
-        if(g.type==="LineString"&&g.coordinates.length>1){const ll=g.coordinates.map(c=>[c[1],c[0]]);L.polyline(ll,{color:"#fff",weight:9,opacity:.85,interactive:false}).addTo(MAP._ttinc);L.polyline(ll,{color:col(x),weight:6,opacity:1,dashArray:x.cat===8?"8 6":null}).bindPopup(pop).addTo(MAP._ttinc);}
-        else if(isFinite(x.lat))L.circleMarker([x.lat,x.lon],{radius:7,color:"#fff",weight:2,fillColor:col(x),fillOpacity:1}).bindPopup(pop).addTo(MAP._ttinc);});
-      applyMapMode();}
+        if(g.type==="LineString"&&g.coordinates.length>1){const ll=g.coordinates.map(c=>[c[1],c[0]]);L.polyline(ll,{color:"#fff",weight:9,opacity:.85,interactive:false,kat:ttKat(x.cat)}).addTo(MAP._ttinc);L.polyline(ll,{color:col(x),weight:6,opacity:1,dashArray:x.cat===8?"8 6":null,kat:ttKat(x.cat)}).bindPopup(pop).addTo(MAP._ttinc);}
+        else if(isFinite(x.lat))L.circleMarker([x.lat,x.lon],{radius:7,color:"#fff",weight:2,fillColor:col(x),fillOpacity:1,kat:ttKat(x.cat)}).bindPopup(pop).addTo(MAP._ttinc);});
+      applyMapMode();vlMapFilter();}
     const jams=list.filter(x=>x.cat===6||x.delay>0);
     {const mx=jams.length?Math.max(0,...jams.map(x=>x.delay||0)):0,nA=jams.filter(x=>/(^|, )A\d/.test(x.road)).length;
       TILE_PARTS.traffic.tt=jams.length?(mx?"größte Verzögerung +"+mx+" min · ":"")+nA+" davon auf Autobahnen":"alle Straßen frei";TILE_PARTS.traffic._tt=1;
@@ -1213,7 +1213,7 @@ function applyMapMode(){
   if(tt){MAP._light.addTo(MAP);if(TTFLOW)MAP._tt.addTo(MAP);if(MAP._ttinc)MAP._ttinc.addTo(MAP);}else MAP._osm.addTo(MAP);
   if(C.isDus&&!tt){if(!MAP._los)MAP._los=L.tileLayer.wms("https://vtmanager.duesseldorf.de/geovtinfo/wms",{layers:"vtinfo:LOS",format:"image/png",transparent:true,tiled:true,opacity:.85,zIndex:5,attribution:"Verkehrslage © Landeshauptstadt Düsseldorf"});MAP._los.addTo(MAP);}
   else if(MAP._los&&MAP.hasLayer(MAP._los))MAP._los.remove();
-  if(MAPLAYER){if(tt&&MAP.hasLayer(MAPLAYER))MAPLAYER.remove();else if(!tt&&!MAP.hasLayer(MAPLAYER))MAPLAYER.addTo(MAP);}
+  if(MAPLAYER&&!MAP.hasLayer(MAPLAYER))MAPLAYER.addTo(MAP); // Autobahn-Meldungen (auch Baustellen) immer zeigen
   document.querySelectorAll(".tt-leg").forEach(e=>e.hidden=!tt);document.querySelectorAll(".osm-leg").forEach(e=>e.hidden=tt||!C.isDus);
   const fl=$("ttflow");if(fl){fl.parentElement.hidden=!tt;fl.checked=TTFLOW;}
   document.querySelectorAll("#mapsw [data-mm]").forEach(b=>b.classList.toggle("on",b.dataset.mm===(tt?"tomtom":"osm")));
@@ -1454,15 +1454,16 @@ async function loadAutobahn(){
     :'<div class="state good">Derzeit keine Staus auf '+esc(roads.join(", "))+' im Umkreis von '+JAM_RADIUS_KM+' km.</div>';
   if(ensureMap()){
     MAPLAYER.clearLayers();
-    uniq(got.roadworks).forEach(r=>{if(isFinite(r.lat))L.circleMarker([r.lat,r.lon],{radius:4,color:"#8a9aa5",weight:1,fillColor:"#8a9aa5",fillOpacity:.7}).bindPopup(popupHtml(r,"Baustelle")).addTo(MAPLAYER);});
-    warnings.filter(w=>!jamInfo(w)&&!isClosed(w)).forEach(w=>{if(isFinite(w.lat))L.circleMarker([w.lat,w.lon],{radius:6,color:"#fff",weight:2,fillColor:"#c98a00",fillOpacity:1}).bindPopup(popupHtml(w,"Behinderung")).addTo(MAPLAYER);});
+    uniq(got.roadworks).forEach(r=>{if(isFinite(r.lat))L.circleMarker([r.lat,r.lon],{radius:5,color:"#fff",weight:1.5,fillColor:"#6f7f8a",fillOpacity:.9,kat:"bau"}).bindPopup(popupHtml(r,"Baustelle")).addTo(MAPLAYER);});
+    warnings.filter(w=>!jamInfo(w)&&!isClosed(w)).forEach(w=>{if(isFinite(w.lat))L.circleMarker([w.lat,w.lon],{radius:6,color:"#fff",weight:2,fillColor:"#c98a00",fillOpacity:1,kat:"unfall"}).bindPopup(popupHtml(w,"Behinderung")).addTo(MAPLAYER);});
     closuresAll.forEach(c=>{const lines=geomLines(c);
-      lines.forEach(ll=>L.polyline(ll,{color:"#7d1f6b",weight:5,opacity:.9}).bindPopup(popupHtml(c,"<b>Sperrung</b>")).addTo(MAPLAYER));
-      if(isFinite(c.lat))L.circleMarker([c.lat,c.lon],{radius:6,color:"#fff",weight:2,fillColor:"#7d1f6b",fillOpacity:1}).bindPopup(popupHtml(c,"<b>Sperrung</b>")).addTo(MAPLAYER);});
+      lines.forEach(ll=>L.polyline(ll,{color:"#7d1f6b",weight:5,opacity:.9,kat:"sperr"}).bindPopup(popupHtml(c,"<b>Sperrung</b>")).addTo(MAPLAYER));
+      if(isFinite(c.lat))L.circleMarker([c.lat,c.lon],{radius:6,color:"#fff",weight:2,fillColor:"#7d1f6b",fillOpacity:1,kat:"sperr"}).bindPopup(popupHtml(c,"<b>Sperrung</b>")).addTo(MAPLAYER);});
     jams.forEach(j=>{const col=j.jam.kind==="stau"?"#d62d20":"#f0a020";const extra=[j.jam.delay!=null?"<b>+"+j.jam.delay+" min</b>":"",j.jam.len?fmt(j.jam.len,1)+" km":"",j.jam.speed!=null?"Ø "+j.jam.speed+" km/h":""].filter(Boolean).join(" · ");
       const lines=geomLines(j);
-      if(lines.length)lines.forEach(ll=>{L.polyline(ll,{color:"#fff",weight:10,opacity:.8,interactive:false}).addTo(MAPLAYER);L.polyline(ll,{color:col,weight:6,opacity:1}).bindPopup(popupHtml(j,extra)).addTo(MAPLAYER);});
-      else if(isFinite(j.lat))L.circleMarker([j.lat,j.lon],{radius:8,color:"#fff",weight:2,fillColor:col,fillOpacity:1}).bindPopup(popupHtml(j,extra)).addTo(MAPLAYER);});
+      if(lines.length)lines.forEach(ll=>{L.polyline(ll,{color:"#fff",weight:10,opacity:.8,interactive:false,kat:"stau"}).addTo(MAPLAYER);L.polyline(ll,{color:col,weight:6,opacity:1,kat:"stau"}).bindPopup(popupHtml(j,extra)).addTo(MAPLAYER);});
+      else if(isFinite(j.lat))L.circleMarker([j.lat,j.lon],{radius:8,color:"#fff",weight:2,fillColor:col,fillOpacity:1,kat:"stau"}).bindPopup(popupHtml(j,extra)).addTo(MAPLAYER);});
+    vlMapFilter();
     drawVTOnMap();setTimeout(()=>MAP.invalidateSize(),50);
   }else{$("stau-map").innerHTML='<div class="state" style="margin:12px">Kartenbibliothek nicht geladen – die Liste darunter ist vollständig.</div>';}
   const jamIds=new Set(jams.map(j=>j.ab+"|"+j.title+"|"+j.subtitle+"|"+(j.identifier||"")));
@@ -2189,26 +2190,32 @@ function foldCount(){const c=$("fcnt-all");if(!c)return;let n=0;["tt","stau-list
 
 /* Verkehrslage: Kategorie-Knöpfe statt langer Liste */
 const VLN={stau:"Staus",unfall:"Unfälle oder Behinderungen",sperr:"Sperrungen",bau:"Baustellen",meld:"Meldungen der Stadt"};
-let VLK=load("vl_k")||"karte";
+let VLK=load("vl_k");if(!VLK||VLK==="karte")VLK="stau";
 const vlVis=el=>!el.closest("[hidden]");
 function vlCount(){const body=$("vl-body");if(!body)return;
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>{const k=b.dataset.vl,n=b.querySelector(".n");if(!n)return;
-    let c;if(k==="meld"){const d=$("mapcity-dus");const on=!!(d&&!d.hidden);b.hidden=!on;if(!on&&VLK==="meld")setTimeout(()=>setVL("karte"),0);c=on?d.querySelectorAll(".li").length:0;}
+    let c;if(k==="meld"){const d=$("mapcity-dus");const on=!!(d&&!d.hidden);b.hidden=!on;if(!on&&VLK==="meld")setTimeout(()=>setVL("stau"),0);c=on?d.querySelectorAll(".li").length:0;}
     else c=[...body.querySelectorAll('[data-kat~="'+k+'"]')].filter(vlVis).length;
     n.textContent=c?String(c):"";b.classList.toggle("none",!c);});
   const em=$("vl-empty");if(!em)return;
   if(VLK==="karte"||VLK==="meld"){em.hidden=true;if(VLK==="meld"){const d=$("mapcity-dus");em.hidden=!!(d&&!d.hidden);em.textContent="Städtische Meldungen gibt es nur für Düsseldorf. Für "+(C.name||"diesen Ort")+" stehen Staus, Sperrungen und Baustellen in den anderen Knöpfen.";if(!em.hidden)em.style.display="block";else em.style.display="";}else em.style.display="";return;}
   em.style.display="";const has=[...body.querySelectorAll('[data-kat~="'+VLK+'"]')].some(vlVis);em.hidden=has;em.textContent="Derzeit keine "+VLN[VLK]+" gemeldet.";}
-function setVL(k){VLK=VLN[k]||k==="karte"?k:"karte";store("vl_k",VLK);const body=$("vl-body");if(!body)return;
+function setVL(k){VLK=VLN[k]?k:"stau";store("vl_k",VLK);const body=$("vl-body");if(!body)return;
   body.dataset.k=VLK;body.classList.toggle("flt",VLK!=="karte"&&VLK!=="meld");
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>b.classList.toggle("on",b.dataset.vl===VLK));
-  if(VLK==="karte"&&typeof MAP!=="undefined"&&MAP)setTimeout(mapRefresh,40);vlCount();}
+  vlMapFilter();vlCount();}
+// Karte: Meldungen der gewählten Kategorie kräftig, die übrigen blass
+function vlMapFilter(){if(typeof MAP==="undefined"||!MAP)return;const k=VLK;
+  const apply=g=>g&&g.eachLayer(l=>{const kt=l.options&&l.options.kat;if(!kt||!l.setStyle)return;const on=k==="meld"||kt===k;
+    if(l.options._op==null){l.options._op=l.options.opacity;l.options._fop=l.options.fillOpacity;}
+    l.setStyle({opacity:on?l.options._op:.12,fillOpacity:on?l.options._fop:.1});if(on&&l.bringToFront)l.bringToFront();});
+  apply(MAP._ttinc);apply(typeof MAPLAYER!=="undefined"?MAPLAYER:null);}
 document.addEventListener("click",e=>{const b=e.target.closest("#vl-cat [data-vl]");if(!b)return;e.preventDefault();setVL(b.dataset.vl);
   const c=$("vl-cat");if(c&&c.getBoundingClientRect().top<0)c.scrollIntoView({block:"start"});});
 /* Eintrag in einer Liste antippen: zur Karte wechseln und Stelle zeigen */
-document.addEventListener("click",e=>{if(VLK==="karte")return;const it=e.target.closest("#vl-body [data-kat][data-lat]");if(!it||e.target.closest("a,summary,details"))return;
+document.addEventListener("click",e=>{const it=e.target.closest("#vl-body [data-kat][data-lat]");if(!it||e.target.closest("a,summary,details"))return;
   const la=+it.dataset.lat,lo=+it.dataset.lon;if(!isFinite(la))return;
-  setVL("karte");if(it.matches(".ttj,.sdj"))return;
+  if(it.matches(".ttj,.sdj"))return;
   setTimeout(()=>{if(!MAP)return;$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.invalidateSize();MAP.setView([la,lo],15);
     const t=it.querySelector(".t"),d=it.querySelector(".d");L.popup().setLatLng([la,lo]).setContent(esc(t?t.innerText:"")+(d?"<br>"+esc(d.innerText.replace(" · in Karte zeigen ›","")):"")).openOn(MAP);},120);},true);
 {let vlT=0;const mo=new MutationObserver(()=>{clearTimeout(vlT);vlT=setTimeout(vlCount,250);});const b=$("vl-body");if(b){mo.observe(b,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});setVL(VLK);}}
