@@ -1874,7 +1874,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-mapgo]");i
 var ELKEY=null,ELR=load("el_rad")||2,ELF=load("el_f")||"all",ELD=null,ELP=null,ELMAP=null,ELLAY=null;
 function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],["datteln","Datteln",51.6539,7.3417],["dortmund","Dortmund",51.5136,7.4653],["alpen","Alpen-Menzelen",51.6449,6.5634],["salzhausen","Salzhausen",53.2236,10.1645]];
   return F.map(([k,n,la,lo])=>{const H=HOMES[k];return {k,name:n,lat:H&&isFinite(H.lat)?H.lat:la,lon:H&&isFinite(H.lon)?H.lon:lo};});}
-function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr";w.innerHTML='<button type="button" data-elw="gps" class="'+(ELP&&ELP.k==="gps"?"on":"")+'">📍 Stattdessen an meinem Standort suchen</button>';}
+function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr";w.innerHTML='<button type="button" data-elw="gps" class="gpsbtn'+(ELP&&ELP.k==="gps"?" on":"")+'"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Stattdessen an meinem Standort suchen</button>';}
 function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
   [["all","Alle Ladesäulen"],["fast","Schnelllader (ab 50 kW)"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;

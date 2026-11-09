@@ -682,6 +682,12 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 #vl-body[data-k="unfall"] [data-kat]:not([data-kat~="unfall"]),#vl-body[data-k="unfall"] .vl-sec:not(:has([data-kat~="unfall"])){display:none!important}
 #vl-body[data-k="sperr"] [data-kat]:not([data-kat~="sperr"]),#vl-body[data-k="sperr"] .vl-sec:not(:has([data-kat~="sperr"])){display:none!important}
 #vl-body[data-k="bau"] [data-kat]:not([data-kat~="bau"]),#vl-body[data-k="bau"] .vl-sec:not(:has([data-kat~="bau"])){display:none!important}
+
+/* Standort-Knopf (Parken, E-Laden) */
+.gpsbtn{display:flex!important;align-items:center;justify-content:center;gap:10px;min-height:50px;font-size:16px!important;font-weight:700!important;color:var(--fg)!important;background:var(--panel-2)!important;border:1px solid var(--line)!important}
+.gpsbtn .pin{width:24px;height:24px;flex:none;fill:#e0302b;stroke:#fff;stroke-width:1.4}
+.gpsbtn .pin circle{fill:#fff;stroke:none}
+.gpsbtn.on{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
 </style>
 </head>
 <body>
@@ -1039,7 +1045,7 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 
 <div class="view" id="v-parken" data-view="parken" hidden>
 <div class="subtabs" data-for="parken"></div>
-<div class="seg" id="pk-seg" style="grid-template-columns:1fr"><button type="button" data-pks="gps">📍 Stattdessen an meinem Standort suchen (2 km)</button></div>
+<div class="seg" id="pk-seg" style="grid-template-columns:1fr"><button type="button" data-pks="gps" class="gpsbtn"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Stattdessen an meinem Standort suchen (2 km)</button></div>
 <div data-pk="gps" hidden>
 <section class="card wide">
   <div class="card-head"><h2>Parken in der Nähe</h2><span class="src">OpenStreetMap · 2 km um deinen Standort</span></div>
@@ -1174,6 +1180,6 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=178"></script>
+<script src="app.js?v=179"></script>
 </body>
 </html>
