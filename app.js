@@ -865,14 +865,14 @@ async function loadVT(){
     VTGEO={active,ev};
     const range=x=>dateTime(x.from)+" – "+(isoDay(new Date(x.from))===isoDay(new Date(x.to))?hhmm(x.to):dateTime(x.to));
     const pt=g=>{let c=g&&g.coordinates;while(Array.isArray(c)&&Array.isArray(c[0]))c=c[0];return Array.isArray(c)&&isFinite(c[1])&&Math.abs(c[1])<=90?c:null;};
-    const item=(x,badge)=>{const c=pt(x.geo);return '<div class="li"'+(c?' data-lat="'+c[1]+'" data-lon="'+c[0]+'"':'')+'><span class="tag '+(x.kind==="Sperrung"?"ab":"alt")+'">'+esc(badge||x.kind)+'</span><div class="t"><b class="ortp"></b>'+esc(x.short||x.name)+'</div><div class="r"></div>'+
+    const item=(x,badge)=>{const c=pt(x.geo);return '<div class="li" data-kat="'+(badge?"meld":x.kind==="Sperrung"?"sperr":"bau")+'"'+(c?' data-lat="'+c[1]+'" data-lon="'+c[0]+'"':'')+'><span class="tag '+(x.kind==="Sperrung"?"ab":"alt")+'">'+esc(badge||x.kind)+'</span><div class="t"><b class="ortp"></b>'+esc(x.short||x.name)+'</div><div class="r"></div>'+
       '<div class="d">'+esc(range(x))+(x.text?'<details><summary>Details</summary>'+esc(x.text)+'</details>':'')+'</div></div>';};
     const nSp=active.filter(x=>x.kind==="Sperrung").length;
     TILE_PARTS.traffic.vt=nSp+" Sperrungen in der Stadt";composeTile("k-traffic","traffic");
     if(false)setKpi("k-vt",String(nSp)+"<small> Sperrungen</small>",ev.length?ev.length+" Veranstaltung(en) angekündigt":"keine Veranstaltungen",nSp>30?"warn":"info");
     $("vt-sum").innerHTML=fact(String(nSp),"Sperrungen aktiv")+fact(String(active.length-nSp),"Meldungen / Baustellen")+fact(String(ev.length),"Veranstaltungen angekündigt")+fact(String(soon.length),"neu in 7 Tagen");
     [...$("vt-sum").children].forEach((f,i)=>{f.dataset.vtgo=["now","now","events","next"][i];f.setAttribute("role","button");f.style.cursor="pointer";});
-    $("vt-now").innerHTML=active.length?'<div class="list">'+active.slice(0,15).map(x=>item(x)).join("")+'</div>'+(active.length>15?'<div class="muted small">+ '+(active.length-15)+' weitere</div>':''):'<div class="state good">Keine aktiven Sperrungen.</div>';
+    $("vt-now").innerHTML=active.length?'<div class="list">'+active.slice(0,60).map(x=>item(x)).join("")+'</div>'+(active.length>60?'<div class="muted small">+ '+(active.length-60)+' weitere</div>':''):'<div class="state good">Keine aktiven Sperrungen.</div>';
     $("vt-events").innerHTML=ev.length?'<div class="list">'+ev.slice(0,8).map(x=>item(x,"Event")).join("")+'</div>':'<div class="state good">Keine angekündigten Veranstaltungen.</div>';
     $("vt-next").innerHTML=soon.length?'<div class="list">'+soon.slice(0,8).map(x=>item(x)).join("")+'</div>':'<div class="state good">Nichts Neues angekündigt.</div>';
     setStatus("vt",true);drawVTOnMap();fillOrte($("vt-now")).then(()=>fillOrte($("vt-next"))).then(()=>fillOrte($("vt-events")));
@@ -1138,6 +1138,7 @@ async function placeOf(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLA
 let FILLING=false,FILLNEXT=null;
 async function fillPlaces(only){if(!TT)return;if(FILLING){FILLNEXT=only||null;return;}FILLING=true;try{const l=(only||TT.list.slice(0,60)).filter(x=>!x.ort&&isFinite(x.lat));
   for(let i=0;i<l.length;i+=3){await Promise.all(l.slice(i,i+3).map(async x=>{let v=await placeOf(x.lat,x.lon);if(!v){await new Promise(r=>setTimeout(r,700));v=await placeOf(x.lat,x.lon);}x.ort=v||null;}));renderTT();if(FILLNEXT)break;await new Promise(r=>setTimeout(r,250));}}finally{FILLING=false;const n=FILLNEXT;FILLNEXT=null;if(n)fillPlaces(n);}}
+const ttKat=c=>c===9?"bau":c===7||c===8?"sperr":c===6?"stau":"unfall";
 function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");const magTxt=["","leicht","mäßig","stark","gesperrt"];
   const F={stau:x=>x.cat===6||x.delay>0,unfall:x=>x.cat===1,sperr:x=>x.cat===8,delay:x=>x.delay>0};
   let l=TTF?list.filter(F[TTF]):list;if(TTF==="delay")l=l.slice().sort((a,b)=>b.delay-a.delay);
@@ -1145,11 +1146,11 @@ function renderTT(){if(!TT)return;const {list,jams,CAT}=TT;const box=$("tt");con
   const nU=list.filter(F.unfall).length,nS=list.filter(F.sperr).length,mx=jams.length?Math.max(0,...jams.map(x=>x.delay||0)):0;
   box.innerHTML='<div class="stau-sum" style="margin-bottom:8px">'+fb("stau",String(jams.length),"Staus / zäh",jams.length)+fb("unfall",String(nU),"Unfälle",nU)+fb("sperr",String(nS),"Sperrungen",nS)+fb("delay",mx?"+"+mx+" min":"–","größte Verzögerung",mx)+'</div>'+
     '<div class="muted small" style="margin-bottom:6px">'+(TTF?'Gefiltert – Kennzahl erneut antippen zeigt wieder alles. ':'Kennzahl antippen filtert die Liste. ')+'Eintrag antippen zeigt ihn in der Karte.</div>'+
-    (l.length?'<div>'+l.slice(0,30).map((x,i)=>(!TTF&&(i===0||l[i-1].grp!==x.grp)?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam ttj" role="button" tabindex="0" data-i="'+list.indexOf(x)+'"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
+    (l.length?'<div>'+l.slice(0,80).map((x,i)=>(!TTF&&(i===0||l[i-1].grp!==x.grp)?'<div class="sublbl" style="margin-top:8px">'+["Autobahnen","Rund um meine Adresse"+(HOMES[C.key]?" · "+esc(HOMES[C.key].label):""),"Weitere Straßen"][x.grp]+'</div>':'')+'<div class="jam ttj" role="button" tabindex="0" data-kat="'+ttKat(x.cat)+'" data-i="'+list.indexOf(x)+'"><span class="tag'+(x.road&&/^A/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
       '<div class="delay'+(x.delay!=null&&x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":esc(magTxt[x.mag]||""))+'</small></div>'+
       '<div class="d">'+(x.ort?'<span class=\"ortc\">'+esc(x.ort)+'</span>':'')+esc([x.from,x.to].filter(Boolean).join(" → "))+[x.len?" · "+fmt(x.len,1)+" km":"",x.grp===1?" · "+fmt(x.home,1)+" km von meiner Adresse":isFinite(x.km)?" · "+fmt(x.km)+" km entfernt":""].join("")+' · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join("")+'</div>'
     :'<div class="state good">Keine Behinderungen im Umkreis gemeldet.</div>');
-  const missing=l.slice(0,30).filter(x=>!x.ort&&isFinite(x.lat));if(missing.length)setTimeout(()=>fillPlaces(missing),50);
+  const missing=l.slice(0,80).filter(x=>!x.ort&&isFinite(x.lat));if(missing.length)setTimeout(()=>fillPlaces(missing),50);
 }
 document.addEventListener("click",e=>{const f=e.target.closest("#tt [data-ttf]");if(f){TTF=TTF===f.dataset.ttf?null:f.dataset.ttf;renderTT();return;}
   const j=e.target.closest("#tt .ttj");if(j&&TT&&MAP){const x=TT.list[+j.dataset.i];if(!x||!isFinite(x.lat))return;
@@ -1405,7 +1406,7 @@ async function loadAutobahn(){
   if(AB_SEL&&!/^r\d/.test(AB_SEL))showAbDetail(AB_SEL);else if(AB_SEL)showAbDetail(AB_SEL);
   $("stau-list").innerHTML=jams.length?'<div>'+jams.map(j=>{const J=j.jam;
       const det=[J.len?fmt(J.len,1)+" km":"",J.speed!=null?"Ø "+J.speed+" km/h":"",fmt(j.km)+" km entfernt"].filter(Boolean).join(" · ");
-      return '<div class="jam" data-lat="'+j.lat+'" data-lon="'+j.lon+'"><span class="tag ab">'+esc(j.ab)+'</span><div class="t"><b class="ortp"></b>'+(j.pr<99?'<span class="pill" style="margin-right:6px">Meine Strecke</span>':'')+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
+      return '<div class="jam" data-kat="stau" data-lat="'+j.lat+'" data-lon="'+j.lon+'"><span class="tag ab">'+esc(j.ab)+'</span><div class="t"><b class="ortp"></b>'+(j.pr<99?'<span class="pill" style="margin-right:6px">Meine Strecke</span>':'')+(J.kind==="stau"?'<span class="pill p-bad" style="margin-right:6px"><i></i>Stau</span>':'<span class="pill p-warn" style="margin-right:6px"><i></i>stockend</span>')+esc(j.title)+'</div>'+
         '<div class="delay'+(J.delay!=null&&J.delay<15?" mid":"")+'">'+(J.delay!=null?"+"+J.delay+" min":"")+'<small>'+(J.delay!=null?"Verzögerung":"")+'</small></div>'+
         '<div class="d">'+esc(j.subtitle||"")+(det?" · "+esc(det):"")+(desc(j)?'<br>'+esc(desc(j)):"")+'</div></div>';}).join("")+'</div>'
     :'<div class="state good">Derzeit keine Staus auf '+esc(roads.join(", "))+' im Umkreis von '+JAM_RADIUS_KM+' km.</div>';
@@ -1425,13 +1426,13 @@ async function loadAutobahn(){
   const jamIds=new Set(jams.map(j=>j.ab+"|"+j.title+"|"+j.subtitle+"|"+(j.identifier||"")));
   const msgs=uniq([...got.closure.map(x=>({...x,_c:1})),...warnings]).filter(m=>!jamIds.has(m.ab+"|"+m.title+"|"+m.subtitle+"|"+(m.identifier||"")))
     .sort((a,b)=>(isClosed(b)?1:0)-(isClosed(a)?1:0)||a.km-b.km);
-  $("traffic").innerHTML=msgs.length?'<div class="list">'+msgs.slice(0,15).map(i=>'<div class="li" data-lat="'+i.lat+'" data-lon="'+i.lon+'"><span class="tag ab">'+esc(i.ab)+'</span><div class="t"><b class="ortp"></b>'+
+  $("traffic").innerHTML=msgs.length?'<div class="list">'+msgs.slice(0,40).map(i=>'<div class="li" data-kat="'+(isClosed(i)?"sperr":"unfall")+'" data-lat="'+i.lat+'" data-lon="'+i.lon+'"><span class="tag ab">'+esc(i.ab)+'</span><div class="t"><b class="ortp"></b>'+
     (isClosed(i)?'<span class="pill p-bad" style="margin-right:6px"><i></i>Sperrung</span>':'')+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
-    (msgs.length>15?'<div class="muted small">+ '+(msgs.length-15)+' weitere</div>':''):'<div class="state good">Keine weiteren Behinderungen im Umkreis.</div>';
-  fillOrte($("stau-list")).then(()=>fillOrte($("traffic")));
+    (msgs.length>40?'<div class="muted small">+ '+(msgs.length-40)+' weitere</div>':''):'<div class="state good">Keine weiteren Behinderungen im Umkreis.</div>';
+  fillOrte($("stau-list")).then(()=>fillOrte($("traffic"))).then(()=>fillOrte($("roadworks")));
   const rw=uniq(got.roadworks).sort((a,b)=>a.km-b.km);
   setKpi("k-verk",String(rw.length)+"<small> Baustellen</small>",uniq(got.electric_charging_station).length+" Ladepunkte","info");
-  $("roadworks").innerHTML=rw.length?'<div class="list">'+rw.slice(0,12).map(i=>'<div class="li"><span class="tag ab">'+esc(i.ab)+'</span><div class="t">'+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
+  $("roadworks").innerHTML=rw.length?'<div class="list">'+rw.slice(0,40).map(i=>'<div class="li" data-kat="bau" data-lat="'+i.lat+'" data-lon="'+i.lon+'"><span class="tag ab">'+esc(i.ab)+'</span><div class="t"><b class="ortp"></b>'+esc(i.title)+'</div><div class="r muted small">'+fmt(i.km)+' km</div><div class="d">'+esc(i.subtitle||"")+(desc(i)?" – "+esc(desc(i)):"")+'</div></div>').join("")+'</div>'+
     '<div class="muted small">'+rw.length+' Baustellen im Umkreis von '+RADIUS_KM+' km</div>':'<div class="state good">Keine Baustellen im Umkreis.</div>';
   const cams=uniq(got.webcam).filter(c=>c.imageurl).sort((a,b)=>a.km-b.km).slice(0,12);CAM_N.ab=cams.length;camTile();
   $("webcams").innerHTML=cams.length?'<div class="cams">'+cams.map(c=>'<a class="cam" href="'+esc(safeUrl(c.linkurl||c.imageurl))+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(c.title)+'" src="'+esc(safeUrl(c.imageurl))+'"><span><b>'+esc(c.ab)+'</b> '+esc(c.subtitle||c.title)+'</span></a>').join("")+'</div>':'<div class="muted small">Die Autobahn GmbH liefert derzeit keine Webcam-Bilder im Umkreis.</div>';
@@ -1709,7 +1710,7 @@ async function loadDatteln(){const box=$("sd-list");if(!box)return;
     const order=["Staus, Unfälle & Behinderungen","Sperrungen","Baustellen"];
     box.innerHTML=l.length?'<div class="stau-sum" style="margin-bottom:8px">'+order.map(g=>'<div class="fact"><b>'+l.filter(x=>grp(x)===g).length+'</b><span>'+g+'</span></div>').join("")+'</div>'+
       order.map(g=>{const a=l.filter(x=>grp(x)===g);return a.length?'<div class="sublbl" style="margin-top:10px">'+g+'</div>'+a.slice(0,25).map(x=>
-        '<div class="jam sdj" role="button" tabindex="0" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
+        '<div class="jam sdj" role="button" tabindex="0" data-kat="'+ttKat(x.cat)+'" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
         '<div class="delay'+(x.delay<15?" mid":"")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
         '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+(x.len?" · "+fmt(x.len,1)+" km":"")+" · "+fmt(x.km,1)+' km vom Zentrum · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):"";}).join("")
       :'<div class="state good">Keine Staus, Sperrungen oder Baustellen in und um Datteln gemeldet.</div>';
@@ -1751,11 +1752,13 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
     }catch(e){RS.data[k]={err:errText(e)};}
     renderReise();}}
-const TDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,a,"nach "+CITYN[b],STN[a][1]+" → "+STN[b][1]]);
+const TDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,a,"nach "+CITYN[b],STN[a][1]+" → "+STN[b][1],b]);
+// Bahn: je Ort Hin- und Rückfahrt zu jedem anderen Ort als eigener Knopf; Fahrten erst nach Antippen
+function tdirsOf(k){const o=[];TDIRS.filter(x=>x[1]===k).forEach(x=>{o.push(x);const r=TDIRS.find(y=>y[1]===x[4]&&y[4]===k);if(r)o.push(r);});return o;}
 function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
   setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===k?" on":"")+'">'+n+'</button>').join(""));
   const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
-  const tk=TDIRS.filter(x=>x[1]===k);if(!tk.some(x=>x[0]===RS.tdir))RS.tdir=tk[0][0];
+  if(RS.tdir&&!tdirsOf(k).some(x=>x[0]===RS.tdir))RS.tdir=null;
   rsMode(RS.mode||"auto");}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(!b)return;const k=b.dataset.rscity;
   const y=window.scrollY;const keep=()=>{if(Math.abs(window.scrollY-y)>4)window.scrollTo(0,y);};
@@ -1783,10 +1786,12 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-oe]");if(!
 function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();
     rsOe();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
-    setBtns($("rs-tdir"),TDIRS.filter(x=>x[1]===RS.city).map(([k,,l,sub])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(RSDIRS.find(x=>x[0]===k)||[])[3]+(RS.tdir===k?" on":"")+'">'+l+'<small style="display:block;font-weight:500;font-size:12.5px;opacity:.85">'+sub+'</small></button>').join(""));
+    const td=$("rs-tdir");
+    setBtns(td,tdirsOf(RS.city).map(([k,a,,sub,b])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(a===RS.city?b:a)+(RS.tdir===k?" on":"")+'">'+sub+'</button>').join(""));
+    $("trips-card").hidden=!RS.tdir;if(!RS.tdir)return;
     const t=RSTRIP[RS.tdir]||"";const st=(()=>{const d=TDIRS.find(x=>x[0]===RS.tdir);return d?d[3]:"";})();
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=t.dataset.rstd;rsMode("bahn");}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=RS.tdir===t.dataset.rstd?null:t.dataset.rstd;rsMode("bahn");if(RS.tdir)setTimeout(()=>{const c=$("trips-card");if(c&&c.getBoundingClientRect().top>innerHeight*.7)c.scrollIntoView({behavior:"smooth",block:"start"});},60);}});
 function renderReise(){const D=RS.data;setStauTitle();
   if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));return;}
   $("rs-quick").innerHTML="";
@@ -2065,19 +2070,39 @@ $("arrange").addEventListener("click",()=>{
   // Tools lassen sich im selben Modus verschieben
   if(EDITING){$("tools").hidden=false;$("tools-toggle").setAttribute("aria-expanded","true");}
   if(window.Sortable&&!TSORT)TSORT=Sortable.create($("toolgrid"),{animation:150,forceFallback:true,fallbackOnBody:true,fallbackTolerance:4,ghostClass:"tile-ghost"});
-  if(TSORT)TSORT.option("disabled",!EDITING);
+  if(TSORT&&!HEDIT)TSORT.option("disabled",!EDITING);
   if(!EDITING)store("tool_order",[...$("toolgrid").children].map(x=>x.dataset.tool));
 });
 let TSORT=null;
 {const ord=load("tool_order");const g=$("toolgrid");if(Array.isArray(ord)&&g){ord.forEach(k=>{const el=g.querySelector('[data-tool="'+k+'"]');if(el)g.appendChild(el);});}}
 document.addEventListener("click",e=>{if(!document.body.classList.contains("arranging"))return;const t=e.target.closest("#toolgrid [data-tool]");if(t&&t.dataset.tool!=="arrange"){e.preventDefault();e.stopImmediatePropagation();}},true);
+// Eigenes Verschieben per Finger (ohne Fremdbibliothek): kurz gedrückt halten, dann ziehen
+function reorder(box,sel){if(!box)return null;let drag=null,tm=0,sx=0,sy=0,moved=false;
+  const start=(x,y,t)=>{if(!HEDIT)return;const it=t.closest&&t.closest(sel);if(!it||!box.contains(it))return;sx=x;sy=y;moved=false;clearTimeout(tm);
+    tm=setTimeout(()=>{drag=it;it.classList.add("h-chosen");box.classList.add("h-dragging");try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}},200);};
+  const move=(x,y,e)=>{if(!drag){if(Math.hypot(x-sx,y-sy)>10)clearTimeout(tm);return;}if(e.cancelable)e.preventDefault();moved=true;
+    drag.style.visibility="hidden";const hit=document.elementFromPoint(x,y);drag.style.visibility="";
+    const o=hit&&hit.closest(sel);if(!o||o===drag||o.parentNode!==box)return;
+    const L=[...box.children],a=L.indexOf(drag),b=L.indexOf(o);box.insertBefore(drag,a<b?o.nextSibling:o);
+    // während des Ziehens nahe am Rand mitscrollen
+    if(y<70)window.scrollBy(0,-12);else if(y>innerHeight-70)window.scrollBy(0,12);};
+  const end=()=>{clearTimeout(tm);if(!drag)return;drag.classList.remove("h-chosen");box.classList.remove("h-dragging");drag=null;
+    if(moved){const stop=ev=>{ev.preventDefault();ev.stopImmediatePropagation();};document.addEventListener("click",stop,{capture:true,once:true});setTimeout(()=>document.removeEventListener("click",stop,true),400);}};
+  box.addEventListener("touchstart",e=>{const t=e.touches[0];start(t.clientX,t.clientY,e.target);},{passive:true});
+  box.addEventListener("touchmove",e=>{const t=e.touches[0];move(t.clientX,t.clientY,e);},{passive:false});
+  box.addEventListener("touchend",end);box.addEventListener("touchcancel",end);
+  box.addEventListener("mousedown",e=>{if(e.button)return;start(e.clientX,e.clientY,e.target);const mm=ev=>move(ev.clientX,ev.clientY,ev),mu=()=>{end();removeEventListener("mousemove",mm);removeEventListener("mouseup",mu);};addEventListener("mousemove",mm);addEventListener("mouseup",mu);});
+  box.addEventListener("contextmenu",e=>{if(HEDIT)e.preventDefault();});
+  return {};}
 // Anordnen direkt im Kopf: Themen-Knöpfe und Tools an Ort und Stelle verschieben
 let HEDIT=false,HSORT=null;
 $("arrange-tool").addEventListener("click",()=>{HEDIT=!HEDIT;document.body.classList.toggle("harrange",HEDIT);
   const at=$("arrange-tool");at.lastChild.textContent=HEDIT?"Fertig":"Anordnen";$("harrange-hint").hidden=!HEDIT;
   if(HEDIT){$("tools").hidden=false;$("tools-toggle").setAttribute("aria-expanded","true");}
-  if(window.Sortable){const opt={animation:150,delay:120,delayOnTouchOnly:true,ghostClass:"tile-ghost",filter:".back,[data-tool='arrange']",preventOnFilter:false};
-    if(!HSORT)HSORT=Sortable.create($("headnav"),opt);if(!TSORT)TSORT=Sortable.create($("toolgrid"),opt);HSORT.option("disabled",!HEDIT);TSORT.option("disabled",!HEDIT);}
+  // Links während des Anordnens „entschärfen“: iPad zieht sonst beim Gedrückthalten die Adresse statt des Knopfs
+  document.querySelectorAll("#headnav a[href],#toolgrid a[href]").forEach(x=>{if(HEDIT){x.dataset.href=x.getAttribute("href");x.removeAttribute("href");}});
+  if(!HEDIT)document.querySelectorAll("#headnav [data-href],#toolgrid [data-href]").forEach(x=>{x.setAttribute("href",x.dataset.href);delete x.dataset.href;});
+  if(HEDIT&&!HSORT){HSORT=reorder($("headnav"),"[data-v]");reorder($("toolgrid"),"[data-tool]:not([data-tool='arrange'])");}
   if(!HEDIT){const tiles=$("tiles");[...$("headnav").querySelectorAll("[data-v]")].forEach(x=>{const t=tiles.querySelector('.tile[data-view="'+x.dataset.v+'"]');if(t)tiles.appendChild(t);});
     saveTileOrder();store("tool_order",[...$("toolgrid").children].map(x=>x.dataset.tool));}});
 document.addEventListener("click",e=>{if(!HEDIT)return;const t=e.target.closest("#headnav a,#toolgrid [data-tool]");if(t&&!(t.dataset&&t.dataset.tool==="arrange")){e.preventDefault();e.stopImmediatePropagation();}},true);
@@ -2096,4 +2121,31 @@ function openMap(){if(location.hash!=="#staus/karte"){MAPFOCUS=1;location.hash="
 function foldCount(){const c=$("fcnt-all");if(!c)return;let n=0;["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(el)n+=el.querySelectorAll(".jam,.li,details.abd").length;});c.textContent=n?String(n):"";}
 ["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(!el)return;foldCount(id);new MutationObserver(()=>foldCount(id)).observe(el,{childList:true,subtree:true});});
 
+/* Verkehrslage: Kategorie-Knöpfe statt langer Liste */
+const VLN={stau:"Staus",unfall:"Unfälle oder Behinderungen",sperr:"Sperrungen",bau:"Baustellen",meld:"Meldungen der Stadt"};
+let VLK=load("vl_k")||"karte";
+const vlVis=el=>!el.closest("[hidden]");
+function vlCount(){const body=$("vl-body");if(!body)return;
+  document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>{const k=b.dataset.vl,n=b.querySelector(".n");if(!n)return;
+    let c;if(k==="meld"){const d=$("mapcity-dus");c=d&&!d.hidden?d.querySelectorAll(".li").length:0;}
+    else c=[...body.querySelectorAll('[data-kat~="'+k+'"]')].filter(vlVis).length;
+    n.textContent=c?String(c):"";b.classList.toggle("none",!c);});
+  const em=$("vl-empty");if(!em)return;
+  if(VLK==="karte"||VLK==="meld"){em.hidden=true;if(VLK==="meld"){const d=$("mapcity-dus");em.hidden=!!(d&&!d.hidden);em.textContent="Städtische Meldungen gibt es nur für Düsseldorf. Für "+(C.name||"diesen Ort")+" stehen Staus, Sperrungen und Baustellen in den anderen Knöpfen.";if(!em.hidden)em.style.display="block";else em.style.display="";}else em.style.display="";return;}
+  em.style.display="";const has=[...body.querySelectorAll('[data-kat~="'+VLK+'"]')].some(vlVis);em.hidden=has;em.textContent="Derzeit keine "+VLN[VLK]+" gemeldet.";}
+function setVL(k){VLK=VLN[k]||k==="karte"?k:"karte";store("vl_k",VLK);const body=$("vl-body");if(!body)return;
+  body.dataset.k=VLK;body.classList.toggle("flt",VLK!=="karte"&&VLK!=="meld");
+  document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>b.classList.toggle("on",b.dataset.vl===VLK));
+  if(VLK==="karte"&&typeof MAP!=="undefined"&&MAP)setTimeout(()=>MAP.invalidateSize(),30);vlCount();}
+document.addEventListener("click",e=>{const b=e.target.closest("#vl-cat [data-vl]");if(!b)return;e.preventDefault();setVL(b.dataset.vl);
+  const c=$("vl-cat");if(c&&c.getBoundingClientRect().top<0)c.scrollIntoView({block:"start"});});
+/* Eintrag in einer Liste antippen: zur Karte wechseln und Stelle zeigen */
+document.addEventListener("click",e=>{if(VLK==="karte")return;const it=e.target.closest("#vl-body [data-kat][data-lat]");if(!it||e.target.closest("a,summary,details"))return;
+  const la=+it.dataset.lat,lo=+it.dataset.lon;if(!isFinite(la))return;
+  setVL("karte");if(it.matches(".ttj,.sdj"))return;
+  setTimeout(()=>{if(!MAP)return;$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.invalidateSize();MAP.setView([la,lo],15);
+    const t=it.querySelector(".t"),d=it.querySelector(".d");L.popup().setLatLng([la,lo]).setContent(esc(t?t.innerText:"")+(d?"<br>"+esc(d.innerText.replace(" · in Karte zeigen ›","")):"")).openOn(MAP);},120);},true);
+{let vlT=0;const mo=new MutationObserver(()=>{clearTimeout(vlT);vlT=setTimeout(vlCount,250);});const b=$("vl-body");if(b){mo.observe(b,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});setVL(VLK);}}
+
 })();
+
