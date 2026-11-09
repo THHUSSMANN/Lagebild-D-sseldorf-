@@ -1836,7 +1836,8 @@ function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(locat
   let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise ab "+(CITYN[(typeof RS!=="undefined"&&RS.city)||""]||C.town):"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
-const gmView=(o,d,via)=>{const A=o.label||o.lat+","+o.lon,B=d.label||d.lat+","+d.lon;
+// App: exakte Koordinaten statt Adresstext (Google findet sonst z. B. Alpen-Menzelen/Salzhausen nicht sicher)
+const gmView=(o,d,via)=>{const A=isFinite(o.lat)?o.lat+","+o.lon:o.label,B=isFinite(d.lat)?d.lat+","+d.lon:d.label;
   return IOS?"comgooglemaps://?saddr="+encodeURIComponent(A)+"&daddr="+(via?via[0].toFixed(5)+","+via[1].toFixed(5)+"+to:":"")+encodeURIComponent(B)+"&directionsmode=driving":gmUrl(o,d,via);};
 // Uber: Abholung am aktuellen Standort, Ziel = Adresse der Fahrt
 const uberUrl=d=>"https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]="+d.lat+"&dropoff[longitude]="+d.lon+"&dropoff[nickname]="+encodeURIComponent(d.label.split(",").slice(-1)[0].trim())+"&dropoff[formatted_address]="+encodeURIComponent(d.label);
