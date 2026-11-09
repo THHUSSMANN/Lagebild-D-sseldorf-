@@ -116,7 +116,7 @@ function distKm(a,b,c,d){const R=6371,r=Math.PI/180;const x=(c-a)*r,y=(d-b)*r;
 const fact=(v,l)=>'<div class="fact"><b>'+v+'</b><span>'+l+'</span></div>';
 const stateBox=(msg,links)=>'<div class="state">'+esc(msg)+(links?' '+links:'')+'</div>';
 const link=(href,txt)=>'<a href="'+esc(href)+'" target="_blank" rel="noopener">'+esc(txt)+' ↗</a>';
-function setKpi(id,val,note,cls){const el=$(id);if(!el)return;["s-ok","s-warn","s-bad","s-crit","s-info"].forEach(c=>el.classList.remove(c));el.classList.add(cls?"s-"+cls:"s-info");
+let HNT=0;function setKpi(id,val,note,cls){const el=$(id);if(!el)return;clearTimeout(HNT);HNT=setTimeout(()=>{try{buildViewbar();}catch(e){}},300);["s-ok","s-warn","s-bad","s-crit","s-info"].forEach(c=>el.classList.remove(c));el.classList.add(cls?"s-"+cls:"s-info");
   el.querySelector(".val").innerHTML=val;el.querySelector(".note").textContent=note||" ";}
 
 function wmo(c){
@@ -1985,7 +1985,7 @@ function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tile
 function buildViewbar(){
   const cur=location.hash.slice(1).split("/")[0];
   const g=groupOf(cur);
-  {const hn=$("headnav");if(hn)hn.innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);return '<a class="hbtn'+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");}
+  {const hn=$("headnav");if(hn)hn.innerHTML=(cur?'<a class="hbtn back" href="#">‹ Übersicht</a>':'')+[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 let ROUTEKEY=null;
@@ -2009,7 +2009,7 @@ function route0(){
   if(typeof foldCount==="function")foldCount();
   if(v==="eladen"&&ELKEY!==C.key)loadEL();
   if(v==="parken")pkShow(PKS||"gps");
-  if(inView){if(ROUTEKEY!==v+"/"+pane){window.scrollTo(0,0);requestAnimationFrame(()=>window.scrollTo(0,0));setTimeout(()=>window.scrollTo(0,0),80);}if(v==="staus"){setStauTitle();if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
+  if(inView){if(ROUTEKEY!==v+"/"+pane){const top=()=>{const m=document.querySelector("main");window.scrollTo(0,m?Math.max(0,m.getBoundingClientRect().top+window.scrollY-6):0);};top();requestAnimationFrame(top);setTimeout(top,80);}if(v==="staus"){setStauTitle();if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
     if(v==="staus"&&pane==="karte"){if(!MAPGO)mapCity(C.key==="datteln"?"datteln":"dus");setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }
 

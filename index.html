@@ -586,6 +586,26 @@ header .fav,header .rtoggle,header .rlink,header .rbtn{color:#fff}
 .kpi.tile{border-radius:18px;background-image:linear-gradient(180deg,var(--glass-hi),rgba(255,255,255,0) 50%);box-shadow:var(--glass-sh);transition:transform .12s ease}
 html,body{overflow-anchor:none}
 .ortp{font-weight:700}
+
+/* ---------- Feinschliff ---------- */
+#viewbar{display:none!important}
+h2{font-size:22px}
+.sec-title h2,.home-head h2{font-size:21px}
+header .hrow{margin:6px 0 10px}
+header .rtoggle{display:inline-flex;align-items:center;gap:8px}
+/* Themen-Knöpfe im Kopf: Glas-Optik mit leichtem Farbton je Zustand (wie die Kacheln) */
+header #headnav a.hbtn{border-radius:16px!important;background-color:rgba(255,255,255,.08);background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%);
+  border:1px solid rgba(255,255,255,.18);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25);transition:transform .12s ease}
+header #headnav a.hbtn:active,header .tools .hbtn:active,header .tools-toggle:active{transform:scale(.965)}
+header #headnav a.hn-ok{background-color:color-mix(in srgb,var(--ok) 22%,transparent);box-shadow:inset 0 3px 0 var(--ok),0 6px 16px rgba(0,0,0,.25)}
+header #headnav a.hn-warn{background-color:color-mix(in srgb,var(--warn) 24%,transparent);box-shadow:inset 0 3px 0 var(--warn),0 6px 16px rgba(0,0,0,.25)}
+header #headnav a.hn-bad{background-color:color-mix(in srgb,var(--bad) 26%,transparent);box-shadow:inset 0 3px 0 var(--bad),0 6px 16px rgba(0,0,0,.25)}
+header #headnav a.hn-crit{background-color:color-mix(in srgb,var(--crit) 30%,transparent);box-shadow:inset 0 3px 0 var(--crit),0 6px 16px rgba(0,0,0,.25)}
+header #headnav a.hn-info{box-shadow:inset 0 3px 0 color-mix(in srgb,var(--accent) 70%,transparent),0 6px 16px rgba(0,0,0,.25)}
+header #headnav a.on{background-color:var(--accent)!important;color:var(--panel)!important}
+header #headnav a.back{background-color:rgba(255,255,255,.18)}
+body.alarm header #headnav a[href="#warnungen"]{animation:alarm 1.1s ease-in-out infinite;color:#fff!important;border-color:#ff6b5e}
+header .tools .hbtn,header .tools-toggle{border-radius:16px!important;background-color:rgba(255,255,255,.08);background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%);border:1px solid rgba(255,255,255,.18);box-shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25)}
 </style>
 </head>
 <body>
@@ -596,18 +616,23 @@ html,body{overflow-anchor:none}
       <div class="dt"><span class="clock" id="clock">--:--:--</span><span class="sub" id="sub"></span></div>
       <button id="refresh" type="button" class="refresh">↻ Aktualisieren</button>
     </div>
+    <div class="hrow">
+      <div class="places">
+        <nav class="favs" id="favs" aria-label="Meine Städte"></nav>
+        <label class="pick"><span>Bereich</span><select id="bezirk" aria-label="Bereich wählen"></select></label>
+      </div>
     <nav class="ctrl" id="headnav" aria-label="Themen"></nav>
     <button type="button" class="hbtn tools-toggle" id="tools-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-.6-.6-2.3z"/></svg>Tools <span class="rcaret">▾</span></button>
     <div class="tools" id="tools" hidden>
     <div class="ctrl">
-      <a class="hbtn" href="https://dus.eventcal.io" target="_blank" rel="noopener">EventCal ↗</a>
-      <a class="hbtn" href="https://dus.eventdoc.io/de" target="_blank" rel="noopener">EventDoc ↗</a>
-      <a class="hbtn" id="gmaps-btn" href="https://www.google.com/maps" target="_blank" rel="noopener">Google Maps ↗</a>
-      <a class="hbtn" href="https://maps.duesseldorf.de" target="_blank" rel="noopener">Düsseldorf Maps ↗</a>
+      <a class="hbtn" href="https://dus.eventcal.io" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2"/></svg>EventCal</a>
+      <a class="hbtn" href="https://dus.eventdoc.io/de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M9 12h6M9 15.5h6M9 9h2"/></svg>EventDoc</a>
+      <a class="hbtn" id="gmaps-btn" href="https://www.google.com/maps" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Google Maps</a>
+      <a class="hbtn" href="https://maps.duesseldorf.de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5 9 4l6 2.5 5.5-2.5v13.5L15 20l-6-2.5-5.5 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>Düsseldorf Maps</a>
       <button type="button" class="hbtn" id="calc-btn" aria-label="Taschenrechner"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>Rechner</button>
       <button type="button" class="hbtn" id="alarm-btn" aria-label="Wecker"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>Wecker</button>
     </div>
-      <div class="radio" id="radio" aria-label="Radio"><button type="button" class="rtoggle" id="radio-toggle" aria-expanded="false">📻 Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
+      <div class="radio" id="radio" aria-label="Radio"><button type="button" class="rtoggle" id="radio-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
         <div class="rlist" id="radio-list" hidden>
         <button type="button" class="rbtn" data-st="wdr2">WDR 2 <small>Rhein Ruhr</small></button>
         <button type="button" class="rbtn" data-st="wdr4">WDR 4</button>
@@ -617,11 +642,6 @@ html,body{overflow-anchor:none}
         </div>
       </div>
     </div>
-    <div class="hrow">
-      <div class="places">
-        <nav class="favs" id="favs" aria-label="Meine Städte"></nav>
-        <label class="pick"><span>Bereich</span><select id="bezirk" aria-label="Bereich wählen"></select></label>
-      </div>
     </div>
     <div class="alarmbar" id="alarmbar" role="alert" hidden></div>
     <audio id="radio-audio" preload="none"></audio>
@@ -1058,6 +1078,6 @@ html,body{overflow-anchor:none}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=159"></script>
+<script src="app.js?v=160"></script>
 </body>
 </html>
