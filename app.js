@@ -1772,7 +1772,7 @@ function setBtns(box,html){if(!box)return;const t=document.createElement("div");
     old.forEach((o,i)=>{if(o.className!==nw[i].className)o.className=nw[i].className;if(o.innerHTML!==nw[i].innerHTML)o.innerHTML=nw[i].innerHTML;});}
   else box.innerHTML=html;}
 // ÖPNV: Auswahl per Knopf statt langer Liste (Abfahrten vor Ort bzw. Verbindungen Dortmund ⇄ Datteln)
-const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln"],["o-dat-do","Datteln → Dortmund Hbf"],["dep","Stadion ⇄ Hbf"]],datteln:[["o-dat-do,o-do-dat","Datteln ⇄ Dortmund"],["dep","Bus Lohstraße ⇄ Busbahnhof"]]};
+const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln"],["o-dat-do","Datteln → Dortmund Hbf"],["dep","Stadion ⇄ Hbf"]],datteln:[["dep","Bus Lohstraße ⇄ Busbahnhof"],["o-dat-do,o-do-dat","Bus & Bahn Datteln ⇄ Dortmund"]]};
 function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opts.some(o=>o[0]===RS.oe))RS.oe=opts[0][0];
   const seg=$("oe-seg");seg.hidden=opts.length<2;seg.style.gridTemplateColumns="repeat("+opts.length+",1fr)";setBtns(seg,opts.map(([k,l])=>'<button type="button" data-oe="'+k+'" class="'+(RS.oe===k?"on":"")+'">'+l+'</button>').join(""));
   const ob=$("oe-trips"),sec=ob.closest("section"),dep=$("oe-dep");
