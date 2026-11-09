@@ -885,6 +885,9 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 .trip summary::after{position:absolute;right:12px;top:50%;transform:translateY(-50%);margin:0}
 .trip[open] summary::after{transform:translateY(-50%) rotate(90deg)}
 .fu-nav{color:inherit;text-decoration:none;display:block}.fu-nav .small{color:var(--accent);font-weight:600}.fu-nav .gmi{width:14px;height:14px;vertical-align:-2px;margin-right:4px;fill:#e0302b;stroke:#fff;stroke-width:1.2}.fu-nav .gmi circle{fill:#fff;stroke:none}
+.pk-nav .nav-go{grid-column:1/-1;display:block;margin-top:2px;font:600 13.5px var(--f-body);color:var(--accent)}.pk-nav .nav-go .gmi{width:14px;height:14px;vertical-align:-2px;margin-right:4px;fill:#e0302b;stroke:#fff;stroke-width:1.2}.pk-nav .nav-go .gmi circle{fill:#fff;stroke:none}
+a.nav-go{display:block;margin-top:4px;font:600 13.5px var(--f-body);color:var(--accent);text-decoration:none;grid-column:1/-1}a.nav-go .gmi{width:14px;height:14px;vertical-align:-2px;margin-right:4px;fill:#e0302b;stroke:#fff;stroke-width:1.2}a.nav-go .gmi circle{fill:#fff;stroke:none}
+.li>a.nav-go{grid-column:2/-1}
 </style>
 </head>
 <body>
@@ -1014,7 +1017,6 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
     <div role="button" tabindex="0" class="kpi tile" data-view="warnungen" id="k-warn"><div class="lbl">Warnungen</div><div class="val">–</div><div class="note">NINA &amp; DWD</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="wetter" id="k-temp"><div class="lbl">Wetter</div><div class="val">–</div><div class="note">wird geladen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="staus" id="k-traffic"><div class="lbl">Reise &amp; Verkehr</div><div class="val">–</div><div class="note">Auto, Bahn, Bus, Parken</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="events" id="k-events" data-dus><div class="lbl">Veranstaltungen</div><div class="val">–</div><div class="note">Düsseldorf</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="bahn" id="k-bahn"><div class="lbl">Bus &amp; Bahn</div><div class="val">–</div><div class="note">Abfahrten &amp; Verbindungen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einsaetze" id="k-ein" hidden><div class="lbl">Feuerwehreinsätze</div><div class="val">–</div><div class="note">Kreisleitstelle</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="blaulicht" id="k-bl"><div class="lbl">Pressemitteilungen</div><div class="val">–</div><div class="note">Pressemeldungen</div></div>
@@ -1168,8 +1170,7 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
   <div class="card-head"><h2>Veranstaltungen Düsseldorf</h2><span class="src">Verkehrszentrale der Landeshauptstadt · verkehrsrelevante Veranstaltungen</span></div>
   <div class="muted small">Eintrag antippen zeigt die Stelle in der Verkehrslage-Karte.</div>
   <div id="ev-list"><div class="state">wird geladen …</div></div>
-  <h3 class="sub2 vl-h">Demnächst <span class="muted small">· neue Sperrungen und Meldungen in 7 Tagen</span></h3>
-  <div id="ev-next"><div class="state">wird geladen …</div></div>
+  <div id="ev-next" hidden></div>
 </section>
 </div>
 
@@ -1442,6 +1443,6 @@ h3.sub2.vl-h{font:700 17px var(--f-display);color:var(--fg);margin:18px 2px 4px;
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=251"></script>
+<script src="app.js?v=254"></script>
 </body>
 </html>
