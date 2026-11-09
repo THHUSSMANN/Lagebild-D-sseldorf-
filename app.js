@@ -442,10 +442,15 @@ $("routes").addEventListener("keydown",e=>{if(e.key==="Enter")$("routes-save").c
 // Kontostand: öffnet die Finanztabelle in iCloud (Link nur lokal auf dem Gerät gespeichert)
 {const fi=$("fin");if(fi)fi.value=load("fin_link")||"";}
 // Link prüfen und vervollständigen (z. B. „icloud.com/…“ ohne https)
-const finNorm=v=>{v=(v||"").trim().replace(/^<|>$/g,"");const m=v.match(/https?:\/\/\S+/i);if(m)return m[0];if(/^(www\.)?icloud\.com\//i.test(v))return "https://"+v.replace(/^\/+/,"");return "";};
+const finNorm=v=>{v=String(v||"").trim().replace(/^<|>$/g,"");const m=v.match(/(https?|ms-excel|numbers):\/\/[^\s<>"]+/i);if(m)return m[0].replace(/[),.;]+$/,"");
+  const d=v.match(/(?:^|\s)((?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s<>"]+)/i);if(d)return "https://"+d[1];return "";};
+function finMsg(t,ok){const m=$("fin-msg");if(m){m.textContent=t;m.style.color=ok?"var(--ok, #2e9d5b)":"#d62d20";}}
 $("fin-save").addEventListener("click",()=>{const raw=$("fin").value.trim();const v=finNorm(raw);
-  if(raw&&!v){$("fin-save").textContent="Kein gültiger Link";setTimeout(()=>$("fin-save").textContent="Speichern",2500);return;}
-  $("fin").value=v;store("fin_link",v||null);$("fin-save").textContent=v?"Gespeichert ✓":"Gelöscht";setTimeout(()=>$("fin-save").textContent="Speichern",1800);});
+  if(raw&&!v){finMsg("Darin ist kein Link zu erkennen. In der Dateien-App die Datei lange drücken → Teilen → „Link kopieren“ und hier einfügen.",false);return;}
+  store("fin_link",v||null);
+  if(v&&load("fin_link")!==v){finMsg("Der Browser lässt das Speichern nicht zu (privates Surfen aktiv?). Bitte normal in Safari bzw. über das Symbol auf dem Home-Bildschirm öffnen.",false);return;}
+  $("fin").value=v;finMsg(v?"Gespeichert ✓ – „Kontostand“ unter Tools öffnet jetzt diese Datei. Hinweis: Safari und das Home-Bildschirm-Symbol speichern getrennt.":"Link gelöscht.",true);});
+{const fi=$("fin");if(fi)fi.addEventListener("paste",()=>setTimeout(()=>$("fin-save").click(),50));}
 $("fin-btn").addEventListener("click",()=>{let l=finNorm(load("fin_link"));
   if(!l){const raw=prompt("iCloud-Link zu deiner Finanztabelle einfügen (beginnt mit https://www.icloud.com/…; wird nur auf diesem Gerät gespeichert):")||"";l=finNorm(raw);
     if(!l){if(raw.trim())alert("Das ist kein gültiger Link. Bitte in der Dateien-App „Link kopieren“ verwenden – der Link beginnt mit https://www.icloud.com/");return;}
@@ -1778,7 +1783,7 @@ function setBtns(box,html){if(!box)return;const t=document.createElement("div");
     old.forEach((o,i)=>{if(o.className!==nw[i].className)o.className=nw[i].className;if(o.innerHTML!==nw[i].innerHTML)o.innerHTML=nw[i].innerHTML;});}
   else box.innerHTML=html;}
 // ÖPNV: Auswahl per Knopf statt langer Liste (Abfahrten vor Ort bzw. Verbindungen Dortmund ⇄ Datteln)
-const OEOPT={dortmund:[["o-do-dat","Stadion → Datteln Busbahnhof"],["dep","Stadion → Hauptbahnhof"]],datteln:[["dep","Bus Lohstraße ⇄ Busbahnhof"],["o-dat-do","Datteln Busbahnhof → Dortmund Hbf"]]};
+const OEOPT={dortmund:[["o-do-dat","Westfalenstadion → Datteln Busbahnhof"],["dep","Westfalenstadion → Hauptbahnhof"]],datteln:[["dep","Bus Lohstraße ⇄ Busbahnhof"],["o-dat-do","Datteln Busbahnhof → Dortmund Hbf"]]};
 function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opts.some(o=>o[0]===RS.oe))RS.oe=opts.length>1?null:opts[0][0];
   const seg=$("oe-seg");seg.hidden=opts.length<2;seg.style.gridTemplateColumns="repeat("+opts.length+",1fr)";setBtns(seg,opts.map(([k,l])=>'<button type="button" data-oe="'+k+'" class="'+(RS.oe===k?"on":"")+'">'+l+'</button>').join(""));
   const ob=$("oe-trips"),sec=ob.closest("section"),dep=$("oe-dep");

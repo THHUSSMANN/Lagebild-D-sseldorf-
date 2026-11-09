@@ -1140,7 +1140,7 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
     </div>
     <div class="field">
       <label for="fin">Link zur Finanztabelle (iCloud)</label>
-      <div class="inline"><input id="fin" type="url" autocomplete="off" spellcheck="false" placeholder="https://www.icloud.com/iclouddrive/…"><button type="button" id="fin-save">Speichern</button></div>
+      <div class="inline"><input id="fin" type="text" inputmode="url" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="https://www.icloud.com/iclouddrive/…"><button type="button" id="fin-save">Speichern</button></div><div id="fin-msg" class="small" aria-live="polite" style="margin-top:6px"></div>
       <span class="hint">Wird nur auf diesem Gerät gespeichert, nie im Internet veröffentlicht. Link in der Dateien-App: Datei lange drücken → Teilen → „Mitarbeit“ → Zugriff „Nur eingeladene Personen“ → „Link kopieren“.</span>
     </div>
     <div class="field">
@@ -1180,6 +1180,6 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=180"></script>
+<script src="app.js?v=181"></script>
 </body>
 </html>
