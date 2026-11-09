@@ -729,6 +729,7 @@ header #favs{flex:1 1 100%;width:100%}
 @media (min-width:900px){#rs-city{grid-template-columns:repeat(5,1fr)!important}.subtabs.grid3{grid-template-columns:repeat(5,1fr)!important}.subtabs.grid3 a:last-child:nth-child(3n+1){grid-column:auto}}
 #rs-dir .gmi{width:18px;height:18px;vertical-align:-3px;margin-right:6px;fill:#e0302b;stroke:#fff;stroke-width:1.2}#rs-dir .gmi circle{fill:#fff;stroke:none}
 #mapsw{grid-template-columns:1fr 1fr!important}
+.subtabs:not(.grid3){display:grid!important;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin-bottom:10px}.subtabs:not(.grid3) a{justify-content:center;text-align:center}
 </style>
 </head>
 <body>
@@ -1226,6 +1227,6 @@ header #favs{flex:1 1 100%;width:100%}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=202"></script>
+<script src="app.js?v=203"></script>
 </body>
 </html>

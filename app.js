@@ -2098,7 +2098,7 @@ function route0(){
   buildViewbar();
   document.querySelectorAll(".subtabs").forEach(el=>{const g=groupOf(el.dataset.for);
     const tabs=(GROUPS[g]||[]).filter(([x])=>tileAvailable(x));el.hidden=tabs.length<2;
-    const cur=v+(pane!=="lage"?"/"+pane:"");el.classList.toggle("grid3",g==="verkehr");
+    const cur=(v==="staus"||location.hash.includes("/"))?v+"/"+pane:v;el.classList.toggle("grid3",g==="verkehr");
     el.innerHTML=tabs.map(([x,l])=>'<a href="#'+x+'" class="'+(x===cur?"on":"")+'"'+(x==="staus/karte"?' data-karte':'')+'>'+esc(x==="staus/karte"?karteLbl():l)+(x==="staus/karte"?' <span class="fcnt" id="fcnt-all"></span>':'')+'</a>').join("");});
   if(typeof foldCount==="function")foldCount();
   // „Ich bin in …“ gilt für den ganzen Bereich Reise & Verkehr (Reise, Verkehrslage, Parken, Tanken, E-Laden)
