@@ -764,6 +764,10 @@ input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;vertical-
 footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var(--muted);opacity:.7;border-top:0!important;padding:18px 0 28px!important;margin:0!important}
 .updmini{font:500 12.5px/1.3 var(--f-body);color:var(--head-fg);opacity:.75;white-space:nowrap;align-self:center}.updmini b{font-weight:600}
 @media (max-width:600px){header .titlerow{flex-wrap:wrap;row-gap:2px}.updmini{flex-basis:100%;order:3;font-size:12px}}
+#vl-body[data-k="next"] .vl-sec:not(#mapcity-dus){display:none!important}
+#vl-body[data-k="next"] [data-vtp="now"],#vl-body[data-k="next"] [data-vtp="events"]{display:none!important}
+#vl-body[data-k="next"] [data-vtp="next"]{display:block!important}
+#vt-seg,#vt-sum{display:none!important} /* Stadt-Kennzahlen stecken jetzt in den Kategorie-Knöpfen */
 </style>
 </head>
 <body>
@@ -985,6 +989,11 @@ footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var
   <label class="muted small vl-map" style="display:inline-flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ttflow"> Verkehrsfluss aller Straßen einfärben (grün = frei, gelb/rot = Stau)</label>
   <div class="legend vl-map"><span class="tt-leg"><i style="background:linear-gradient(90deg,#f3c623,#f08a00,#d62d20,#8b0000)"></i>Stau leicht → schwer (alle Straßen)</span><span data-dus class="osm-leg"><i style="background:linear-gradient(90deg,#3bb04a,#f3c623,#e0302b)"></i>Stadtverkehr Düsseldorf</span><span><i style="background:#d62d20"></i>Stau</span><span><i style="background:#f0a020"></i>stockend</span><span><i style="background:#7d1f6b"></i>Sperrung</span><span><i style="background:#8a9aa5"></i>Baustelle</span></div>
   <div id="mapcity-route" class="mapcity vl-map" hidden></div>
+  <div class="vlcat" id="vl-cat" role="tablist" aria-label="Verkehrslage">
+    <button type="button" data-vl="stau">Staus<b class="n"></b></button><button type="button" data-vl="unfall">Unfälle &amp; Behinderungen<b class="n"></b></button><button type="button" data-vl="sperr">Sperrungen<b class="n"></b></button><button type="button" data-vl="bau">Baustellen<b class="n"></b></button><button type="button" data-vl="event" class="vl-dus">Veranstaltungen<b class="n"></b></button><button type="button" data-vl="next" class="vl-dus">Demnächst (7 Tage)<b class="n"></b></button>
+  </div>
+  <div class="vlfacts" id="vl-facts"></div>
+  <div class="muted small" style="margin:-4px 2px 8px">Knopf antippen zeigt die Liste darunter und hebt die Meldungen in der Karte hervor. Eintrag antippen zeigt seine Stelle in der Karte.</div>
   <div id="mapcity-dus" class="mapcity vl-sec" hidden>
   <div class="sublbl vl-h" style="margin-top:14px;font-size:15px">Stadtverkehr Düsseldorf <span class="muted small">· Verkehrszentrale der Landeshauptstadt (live)</span></div>
   <div class="stau-sum" id="vt-sum"></div>
@@ -997,11 +1006,6 @@ footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var
   <div class="sublbl vl-h" style="margin-top:14px;font-size:15px">Stadtverkehr Datteln <span class="muted small">· TomTom Echtzeit, Datteln und ca. 8 km Umgebung · Eintrag antippen zeigt ihn in der Karte</span></div>
   <div id="sd-list"><div class="state">wird geladen …</div></div>
   </div>
-  <div class="vlcat" id="vl-cat" role="tablist" aria-label="Verkehrslage">
-    <button type="button" data-vl="stau">Staus<b class="n"></b></button><button type="button" data-vl="unfall">Unfälle &amp; Behinderungen<b class="n"></b></button><button type="button" data-vl="sperr">Sperrungen<b class="n"></b></button><button type="button" data-vl="bau">Baustellen<b class="n"></b></button><button type="button" data-vl="event">Veranstaltungen<b class="n"></b></button><button type="button" data-vl="meld">Meldungen Stadt<b class="n"></b></button>
-  </div>
-  <div class="vlfacts" id="vl-facts"></div>
-  <div class="muted small" style="margin:-4px 2px 8px">Knopf antippen zeigt die Liste darunter und hebt die Meldungen in der Karte hervor. Eintrag antippen zeigt seine Stelle in der Karte.</div>
   <div class="vl-sec" id="vl-tt"><h3 class="sub2 vl-h">Alle Straßen · TomTom Echtzeit</h3>
   <div id="tt"><div class="state">wird geladen …</div></div></div>
   <div class="vl-sec" id="vl-ab"><h3 class="sub2 vl-h">Autobahnen · Autobahn GmbH</h3>
@@ -1260,6 +1264,6 @@ footer.ft-min{display:block!important;text-align:center;font-size:12px;color:var
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=219"></script>
+<script src="app.js?v=220"></script>
 </body>
 </html>

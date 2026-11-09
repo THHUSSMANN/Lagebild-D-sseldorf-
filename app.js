@@ -2251,28 +2251,28 @@ function foldCount(){const c=$("fcnt-all");if(!c)return;let n=0;["tt","stau-list
 ["tt","stau-list","traffic"].forEach(id=>{const el=$(id);if(!el)return;foldCount(id);new MutationObserver(()=>foldCount(id)).observe(el,{childList:true,subtree:true});});
 
 /* Verkehrslage: Kategorie-Knöpfe statt langer Liste */
-const VLN={stau:"Staus",unfall:"Unfälle oder Behinderungen",sperr:"Sperrungen",bau:"Baustellen",event:"Veranstaltungen",meld:"Meldungen der Stadt"};
-let VLK=load("vl_k");if(!VLK||VLK==="karte")VLK="stau";
+const VLN={stau:"Staus",unfall:"Unfälle oder Behinderungen",sperr:"Sperrungen",bau:"Baustellen",event:"Veranstaltungen",next:"neuen Meldungen in den nächsten 7 Tagen"};
+let VLK=load("vl_k");if(!VLK||VLK==="karte"||VLK==="meld")VLK="stau";
 const vlVis=el=>!el.closest("[hidden]");
 function vlFacts(){const f=$("vl-facts");if(!f)return;if(typeof TT==="undefined"||!TT){f.innerHTML="";return;}
   const j=TT.jams||[];const len=j.reduce((t,x)=>t+(x.len||0),0),mx=j.length?Math.max(0,...j.map(x=>x.delay||0)):0;
   f.innerHTML=j.length?'<span>Staulänge gesamt <b>'+fmt(len,1)+' km</b></span><span>größte Verzögerung <b>+'+mx+' min</b></span>':'<span>Keine Staus im Umkreis</span>';}
 function vlCount(){const body=$("vl-body");if(!body)return;vlFacts();
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>{const k=b.dataset.vl,n=b.querySelector(".n");if(!n)return;
-    let c;if(k==="meld"||k==="event"){const d=$("mapcity-dus");const on=!!(d&&!d.hidden);b.hidden=!on;if(!on&&VLK===k)setTimeout(()=>setVL("stau"),0);c=on?(k==="event"?$("vt-events").querySelectorAll(".li").length:$("vt-now").querySelectorAll(".li").length):0;}
+    let c;if(k==="next"||k==="event"){const d=$("mapcity-dus");const on=!!(d&&!d.hidden);b.hidden=!on;if(!on&&VLK===k)setTimeout(()=>setVL("stau"),0);c=on?$(k==="event"?"vt-events":"vt-next").querySelectorAll(".li").length:0;}
     else c=[...body.querySelectorAll('[data-kat~="'+k+'"]')].filter(vlVis).length;
     n.textContent=c?String(c):"";b.classList.toggle("none",!c);});
   const em=$("vl-empty");if(!em)return;
-  if(VLK==="karte"||VLK==="meld"||VLK==="event"){em.hidden=true;if(VLK==="meld"||VLK==="event"){const d=$("mapcity-dus");em.hidden=!!(d&&!d.hidden);em.textContent="Städtische Meldungen gibt es nur für Düsseldorf. Für "+(C.name||"diesen Ort")+" stehen Staus, Sperrungen und Baustellen in den anderen Knöpfen.";if(!em.hidden)em.style.display="block";else em.style.display="";}else em.style.display="";return;}
+  if(VLK==="karte"||VLK==="next"||VLK==="event"){em.hidden=true;if(VLK==="next"||VLK==="event"){const d=$("mapcity-dus");em.hidden=!!(d&&!d.hidden);em.textContent="Städtische Meldungen gibt es nur für Düsseldorf. Für "+(C.name||"diesen Ort")+" stehen Staus, Sperrungen und Baustellen in den anderen Knöpfen.";if(!em.hidden)em.style.display="block";else em.style.display="";}else em.style.display="";return;}
   em.style.display="";const has=[...body.querySelectorAll('[data-kat~="'+VLK+'"]')].some(vlVis);em.hidden=has;em.textContent="Derzeit keine "+VLN[VLK]+" gemeldet.";}
 function setVL(k){VLK=VLN[k]?k:"stau";store("vl_k",VLK);const body=$("vl-body");if(!body)return;
-  body.dataset.k=VLK;body.classList.toggle("flt",VLK!=="karte"&&VLK!=="meld"&&VLK!=="event");
-  if(VLK==="meld"){const nb=document.querySelector('#vt-seg [data-vts="now"]');if(nb&&!nb.classList.contains("on"))nb.click();}
+  body.dataset.k=VLK;body.classList.toggle("flt",VLK!=="karte"&&VLK!=="next"&&VLK!=="event");
+  {const nb=document.querySelector('#vt-seg [data-vts="now"]');if(nb&&!nb.classList.contains("on"))nb.click();}
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>b.classList.toggle("on",b.dataset.vl===VLK));
   vlMapFilter();vlCount();}
 // Karte: Meldungen der gewählten Kategorie kräftig, die übrigen blass
 function vlMapFilter(){if(typeof MAP==="undefined"||!MAP)return;const k=VLK;
-  const apply=g=>g&&g.eachLayer(l=>{const kt=l.options&&l.options.kat;if(!kt||!l.setStyle)return;const on=k==="meld"||k==="event"||kt===k;
+  const apply=g=>g&&g.eachLayer(l=>{const kt=l.options&&l.options.kat;if(!kt||!l.setStyle)return;const on=k==="next"||k==="event"||kt===k;
     if(l.options._op==null){l.options._op=l.options.opacity;l.options._fop=l.options.fillOpacity;}
     l.setStyle({opacity:on?l.options._op:.12,fillOpacity:on?l.options._fop:.1});if(on&&l.bringToFront)l.bringToFront();});
   apply(MAP._ttinc);apply(typeof MAPLAYER!=="undefined"?MAPLAYER:null);}
