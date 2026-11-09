@@ -1137,10 +1137,17 @@ async function loadTomTom(){
 let TT=null,TTF=null;const PLACECACHE=Object.fromEntries(Object.entries(load("placecache")||{}).filter(([,v])=>v));
 // Ort (Stadt/Stadtteil) vor Stau- und Baustellenmeldungen setzen
 async function fillOrte(box){if(!box||!TTKEY)return;for(const el of [...box.querySelectorAll("[data-lat] .ortp:empty")].slice(0,90)){const r=el.closest("[data-lat]");const la=+r.dataset.lat,lo=+r.dataset.lon;if(!isFinite(la))continue;const o=await placeOf(la,lo);if(o&&!el.textContent){el.textContent=o;el.classList.add("ortc");}}}
-async function placeOf(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLACECACHE[k]!==undefined)return PLACECACHE[k];
+// Ortsabfragen in einer Warteschlange (TomTom erlaubt nur wenige Abfragen pro Sekunde – sonst fehlen Ortsnamen)
+const PQ={run:0,q:[],inflight:{}};
+function pqNext(){while(PQ.run<2&&PQ.q.length){const j=PQ.q.shift();PQ.run++;j().finally(()=>{setTimeout(()=>{PQ.run--;pqNext();},220);});}}
+function placeOf(lat,lon){if(!isFinite(lat)||!isFinite(lon))return Promise.resolve("");const k=(+lat).toFixed(3)+","+(+lon).toFixed(3);if(PLACECACHE[k]!==undefined)return Promise.resolve(PLACECACHE[k]);
+  if(PQ.inflight[k])return PQ.inflight[k];
+  const p=new Promise(res=>{PQ.q.push(async()=>{let v="";for(let t=0;t<3&&!v;t++){if(t)await new Promise(r=>setTimeout(r,900*t));v=await placeOf0(+lat,+lon);}delete PQ.inflight[k];res(v);});pqNext();});
+  PQ.inflight[k]=p;return p;}
+async function placeOf0(lat,lon){const k=lat.toFixed(3)+","+lon.toFixed(3);if(PLACECACHE[k]!==undefined)return PLACECACHE[k];
   try{const r=await getJSON("https://api.tomtom.com/search/2/reverseGeocode/"+lat+","+lon+".json?language=de-DE&key="+encodeURIComponent(TTKEY));
     const a=((r.addresses||[])[0]||{}).address||{};const city=a.municipality||"",sub=a.municipalitySubdivision||"";
-    const v=city&&sub&&sub!==city?city+"-"+sub:city||sub||a.countrySecondarySubdivision||"";if(!v)return "";PLACECACHE[k]=v;}catch(e){return "";}
+    const v=city&&sub&&sub!==city?city+"-"+sub:city||sub||a.countrySecondarySubdivision||a.countrySubdivisionName||"";if(!v)return "";PLACECACHE[k]=v;}catch(e){return "";}
   const ks=Object.keys(PLACECACHE);if(ks.length>600)ks.slice(0,200).forEach(x=>delete PLACECACHE[x]);store("placecache",PLACECACHE);return PLACECACHE[k];}
 let FILLING=false,FILLNEXT=null;
 async function fillPlaces(only){if(!TT)return;if(FILLING){FILLNEXT=only||null;return;}FILLING=true;try{const l=(only||TT.list.slice(0,60)).filter(x=>!x.ort&&isFinite(x.lat));
