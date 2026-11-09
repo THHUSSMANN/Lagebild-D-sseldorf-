@@ -760,6 +760,7 @@ input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;vertical-
 #vl-body[data-k="event"] #vt-seg,#vl-body[data-k="event"] #vt-sum,#vl-body[data-k="event"] [data-vtp="now"],#vl-body[data-k="event"] [data-vtp="next"]{display:none!important}
 #vl-body[data-k="event"] [data-vtp="events"]{display:block!important}
 #vl-body[data-k="meld"] [data-vts="events"]{display:none!important}
+.vlfacts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}.vlfacts:empty{display:none}.vlfacts span{font:600 14px var(--f-body);padding:6px 12px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)}.vlfacts b{font-family:var(--f-display)}
 </style>
 </head>
 <body>
@@ -996,6 +997,7 @@ input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;vertical-
   <div class="vlcat" id="vl-cat" role="tablist" aria-label="Verkehrslage">
     <button type="button" data-vl="stau">Staus<b class="n"></b></button><button type="button" data-vl="unfall">Unfälle &amp; Behinderungen<b class="n"></b></button><button type="button" data-vl="sperr">Sperrungen<b class="n"></b></button><button type="button" data-vl="bau">Baustellen<b class="n"></b></button><button type="button" data-vl="event">Veranstaltungen<b class="n"></b></button><button type="button" data-vl="meld">Meldungen Stadt<b class="n"></b></button>
   </div>
+  <div class="vlfacts" id="vl-facts"></div>
   <div class="muted small" style="margin:-4px 2px 8px">Knopf antippen zeigt die Liste darunter und hebt die Meldungen in der Karte hervor. Eintrag antippen zeigt seine Stelle in der Karte.</div>
   <div class="vl-sec" id="vl-tt"><h3 class="sub2 vl-h">Alle Straßen · TomTom Echtzeit</h3>
   <div id="tt"><div class="state">wird geladen …</div></div></div>
@@ -1257,6 +1259,6 @@ input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;vertical-
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=215"></script>
+<script src="app.js?v=216"></script>
 </body>
 </html>

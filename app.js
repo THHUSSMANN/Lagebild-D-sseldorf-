@@ -2251,7 +2251,10 @@ function foldCount(){const c=$("fcnt-all");if(!c)return;let n=0;["tt","stau-list
 const VLN={stau:"Staus",unfall:"Unfälle oder Behinderungen",sperr:"Sperrungen",bau:"Baustellen",event:"Veranstaltungen",meld:"Meldungen der Stadt"};
 let VLK=load("vl_k");if(!VLK||VLK==="karte")VLK="stau";
 const vlVis=el=>!el.closest("[hidden]");
-function vlCount(){const body=$("vl-body");if(!body)return;
+function vlFacts(){const f=$("vl-facts");if(!f)return;if(typeof TT==="undefined"||!TT){f.innerHTML="";return;}
+  const j=TT.jams||[];const len=j.reduce((t,x)=>t+(x.len||0),0),mx=j.length?Math.max(0,...j.map(x=>x.delay||0)):0;
+  f.innerHTML=j.length?'<span>Staulänge gesamt <b>'+fmt(len,1)+' km</b></span><span>größte Verzögerung <b>+'+mx+' min</b></span>':'<span>Keine Staus im Umkreis</span>';}
+function vlCount(){const body=$("vl-body");if(!body)return;vlFacts();
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>{const k=b.dataset.vl,n=b.querySelector(".n");if(!n)return;
     let c;if(k==="meld"||k==="event"){const d=$("mapcity-dus");const on=!!(d&&!d.hidden);b.hidden=!on;if(!on&&VLK===k)setTimeout(()=>setVL("stau"),0);c=on?(k==="event"?$("vt-events").querySelectorAll(".li").length:$("vt-now").querySelectorAll(".li").length):0;}
     else c=[...body.querySelectorAll('[data-kat~="'+k+'"]')].filter(vlVis).length;
