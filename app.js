@@ -382,6 +382,8 @@ function choose(v,scroll){
   if(before===C.key&&C.isDus){renderWeather();renderAir();renderParking();renderBike();loadFuel();}
   else{WX=null;AQ=null;OBS=null;BIKE=null;clearPlaceViews();refreshAll(true);}
   if(scroll)window.scrollTo({top:0,behavior:"smooth"});
+  // Ort oben gewechselt, während Reise & Verkehr offen ist → Ansicht für den neuen Ort neu aufbauen
+  if(/^#(staus|parken|tanken|eladen)/.test(location.hash))setTimeout(()=>{try{route();}catch(e){}},60);
 }
 function clearPlaceViews(){
   TILE_PARTS.traffic={};TILE_PARTS.mobil={};
@@ -1532,7 +1534,7 @@ async function loadAutobahn(){
 
 // ================= Tankerkönig =================
 async function loadFuel(){
-  const box=$("fuel");
+  const box=$("fuel");{const h=$("fuel-h");if(h)h.textContent="Tankstellen in "+(C.isDus?"Düsseldorf":C.town);}
   if(!TK){box.innerHTML=stateBox("Für Spritpreise einmal einen kostenlosen Tankerkönig-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');setStatus("fuel",false,"Schlüssel fehlt");return;}
   try{const d=await getJSON("https://creativecommons.tankerkoenig.de/json/list.php?lat="+C.lat+"&lng="+C.lon+"&rad="+(C.isDus?4:8)+"&sort=dist&type=all&apikey="+encodeURIComponent(TK));
     if(!d.ok)throw new Error(d.message||"Abfrage abgelehnt");
@@ -1815,7 +1817,7 @@ let MAPGO=null;
 let RS={dir:null,data:{},sel:0,at:0},RSMAP=null,RSLAY=null;
 const RSDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,CITYN[a]+" → "+CITYN[b],a,b]);
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
-  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise":"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
+  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise ab "+(CITYN[(typeof RS!=="undefined"&&RS.city)||""]||C.town):"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
 const gmView=(o,d,via)=>{const A=o.label||o.lat+","+o.lon,B=d.label||d.lat+","+d.lon;
