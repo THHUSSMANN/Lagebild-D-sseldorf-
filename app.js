@@ -1554,10 +1554,20 @@ async function loadAutobahn(){
 }
 
 // ================= Tankerkönig =================
+// Unterwegs: automatisch der aktuelle Standort, wenn er mehr als 2 km vom gewählten Ort entfernt ist
+let AUTOPOS=null,AUTOAT=0,FUELPOS=null;const AUTOMAN={};
+function nearPos(){return new Promise(res=>{if(!window.isSecureContext||!navigator.geolocation)return res(null);
+  if(AUTOPOS&&Date.now()-AUTOAT<120000)return res(AUTOPOS);
+  navigator.geolocation.getCurrentPosition(p=>{AUTOPOS={lat:p.coords.latitude,lon:p.coords.longitude};AUTOAT=Date.now();res(AUTOPOS);},()=>res(null),{enableHighAccuracy:false,timeout:8000,maximumAge:120000});});}
+async function autoAway(){try{if(navigator.permissions){const st=await navigator.permissions.query({name:"geolocation"});if(st.state==="denied")return null;}}catch(e){}
+  const p=await nearPos();if(!p||!isFinite(C.lat))return null;return distKm(p.lat,p.lon,C.lat,C.lon)>2?p:null;}
+async function fuelAuto(){if(AUTOMAN.fu)return;const p=await autoAway();const was=FUELPOS;FUELPOS=p;if(!!was!==!!p||(p&&was&&distKm(p.lat,p.lon,was.lat,was.lon)>0.3))loadFuel();}
+document.addEventListener("click",e=>{const a=e.target.closest("[data-fuelpos]");if(!a)return;e.preventDefault();
+  if(a.dataset.fuelpos==="ort"){AUTOMAN.fu=true;FUELPOS=null;loadFuel();}else{AUTOMAN.fu=false;AUTOPOS=null;fuelAuto();}});
 async function loadFuel(){
-  const box=$("fuel");{const h=$("fuel-h");if(h)h.textContent="Tankstellen in "+(C.isDus?"Düsseldorf":C.town);}
+  const box=$("fuel");const FP=FUELPOS;{const h=$("fuel-h");if(h)h.textContent=FP?"Tankstellen in deiner Nähe":"Tankstellen in "+(C.isDus?"Düsseldorf":C.town);}
   if(!TK){box.innerHTML=stateBox("Für Spritpreise einmal einen kostenlosen Tankerkönig-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');setStatus("fuel",false,"Schlüssel fehlt");return;}
-  try{const d=await getJSON("https://creativecommons.tankerkoenig.de/json/list.php?lat="+C.lat+"&lng="+C.lon+"&rad="+(C.isDus?4:8)+"&sort=dist&type=all&apikey="+encodeURIComponent(TK));
+  try{const d=await getJSON("https://creativecommons.tankerkoenig.de/json/list.php?lat="+(FP?FP.lat:C.lat)+"&lng="+(FP?FP.lon:C.lon)+"&rad="+(FP?5:C.isDus?4:8)+"&sort=dist&type=all&apikey="+encodeURIComponent(TK));
     if(!d.ok)throw new Error(d.message||"Abfrage abgelehnt");
     const st=(d.stations||[]).slice(0,15);/* auch geschlossene zeigen (ausgegraut), z. B. früh morgens */
     if(!st.length){box.innerHTML=stateBox("Keine Tankstelle in der Nähe gefunden.");setStatus("fuel",true);return;}
@@ -1567,7 +1577,7 @@ async function loadFuel(){
     let r='<table><thead><tr><th>Tankstelle</th><th class="num">km</th><th class="num">Super E5</th><th class="num">E10</th><th class="num">Diesel</th></tr></thead><tbody>';
     st.forEach(s=>{const ad=((s.street||"")+" "+(s.houseNumber||"")).trim()+", "+(s.place||"");const nv=isFinite(s.lat)&&isFinite(s.lng)?(IOS?"comgooglemaps://?daddr="+s.lat+","+s.lng+"&directionsmode=driving":"https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination="+s.lat+","+s.lng):"";
       r+='<tr'+(s.isOpen?'':' class="fu-closed"')+'><td class="wrap-txt">'+(nv?'<a class="fu-nav" href="'+nv+'"'+(IOS?'':' target="_blank" rel="noopener"')+' title="Mit Google Maps hinfahren">':'')+'<b>'+esc(s.brand||s.name)+'</b>'+(s.isOpen?'':' <span class="fu-zu">geschlossen</span>')+'<br><span class="small">'+GMICON+esc(ad)+(nv?' ↗':'')+'</span>'+(nv?'</a>':'')+'</td><td class="num">'+fmt(s.dist,1)+'</td><td class="num">'+p(s.e5,bE5,s.isOpen)+'</td><td class="num">'+p(s.e10,bE10,s.isOpen)+'</td><td class="num">'+p(s.diesel,bD,s.isOpen)+'</td></tr>';});
-    box.innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">Tankstellen nahe '+esc(C.short)+' nach Entfernung · günstigster Preis der geöffneten grün · geschlossene ausgegraut.</div>';
+    box.innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">'+(FP?'Um deinen aktuellen Standort (du bist mehr als 2 km von '+esc(C.short)+' entfernt) · <a href="#" data-fuelpos="ort">stattdessen um '+esc(C.short)+' suchen</a>':'Tankstellen nahe '+esc(C.short)+(AUTOMAN.fu?' · <a href="#" data-fuelpos="gps">um meinen Standort suchen</a>':''))+'<br>Sortiert nach Entfernung · günstigster Preis der geöffneten grün · geschlossene ausgegraut.</div>';
     setStatus("fuel",true);
   }catch(e){setStatus("fuel",false,errText(e));box.innerHTML=stateBox("Spritpreise nicht verfügbar – "+errText(e)+".");}
 }
@@ -2049,7 +2059,7 @@ function elGPS(){const msg=$("el-gpsmsg");let done=false;
   if(!window.isSecureContext||!navigator.geolocation){show(stateBox("Standort wird hier nicht unterstützt."));return;}
   document.querySelectorAll("#el-where button").forEach(b=>b.classList.toggle("on",b.dataset.elw==="gps"));
   show('<div class="state">📍 Standort wird ermittelt …</div>');
-  const ok=p=>{if(done)return;done=true;msg.innerHTML="";elSet({k:"gps",name:"Mein Standort",lat:p.coords.latitude,lon:p.coords.longitude});};
+  const ok=p=>{if(done)return;done=true;msg.innerHTML="";elSet({k:"gps",name:"deinen Standort",lat:p.coords.latitude,lon:p.coords.longitude});};
   const fail=err=>{if(done)return;done=true;const c=err&&err.code;
     show(c===1?stateBox("Standort nicht freigegeben.",'So geht es auf dem iPhone: <b>Einstellungen → Datenschutz &amp; Sicherheit → Ortungsdienste</b> muss an sein, dort bei <b>Safari-Websites</b> „Beim Verwenden der App“ wählen. Dann <b>Einstellungen → Apps → Safari → Standort</b> auf „Fragen“ oder „Erlauben“ stellen. Danach die App schließen, neu öffnen und „Mein Standort“ noch einmal antippen.')
       :stateBox(c===3||c==="wd"?"Standort hat zu lange gedauert.":"Standort konnte nicht ermittelt werden.",'Bitte noch einmal antippen, am besten mit WLAN oder im Freien. Oder oben einen Ort bzw. eine Adresse eingeben.'));};
@@ -2060,7 +2070,7 @@ function elGPS(){const msg=$("el-gpsmsg");let done=false;
 function elSet(p){ELP=p;$("el-hits").innerHTML="";loadEL();}
 document.addEventListener("click",e=>{const r=e.target.closest("[data-elr]");if(r){ELR=+r.dataset.elr;store("el_rad",ELR);loadEL();return;}
   const f=e.target.closest("[data-elf]");if(f){ELF=f.dataset.elf;store("el_f",ELF);renderELSeg();renderEL();return;}
-  const w=e.target.closest("[data-elw]");if(w){const k=w.dataset.elw;
+  const w=e.target.closest("[data-elw]");if(w){const k=w.dataset.elw;AUTOMAN.el=true;
     if(k==="gps"){elGPS();return;}
     const fv=elFavs().find(x=>x.k===k);if(fv)elSet(fv);return;}
   const h=e.target.closest("[data-elhit]");if(h){const [la,lo]=h.dataset.elhit.split(",").map(Number);$("el-q").value=h.textContent;elSet({k:"q",name:h.dataset.n,lat:la,lon:lo});}});
@@ -2081,7 +2091,7 @@ async function loadPkCity(k){const box=$("pk-city");if(!box)return;const Z=PKCEN
   if(PKC[k]){renderPk("pk-city",PKC[k],'Öffentliche Parkmöglichkeiten bis 3 km '+(PKCENTER[k]?PKCENTER[k].lbl:'um deine Adresse in '+esc(n))+', die nächste zuerst. Antippen öffnet die Route in Google Maps.');return;}
   box.innerHTML='<div class="state">wird geladen …</div>';
   try{const d=await pkQuery(Z,3000);PKC[k]=pkParse(d,Z);if(PKS===k)loadPkCity(k);}catch(e){box.innerHTML=stateBox("Parkdaten für "+esc(n)+" nicht verfügbar – "+errText(e)+".");}}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-pks]");if(b){e.preventDefault();
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pks]");if(b){e.preventDefault();AUTOMAN.pk=true;
   // Standort-Knopf ist ein Umschalter: erneut antippen führt zurück zum gewählten Ort
   if(b.dataset.pks==="gps"&&PKS==="gps"&&b.closest("#pk-seg"))pkShow((typeof RS!=="undefined"&&RS.city)||"dus");else pkShow(b.dataset.pks);}});
 function pkParse(d,R){return (d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
@@ -2196,7 +2206,9 @@ function route0(){
   if(["staus","parken","tanken","eladen"].includes(v)){const rc=document.querySelector(".rv-city"),vw=$("v-"+v);if(rc&&vw){const st=vw.querySelector(".subtabs");if(st&&rc.nextElementSibling!==st)st.before(rc);else if(!st&&rc.parentNode!==vw)vw.prepend(rc);}
     if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));}if(EFAK!==EFACITY[RS.city]){EFAK=EFACITY[RS.city];STOPIDX=null;}if(RS.mode==="oepnv"&&v==="staus")rsOe();setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}
   if(v==="eladen"&&(ELKEY!==RS.city||!ELP)){if(ELP&&ELP.k!=="gps"&&ELP.k!==RS.city)ELP=null;loadEL();}
-  if(v==="parken")pkShow(PKS==="gps"?"gps":RS.city||"dus");
+  if(v==="eladen"&&!AUTOMAN.el&&!(ELP&&ELP.k==="gps"))autoAway().then(p=>{if(p&&location.hash==="#eladen"&&!(ELP&&ELP.k==="gps")&&!AUTOMAN.el)elGPS();});
+  if(v==="parken"){pkShow(PKS==="gps"?"gps":RS.city||"dus");if(PKS!=="gps"&&!AUTOMAN.pk)autoAway().then(p=>{if(p&&location.hash==="#parken"&&PKS!=="gps"&&!AUTOMAN.pk)pkShow("gps");});}
+  if(v==="tanken")fuelAuto();
   if(inView){if(ROUTEKEY!==v+"/"+pane){const top=()=>{const m=document.querySelector("main");window.scrollTo(0,m?Math.max(0,m.getBoundingClientRect().top+window.scrollY-6):0);};top();requestAnimationFrame(top);setTimeout(top,80);}if(v==="staus"){setStauTitle();if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
     if(v==="staus"&&pane==="karte"){const vc=RS.city||(C.isDus?"dus":(TOWNS[C.key]?C.key:"dus"));if(MAPGO!==vc&&!/^r\d$/.test(MAPGO||""))setTimeout(()=>mapGo(vc),80);setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }
