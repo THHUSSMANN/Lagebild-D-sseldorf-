@@ -865,7 +865,7 @@ function PKREF(){return C.isDus?{lat:C.lat,lon:C.lon}:(HOMES.dus&&isFinite(HOMES
 function renderParking(){
   const R=PKREF();
   const near=(list,n,max)=>(list||[]).map(p=>({...p,km:distKm(R.lat,R.lon,p.lat,p.lon)})).filter(p=>!max||p.km<=max).sort((x,y)=>x.km-y.km).slice(0,n);
-  const route=p=>NAVTO(p.lat,p.lon);
+  const route=p=>NAVTO(p.lat,p.lon,p.addr||p.vti_anschrift);
   const box=(id,list,label,n,max)=>{
     if(!list){$(id).innerHTML=stateBox(label+" nicht verfügbar.");return;}
     const s=near(list,n||5,max);
@@ -892,7 +892,7 @@ function renderGarages(){
     const q=max&&used!=null?used/max:null;const cls=q==null||p.status!==1?"":q>=.95?"bad":q>=.8?"warn":"ok";
     return '<div class="li"><span class="tag alt">'+fmt(p.km,1)+' km</span><div class="t">'+esc(p.bezeichnung||p.name)+'</div>'+
       '<div class="r">'+(free!=null&&p.status===1?'<span class="pill p-'+cls+'"><i></i>'+fmt(free)+' frei '+tr(p.tendenz)+'</span>':'<span class="muted small">keine Belegung</span>')+'</div>'+
-      '<div class="d">'+esc(p.vti_anschrift||"")+(max?" · "+fmt(max)+" Plätze":"")+(p.durchfahrtshoehe?" · Höhe "+fmt(p.durchfahrtshoehe,2)+" m":"")+'</div>'+NAVTO(p.lat,p.lon)+'</div>';}).join("")+'</div>';
+      '<div class="d">'+[max?fmt(max)+" Plätze":"",p.durchfahrtshoehe?"Höhe "+fmt(p.durchfahrtshoehe,2)+" m":""].filter(Boolean).join(" · ")+'</div>'+NAVTO(p.lat,p.lon,p.vti_anschrift)+'</div>';}).join("")+'</div>';
 }
 
 // ================= Stadtverkehr Düsseldorf (Verkehrszentrale) =================
@@ -1563,10 +1563,10 @@ async function loadFuel(){
     if(!st.length){box.innerHTML=stateBox("Keine Tankstelle in der Nähe gefunden.");setStatus("fuel",true);return;}
     const best=k=>Math.min(...st.filter(s=>s.isOpen).map(s=>s[k]).filter(v=>typeof v==="number"));
     const bE5=best("e5"),bE10=best("e10"),bD=best("diesel");
-    const p=(v,b)=>typeof v!=="number"?"–":'<span style="'+(v===b?"color:var(--ok);font-weight:700":"")+'">'+v.toFixed(2).replace(".",",")+'<sup>9</sup></span>';
+    const p=(v,b,o)=>typeof v!=="number"?"–":'<span style="'+(o!==false&&v===b?"color:var(--ok);font-weight:700":"")+'">'+v.toFixed(2).replace(".",",")+'<sup>9</sup></span>';
     let r='<table><thead><tr><th>Tankstelle</th><th class="num">km</th><th class="num">Super E5</th><th class="num">E10</th><th class="num">Diesel</th></tr></thead><tbody>';
     st.forEach(s=>{const ad=((s.street||"")+" "+(s.houseNumber||"")).trim()+", "+(s.place||"");const nv=isFinite(s.lat)&&isFinite(s.lng)?(IOS?"comgooglemaps://?daddr="+s.lat+","+s.lng+"&directionsmode=driving":"https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination="+s.lat+","+s.lng):"";
-      r+='<tr'+(s.isOpen?'':' class="fu-closed"')+'><td class="wrap-txt">'+(nv?'<a class="fu-nav" href="'+nv+'"'+(IOS?'':' target="_blank" rel="noopener"')+' title="Mit Google Maps hinfahren">':'')+'<b>'+esc(s.brand||s.name)+'</b>'+(s.isOpen?'':' <span class="fu-zu">geschlossen</span>')+'<br><span class="small">'+GMICON+esc(ad)+(nv?' ↗':'')+'</span>'+(nv?'</a>':'')+'</td><td class="num">'+fmt(s.dist,1)+'</td><td class="num">'+p(s.e5,bE5)+'</td><td class="num">'+p(s.e10,bE10)+'</td><td class="num">'+p(s.diesel,bD)+'</td></tr>';});
+      r+='<tr'+(s.isOpen?'':' class="fu-closed"')+'><td class="wrap-txt">'+(nv?'<a class="fu-nav" href="'+nv+'"'+(IOS?'':' target="_blank" rel="noopener"')+' title="Mit Google Maps hinfahren">':'')+'<b>'+esc(s.brand||s.name)+'</b>'+(s.isOpen?'':' <span class="fu-zu">geschlossen</span>')+'<br><span class="small">'+GMICON+esc(ad)+(nv?' ↗':'')+'</span>'+(nv?'</a>':'')+'</td><td class="num">'+fmt(s.dist,1)+'</td><td class="num">'+p(s.e5,bE5,s.isOpen)+'</td><td class="num">'+p(s.e10,bE10,s.isOpen)+'</td><td class="num">'+p(s.diesel,bD,s.isOpen)+'</td></tr>';});
     box.innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">Tankstellen nahe '+esc(C.short)+' nach Entfernung · günstigster Preis der geöffneten grün · geschlossene ausgegraut.</div>';
     setStatus("fuel",true);
   }catch(e){setStatus("fuel",false,errText(e));box.innerHTML=stateBox("Spritpreise nicht verfügbar – "+errText(e)+".");}
@@ -1918,7 +1918,7 @@ function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="
     const t=RSTRIP[RS.tdir]||"";const st=(()=>{const d=TDIRS.find(x=>x[0]===RS.tdir);return d?d[3]:"";})();
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rsm]");if(b)rsMode(b.dataset.rsm);const t=e.target.closest("[data-rstd]");if(t){RS.tdir=RS.tdir===t.dataset.rstd?null:t.dataset.rstd;rsMode("bahn");if(RS.tdir)setTimeout(()=>{const c=$("trips-card");if(c&&c.getBoundingClientRect().top>innerHeight*.7)c.scrollIntoView({behavior:"smooth",block:"start"});},60);}});
-const NAVTO=(lat,lon)=>' <a class="nav-go" href="'+(IOS?"comgooglemaps://?daddr="+lat+","+lon+"&directionsmode=driving":"https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination="+lat+","+lon)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>'+GMICON+'Hinfahren ↗</a>';
+const NAVTO=(lat,lon,lbl)=>' <a class="nav-go el-ad" href="'+(IOS?"comgooglemaps://?daddr="+lat+","+lon+"&directionsmode=driving":"https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination="+lat+","+lon)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>'+GMICON+esc(lbl||"Route hierhin")+' ↗</a>';
 const GMICON='<svg class="gmi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.5s-7-6-7-11.6a7 7 0 0 1 14 0c0 5.6-7 11.6-7 11.6z"/><circle cx="12" cy="9.8" r="2.6"/></svg>';
 function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catch(e){}
   if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));return;}
@@ -2038,10 +2038,10 @@ function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?E
     l.slice(0,300).forEach(x=>L.circleMarker([x.lat,x.lon],{radius:7,color:"#fff",weight:2,fillColor:x.kw>=50?"#0b6e8a":"#2e9d5b",fillOpacity:1}).bindPopup('<b>'+esc(x.name)+'</b><br>'+(x.kw?fmt(x.kw,0)+' kW · ':'')+info(x)+(x.addr?'<br>'+esc(x.addr):'')+'<br><a href="'+nav(x)+'" target="_blank" rel="noopener">Route in Google Maps ↗</a>').addTo(ELLAY));
     ELMAP.fitBounds(L.latLng(ELP.lat,ELP.lon).toBounds(ELR*2000),{padding:[4,4]});}
   else $("el-map").hidden=true;
-  box.innerHTML='<div class="muted small" style="margin-bottom:4px">'+l.length+' Ladestationen'+(ELF==="fast"?" mit mind. 50 kW":"")+' im Umkreis von '+ELR+' km um '+esc(ELP.name)+', die nächste zuerst. In der Karte: blau = Schnelllader, grün = normal. Antippen öffnet die Route in Google Maps.</div>'+
-    (l.length?l.slice(0,80).map(x=>'<a class="el" href="'+nav(x)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="t">'+esc(x.name)+'</span><span class="k">'+fmt(x.km,1)+' km</span>'+
+  box.innerHTML='<div class="muted small" style="margin-bottom:4px">'+l.length+' Ladestationen'+(ELF==="fast"?" mit mind. 50 kW":"")+' im Umkreis von '+ELR+' km um '+esc(ELP.name)+', die nächste zuerst. In der Karte: blau = Schnelllader, grün = normal. Adresse antippen startet die Navigation in Google Maps.</div>'+
+    (l.length?l.slice(0,80).map(x=>'<a class="el" href="'+nav(x)+'"'+(IOS?'':' target="_blank" rel="noopener"')+' style="text-decoration:none;color:inherit" title="Mit Google Maps hinfahren"><span class="t">'+esc(x.name)+'</span><span class="k">'+fmt(x.km,1)+' km</span>'+
       '<span class="d">'+(x.kw?'<span class="kw'+(x.kw>=50?" fast":"")+'">'+fmt(x.kw,0)+' kW</span>':'')+info(x)+
-      (x.addr||x.op&&x.op!==x.name?'<br>'+esc([x.addr,x.op&&x.op!==x.name?x.op:""].filter(Boolean).join(" · ")):"")+'</span></a>').join("")
+      (x.op&&x.op!==x.name?'<br>'+esc(x.op):"")+'</span><span class="el-ad">'+GMICON+esc(x.addr||"Route zur Ladesäule")+' ↗</span></a>').join("")
      :'<div class="state">Keine Ladestationen gefunden – Umkreis vergrößern.</div>')+
     '<div class="muted small" style="margin-top:8px">Daten: Ladesäulenregister der Bundesnetzagentur (rund um deine Orte) und OpenStreetMap-Mitwirkende, Ortssuche: Nominatim. Belegung live gibt es dort nicht. Amtliche Liste für Deutschland: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
 function elGPS(){const msg=$("el-gpsmsg");let done=false;
@@ -2116,10 +2116,10 @@ function renderPk(id,data,intro){const box=$(id);if(!data)return;
   box.innerHTML='<div class="muted small" style="margin-bottom:4px">'+intro+'</div>'+
     (G.map(([k,l,n])=>{const a=k==="bh"?bh:data.filter(x=>x.kind===k);if(!a.length)return"";return '<div class="sublbl" style="margin-top:12px">'+l+' <span class="muted small" style="font-weight:400">('+a.length+')</span></div>'+a.slice(0,n).map(x=>
       '<a class="el pk-nav" href="'+nav(x)+'"'+(IOS?'':' target="_blank" rel="noopener"')+' style="text-decoration:none;color:inherit" title="Mit Google Maps hinfahren"><span class="t">'+esc(x.name)+'</span><span class="k">'+fmt(x.km,1)+' km</span><span class="d">'+
-      (x.addr?'':'<span class="pka" data-lat="'+x.lat+'" data-lon="'+x.lon+'"></span>')+esc([x.addr,x.cap?x.cap+" Plätze":"",Number(x.dis)>0?x.dis+" Behindertenplätze":"",x.fee==="yes"?"gebührenpflichtig":x.fee==="no"?"kostenlos":"",x.max?"max. "+x.max:"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "))+'</span><span class="nav-go">'+GMICON+'Hinfahren ↗</span></a>').join("");}).join("")
+      esc([x.cap?x.cap+" Plätze":"",Number(x.dis)>0?x.dis+" Behindertenplätze":"",x.fee==="yes"?"gebührenpflichtig":x.fee==="no"?"kostenlos":"",x.max?"max. "+x.max:"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "))+'</span><span class="el-ad">'+GMICON+(x.addr?esc(x.addr):'<span class="pka" data-lat="'+x.lat+'" data-lon="'+x.lon+'"></span>')+' ↗</span></a>').join("");}).join("")
     ||'<div class="state">Keine öffentlichen Parkplätze gefunden.</div>')+'<div class="muted small" style="margin-top:8px">Daten: OpenStreetMap-Mitwirkende, Adressen: TomTom.</div>';
   // fehlende Adressen nachladen (Straße, Ortsteil)
-  [...box.querySelectorAll(".pka:empty")].forEach(async el=>{const v=await addrOf(+el.dataset.lat,+el.dataset.lon);if(v&&el.isConnected){el.textContent=v;const d=el.parentNode;if(d&&d.childNodes.length>1&&d.lastChild.textContent)el.after(" · ");const it=data.find(x=>Math.abs(x.lat-el.dataset.lat)<1e-6&&Math.abs(x.lon-el.dataset.lon)<1e-6);if(it)it.addr=v;}});}
+  [...box.querySelectorAll(".pka:empty")].forEach(async el=>{const v=await addrOf(+el.dataset.lat,+el.dataset.lon);if(v&&el.isConnected){el.textContent=v;const it=data.find(x=>Math.abs(x.lat-el.dataset.lat)<1e-6&&Math.abs(x.lon-el.dataset.lon)<1e-6);if(it)it.addr=v;}});}
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;
   const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
