@@ -451,11 +451,11 @@ $("efa-dir").addEventListener("input",()=>{DIRF[C.key]=$("efa-dir").value;store(
 // Ziel eingeben → Verbindung mit Bus & Bahn in Google Maps (ab aktueller Haltestelle)
 let EFASTOP="";
 function efaGo(){const a=$("efa-go");if(!a)return;const q=($("efa-dir").value||"").trim();if(q.length<3||!EFASTOP){a.hidden=true;return;}
-  const o=encodeURIComponent(EFASTOP),d=encodeURIComponent(q);
-  a.href=IOS?"comgooglemaps://?saddr="+o+"&daddr="+d+"&directionsmode=transit":"https://www.google.com/maps/dir/?api=1&travelmode=transit&origin="+o+"&destination="+d;
-  if(!IOS){a.target="_blank";a.rel="noopener";}
-  a.innerHTML=GMICON+'Verbindung nach „'+esc(q)+'“ suchen ↗<small>ab '+esc(EFASTOP)+' · Bus &amp; Bahn in Google Maps</small>';a.hidden=false;}
-$("efa-dir").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();efaGo();const a=$("efa-go");if(a&&!a.hidden)a.click();}});
+  const o=encodeURIComponent(EFASTOP),d=encodeURIComponent(q),nt=IOS?'':' target="_blank" rel="noopener"';
+  const vrr="https://efa.vrr.de/vrr/XSLT_TRIP_REQUEST2?language=de&sessionID=0&requestID=0&itdTripDateTimeDepArr=dep&useRealtime=1&type_origin=any&name_origin="+o+"&type_destination=any&name_destination="+d;
+  const gm=IOS?"comgooglemaps://?saddr="+o+"&daddr="+d+"&directionsmode=transit":"https://www.google.com/maps/dir/?api=1&travelmode=transit&origin="+o+"&destination="+d;
+  a.innerHTML='<div class="efa-gh">Verbindung nach „'+esc(q)+'“ <small>ab '+esc(EFASTOP)+'</small></div><div class="efa-gb"><a class="efa-go" href="'+vrr+'" target="_blank" rel="noopener">VRR ↗<small>offizielle Auskunft</small></a><a class="efa-go" href="'+gm+'"'+nt+'>Google Maps ↗<small>Bus &amp; Bahn</small></a></div>';a.hidden=false;}
+$("efa-dir").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();efaGo();const a=$("efa-go");const l=a&&!a.hidden&&a.querySelector("a");if(l)l.click();}});
 $("efa-stops").addEventListener("click",e=>{const d=e.target.closest("[data-bdir]");if(d){store("busdir_"+ec().key,+d.dataset.bdir);renderEFA();return;}const b=e.target.closest("[data-stop]");if(!b)return;STOPS[ec().key]=b.dataset.stop;store("stops",STOPS);$("stop").value=b.dataset.stop;loadEFA();});
 $("stop").addEventListener("keydown",e=>{if(e.key==="Enter"){$("stop-sug").innerHTML="";$("stop-save").click();}});
 $("stop").addEventListener("input",()=>{const q=normStop($("stop").value);const box=$("stop-sug");
@@ -2217,6 +2217,7 @@ document.querySelectorAll(".view").forEach(v=>{const p=VIEWPARENT[v.dataset.view
   bar.append(x);});
 // aktiven Unterreiter in der Leiste sichtbar halten
 new MutationObserver(()=>{document.querySelectorAll(".vtop .subtabs a.on").forEach(a=>{const b=a.parentNode;if(a.offsetLeft<b.scrollLeft||a.offsetLeft+a.offsetWidth>b.scrollLeft+b.clientWidth)b.scrollTo({left:a.offsetLeft-12,behavior:"smooth"});});}).observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]});
+document.addEventListener("click",e=>{if(e.target.closest("[data-uber]")){const u="https://m.uber.com/ul/?action=setPickup&pickup=my_location";if(IOS)location.href=u;else window.open(u,"_blank","noopener");}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
 let EDITING=false,SORT=null;
 document.querySelectorAll("#tiles .tile").forEach(t=>{
