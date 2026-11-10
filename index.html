@@ -944,12 +944,15 @@ a.nav-go.el-ad,.el .el-ad{grid-column:1/-1;display:block;margin-top:4px;color:va
 #fu-hits button{display:block;width:100%;text-align:left;margin:4px 0;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:500 14.5px var(--f-body)}
 #fu-form{margin-bottom:8px}
 /* Löschen-Kreuz in Eingabefeldern */
-.clr-w{position:relative;display:block;width:100%;min-width:0}.clr-w>input{width:100%;padding-right:42px!important}
-.clr-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;padding:0;border:0;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
-.clr-x svg{width:22px;height:22px;fill:color-mix(in srgb,var(--muted) 30%,transparent);stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.clr-w{position:relative;display:block;width:100%;min-width:0}.clr-w>input{width:100%;padding-right:56px!important}
+.clr-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:44px;height:44px;padding:0;border:0;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.clr-x svg{width:30px;height:30px;fill:color-mix(in srgb,var(--muted) 28%,transparent);stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.fl .clr-x{width:38px;height:38px;right:4px}.fl .clr-x svg{width:26px;height:26px}.fl .clr-w>input{padding-right:46px!important}
 .clr-w>input:placeholder-shown+.clr-x{display:none}
 .clr-all{width:100%;margin:14px 0 6px}
 .bs-yel .clr-w{width:auto}
+.fl .clr-x,.fl .fa-ab .clr-x{background:none!important;border:0!important;box-shadow:none!important;min-height:0!important;padding:0!important}
+.fl .fa-in{align-items:end}
 </style>
 </head>
 <body>
@@ -1513,6 +1516,6 @@ a.nav-go.el-ad,.el .el-ad{grid-column:1/-1;display:block;margin-top:4px;color:va
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=271"></script>
+<script src="app.js?v=272"></script>
 </body>
 </html>
