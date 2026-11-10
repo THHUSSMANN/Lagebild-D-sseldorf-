@@ -447,7 +447,15 @@ $("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim
 $("windy-save").addEventListener("click",()=>{WINDY=$("windy").value.trim();store("windy",WINDY);loadWindy();});$("theme").value=theme;
 $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!v||!C.efaDefault)return;STOPS[C.key]=v;store("stops",STOPS);loadEFA();
   const m=stopMatch(v);$("stop-hint").innerHTML=m.file?"Übernommen – Abfahrten werden angezeigt.":m.id?"Diese Haltestelle wird noch nicht automatisch abgerufen. Live-Abfahrten öffnen sich über den Link in der Bus-Ansicht; sag Claude Bescheid, dann wird sie fest ergänzt.":"Haltestelle nicht im Verzeichnis gefunden – bitte aus der Vorschlagsliste wählen.";});
-$("efa-dir").addEventListener("input",()=>{DIRF[C.key]=$("efa-dir").value;store("dirf",DIRF);renderEFA();});
+$("efa-dir").addEventListener("input",()=>{DIRF[C.key]=$("efa-dir").value;store("dirf",DIRF);renderEFA();efaGo();});
+// Ziel eingeben → Verbindung mit Bus & Bahn in Google Maps (ab aktueller Haltestelle)
+let EFASTOP="";
+function efaGo(){const a=$("efa-go");if(!a)return;const q=($("efa-dir").value||"").trim();if(q.length<3||!EFASTOP){a.hidden=true;return;}
+  const o=encodeURIComponent(EFASTOP),d=encodeURIComponent(q);
+  a.href=IOS?"comgooglemaps://?saddr="+o+"&daddr="+d+"&directionsmode=transit":"https://www.google.com/maps/dir/?api=1&travelmode=transit&origin="+o+"&destination="+d;
+  if(!IOS){a.target="_blank";a.rel="noopener";}
+  a.innerHTML=GMICON+'Verbindung nach „'+esc(q)+'“ suchen ↗<small>ab '+esc(EFASTOP)+' · Bus &amp; Bahn in Google Maps</small>';a.hidden=false;}
+$("efa-dir").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();efaGo();const a=$("efa-go");if(a&&!a.hidden)a.click();}});
 $("efa-stops").addEventListener("click",e=>{const d=e.target.closest("[data-bdir]");if(d){store("busdir_"+ec().key,+d.dataset.bdir);renderEFA();return;}const b=e.target.closest("[data-stop]");if(!b)return;STOPS[ec().key]=b.dataset.stop;store("stops",STOPS);$("stop").value=b.dataset.stop;loadEFA();});
 $("stop").addEventListener("keydown",e=>{if(e.key==="Enter"){$("stop-sug").innerHTML="";$("stop-save").click();}});
 $("stop").addEventListener("input",()=>{const q=normStop($("stop").value);const box=$("stop-sug");
@@ -1431,7 +1439,7 @@ function showAbDetail(k){
   if(!set){box.hidden=true;return;}
   {if(/^r\d+$/.test(k)){const h=$("prio-h");if(h&&box.nextElementSibling!==h)h.before(box);}else{const an=$("stau-sum");if(an&&an.nextElementSibling!==box)an.after(box);}}
   box.hidden=false;
-  box.innerHTML='<div class="abd-head"><h3>'+esc(set.t)+' <span class="muted small">('+set.l.length+')</span></h3><button type="button" class="btn sm" data-close="1">Schließen ✕</button></div>'+
+  box.innerHTML='<div class="abd-head"><h3>'+esc(set.t)+' <span class="muted small">('+set.l.length+')</span></h3><button type="button" class="td-x x-round" data-close="1" aria-label="Schließen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'+
     (set.l.length?'<div class="muted small" style="margin-bottom:6px">Eintrag antippen für alle Angaben (Abschnitt, Dauer, Umleitung).</div>'+set.l.map(abItem).join(""):'<div class="state good">Keine Meldungen auf dieser Strecke im Umkreis von '+PRIO_RADIUS_KM+' km.</div>');
   document.querySelectorAll("#stau-sum .fbtn,#prio .route").forEach(b=>b.classList.toggle("on",(b.dataset.f||("r"+b.dataset.route))===k));
   const miss=set.l.filter(x=>!x.ort&&!x._pq&&isFinite(x.lat)).slice(0,40);
@@ -1579,7 +1587,7 @@ async function loadEFA(){const EK=ec().key;
   if(!STOPIDX)await loadStopIndex();
   // gespeicherte Haltestelle nur verwenden, wenn sie für diesen Ort wirklich abgerufen wird (sonst Standard, z. B. Nikolaus-Knopp-Platz)
   let stop=STOPS[ec().key]||ec().efaDefault;{const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
-  const m=stopMatch(stop);
+  const m=stopMatch(stop);EFASTOP=stop;efaGo();
   const avail=(STOPIDX&&STOPIDX.available)||[];
   $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,""))+'</button>').join(""):"";
   $("efa-dir").value=DIRF[ec().key]||"";
@@ -1609,7 +1617,8 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
   if(f)rows=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);
   rows=rows.slice(0,14);
-  if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Abfahrten mit diesem Filter im abgerufenen Zeitraum.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
+  EFASTOP=d.data.stop||"";efaGo();
+  if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Linie fährt Richtung „"+esc(DIRF[ec().key])+"“. Für eine Verbindung mit Umsteigen den Knopf oben antippen.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
     if(!(ec().isDus||ec().key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
   $("efa").innerHTML=busTripsHtml(d.data.stop)+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
@@ -2201,7 +2210,11 @@ document.addEventListener("click",e=>{const x=e.target.closest("#v-einstellungen
   setTimeout(()=>{$("tools").hidden=false;$("tools-toggle").setAttribute("aria-expanded","true");const t=document.querySelector('#toolgrid [data-tool="'+(x.closest("#v-flaechen")?"flaechen":"settings")+'"]')||$("tools-toggle");t.scrollIntoView({behavior:"smooth",block:"center"});},120);});
 document.querySelectorAll(".view").forEach(v=>{const p=VIEWPARENT[v.dataset.view];const x=document.createElement("a");x.href="#"+(p?p[0]:"");x.className="view-x";x.setAttribute("aria-label",p?p[1]:"Schließen, zurück zur Übersicht");x.innerHTML=p?p[1]:"✕ Schließen";v.prepend(x);
   // iOS-26-Leiste: Unterreiter + runder Schließen-Knopf in einer Zeile
-  const st=v.querySelector(":scope > .subtabs");if(st&&!p){const bar=document.createElement("div");bar.className="vtop";x.after(bar);bar.append(st,x);x.classList.add("round");x.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';}});
+  // überall nur das runde ✕ (bei Unterseiten führt es eine Ebene zurück)
+  x.classList.add("round");x.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';x.title=p?p[1].replace(/^‹\s*/,""):"Schließen";
+  const bar=document.createElement("div");bar.className="vtop";x.after(bar);
+  const st=v.querySelector(":scope > .subtabs, :scope > .segsw");if(st&&st===bar.nextElementSibling)bar.append(st);else{const sp=document.createElement("span");sp.className="vtop-sp";bar.append(sp);}
+  bar.append(x);});
 // aktiven Unterreiter in der Leiste sichtbar halten
 new MutationObserver(()=>{document.querySelectorAll(".vtop .subtabs a.on").forEach(a=>{const b=a.parentNode;if(a.offsetLeft<b.scrollLeft||a.offsetLeft+a.offsetWidth>b.scrollLeft+b.clientWidth)b.scrollTo({left:a.offsetLeft-12,behavior:"smooth"});});}).observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&location.hash.length>1&&!document.querySelector("dialog[open]"))location.hash="";});
