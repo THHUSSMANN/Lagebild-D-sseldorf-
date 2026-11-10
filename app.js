@@ -2290,6 +2290,10 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.service
 if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderReise,TILE_PARTS};
 
 // ================= Besuchersicherheit: Fläche, Besucherzahl, Rettungswegbreite =================
+// § 7 Abs. 4 SBauVO NRW: 1,20 m je 600 (im Freien) bzw. 200 Personen (andere), Zwischenwerte zulässig,
+// lichte Mindestbreite je Rettungswegteil 1,20 m; bei Versammlungsräumen mit höchstens 200 Besucherplätzen 0,90 m.
+const rwMin=(p,div)=>div===200&&p<=200?0.9:1.2;
+const rwBreite=(p,div,w)=>p>0?Math.max(rwMin(p,div),p/div*(w||1.2)):0;
 {const num=v=>{v=String(v||"").trim().replace(/\s/g,"");if(/,/.test(v))v=v.replace(/\./g,"").replace(",",".");else if(/^\d{1,3}(\.\d{3})+$/.test(v))v=v.replace(/\./g,"");const n=parseFloat(v);return isFinite(n)?n:NaN;};
   const f0=n=>Math.round(n).toLocaleString("de-DE"),f2=n=>n.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
   const st=load("bsicher")||{};let sel=st.sel||2,mode=st.mode===200?200:600;
@@ -2299,8 +2303,8 @@ if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderR
       $("bs-dens").innerHTML=[1,2,3,4].map(d=>'<button type="button" data-bsd="'+d+'" class="'+(d===sel?"on":"")+'"><span>'+d+(d===1?" Person":" Personen")+' / m²'+(d===1?' <small>(nur Vergleich)</small>':d===2?' <small>(Mindestansatz Stehflächen)</small>':'')+'</span><b>'+f0(Math.floor(N*d))+'</b></button>').join("");}
     else{$("bs-net").innerHTML="";$("bs-dens").innerHTML='<div class="muted small">Bitte eine Fläche eingeben.</div>';}
     const div=mode;const W0=num($("bs-wid").value);
-    if(isFinite(P0)&&P0>0){const w=P0/div*1.2;
-      $("bs-rw").innerHTML='<span>Erforderliche Gesamtbreite ('+(div===600?"im Freien":"in Gebäuden")+')</span><b>'+f2(w)+' m</b><span>je Rettungswegteil mind. 1,20 m</span>';}
+    if(isFinite(P0)&&P0>0){const r=P0/div*1.2,w=rwBreite(P0,div);
+      $("bs-rw").innerHTML='<span>Erforderliche Gesamtbreite ('+(div===600?"im Freien":"in Gebäuden")+')</span><b>'+f2(w)+' m</b><span>'+(w>r+0.005?'rechnerisch '+f2(r)+' m, aber Mindestbreite '+f2(rwMin(P0,div))+' m (§ 7 Abs. 4 SBauVO)':'je Rettungswegteil mind. '+f2(rwMin(P0,div))+' m')+'</span>';}
     else $("bs-rw").innerHTML="";
     if(isFinite(W0)&&W0>0)$("bs-wp").innerHTML='<span>Zulässige Personen bei '+f2(W0)+' m ('+(div===600?"im Freien":"in Gebäuden")+')</span><b>'+f0(Math.floor(W0/1.2*div+1e-9))+' Personen</b>';else $("bs-wp").innerHTML="";
     // Tabelle wie in der Excel-Vorlage: 1,20 m bis 18 m in 0,60-m-Schritten
@@ -2332,9 +2336,9 @@ if(/[?&]debug\b/.test(location.search))window.__LB={get RS(){return RS;},renderR
   function sums(){const P=par();let br=0,ab=0,ne=0,n=0,pa=0;const per=P.d.map(()=>0);
     FL.forEach((f,i)=>{if(!incOf(i))return;const b=num(S.br[i]??(i===FREE?"":f[1])),a=num(S.abz[i]);const N=netOf(i);br+=b||0;pa+=(b||0)*pzi(i)/100;ab+=a>0?a:0;ne+=N;n++;P.d.forEach((d,k)=>per[k]+=N*d);});
     $("fl-sum").innerHTML='<h3>Gesamtkapazität der einbezogenen Flächen <span class="muted small">('+n+' von '+(FL.length-1)+')</span></h3><div class="muted small" style="margin-bottom:6px">Gesamtfläche '+f0(br)+' m² − Pauschale '+f0(pa)+' m² − Aufbauten '+f0(ab)+' m² = <b>Netto '+f0(ne)+' m²</b></div>'+
-      '<table><thead><tr><th>Dichte</th><th>Personen</th><th class="rw">Rettungsweg</th></tr></thead><tbody>'+P.d.map((d,k)=>'<tr><td>'+String(d).replace(".",",")+' P/m²</td><td><b>'+f0(Math.floor(per[k]))+'</b></td><td class="rw">'+f2(per[k]/P.div*P.w)+' m</td></tr>').join("")+'</tbody></table>';}
+      '<table><thead><tr><th>Dichte</th><th>Personen</th><th class="rw">Rettungsweg</th></tr></thead><tbody>'+P.d.map((d,k)=>'<tr><td>'+String(d).replace(".",",")+' P/m²</td><td><b>'+f0(Math.floor(per[k]))+'</b></td><td class="rw">'+f2(rwBreite(per[k],P.div,P.w))+' m</td></tr>').join("")+'</tbody></table>';}
   function card(f,i){const P=par();const N=netOf(i);
-    return '<table><thead><tr><th>Dichte</th><th>Personen</th><th class="rw">Rettungsweg</th></tr></thead><tbody>'+P.d.map(d=>'<tr><td>'+String(d).replace(".",",")+' P/m²</td><td>'+f0(Math.floor(N*d))+'</td><td class="rw">'+f2(N*d/P.div*P.w)+' m</td></tr>').join("")+'</tbody></table>';}
+    return '<table><thead><tr><th>Dichte</th><th>Personen</th><th class="rw">Rettungsweg</th></tr></thead><tbody>'+P.d.map(d=>'<tr><td>'+String(d).replace(".",",")+' P/m²</td><td>'+f0(Math.floor(N*d))+'</td><td class="rw">'+f2(rwBreite(Math.floor(N*d),P.div,P.w))+' m</td></tr>').join("")+'</tbody></table>';}
   const FLPIN='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.5s-7-6-7-11.6a7 7 0 0 1 14 0c0 5.6-7 11.6-7 11.6z"/><circle cx="12" cy="9.8" r="2.6"/></svg>';
   let FLSEL=null,FLS=false;
   const ordr=()=>{const o=(Array.isArray(S.ord)?S.ord:[]).filter(i=>i>=0&&i<FL.length);if(!o.includes(FREE))o.unshift(FREE);FL.forEach((f,i)=>{if(!o.includes(i))o.push(i);});return o;};
