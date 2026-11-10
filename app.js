@@ -1862,7 +1862,9 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
   if(!TTKEY){$("rs-alts").innerHTML=stateBox("Für die Fahrzeit den TomTom-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
   const city=RS.city;for(const [k,t] of RSDIRS.filter(x=>x[2]===city).sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){if(RS.city&&RS.city!==city)break;/* nur bei echtem Ortswechsel abbrechen */const [o,d]=rsEnds(k);
     try{const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&maxAlternatives=2&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
-      let r;try{r=await getJSON(url,20000);}catch(e){await new Promise(z=>setTimeout(z,1200));r=await getJSON(url,20000);}
+      /* TomTom lehnt bei zu vielen Abfragen pro Sekunde ab (HTTP 429): bis zu 4 Versuche mit wachsender Pause */
+      let r,le;for(const w of [0,1500,3500,7000]){if(w)await new Promise(z=>setTimeout(z,w));try{r=await getJSON(url,20000);break;}catch(e){le=e;if(!/\b(429|5\d\d)\b|Timeout|abgebrochen|fetch/i.test(String(e&&e.message||e)))break;}}
+      if(!r)throw le;
       const main=(r.routes[0].legs||[]).flatMap(l=>l.points||[]);
       const alts=r.routes.map((rt,i)=>{const P=routeParse(rt);const sm=rt.summary;
         let via=null;if(i>0){let best=-1;for(let a=Math.floor(P.pts.length*.15);a<P.pts.length*.85;a+=3){const q=P.pts[a];let m=1e9;for(let b=0;b<main.length;b+=4){const dd=Math.abs(main[b].latitude-q.latitude)+Math.abs(main[b].longitude-q.longitude);if(dd<m)m=dd;}if(m>best){best=m;via=[q.latitude,q.longitude];}}}
@@ -1872,7 +1874,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
       alts.forEach(a=>routeRW(a,["warning","closure"]).then(async l=>{a.ab=l.map(w=>({...w,jam:jamInfo(w),cl:w._svc==="closure"||w.isBlocked===true||w.isBlocked==="true"})).filter(w=>w.cl||w.jam);if(a.i===0&&RS.data[k]&&RS.data[k].alts===alts){svUpd(k,a);renderReise();}else if(RS.dir===k)renderReise();for(const w of a.ab)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k)renderReise();}}));
       alts.forEach(a=>routeRW(a).then(async l=>{a.rw=l;if(RS.dir===k)renderReise();for(const w of l)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k&&RS.data[k]&&RS.data[k].alts&&RS.data[k].alts[RS.sel]===a)renderReise();}}));
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
-    }catch(e){RS.data[k]={err:errText(e)};}
+    }catch(e){if(!(RS.data[k]&&RS.data[k].alts))RS.data[k]={err:errText(e)};/* sonst letzten Stand behalten */}
     renderReise();}
   if(RS.city&&RS.city!==city){RS.at=0;loadReise(false);}}
 const TDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,a,"nach "+CITYN[b],STN[a][1]+" → "+STN[b][1],b]);
