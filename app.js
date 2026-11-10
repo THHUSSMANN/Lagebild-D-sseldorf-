@@ -2031,13 +2031,21 @@ function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],["datteln","Datt
 function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr";w.innerHTML='<button type="button" data-elw="gps" class="gpsbtn'+(ELP&&ELP.k==="gps"?" on":"")+'"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>An meinem Standort suchen</button>';}
 function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
   [["all","Alle Ladesäulen"],["fast","Schnelllader (ab 50 kW)"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
+// Ladesäulenregister der Bundesnetzagentur für ganz Deutschland, in 0,5°-Kacheln vom eigenen Server
+let EVIDX=null;const EVC={};
+async function evNear(la,lo,r){try{if(!EVIDX)EVIDX=getJSON("data/ev/index.json?t="+Math.floor(Date.now()/36e5),15000).catch(e=>{EVIDX=null;throw e;});const I=await EVIDX;if(!I||!Array.isArray(I.keys))return null;
+  const dl=r/111,dn=r/(111*Math.cos(la*Math.PI/180));const ks=new Set();
+  for(let a=Math.floor((la-dl)*2);a<=Math.floor((la+dl)*2);a++)for(let b=Math.floor((lo-dn)*2);b<=Math.floor((lo+dn)*2);b++){const k=a+"_"+b;if(I.keys.includes(k))ks.add(k);}
+  const rows=(await Promise.all([...ks].map(k=>EVC[k]||(EVC[k]=getJSON("data/ev/"+k+".json?t="+Math.floor(Date.now()/36e5),15000).catch(e=>{delete EVC[k];throw e;}))))).flat();
+  const b=rows.filter(x=>distKm(la,lo,x[0],x[1])<=r).map(x=>({lat:x[0],lon:x[1],kw:x[2]||null,n:x[3]||null,op:x[4],addr:x[5],plugs:x[6]?x[6].split("|"):[],name:x[7],oh:x[8]}));
+  return {elements:[],b,src:"bnetza"};}catch(e){return null;}}
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
   if(!ELP||(ELP.auto&&ELP.k!==ck)){const f=elFavs().find(x=>x.k===ck);ELP={...(f||{k:ck,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon}),auto:1};}
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
   const la=ELP.lat,lo=ELP.lon;const gm='<a class="el-gm" href="https://www.google.com/maps/search/Ladestation/@'+la+','+lo+',14z" target="_blank" rel="noopener">'+GMICON+'Ladesäulen um '+esc(ELP.name)+' in Google Maps zeigen ↗</a>';EGM=gm;
-  box.innerHTML='<div class="state">Ladesäulen werden bei OpenStreetMap abgefragt – das kann bis zu 25 Sekunden dauern …</div>'+gm;
+  box.innerHTML='<div class="state">Ladesäulen werden geladen …</div>'+gm;
   const q='[out:json][timeout:25];nwr["amenity"="charging_station"](around:'+(ELR*1000)+','+la+','+lo+');out center tags;';
-  try{const d=(await osmLocal("c",la,lo,ELR))||await overpass(q);const BN=d.b||[];
+  try{const d=(await osmLocal("c",la,lo,ELR))||(await evNear(la,lo,ELR))||await overpass(q);const BN=d.b||[];
     const kw=t=>{let m=0;for(const [k,v] of Object.entries(t))if(/(^|:)output$/.test(k)){const x=String(v).match(/([\d.,]+)\s*(kW|W)?/i);if(x){let n=parseFloat(x[1].replace(",","."));if(/^W$/i.test(x[2]||"")||n>1000)n/=1000;if(n>m)m=n;}}return m||null;};
     const SOCK={type2:"Typ 2",type2_combo:"CCS",chademo:"CHAdeMO",tesla_supercharger:"Tesla",schuko:"Schuko",type2_cable:"Typ 2 Kabel"};
     ELD=(d.elements||[]).map(e=>{const t=e.tags||{};const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);

@@ -513,6 +513,7 @@ await job("medien.json", async () => {
 // ---------- Ladesäulen & Parkplätze (OpenStreetMap) rund um die Lieblingsorte, 1× täglich ----------
 // Der Browser fragt OpenStreetMap sonst selbst ab – das ist abends oft überlastet. Hier vorab gesammelt.
 // Ladesäulenregister der Bundesnetzagentur (amtlich, vollständiger als OpenStreetMap)
+const EVT = {}; // Ladesäulen ganz Deutschland, Kachel "lat2_lon2" (0,5°)
 async function bnetza(RC) {
   const page = await get("https://www.bundesnetzagentur.de/ladeinfrastruktur", { type: "text" });
   let m = page.match(/href="([^"]*Ladesaeulenregister[^"]*\.csv[^"]*)"/i); if (!m) throw new Error("CSV-Link nicht gefunden");
@@ -532,17 +533,32 @@ async function bnetza(RC) {
   const P = Object.values(PLACES); const out = [];
   for (let k = hi + 1; k < lines.length; k++) { const l = lines[k]; if (!l) continue; const c = split(l);
     const lat = numLL(c[iLat]), lon = numLL(c[iLon]); if (!isFinite(lat) || !isFinite(lon)) continue;
-    if (!P.some(p => distKm(p.lat, p.lon, lat, lon) <= RC)) continue;
     if (iStat >= 0 && c[iStat] && !/betrieb/i.test(c[iStat])) continue;
     const plugs = [...new Set(iPlug.flatMap(i => String(c[i] || "").split(/[,;]/).map(x => x.trim()).filter(Boolean)))];
+    { const key = Math.floor(lat * 2) + "_" + Math.floor(lon * 2); (EVT[key] = EVT[key] || []).push([Math.round(lat * 1e5) / 1e5, Math.round(lon * 1e5) / 1e5, iKw >= 0 ? num(c[iKw]) || 0 : 0, iN >= 0 ? parseInt(c[iN]) || 0 : 0, c[iOp] || "", [[c[iStr], c[iNr]].filter(Boolean).join(" "), c[iOrt]].filter(Boolean).join(", "), plugs.join("|"), (iName >= 0 && c[iName]) || (iLoc >= 0 && c[iLoc]) || "", iOh >= 0 ? c[iOh] || "" : ""]); }
+    if (!P.some(p => distKm(p.lat, p.lon, lat, lon) <= RC)) continue;
     out.push({ lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5, op: c[iOp] || "", name: (iName >= 0 && c[iName]) || (iLoc >= 0 && c[iLoc]) || "", addr: [[c[iStr], c[iNr]].filter(Boolean).join(" "), c[iOrt]].filter(Boolean).join(", "),
       kw: iKw >= 0 ? num(c[iKw]) || null : null, n: iN >= 0 ? parseInt(c[iN]) || null : null, plugs, oh: iOh >= 0 ? c[iOh] || "" : "" }); }
   if (!out.length) throw new Error("keine Einträge erkannt (Spalten: " + H.slice(0, 12).join("|") + ")");
   return out;
 }
+async function evWrite() {
+  const keys = Object.keys(EVT); if (!keys.length) return;
+  await fs.mkdir(path.join(OUT, "ev"), { recursive: true });
+  for (const k of keys) await fs.writeFile(path.join(OUT, "ev", k + ".json"), JSON.stringify(EVT[k]));
+  await fs.writeFile(path.join(OUT, "ev", "index.json"), JSON.stringify({ generated: new Date().toISOString(), keys, n: keys.reduce((t, k) => t + EVT[k].length, 0) }));
+}
+// Kacheln vom zuletzt veröffentlichten Stand übernehmen (Register wird nur 1× täglich neu geladen)
+async function evCopy() {
+  try { const idx = await get(LIVE + "ev/index.json", { ms: 20000 }); if (!idx || !Array.isArray(idx.keys)) return "ev: kein Index";
+    await fs.mkdir(path.join(OUT, "ev"), { recursive: true }); await fs.writeFile(path.join(OUT, "ev", "index.json"), JSON.stringify(idx));
+    let ok = 0; const q = [...idx.keys];
+    await Promise.all(Array.from({ length: 8 }, async () => { while (q.length) { const k = q.shift(); try { const d = await get(LIVE + "ev/" + k + ".json", { ms: 20000 }); await fs.writeFile(path.join(OUT, "ev", k + ".json"), JSON.stringify(d)); ok++; } catch {} } }));
+    return "ev " + ok + "/" + idx.keys.length + " Kacheln";
+  } catch (e) { return "ev: " + (e.message || e); } }
 async function osmPoi() {
   try { const prev = await get(LIVE + "osm-poi.json", { ms: 20000 });
-    if (prev && prev.data && prev.data.c && Date.now() - new Date(prev.generated) < 20 * 3600e3 && !prev.stale && Object.keys(PLACES).every(k => prev.data.places && prev.data.places[k])) { await fs.writeFile(path.join(OUT, "osm-poi.json"), JSON.stringify(prev)); return "ok (vom " + prev.generated.slice(0, 16) + ")"; } } catch {}
+    if (prev && prev.data && prev.data.c && Date.now() - new Date(prev.generated) < 20 * 3600e3 && !prev.stale && Object.keys(PLACES).every(k => prev.data.places && prev.data.places[k])) { await fs.writeFile(path.join(OUT, "osm-poi.json"), JSON.stringify(prev)); let ev = await evCopy(); if (!/^ev \d+\/\d+/.test(ev) || /^ev 0\//.test(ev)) { try { await bnetza(15); await evWrite(); ev = "ev neu: " + Object.keys(EVT).length + " Kacheln"; } catch (e) { ev = "ev Fehler: " + (e.message || e); } } return "ok (vom " + prev.generated.slice(0, 16) + ", " + ev + ")"; } } catch {}
   const SERVERS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
   const op = async q => { let err; for (const u of SERVERS) { try { const r = await fetch(u, { method: "POST", headers: { ...UA, "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q), signal: AbortSignal.timeout(150000) });
     if (!r.ok) throw new Error("HTTP " + r.status); const d = JSON.parse(await r.text()); if (!Array.isArray(d.elements)) throw new Error("Format"); return d.elements; } catch (e) { err = e; await sleep(2000); } } throw err; };
@@ -560,6 +576,7 @@ async function osmPoi() {
   }
   try { out.b = await bnetza(RC); } catch (e) { out.b = []; out.bErr = String(e.message || e); }
   await write("osm-poi.json", out);
+  await evWrite();
   return "ok (" + out.c.length + " Ladestationen OSM, " + out.b.length + " Ladeeinrichtungen BNetzA" + (out.bErr ? " – BNetzA: " + out.bErr : "") + ", " + out.p.length + " Parkplätze)";
 }
 try { results["osm-poi.json"] = await osmPoi(); } catch (e) { results["osm-poi.json"] = "Fehler: " + (e.message || e);
