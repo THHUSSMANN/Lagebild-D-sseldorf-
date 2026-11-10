@@ -953,6 +953,26 @@ a.nav-go.el-ad,.el .el-ad{grid-column:1/-1;display:block;margin-top:4px;color:va
 .bs-yel .clr-w{width:auto}
 .fl .clr-x,.fl .fa-ab .clr-x{background:none!important;border:0!important;box-shadow:none!important;min-height:0!important;padding:0!important}
 .fl .fa-in{align-items:end}
+/* Startseite ohne geöffneten Bereich: durchgehend dunkel, kompakte Fußzeile */
+html:not(:has(.view:not([hidden]))){background:#14212b}
+body:not(:has(.view:not([hidden]))){background:#14212b}
+body:not(:has(.view:not([hidden]))) footer.ft-min{color:rgba(255,255,255,.45)}
+footer.ft-min{padding:6px 0 calc(env(safe-area-inset-bottom) + 14px)!important;font-size:13px!important;opacity:.85}
+body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
+/* einzelne Kachel am Ende einer Reihe über volle Breite */
+#tiles>.span2,#toolgrid>.span2,#headnav>.span2{grid-column:1/-1}
+/* ---------- Einheitliche Knöpfe (iOS-26-Glas) ---------- */
+.view .inline>button,.view .r>button,.view .segsw button,.view .gpsbtn,.view .elsearch button,.view .btn,dialog .inline>button{
+  border-radius:16px!important;min-height:44px;padding:0 18px;font:600 15px/1.2 var(--f-body);color:var(--fg);
+  background-color:var(--glass)!important;background-image:linear-gradient(180deg,var(--glass-hi),rgba(255,255,255,0) 55%)!important;
+  border:1px solid var(--glass-b)!important;box-shadow:var(--glass-sh)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);transition:transform .12s ease,background-color .2s ease}
+.view .btn.sm{min-height:40px;font-size:14px;padding:0 14px}
+/* Hauptaktion (Suchen) und gewählter Zustand: kräftig gefüllt */
+.view .elsearch button,#place-search,.view .segsw button.on{
+  background-color:var(--accent)!important;color:var(--panel)!important;border-color:transparent!important;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%)!important;box-shadow:0 4px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.35)!important}
+.view .inline>button:active,.view .r>button:active,.view .segsw button:active,.view .gpsbtn:active,.view .elsearch button:active{transform:scale(.965)}
 </style>
 </head>
 <body>
@@ -1516,6 +1536,6 @@ a.nav-go.el-ad,.el .el-ad{grid-column:1/-1;display:block;margin-top:4px;color:va
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=272"></script>
+<script src="app.js?v=273"></script>
 </body>
 </html>

@@ -2050,6 +2050,12 @@ document.addEventListener("click",e=>{const b=e.target.closest(".clr-x");if(b){e
     $("bs-area").dispatchEvent(new Event("input",{bubbles:true}));$("bs-p20").dispatchEvent(new Event("change",{bubbles:true}));$("bs-area").focus();}});
 document.addEventListener("DOMContentLoaded",()=>clrInit());setTimeout(()=>clrInit(),0);
 {const fl=document.getElementById("fl-list");if(fl)new MutationObserver(()=>clrInit(fl)).observe(fl,{childList:true,subtree:true});}
+// Raster aufräumen: bleibt am Ende eine einzelne Kachel übrig, nimmt sie die volle Breite ein
+function spanLast(){["tiles","toolgrid","headnav"].forEach(id=>{const g=document.getElementById(id);if(!g)return;const gt=getComputedStyle(g).gridTemplateColumns,rm=gt.match(/^repeat\((\d+)/),cols=rm?+rm[1]:gt.split(" ").filter(x=>/px$/.test(x)).length;
+  [...g.children].forEach(c=>c.classList.remove("span2"));const v=[...g.children].filter(c=>!c.hidden&&getComputedStyle(c).display!=="none"&&getComputedStyle(c).gridColumnEnd!=="-1"&&c.dataset.tool!=="arrange");
+  if(cols===2&&v.length%2===1)v[v.length-1].classList.add("span2");});}
+["tiles","toolgrid","headnav"].forEach(id=>{const g=document.getElementById(id);if(g)new MutationObserver(()=>{clearTimeout(spanLast.t);spanLast.t=setTimeout(spanLast,50);}).observe(g,{childList:true,subtree:false,attributes:true,attributeFilter:["hidden","class","style"]});});
+window.addEventListener("resize",()=>spanLast());document.addEventListener("click",()=>setTimeout(spanLast,120));setTimeout(spanLast,300);
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
   if(!ELP||(ELP.auto&&ELP.k!==ck)){const f=elFavs().find(x=>x.k===ck);ELP={...(f||{k:ck,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon}),auto:1};}
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
