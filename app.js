@@ -2039,6 +2039,17 @@ async function evNear(la,lo,r){try{if(!EVIDX)EVIDX=getJSON("data/ev/index.json?t
   const rows=(await Promise.all([...ks].map(k=>EVC[k]||(EVC[k]=getJSON("data/ev/"+k+".json?t="+Math.floor(Date.now()/36e5),15000).catch(e=>{delete EVC[k];throw e;}))))).flat();
   const b=rows.filter(x=>distKm(la,lo,x[0],x[1])<=r).map(x=>({lat:x[0],lon:x[1],kw:x[2]||null,n:x[3]||null,op:x[4],addr:x[5],plugs:x[6]?x[6].split("|"):[],name:x[7],oh:x[8]}));
   return {elements:[],b,src:"bnetza"};}catch(e){return null;}}
+// Löschen-Kreuz (ⓧ) in Eingabefeldern + „Alle Eingaben löschen“
+function clrInit(root){(root||document).querySelectorAll('#bs-dlg input[type="text"]:not(#bs-cut), #fl-list input[data-fk="br"], #fl-list input[data-fk="abz"], #fl-list input[data-fk="nm"]').forEach(inp=>{
+  if(inp.dataset.clr)return;inp.dataset.clr="1";if(!inp.placeholder)inp.placeholder=" ";
+  const w=document.createElement("span");w.className="clr-w";inp.before(w);w.append(inp);
+  const b=document.createElement("button");b.type="button";b.className="clr-x";b.setAttribute("aria-label","Eingabe löschen");b.tabIndex=-1;
+  b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>';w.append(b);});}
+document.addEventListener("click",e=>{const b=e.target.closest(".clr-x");if(b){e.preventDefault();const inp=b.parentNode.querySelector("input");inp.value="";inp.dispatchEvent(new Event("input",{bubbles:true}));inp.dispatchEvent(new Event("change",{bubbles:true}));inp.focus();return;}
+  if(e.target.closest("#bs-clear")){["bs-area","bs-auf","bs-pers","bs-wid"].forEach(id=>{const x=$(id);if(x)x.value="";});const c=$("bs-cut");if(c)c.value="20";const t=$("bs-p20");if(t)t.checked=true;
+    $("bs-area").dispatchEvent(new Event("input",{bubbles:true}));$("bs-p20").dispatchEvent(new Event("change",{bubbles:true}));$("bs-area").focus();}});
+document.addEventListener("DOMContentLoaded",()=>clrInit());setTimeout(()=>clrInit(),0);
+{const fl=document.getElementById("fl-list");if(fl)new MutationObserver(()=>clrInit(fl)).observe(fl,{childList:true,subtree:true});}
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
   if(!ELP||(ELP.auto&&ELP.k!==ck)){const f=elFavs().find(x=>x.k===ck);ELP={...(f||{k:ck,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon}),auto:1};}
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
@@ -2385,7 +2396,7 @@ const rwBreite=(p,div,w)=>p>0?Math.max(rwMin(p,div),p/div*(w||1.2)):0;
       return '<div class="fa'+(on?"":" off")+(i===FREE?" free":"")+'" data-fi="'+i+'"><div class="fa-h"><span class="fa-nr">'+nrOf(i)+'</span>'+(i===FREE?'<input class="fa-nm" type="text" data-fk="nm" placeholder="Name der Fläche (optional)" value="'+esc(S.nm||"")+'">':'<span class="fa-n">'+esc(f[0])+'</span>')+mapA(f,nmOf(i))+'<label class="fa-sw"><input type="checkbox" data-fk="inc"'+(on?" checked":"")+'>einbeziehen</label></div>'+
         '<div class="fa-in"><label>Gesamtfläche (m²)<input type="text" inputmode="decimal" data-fk="br" value="'+esc(String(b).replace(".",","))+'"></label>'+
         '<label class="fa-y">Bühnen, Gastro, Aufbauten (m²)<span class="fa-ab"><input type="text" inputmode="decimal" data-fk="abz" placeholder="0" value="'+esc(String(a))+'"></span></label>'+
-        '<label>Nettofläche<span class="net" data-net>'+f0(N)+' m²</span></label></div><label class="tgl fa-tg"><input type="checkbox" data-fk="p20"'+(S.p20[i]===false?"":" checked")+'><span class="tgl-s"></span><span data-pzl>'+String(pz()).replace(".",",")+' % Pauschale abziehen</span></label><small class="fa-calc" data-calc>'+calcTxt(i)+'</small>'+
+        '<label>Nettofläche<span class="net" data-net>'+f0(N)+' m²</span></label></div><label class="tgl fa-tg"><input type="checkbox" data-fk="p20"'+(S.p20[i]===false?"":" checked")+'><span class="tgl-s"></span><span data-pzl>'+String(pz()).replace(".",",")+' % Pauschale abziehen</span></label><small class="fa-calc" data-calc>'+calcTxt(i)+'</small><button type="button" class="btn sm clr-all" data-flclr="'+i+'">Eingaben dieser Fläche löschen</button>'+
         '<div data-tab>'+card(f,i)+'</div>'+
         '<textarea data-fk="note" placeholder="Maßnahmen (nur auf diesem Gerät gespeichert)">'+esc(S.note[i]||"")+'</textarea>'+
         (f[2]?'':'<!--')+'<div class="fa-l"><a href="'+esc(f[2])+'" target="_blank" rel="noopener">Düsseldorf Maps ↗</a><a href="'+esc(f[3])+'" target="_blank" rel="noopener">OpenStreetMap ↗</a></div>'+(f[2]?'':'-->')+'</div>';}).join("");
@@ -2401,6 +2412,7 @@ const rwBreite=(p,div,w)=>p>0?Math.max(rwMin(p,div),p/div*(w||1.2)):0;
     const t=e.target.closest("#fl-grid [data-ft]");if(t&&!FLS){showSel(+t.dataset.ft);return;}
     if(e.target.closest("#fl-back")){showSel(null);return;}
     const so=e.target.closest("#fl-sort");if(so){FLS=!FLS;so.classList.toggle("on",FLS);so.lastChild.textContent=FLS?"Fertig":"Anordnen";$("fl-grid").classList.toggle("sorting",FLS);return;}
+    {const fc=e.target.closest("[data-flclr]");if(fc){const i=+fc.dataset.flclr;delete S.br[i];S.abz[i]="";S.p20[i]=true;if(i===FREE)S.nm="";save();render();return;}}
     if(e.target.closest("#fl-reset")&&confirm("Alle Abzüge, Notizen und Einstellungen der Veranstaltungsflächen zurücksetzen?")){S={inc:{},abz:{},br:{},note:{},p20:{}};save();render();}});
   if($("fl-list")){render();reorder($("fl-grid"),".fl-t",()=>FLS,()=>{S.ord=[...$("fl-grid").children].map(x=>+x.dataset.ft);save();});
     window.addEventListener("hashchange",()=>{if(location.hash!=="#flaechen")showSel(null);});}}

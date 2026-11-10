@@ -943,6 +943,13 @@ a.nav-go.el-ad,.el .el-ad{grid-column:1/-1;display:block;margin-top:4px;color:va
 .el-gm{display:block;margin:12px 0 4px;padding:12px 16px;border-radius:16px;border:1px solid var(--line);background:var(--panel);color:var(--accent);font:600 15px var(--f-body);text-decoration:none}.el-gm .gmi{width:15px;height:15px;vertical-align:-2px;margin-right:6px;fill:#e0302b;stroke:#fff;stroke-width:1.2}.el-gm .gmi circle{fill:#fff;stroke:none}
 #fu-hits button{display:block;width:100%;text-align:left;margin:4px 0;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:500 14.5px var(--f-body)}
 #fu-form{margin-bottom:8px}
+/* Löschen-Kreuz in Eingabefeldern */
+.clr-w{position:relative;display:block;width:100%;min-width:0}.clr-w>input{width:100%;padding-right:42px!important}
+.clr-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;padding:0;border:0;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.clr-x svg{width:22px;height:22px;fill:color-mix(in srgb,var(--muted) 30%,transparent);stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.clr-w>input:placeholder-shown+.clr-x{display:none}
+.clr-all{width:100%;margin:14px 0 6px}
+.bs-yel .clr-w{width:auto}
 </style>
 </head>
 <body>
@@ -1025,6 +1032,7 @@ a.nav-go.el-ad,.el .el-ad{grid-column:1/-1;display:block;margin-top:4px;color:va
     <label class="bs-l" for="bs-wid">Vorhandene Breite → zulässige Personen</label>
     <div class="bs-row"><input id="bs-wid" type="text" inputmode="decimal" placeholder="z. B. 9,6" autocomplete="off"><span class="bs-u">m</span></div>
     <div class="bs-res" id="bs-wp"></div>
+    <button type="button" class="btn sm clr-all" id="bs-clear">Alle Eingaben löschen</button>
     <details class="bs-tab"><summary>Tabelle Rettungswegbreiten (1,20 m bis 18 m)</summary><div id="bs-tab"></div></details>
     <div class="muted small">SBauVO NRW: im Freien 1,20 m je 600 Personen, in Gebäuden 1,20 m je 200 Personen; Stehflächen mit mind. 2 Pers./m². Rechenhilfe – maßgeblich sind Sicherheitskonzept und Genehmigung.</div>
   </div>
@@ -1505,6 +1513,6 @@ a.nav-go.el-ad,.el .el-ad{grid-column:1/-1;display:block;margin-top:4px;color:va
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=270"></script>
+<script src="app.js?v=271"></script>
 </body>
 </html>
