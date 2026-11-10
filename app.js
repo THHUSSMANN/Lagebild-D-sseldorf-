@@ -626,7 +626,7 @@ async function loadAir(){
 function renderAir(){
   if(!AQ||!AQ[C.wxIdx]){if(status.aq&&!status.aq.ok)$("air").innerHTML=stateBox("Luftdaten nicht verfügbar – "+status.aq.msg);return;}
   const a=AQ[C.wxIdx],c=a.current,q=eaqi(c.european_aqi);
-  setKpi("k-aq",fmt(c.european_aqi)+"<small> EAQI</small>",q.t+" · "+C.short,q.c);
+  setKpi("k-aq",fmt(c.european_aqi)+"<small> EAQI</small>",q.t+" · "+C.short,q.i<=2?"":q.c);/* Kachel erst ab „schlecht“ (EAQI > 60) einfärben */
   const scale='<div class="aq-scale" aria-hidden="true">'+AQ_COL.map((col,i)=>'<span style="background:'+col+'" class="'+(i===q.i?"on":"")+'"></span>').join("")+'</div>';
   let mx=null;if(a.hourly){const now=Date.now()/1000;a.hourly.time.forEach((t,i)=>{if(t>=now&&t<now+86400){const v=a.hourly.european_aqi[i];if(v!=null&&(mx==null||v>mx))mx=v;}});}
   $("air").innerHTML='<div class="row"><div><div class="big">'+fmt(c.european_aqi)+'</div><div class="muted">EAQI · '+esc(C.short)+'</div></div><div style="flex:1;min-width:160px"><span class="pill p-'+q.c+'"><i></i>'+q.t+'</span>'+scale+
