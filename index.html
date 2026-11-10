@@ -915,6 +915,16 @@ a.nav-go{display:block;margin-top:4px;font:600 13.5px var(--f-body);color:var(--
 #rs-mode>*{min-width:0;padding-left:6px!important;padding-right:6px!important;justify-content:center;gap:6px;font-size:15px!important}
 @media (max-width:420px){#rs-mode>*{flex-direction:column;gap:2px;font-size:13px!important;min-height:56px}#rs-mode .mi{width:20px;height:20px;margin:0!important}}
 .fu-closed td{opacity:.55}.fu-zu{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font:600 11.5px var(--f-body);background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted);vertical-align:2px}
+/* Lesbarkeit: Nebentexte mindestens 14–15 px (iPhone und überall) */
+.small,small,.muted.small,.hint,.field .hint,.card-head .src,.legend span,.legend .tt-leg,.tnote,.flt label,.flt .muted,.updmini,.updmini b,.updmini span,
+.li .d,.li .r,.jam .d,.fl-t small,.fa-calc,.fl-set label,.field label,.fl-ov .muted,.fl-opt .muted,.sec-title .muted,h3.sub2 .muted,.sublbl .muted,
+.efa-gh small,.efa-go small,.lc-go,.vl-facts,.vl-facts *,#rs-alts .muted,.state,.muted{font-size:max(14.5px,1em)!important}
+.small,small,.muted.small,.hint,.card-head .src,.li .d,.jam .d,.fa-calc,.fl-t small,.legend span,.tnote,.flt label,.flt .muted,.state{font-size:14.5px!important;line-height:1.4}
+header .fav small{font-size:13.5px!important}.updmini,.updmini *{font-size:14px!important}footer.ft-min{font-size:14px!important}
+.seg button,#rs-mode>*,.rs-dir button small,#rs-dir button small,#rs-tdir button small{font-size:14.5px!important}
+a.hbtn .hn-v{font-size:14px!important}.fl-th .fa-nr,.fa-nr{font-size:14px!important}
+.kpi .note,.tile .note{font-size:14.5px!important}
+@media (max-width:420px){#rs-mode>*{font-size:13.5px!important}}
 </style>
 </head>
 <body>
@@ -1470,6 +1480,6 @@ a.nav-go{display:block;margin-top:4px;font:600 13.5px var(--f-body);color:var(--
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=263"></script>
+<script src="app.js?v=264"></script>
 </body>
 </html>
