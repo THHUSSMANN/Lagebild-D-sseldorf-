@@ -1563,9 +1563,18 @@ async function autoAway(){try{if(navigator.permissions){const st=await navigator
   const p=await nearPos();if(!p||!isFinite(C.lat))return null;return distKm(p.lat,p.lon,C.lat,C.lon)>2?p:null;}
 async function fuelAuto(){if(AUTOMAN.fu)return;const p=await autoAway();const was=FUELPOS;FUELPOS=p;if(!!was!==!!p||(p&&was&&distKm(p.lat,p.lon,was.lat,was.lon)>0.3))loadFuel();}
 document.addEventListener("click",e=>{const a=e.target.closest("[data-fuelpos]");if(!a)return;e.preventDefault();
-  if(a.dataset.fuelpos==="ort"){AUTOMAN.fu=true;FUELPOS=null;loadFuel();}else{AUTOMAN.fu=false;AUTOPOS=null;fuelAuto();}});
+  if(a.dataset.fuelpos==="ort"){AUTOMAN.fu=true;FUELPOS=null;$("fu-q").value="";loadFuel();}
+  else{AUTOMAN.fu=true;AUTOPOS=null;const box=$("fuel");box.innerHTML='<div class="state">Standort wird ermittelt …</div>';nearPos().then(p=>{if(!p){box.innerHTML=stateBox("Standort nicht freigegeben – unter Einstellungen → Apps → Safari → Standort „Erlauben“ wählen.");return;}FUELPOS={...p};$("fu-q").value="";loadFuel();});}});
+document.addEventListener("submit",async e=>{if(e.target.id!=="fu-form")return;e.preventDefault();const q=$("fu-q").value.trim();if(!q)return;const hb=$("fu-hits");hb.innerHTML='<div class="muted small">sucht …</div>';
+  try{const r=await getJSON("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=de&accept-language=de&q="+encodeURIComponent(q));
+    const set=(la,lo,n)=>{hb.innerHTML="";AUTOMAN.fu=true;FUELPOS={lat:la,lon:lo,name:n};loadFuel();};
+    if(!r.length){hb.innerHTML='<div class="muted small">Nichts gefunden – anders schreiben, z. B. „Holstenstraße 1, Kiel“.</div>';return;}
+    if(r.length===1){set(+r[0].lat,+r[0].lon,r[0].name||q);return;}
+    hb.innerHTML=r.map(x=>'<button type="button" data-fuhit="'+x.lat+','+x.lon+'" data-n="'+esc(x.name||q)+'">'+esc(x.display_name)+'</button>').join("");
+    hb.querySelectorAll("[data-fuhit]").forEach(b=>b.addEventListener("click",()=>{const [la,lo]=b.dataset.fuhit.split(",").map(Number);set(la,lo,b.dataset.n);}));
+  }catch(err){hb.innerHTML='<div class="muted small">Ortssuche nicht erreichbar – '+esc(errText(err))+'.</div>';}});
 async function loadFuel(){
-  const box=$("fuel");const FP=FUELPOS;{const h=$("fuel-h");if(h)h.textContent=FP?"Tankstellen in deiner Nähe":"Tankstellen in "+(C.isDus?"Düsseldorf":C.town);}
+  const box=$("fuel");const FP=FUELPOS;{const h=$("fuel-h");if(h)h.textContent=FP?(FP.name?"Tankstellen · "+FP.name:"Tankstellen in deiner Nähe"):"Tankstellen in "+(C.isDus?"Düsseldorf":C.town);}
   if(!TK){box.innerHTML=stateBox("Für Spritpreise einmal einen kostenlosen Tankerkönig-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');setStatus("fuel",false,"Schlüssel fehlt");return;}
   try{const d=await getJSON("https://creativecommons.tankerkoenig.de/json/list.php?lat="+(FP?FP.lat:C.lat)+"&lng="+(FP?FP.lon:C.lon)+"&rad="+(FP?5:C.isDus?4:8)+"&sort=dist&type=all&apikey="+encodeURIComponent(TK));
     if(!d.ok)throw new Error(d.message||"Abfrage abgelehnt");
@@ -1577,7 +1586,7 @@ async function loadFuel(){
     let r='<table><thead><tr><th>Tankstelle</th><th class="num">km</th><th class="num">Super E5</th><th class="num">E10</th><th class="num">Diesel</th></tr></thead><tbody>';
     st.forEach(s=>{const ad=((s.street||"")+" "+(s.houseNumber||"")).trim()+", "+(s.place||"");const nv=isFinite(s.lat)&&isFinite(s.lng)?(IOS?"comgooglemaps://?daddr="+s.lat+","+s.lng+"&directionsmode=driving":"https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination="+s.lat+","+s.lng):"";
       r+='<tr'+(s.isOpen?'':' class="fu-closed"')+'><td class="wrap-txt">'+(nv?'<a class="fu-nav" href="'+nv+'"'+(IOS?'':' target="_blank" rel="noopener"')+' title="Mit Google Maps hinfahren">':'')+'<b>'+esc(s.brand||s.name)+'</b>'+(s.isOpen?'':' <span class="fu-zu">geschlossen</span>')+'<br><span class="small">'+GMICON+esc(ad)+(nv?' ↗':'')+'</span>'+(nv?'</a>':'')+'</td><td class="num">'+fmt(s.dist,1)+'</td><td class="num">'+p(s.e5,bE5,s.isOpen)+'</td><td class="num">'+p(s.e10,bE10,s.isOpen)+'</td><td class="num">'+p(s.diesel,bD,s.isOpen)+'</td></tr>';});
-    box.innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">'+(FP?'Um deinen aktuellen Standort (du bist mehr als 2 km von '+esc(C.short)+' entfernt) · <a href="#" data-fuelpos="ort">stattdessen um '+esc(C.short)+' suchen</a>':'Tankstellen nahe '+esc(C.short)+(AUTOMAN.fu?' · <a href="#" data-fuelpos="gps">um meinen Standort suchen</a>':''))+'<br>Sortiert nach Entfernung · günstigster Preis der geöffneten grün · geschlossene ausgegraut.</div>';
+    box.innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">'+(FP?(FP.name?'Um '+esc(FP.name):'Um deinen aktuellen Standort')+' · <a href="#" data-fuelpos="ort">zurück zu '+esc(C.short)+'</a>':'Tankstellen nahe '+esc(C.short)+(AUTOMAN.fu?' · <a href="#" data-fuelpos="gps">um meinen Standort suchen</a>':''))+'<br>Sortiert nach Entfernung · günstigster Preis der geöffneten grün · geschlossene ausgegraut.</div>';
     setStatus("fuel",true);
   }catch(e){setStatus("fuel",false,errText(e));box.innerHTML=stateBox("Spritpreise nicht verfügbar – "+errText(e)+".");}
 }
@@ -2025,7 +2034,8 @@ function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
   if(!ELP||(ELP.auto&&ELP.k!==ck)){const f=elFavs().find(x=>x.k===ck);ELP={...(f||{k:ck,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon}),auto:1};}
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
-  const la=ELP.lat,lo=ELP.lon;box.innerHTML='<div class="state">wird geladen …</div>';
+  const la=ELP.lat,lo=ELP.lon;const gm='<a class="el-gm" href="https://www.google.com/maps/search/Ladestation/@'+la+','+lo+',14z" target="_blank" rel="noopener">'+GMICON+'Ladesäulen um '+esc(ELP.name)+' in Google Maps zeigen ↗</a>';EGM=gm;
+  box.innerHTML='<div class="state">Ladesäulen werden bei OpenStreetMap abgefragt – das kann bis zu 25 Sekunden dauern …</div>'+gm;
   const q='[out:json][timeout:25];nwr["amenity"="charging_station"](around:'+(ELR*1000)+','+la+','+lo+');out center tags;';
   try{const d=(await osmLocal("c",la,lo,ELR))||await overpass(q);const BN=d.b||[];
     const kw=t=>{let m=0;for(const [k,v] of Object.entries(t))if(/(^|:)output$/.test(k)){const x=String(v).match(/([\d.,]+)\s*(kW|W)?/i);if(x){let n=parseFloat(x[1].replace(",","."));if(/^W$/i.test(x[2]||"")||n>1000)n/=1000;if(n>m)m=n;}}return m||null;};
@@ -2038,7 +2048,8 @@ async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof R
       const bn=BN.map(b=>({name:b.name||b.op||"Ladesäule",op:b.op,addr:b.addr,cap:b.n,so:pl(b.plugs||[]),kw:b.kw,fee:null,oh:b.oh,lat:b.lat,lon:b.lon,km:distKm(la,lo,b.lat,b.lon),bn:1}));
       ELD=bn.concat(ELD.filter(x=>!bn.some(b=>distKm(b.lat,b.lon,x.lat,x.lon)<0.04))).sort((a,b)=>a.km-b.km);}
     renderEL();
-  }catch(e){ELD=null;$("el-map").hidden=true;box.innerHTML=stateBox("E-Ladesäulen nicht verfügbar – "+errText(e)+".",'<a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a>');}}
+  }catch(e){ELD=null;$("el-map").hidden=true;box.innerHTML=stateBox("OpenStreetMap antwortet gerade nicht – "+errText(e)+". Später erneut versuchen oder Google Maps nutzen.")+EGM;}}
+let EGM="";
 function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?ELD.filter(x=>x.kw>=50):ELD;
   const nav=x=>IOS?"comgooglemaps://?daddr="+x.lat+","+x.lon+"&directionsmode=driving":"https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination="+x.lat+","+x.lon;
   const info=x=>esc([x.so.join(", "),x.cap?x.cap+" Ladepunkte":"",x.fee==="no"?"kostenlos":"",x.oh==="24/7"?"rund um die Uhr":x.oh||""].filter(Boolean).join(" · "));
@@ -2053,7 +2064,7 @@ function renderEL(){const box=$("el-list");if(!ELD)return;const l=ELF==="fast"?E
       '<span class="d">'+(x.kw?'<span class="kw'+(x.kw>=50?" fast":"")+'">'+fmt(x.kw,0)+' kW</span>':'')+info(x)+
       (x.op&&x.op!==x.name?'<br>'+esc(x.op):"")+'</span><span class="el-ad">'+GMICON+esc(x.addr||"Route zur Ladesäule")+' ↗</span></a>').join("")
      :'<div class="state">Keine Ladestationen gefunden – Umkreis vergrößern.</div>')+
-    '<div class="muted small" style="margin-top:8px">Daten: Ladesäulenregister der Bundesnetzagentur (rund um deine Orte) und OpenStreetMap-Mitwirkende, Ortssuche: Nominatim. Belegung live gibt es dort nicht. Amtliche Liste für Deutschland: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
+    EGM+'<div class="muted small" style="margin-top:8px">Daten: Ladesäulenregister der Bundesnetzagentur (rund um deine Orte) und OpenStreetMap-Mitwirkende, Ortssuche: Nominatim. Belegung live gibt es dort nicht. Amtliche Liste für Deutschland: <a href="https://www.bundesnetzagentur.de/ladesaeulenkarte" target="_blank" rel="noopener">Ladesäulenkarte der Bundesnetzagentur ↗</a></div>';}
 function elGPS(){const msg=$("el-gpsmsg");let done=false;
   const show=h=>{msg.innerHTML=h;msg.scrollIntoView({behavior:"smooth",block:"nearest"});};
   if(!window.isSecureContext||!navigator.geolocation){show(stateBox("Standort wird hier nicht unterstützt."));return;}
