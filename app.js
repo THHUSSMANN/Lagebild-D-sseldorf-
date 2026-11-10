@@ -1559,15 +1559,15 @@ async function loadFuel(){
   if(!TK){box.innerHTML=stateBox("Für Spritpreise einmal einen kostenlosen Tankerkönig-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');setStatus("fuel",false,"Schlüssel fehlt");return;}
   try{const d=await getJSON("https://creativecommons.tankerkoenig.de/json/list.php?lat="+C.lat+"&lng="+C.lon+"&rad="+(C.isDus?4:8)+"&sort=dist&type=all&apikey="+encodeURIComponent(TK));
     if(!d.ok)throw new Error(d.message||"Abfrage abgelehnt");
-    const st=(d.stations||[]).filter(s=>s.isOpen).slice(0,10);
-    if(!st.length){box.innerHTML=stateBox("Keine geöffnete Tankstelle in der Nähe.");setStatus("fuel",true);return;}
-    const best=k=>Math.min(...st.map(s=>s[k]).filter(v=>typeof v==="number"));
+    const st=(d.stations||[]).slice(0,15);/* auch geschlossene zeigen (ausgegraut), z. B. früh morgens */
+    if(!st.length){box.innerHTML=stateBox("Keine Tankstelle in der Nähe gefunden.");setStatus("fuel",true);return;}
+    const best=k=>Math.min(...st.filter(s=>s.isOpen).map(s=>s[k]).filter(v=>typeof v==="number"));
     const bE5=best("e5"),bE10=best("e10"),bD=best("diesel");
     const p=(v,b)=>typeof v!=="number"?"–":'<span style="'+(v===b?"color:var(--ok);font-weight:700":"")+'">'+v.toFixed(2).replace(".",",")+'<sup>9</sup></span>';
     let r='<table><thead><tr><th>Tankstelle</th><th class="num">km</th><th class="num">Super E5</th><th class="num">E10</th><th class="num">Diesel</th></tr></thead><tbody>';
     st.forEach(s=>{const ad=((s.street||"")+" "+(s.houseNumber||"")).trim()+", "+(s.place||"");const nv=isFinite(s.lat)&&isFinite(s.lng)?(IOS?"comgooglemaps://?daddr="+s.lat+","+s.lng+"&directionsmode=driving":"https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination="+s.lat+","+s.lng):"";
-      r+='<tr><td class="wrap-txt">'+(nv?'<a class="fu-nav" href="'+nv+'"'+(IOS?'':' target="_blank" rel="noopener"')+' title="Mit Google Maps hinfahren">':'')+'<b>'+esc(s.brand||s.name)+'</b><br><span class="small">'+GMICON+esc(ad)+(nv?' ↗':'')+'</span>'+(nv?'</a>':'')+'</td><td class="num">'+fmt(s.dist,1)+'</td><td class="num">'+p(s.e5,bE5)+'</td><td class="num">'+p(s.e10,bE10)+'</td><td class="num">'+p(s.diesel,bD)+'</td></tr>';});
-    box.innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">Geöffnete Tankstellen nahe '+esc(C.short)+', günstigster Preis grün.</div>';
+      r+='<tr'+(s.isOpen?'':' class="fu-closed"')+'><td class="wrap-txt">'+(nv?'<a class="fu-nav" href="'+nv+'"'+(IOS?'':' target="_blank" rel="noopener"')+' title="Mit Google Maps hinfahren">':'')+'<b>'+esc(s.brand||s.name)+'</b>'+(s.isOpen?'':' <span class="fu-zu">geschlossen</span>')+'<br><span class="small">'+GMICON+esc(ad)+(nv?' ↗':'')+'</span>'+(nv?'</a>':'')+'</td><td class="num">'+fmt(s.dist,1)+'</td><td class="num">'+p(s.e5,bE5)+'</td><td class="num">'+p(s.e10,bE10)+'</td><td class="num">'+p(s.diesel,bD)+'</td></tr>';});
+    box.innerHTML='<div class="tbl-wrap">'+r+'</tbody></table></div><div class="muted small">Tankstellen nahe '+esc(C.short)+' nach Entfernung · günstigster Preis der geöffneten grün · geschlossene ausgegraut.</div>';
     setStatus("fuel",true);
   }catch(e){setStatus("fuel",false,errText(e));box.innerHTML=stateBox("Spritpreise nicht verfügbar – "+errText(e)+".");}
 }
