@@ -925,6 +925,17 @@ header .fav small{font-size:13.5px!important}.updmini,.updmini *{font-size:14px!
 a.hbtn .hn-v{font-size:14px!important}.fl-th .fa-nr,.fa-nr{font-size:14px!important}
 .kpi .note,.tile .note{font-size:14.5px!important}
 @media (max-width:420px){#rs-mode>*{font-size:13.5px!important}}
+/* Verkehrslage: eine gemeinsame Liste nach Entfernung, Quellen-Listen ausgeblendet */
+#vl-body :is(#vt-now,#sd-list,#tt,#stau-list,#traffic,#roadworks){display:none!important}
+#vl-body #mapcity-dus>h3.vl-h,#vl-body #mapcity-datteln,#vl-body #vl-tt,#vl-body #vl-ab{display:none!important}
+#vl-body[data-k="event"] #vl-all,#vl-body[data-k="next"] #vl-all{display:none!important}
+#vl-body[data-k="event"] #mapcity-dus,#vl-body[data-k="next"] #mapcity-dus{display:block!important}
+.vm-gh{display:flex;align-items:center;justify-content:space-between;margin:14px 2px 6px;font:700 15px var(--f-body);color:var(--fg)}.vm-gh .n{font:600 14px var(--f-body);color:var(--muted)}
+.vm-far-btn{width:100%;margin:12px 0 4px;min-height:44px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:600 15px var(--f-body)}
+.vm-far:not(.open) .vm-items{display:none}.vm-grp.vm-none{display:none}.vm-empty{margin:12px 2px 4px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--fg);font:600 15px var(--f-body)}
+.vmeta{grid-column:1/-1;display:flex;gap:8px;align-items:center;margin-top:4px;font:600 13.5px var(--f-body)!important;color:var(--muted)}
+.vmeta .vd{color:var(--accent)}.vmeta .vq{padding:1px 8px;border-radius:999px;border:1px solid var(--line);font-weight:600}
+.vm .d,.vm .note{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 </style>
 </head>
 <body>
@@ -1176,6 +1187,7 @@ a.hbtn .hn-v{font-size:14px!important}.fl-th .fa-nr,.fa-nr{font-size:14px!import
   </div>
   <div class="vlfacts" id="vl-facts"></div>
   <div class="muted small" style="margin:-4px 2px 8px">Knopf antippen zeigt die Liste darunter und hebt die Meldungen in der Karte hervor. Eintrag antippen zeigt seine Stelle in der Karte.</div>
+  <div class="vl-sec" id="vl-all"><h3 class="sub2 vl-h" id="vl-all-h">Meldungen</h3><div id="vl-merged"><div class="state">wird geladen …</div></div></div>
   <div id="mapcity-dus" class="mapcity vl-sec" hidden>
   <h3 class="sub2 vl-h">Stadt Düsseldorf <span class="muted small">· Verkehrszentrale (live)</span></h3>
   <div class="stau-sum" id="vt-sum"></div>
@@ -1480,6 +1492,6 @@ a.hbtn .hn-v{font-size:14px!important}.fl-th .fa-nr,.fa-nr{font-size:14px!import
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=265"></script>
+<script src="app.js?v=266"></script>
 </body>
 </html>

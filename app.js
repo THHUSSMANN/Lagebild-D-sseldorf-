@@ -2393,7 +2393,7 @@ function dedupVL(){const box=$("stau-list");if(!box)return;const T=(typeof TT!==
 /* Verkehrslage: Kategorie-Knöpfe statt langer Liste */
 const VLN={stau:"Staus",unfall:"Unfälle oder Behinderungen",sperr:"Sperrungen",bau:"Baustellen",event:"Veranstaltungen",next:"neuen Meldungen in den nächsten 7 Tagen"};
 let VLK=load("vl_k");if(!VLK||VLK==="karte"||VLK==="meld")VLK="stau";
-const vlVis=el=>!el.closest("[hidden]");
+const vlVis=el=>!el.closest("[hidden]")&&!!el.closest("#vl-merged");
 function vlFacts(){const f=$("vl-facts");if(!f)return;if(typeof TT==="undefined"||!TT){f.innerHTML="";return;}
   const j=TT.jams||[];const len=j.reduce((t,x)=>t+(x.len||0),0),mx=j.length?Math.max(0,...j.map(x=>x.delay||0)):0;
   f.innerHTML=j.length?'<span>Staulänge gesamt <b>'+fmt(len,1)+' km</b></span><span>größte Verzögerung <b>+'+mx+' min</b></span>':'<span>Keine Staus im Umkreis</span>';}
@@ -2409,7 +2409,7 @@ function setVL(k){VLK=VLN[k]?k:"stau";store("vl_k",VLK);const body=$("vl-body");
   body.dataset.k=VLK;body.classList.toggle("flt",VLK!=="karte"&&VLK!=="next"&&VLK!=="event");
   {const nb=document.querySelector('#vt-seg [data-vts="now"]');if(nb&&!nb.classList.contains("on"))nb.click();}
   document.querySelectorAll("#vl-cat [data-vl]").forEach(b=>b.classList.toggle("on",b.dataset.vl===VLK));
-  vlMapFilter();vlCount();}
+  vlMapFilter();vlCount();try{vlMerge();}catch(e){}}
 // Karte: Meldungen der gewählten Kategorie kräftig, die übrigen blass
 function vlMapFilter(){if(typeof MAP==="undefined"||!MAP)return;const k=VLK;
   const apply=g=>g&&g.eachLayer(l=>{const kt=l.options&&l.options.kat;if(!kt||!l.setStyle)return;const on=k==="next"||k==="event"||kt===k;
@@ -2420,6 +2420,41 @@ document.addEventListener("click",e=>{const b=e.target.closest("#vl-cat [data-vl
   const c=$("vl-cat");if(c&&c.getBoundingClientRect().top<0)c.scrollIntoView({block:"start"});});
 /* Eintrag in einer Liste antippen: zur Karte wechseln und Stelle zeigen */
 let VLRING=null,VLBACK=null;
+
+// ================= Verkehrslage: alle Quellen in einer Liste, nach Entfernung, ohne Doppelungen =================
+// Zuverlässigste Quelle gewinnt: Staus → TomTom (gemessen) vor Autobahn GmbH; sonst Verkehrszentrale (amtlich) vor Autobahn GmbH vor TomTom
+const VMSRC=[["vt-now","Stadt"],["traffic","Autobahn"],["roadworks","Autobahn"],["stau-list","Autobahn"],["tt","TomTom"],["sd-list","TomTom"]];
+const VMPRIO={stau:["TomTom","Autobahn","Stadt"],other:["Stadt","Autobahn","TomTom"]};
+let VMT=0;
+function vlMerge(){const box=$("vl-merged");if(!box)return;
+  const ref=isFinite(C.lat)?[C.lat,C.lon]:null;
+  const all=[];VMSRC.forEach(([id,q])=>{const c=$(id);if(!c)return;c.querySelectorAll("[data-kat][data-lat]").forEach(el=>{if(el.hidden)return;
+    const la=+el.dataset.lat,lo=+el.dataset.lon;if(!isFinite(la)||!isFinite(lo))return;const k=(el.dataset.kat||"").split(/\s+/)[0];
+    all.push({el,q,k,la,lo,km:ref?distKm(ref[0],ref[1],la,lo):0});});});
+  // Doppelungen: gleiche Art, < 300 m auseinander → nur die zuverlässigere Quelle
+  const rank=x=>(VMPRIO[x.k==="stau"?"stau":"other"]).indexOf(x.q);
+  all.sort((a,b)=>rank(a)-rank(b));const keep=[];
+  all.forEach(x=>{if(keep.some(y=>y.k===x.k&&distKm(y.la,y.lo,x.la,x.lo)<0.3))return;keep.push(x);});
+  keep.sort((a,b)=>a.km-b.km);
+  const vk=typeof VLK!=="undefined"?VLK:"stau";const cnt=a=>a.filter(x=>(" "+x.el.dataset.kat+" ").includes(" "+vk+" ")).length;
+  const row=x=>{const c=x.el.cloneNode(true);c.removeAttribute("id");c.querySelectorAll("[id]").forEach(n=>n.removeAttribute("id"));c.classList.add("vm");/* eigene Entfernungsangaben der Quelle entfernen (widersprechen der neuen) */
+    const tw=document.createTreeWalker(c,NodeFilter.SHOW_TEXT);let tn;while(tn=tw.nextNode()){tn.textContent=tn.textContent.replace(/\s*·?\s*[\d.,]+\s*km\s+(vom Zentrum|von meiner Adresse|von (meinem|deinem|Ihrem) Standort|von hier|entfernt|von [A-ZÄÖÜ][\wäöüß()\-]*(?:\s[A-ZÄÖÜ(][\wäöüß()\-]*)?(?=\s·|$))/gi,"");}
+    const m=document.createElement("div");m.className="vmeta";m.innerHTML='<span class="vd">📍 '+fmt(x.km,1).replace(".",",")+' km</span><span class="vq">'+x.q+'</span>';c.append(m);return c;};
+  const near=keep.filter(x=>x.km<=3),mid=keep.filter(x=>x.km>3&&x.km<=10),far=keep.filter(x=>x.km>10);
+  const wasOpen=!!box.querySelector(".vm-far.open");
+  box.innerHTML="";
+  const grp=(t,arr,cls)=>{if(!arr.length)return;const g=document.createElement("div");g.className="vm-grp "+(cls||"");
+    if(cls==="vm-far"){const b=document.createElement("button");b.type="button";b.className="vm-far-btn";b.textContent=t+" ("+cnt(arr)+")";g.append(b);if(wasOpen)g.classList.add("open");}
+    else{const hh=document.createElement("div");hh.className="vm-gh";hh.innerHTML=t+' <span class="n">'+cnt(arr)+'</span>';g.append(hh);}
+    const it=document.createElement("div");it.className="list vm-items";arr.forEach(x=>it.append(row(x)));g.append(it);box.append(g);};
+  grp("In deiner Nähe · bis 3 km",near);grp("Im Umkreis · 3 bis 10 km",mid);grp("Weiter entfernt · über 10 km",far,"vm-far");
+  if(!keep.length)box.innerHTML='<div class="state">wird geladen …</div>';
+  else if(vk!=="karte"&&VLN[vk]&&!cnt(near)&&!cnt(mid)){const st=document.createElement("div");st.className="vm-empty";st.textContent="Bis 10 km keine "+VLN[vk]+" gemeldet.";box.prepend(st);}
+  const hd=$("vl-all-h");if(hd)hd.innerHTML='Meldungen rund um '+esc(C.short||C.name||"")+' <span class="muted small">· nach Entfernung · jede Meldung nur einmal</span>';
+  box.querySelectorAll(".vm-grp").forEach(g=>{g.classList.toggle("vm-none",!cnt([...g.querySelectorAll(".vm")].map(el=>({el}))));});
+  try{vlCount();}catch(e){}}
+document.addEventListener("click",e=>{const b=e.target.closest(".vm-far-btn");if(b){b.parentNode.classList.toggle("open");}});
+VMSRC.forEach(([id])=>{const el=$(id);if(el)new MutationObserver(()=>{clearTimeout(VMT);VMT=setTimeout(vlMerge,150);}).observe(el,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});});
 document.addEventListener("click",e=>{const it=e.target.closest("#vl-body [data-kat][data-lat]");if(!it||e.target.closest("a,summary,details"))return;
   const la=+it.dataset.lat,lo=+it.dataset.lon;if(!isFinite(la)||!isFinite(lo))return;e.stopImmediatePropagation();e.preventDefault();
   if(typeof MAP==="undefined"||!MAP)return;VLBACK=it;
