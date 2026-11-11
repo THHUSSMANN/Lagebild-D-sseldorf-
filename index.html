@@ -992,18 +992,21 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
 .qapp:active{transform:scale(.965)}
 .qapp .mi{width:20px;height:20px}
 /* Radio oben: Sonos zuerst, dann Sender, dann Apps */
-#radio{display:block;margin:10px 0 0}
-#radio .rlist{display:grid!important;grid-template-columns:1fr 1fr;gap:10px}
+#radio{display:block!important;width:100%;max-width:none;margin:12px 0 0}
+#radio .rlist{width:100%}
+#radio .rbtn::after{content:"▶";margin-left:auto;font-size:12px;opacity:.6}
+#radio .rbtn.on::after{content:"❚❚";opacity:1}
+#radio .rsonos span{text-align:left}
+#radio .rlist{display:grid!important;grid-template-columns:1fr;gap:10px}
 #radio .rlist[hidden]{display:none!important}
-#radio .rbtn,#radio .rapp{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:6px 12px;border-radius:16px!important;color:#fff;text-decoration:none;font:600 15px/1.2 var(--f-body);white-space:normal;text-align:center;
+#radio .rbtn,#radio .rapp{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-height:46px;padding:6px 12px;border-radius:16px!important;color:#fff;text-decoration:none;font:600 15px/1.2 var(--f-body);white-space:normal;text-align:center;
   background:rgba(255,255,255,.08) linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 55%);border:1px solid rgba(255,255,255,.18);box-shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25)}
 #radio .rbtn small,#radio .rapp small{display:block;font:500 12.5px var(--f-body);opacity:.75}
 #radio .rsonos{grid-column:1/-1;min-height:54px;background-color:var(--accent);border-color:transparent}
 #radio .rsonos .mi{width:22px;height:22px}
 #radio .rbtn.on{background:#e8f6fb;color:#06222e}
-#radio .rbtn{flex-direction:column;gap:0}
+#radio .rbtn{flex-direction:row;gap:8px;padding-left:18px}#radio .rapp{padding-left:18px}
 #radio .rbtn::before{display:none}
-#radio .rbtn.on::after{content:" ❚❚";font-size:11px}
 #headnav .hn-radio{cursor:pointer;text-align:left;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center}
 #headnav .hn-radio .hn-l,#headnav .hn-radio .hn-v{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #headnav .hn-radio.on{outline:2px solid var(--accent)}
@@ -1024,17 +1027,6 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
         <label class="pick"><span>Bereich</span><select id="bezirk" aria-label="Bereich wählen"></select></label>
       </div>
     <nav class="ctrl" id="headnav" aria-label="Themen"></nav>
-    <div class="radio" id="radio" aria-label="Radio">
-        <div class="rlist" id="radio-list" hidden>
-        <a class="rapp rsonos" id="qa-sonos" href="shortcuts://run-shortcut?name=WDR%202%20Sonos"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="3"/><circle cx="12" cy="14" r="3.2"/><circle cx="12" cy="7.5" r="1"/></svg><span>Sonos · WDR 2 Rhein-Ruhr<small>alle Räume</small></span></a>
-        <button type="button" class="rbtn" data-st="wdr2">WDR 2 <small>Rhein Ruhr</small></button>
-        <button type="button" class="rbtn" data-st="wdr4">WDR 4</button>
-        <button type="button" class="rbtn" data-st="antenne">Antenne Düsseldorf</button>
-        <a class="rapp" href="https://music.apple.com/de/" target="_blank" rel="noopener">Apple Music ↗</a>
-        <a class="rapp" href="https://tunein.com/" target="_blank" rel="noopener">TuneIn Radio ↗</a>
-        <a class="rapp" href="https://www.ardsounds.de/" target="_blank" rel="noopener">ARD Sounds ↗</a>
-        </div>
-    </div>
     <p class="harrange-hint" id="harrange-hint" hidden>Themen und Tools mit dem Finger verschieben (kurz gedrückt halten) – „Fertig“ unten speichert.</p>
     <button type="button" class="hbtn tools-toggle" id="tools-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-.6-.6-2.3z"/></svg>Tools <span class="rcaret">▾</span></button>
     <div class="tools" id="tools" hidden>
@@ -1046,13 +1038,24 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
       <button type="button" data-tool="calc" class="hbtn" id="calc-btn" aria-label="Taschenrechner"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>Rechner</button>
       <button type="button" data-tool="alarm" class="hbtn" id="alarm-btn" aria-label="Wecker"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>Wecker</button>
       <button type="button" data-tool="fin" class="hbtn" id="fin-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="7.5" width="16" height="12" rx="2.5"/><path d="M20 11.5h-4a2 2 0 0 0 0 4h4"/><circle cx="16.3" cy="13.5" r=".6"/></svg>Kontostand</button>
-      <button type="button" data-tool="radio" class="hbtn rtoggle" id="radio-toggle" aria-expanded="false" hidden><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
+      <button type="button" data-tool="radio" class="hbtn rtoggle" id="radio-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
       <button type="button" data-tool="bsicher" class="hbtn" id="bs-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h9v16H4z"/><path d="M14 12h7m-3-3 3 3-3 3"/><circle cx="8.5" cy="12" r="1"/></svg><span class="hb2">Kapazität &amp;<br>Rettungswege</span></button>
       <a data-tool="flaechen" class="hbtn" href="#flaechen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M4 12h16M12 5v14"/><circle cx="8" cy="8.5" r="1"/><circle cx="16" cy="15.5" r="1"/></svg>Event-Flächen</a>
       <a data-tool="settings" class="hbtn" href="#einstellungen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>Einstellungen</a>
       <button type="button" data-tool="arrange" class="hbtn" id="arrange-tool"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><path d="M16.75 13.5v6.5M13.5 16.75H20"/></svg>Anordnen</button>
     </div>
     </div>
+    </div>
+    <div class="radio" id="radio" aria-label="Radio">
+        <div class="rlist" id="radio-list" hidden>
+        <a class="rapp rsonos" id="qa-sonos" href="shortcuts://run-shortcut?name=WDR%202%20Sonos"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="3"/><circle cx="12" cy="14" r="3.2"/><circle cx="12" cy="7.5" r="1"/></svg><span>Sonos · WDR 2 Rhein-Ruhr<small>alle Räume</small></span></a>
+        <button type="button" class="rbtn" data-st="wdr2">WDR 2 Rhein Ruhr</button>
+        <button type="button" class="rbtn" data-st="wdr4">WDR 4</button>
+        <button type="button" class="rbtn" data-st="antenne">Antenne Düsseldorf</button>
+        <a class="rapp" href="https://music.apple.com/de/" target="_blank" rel="noopener">Apple Music ↗</a>
+        <a class="rapp" href="https://tunein.com/" target="_blank" rel="noopener">TuneIn Radio ↗</a>
+        <a class="rapp" href="https://www.ardsounds.de/" target="_blank" rel="noopener">ARD Sounds ↗</a>
+        </div>
     </div>
     <div class="alarmbar" id="alarmbar" role="alert" hidden></div>
     <audio id="radio-audio" preload="none"></audio>
@@ -1584,6 +1587,6 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=277"></script>
+<script src="app.js?v=278"></script>
 </body>
 </html>
