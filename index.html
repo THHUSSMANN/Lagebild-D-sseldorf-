@@ -1124,6 +1124,11 @@ body.t-open{overflow:hidden}
 .al-chk input[type=checkbox]:checked,#gm-web:checked{background:#34c759}
 .al-chk input[type=checkbox]:checked::after,#gm-web:checked::after{transform:translateX(20px)}
 .tm-li .tm-city{font:700 13px var(--f-body);letter-spacing:.02em;color:var(--accent);text-transform:uppercase}
+/* v306: Wetter-Reiter unter „Wetter jetzt“ */
+.wx-segwrap{grid-column:1/-1}
+#wx-seg{display:flex!important;gap:4px;padding:5px;margin:0;border-radius:26px;background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 6px 20px rgba(0,0,0,.18)}
+#wx-seg button{flex:1 1 0;min-height:42px!important;padding:0 6px!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:600 15px var(--f-body)!important;color:var(--fg);border-radius:999px!important}
+#wx-seg button.on{background:var(--accent)!important;color:var(--panel)!important;box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 40%,transparent)!important}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1299,22 +1304,23 @@ body.t-open{overflow:hidden}
     <div class="card-head"><h2>Wetter jetzt</h2><span class="src">Open-Meteo · DWD-Station</span></div>
     <div id="wx-now"><div class="state">Wetterdaten werden geladen …</div></div>
   </section>
-  <section class="card" id="radar-card">
+  <div class="wide wx-segwrap"><div class="seg" id="wx-seg"><button type="button" data-wx="24" class="on">24 Std.</button><button type="button" data-wx="7">7 Tage</button><button type="button" data-wx="radar">Radar</button><button type="button" data-wx="wear">Kleidung</button></div></div>
+  <section class="card wide" id="radar-card" data-wxp="radar" hidden>
     <div class="card-head"><h2>Regenradar</h2><span class="src">Deutscher Wetterdienst · letzte Stunde und Vorhersage bis 2 Stunden</span></div>
     <div class="map" id="radar-map" style="height:340px"></div>
     <div class="radar-bar"><button type="button" class="btn sm" id="radar-play" aria-label="Abspielen">▶</button><input type="range" id="radar-t" min="-12" max="24" step="1" value="0" aria-label="Zeitpunkt"><button type="button" class="btn sm" id="radar-now">Jetzt</button></div>
     <div class="radar-info"><span id="radar-lbl">wird geladen …</span><span class="radar-leg"><i style="background:#9fd3ff"></i>leicht <i style="background:#2f7fff"></i>mäßig <i style="background:#ffd400"></i>stark <i style="background:#ff2a2a"></i>Unwetter</span></div>
   </section>
-  <section class="card">
+  <section class="card wide" data-wxp="wear" hidden>
     <div class="card-head"><h2>Was ziehe ich an?</h2><span class="src" id="wear-src">heute tagsüber · aus der Vorhersage</span></div>
     <div id="wear"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card">
+  <section class="card wide" data-wxp="24">
     <div class="card-head"><h2>Nächste 24 Stunden</h2>
       <div class="legend"><span><i style="background:var(--accent)"></i>Temperatur</span><span><i style="background:var(--accent);opacity:.3"></i>Regenrisiko</span></div></div>
     <div id="wx-24"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card wide">
+  <section class="card wide" data-wxp="7" hidden>
     <div class="card-head"><h2>7-Tage-Vorhersage</h2></div>
     <div class="tbl-wrap" id="wx-7"><div class="state">wird geladen …</div></div>
   </section>
@@ -1753,6 +1759,6 @@ body.t-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=305"></script>
+<script src="app.js?v=306"></script>
 </body>
 </html>

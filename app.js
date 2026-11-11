@@ -481,6 +481,10 @@ async function loadTM(){const box=$("tm-list");if(!box)return;
 /* Karten und Listen erst laden, wenn die Ansicht sichtbar ist */
 function lazyViews(){setTimeout(()=>{try{radarInit();shipsInit();const f=$("flights");if(f&&f.offsetParent&&(!window.FL_AT||Date.now()-window.FL_AT>6e4)){window.FL_AT=Date.now();loadFlights();}}catch(e){}},250);}
 window.addEventListener("hashchange",lazyViews);document.addEventListener("click",lazyViews);lazyViews();
+/* Wetter: unter „Wetter jetzt“ nur ein Bereich sichtbar, Auswahl über Reiter (wird gemerkt) */
+function wxTab(k){document.querySelectorAll("#wx-seg [data-wx]").forEach(b=>b.classList.toggle("on",b.dataset.wx===k));document.querySelectorAll("[data-wxp]").forEach(p=>p.hidden=p.dataset.wxp!==k);store("wx_tab",k);if(k==="radar")setTimeout(()=>{try{radarInit();}catch(e){}},50);}
+document.addEventListener("click",e=>{const b=e.target.closest("#wx-seg [data-wx]");if(b)wxTab(b.dataset.wx);});
+{const k=load("wx_tab");if(k&&document.querySelector('#wx-seg [data-wx="'+k+'"]'))wxTab(k);}
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
