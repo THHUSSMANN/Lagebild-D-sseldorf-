@@ -353,6 +353,21 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
 // Radio
 let RADIO=null;
 const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/",orfstm:"https://steiermark.orf.at/radio/",orfnoe:"https://noe.orf.at/radio/",kronehit:"https://www.kronehit.at/",antstm:"https://www.antenne.at/"};
+/* Einstellungen auf andere Geräte übertragen (Text per AirDrop/Notizen, kein Server) */
+{const SKIP=["placecache","addrcache"],PFX="LAGEBILD1:";
+ const msg=(t,c)=>{const m=$("sync-msg");if(!m)return;m.textContent=t;m.className="hint "+(c||"");};
+ const pack=()=>{const d={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||!k.startsWith("lbd_")||SKIP.includes(k.slice(4)))continue;d[k]=localStorage.getItem(k);}
+   return PFX+btoa(unescape(encodeURIComponent(JSON.stringify({v:1,t:new Date().toISOString(),d}))));};
+ const unpack=t=>{t=(t||"").replace(/\s+/g,"");const i=t.indexOf(PFX);if(i<0)throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(t.slice(i+PFX.length)))));if(!o||!o.d)throw 0;return o;};
+ const out=$("sync-out");if(out)out.addEventListener("click",async()=>{const t=pack();$("sync-text").value=t;
+   try{if(navigator.share){await navigator.share({title:"Lagebild – Einstellungen",text:t});msg("Übertragen. Auf dem anderen Gerät „Einstellungen übernehmen“ tippen.","ok");return;}}catch(e){if(e&&e.name==="AbortError")return;}
+   try{await navigator.clipboard.writeText(t);msg("Kopiert. Auf dem anderen Gerät einfügen und „Übernehmen“ tippen.","ok");}catch(e){$("sync-text").select();msg("Text oben markiert – bitte kopieren.","");}});
+ const go=t=>{let o;try{o=unpack(t);}catch(e){msg("Das ist kein gültiger Übertragungs-Text.","err");return;}
+   Object.entries(o.d).forEach(([k,v])=>{if(k.startsWith("lbd_"))try{localStorage.setItem(k,v);}catch(e){}});
+   msg("Übernommen ("+Object.keys(o.d).length+" Einstellungen) – lädt neu …","ok");setTimeout(()=>location.reload(),800);};
+ const pin=$("sync-in-paste");if(pin)pin.addEventListener("click",async()=>{let t="";try{t=await navigator.clipboard.readText();}catch(e){}
+   if(t&&t.includes(PFX)){$("sync-text").value=t;go(t);}else{$("sync-text").focus();msg("Übertragungs-Text unten einfügen und „Übernehmen & neu laden“ tippen.","");}});
+ const inb=$("sync-in");if(inb)inb.addEventListener("click",()=>go($("sync-text").value));}
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}

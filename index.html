@@ -1008,6 +1008,11 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
 #radio .rbtn.on .r-play{width:40px;height:40px;background:#4db6d6;box-shadow:0 0 0 4px rgba(77,182,214,.25)}
 @keyframes rpulse{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){#radio .rbtn.on .r-tx small::after{animation:none}}
+#sync-field .sync-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#sync-field button{min-height:44px;border-radius:12px;font:600 15px var(--f-body)}
+#sync-field textarea{width:100%;box-sizing:border-box;margin-top:8px;font:13px ui-monospace,monospace;border-radius:10px;padding:8px}
+#sync-field .sync-go{width:100%;margin-top:6px}
+#sync-msg.ok{color:#5bd38a}#sync-msg.err{color:#ff6b6b}
 #radio .rsonos{grid-column:1/-1;min-height:54px;background-color:var(--accent);border-color:transparent}
 #radio .rsonos .mi{width:22px;height:22px}
 #radio .rbtn.on{background:#e8f6fb;color:#06222e}
@@ -1561,6 +1566,13 @@ body.r-open{overflow:hidden}
   <div class="card-head"><h2>Einstellungen</h2><span class="src">werden nur auf diesem Gerät gespeichert</span></div>
   <a class="srcgo" href="#quellen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 0 1 14 0M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1.2"/><path d="M12 13.5V20M8 20h8"/></svg><span><b>Schnittstellen</b> <small>Status aller Datenquellen</small></span><em id="tool-src-v"></em><i>›</i></a>
   <div class="settings">
+    <div class="field" id="sync-field">
+      <label>Auf iPad und Mac übertragen</label>
+      <div class="sync-btns"><button type="button" id="sync-out">⇪ Einstellungen übertragen</button><button type="button" id="sync-in-paste">⇩ Einstellungen übernehmen</button></div>
+      <textarea id="sync-text" rows="3" placeholder="Hier den Übertragungs-Text einfügen …" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+      <button type="button" id="sync-in" class="sync-go">Übernehmen &amp; neu laden</button>
+      <span class="hint" id="sync-msg">Überträgt Reihenfolge, Radio, Orte, Haltestellen, Routen, Alarme und Schlüssel. Auf diesem Gerät „übertragen“ (z. B. per AirDrop oder Notizen), auf dem anderen Gerät „übernehmen“. Enthält deine Schlüssel – nur an eigene Geräte schicken.</span>
+    </div>
     <div class="field">
       <label for="place-q">Ort hinzufügen</label>
       <div class="inline"><input id="place-q" type="search" autocomplete="off" placeholder="z. B. Kempen, Wesel, Lüneburg"><button type="button" id="place-search">Suchen</button></div>
@@ -1631,6 +1643,6 @@ body.r-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=285"></script>
+<script src="app.js?v=286"></script>
 </body>
 </html>
