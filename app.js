@@ -370,7 +370,7 @@ $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");
 });
 $("tools-toggle").addEventListener("click",()=>{const l=$("tools"),open=l.hidden;l.hidden=!open;$("tools-toggle").setAttribute("aria-expanded",open?"true":"false");});
 /* App direkt öffnen; ist sie nicht da, nach kurzer Zeit die Webseite */
-document.addEventListener("click",e=>{const a=e.target.closest("a[data-app]");if(!a)return;e.preventDefault();const web=a.href;let left=false;
+document.addEventListener("click",e=>{const a=e.target.closest("a[data-app],button[data-href]");if(!a)return;e.preventDefault();const web=a.href||a.dataset.href;if(!a.dataset.app){window.open(web,"_blank","noopener");return;}let left=false;
   const vis=()=>{left=true;};document.addEventListener("visibilitychange",vis);window.addEventListener("blur",vis,{once:true});
   location.href=a.dataset.app;setTimeout(()=>{document.removeEventListener("visibilitychange",vis);window.removeEventListener("blur",vis);if(!left&&!document.hidden)window.open(web,"_blank","noopener");},2500);});
 function radioShow(open){const l=$("radio-list");l.hidden=!open;document.body.classList.toggle("r-open",open);
