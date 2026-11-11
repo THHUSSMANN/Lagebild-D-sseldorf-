@@ -1125,12 +1125,12 @@ function renderWebcamLinks(){
   const list=WEBCAM_LINKS[C.key]||[];const box=$("webcam-links");
   $("cam-title").textContent="Webcams "+C.town;
   const host=u=>{try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return"";}};
-  const tiles=list.filter(x=>x.live||x.hls||x.img||x.off),links=list.filter(x=>!x.live&&!x.hls&&!x.img&&!x.off);
+  const tiles=list.filter(x=>x.live||x.hls||x.img||x.off),links=[]; // reine Link-Kacheln ohne Bild ausgeblendet
   box.innerHTML=(tiles.length?'<div class="sublbl">Live – antippen für Großansicht</div><div class="cams cams-l" style="margin-bottom:12px">'+tiles.map((x,i)=>
       x.off?'<a class="cam linkcam offcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">⏸</span><span class="lc-go">'+esc(x.off)+'</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></a>'
       :'<div class="cam live" data-ci="'+i+'"><div class="lsbox">'+(x.live?'<div class="lsinner" id="lst-'+i+'" data-li="'+i+'"></div><span class="ls-hit"></span>':'')+(x.hls?'<video muted playsinline autoplay data-hls="'+esc(x.hls)+'"></video>':'')+(x.img?'<img src="'+esc(x.img)+'?t='+Date.now()+'" alt="">':'')+'<span class="ls-badge">LIVE</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(x.by||host(x.u))+'</span></span></div>').join("")+'</div>':'')+
     (links.length?'<div class="sublbl">'+(C.isDus?"Weitere Webcam-Seiten":"Webcams in der Umgebung (keine Kamera direkt im Ort)")+'</div><div class="cams cams-l" style="margin-bottom:10px">'+links.map(x=>'<a class="cam linkcam" href="'+esc(x.u)+'" target="_blank" rel="noopener"><div class="lc-box"><span class="lc-ic">📷</span><span class="lc-go">öffnen ↗</span></div><span><b>'+esc(x.t)+'</b><br><span class="muted small">'+esc(host(x.u))+'</span></span></a>').join("")+'</div>':'')||
-    '<div class="state">Für '+esc(C.town)+' sind keine Webcams hinterlegt.</div>';
+    '';
   box.querySelectorAll(".cam.live").forEach(el=>el.addEventListener("click",()=>openCam(tiles[+el.dataset.ci])));
   box.querySelectorAll("video[data-hls]").forEach(v=>attachHls(v,v.dataset.hls));
   box.querySelectorAll(".lsinner").forEach(el=>tileLive(el,tiles[+el.dataset.li]));
