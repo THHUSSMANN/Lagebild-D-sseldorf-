@@ -2067,6 +2067,12 @@ function spanLast(){["tiles","toolgrid","headnav"].forEach(id=>{const g=document
   if(cols===2&&v.length%2===1)v[v.length-1].classList.add("span2");});}
 ["tiles","toolgrid","headnav"].forEach(id=>{const g=document.getElementById(id);if(g)new MutationObserver(()=>{clearTimeout(spanLast.t);spanLast.t=setTimeout(spanLast,50);}).observe(g,{childList:true,subtree:false,attributes:true,attributeFilter:["hidden","class","style"]});});
 window.addEventListener("resize",()=>spanLast());document.addEventListener("click",()=>setTimeout(spanLast,120));setTimeout(spanLast,300);
+// Kopf-Knöpfe WeekCal / Erinnerungen: Ziel lokal anpassbar (z. B. Kurzbefehl)
+const QA={cal:["qa-cal","weekcal://"],rem:["qa-rem","x-apple-reminderkit://"]};
+function qaInit(){Object.entries(QA).forEach(([k,[id,def]])=>{const v=load("qa_"+k)||"";const a=$(id);if(a)a.href=v||def;const i=$(id+"-in");if(i)i.value=v;});}
+qaInit();
+document.addEventListener("click",e=>{const b=e.target.closest("[data-qasave]");if(!b)return;const k=b.dataset.qasave;const i=$(QA[k][0]+"-in");const v=(i.value||"").trim();
+  if(v&&!/^[a-z][a-z0-9+.-]*:/i.test(v)){i.setCustomValidity("Bitte eine Adresse wie weekcal:// oder shortcuts://… eintragen");i.reportValidity();return;}i.setCustomValidity("");store("qa_"+k,v||null);qaInit();b.textContent="Gespeichert ✓";setTimeout(()=>b.textContent="Speichern",1500);});
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
   if(!ELP||(ELP.auto&&ELP.k!==ck)){const f=elFavs().find(x=>x.k===ck);ELP={...(f||{k:ck,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon}),auto:1};}
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
