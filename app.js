@@ -1897,7 +1897,7 @@ function renderCal(){
   $("cal-src").textContent="Feiertage · Schulferien "+(STATE_NAME[C.state]||"");
   const w=WX&&WX[C.wxIdx];let html="";const sn=STATE_NAME[C.state]||"";
   if(w){const d=w.daily;const len=d.daylight_duration[0];
-    html+='<div class="facts">'+fact(hhmm(d.sunrise[0]*1000),"Sonnenaufgang")+fact(hhmm(d.sunset[0]*1000),"Sonnenuntergang")+fact(Math.floor(len/3600)+" h "+Math.round(len%3600/60)+" min","Tageslicht")+fact(String(isoWeek(new Date())),"Kalenderwoche")+(()=>{const m=moonInfo(new Date());return fact(m.e+" "+m.n,m.full)})()+'</div>';}
+    html+='<div class="facts">'+fact(hhmm(d.sunrise[0]*1000),"Sonnenaufgang")+fact(hhmm(d.sunset[0]*1000),"Sonnenuntergang")+fact(Math.floor(len/3600)+" h "+Math.round(len%3600/60)+" min","Tageslicht")+fact(String(isoWeek(new Date())),"Kalenderwoche")+(()=>{const m=moonInfo(new Date());return '<div class="fact moon"><b>'+m.e+' '+esc(m.n)+'</b><span>'+esc(m.full)+'</span></div>'})()+'</div>';}
   const today=isoDay();const nd=s=>new Date(s+"T12:00:00");const days=s=>Math.round((nd(s)-nd(today))/864e5);
   const rel=n=>n===0?"heute":n===1?"morgen":"in "+n+" Tagen";
   if(HOL&&HOL.length){const next=HOL.filter(h=>h.date>=today).slice(0,4);
