@@ -1522,6 +1522,9 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
       <div class="inline"><input id="qa-cal-in" type="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="weekcal://"><button type="button" data-qasave="cal">Speichern</button></div>
       <label for="qa-rem-in" style="margin-top:10px">Kopf-Knopf „Erinnerungen“</label>
       <div class="inline"><input id="qa-rem-in" type="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="x-apple-reminderkit://"><button type="button" data-qasave="rem">Speichern</button></div>
+      <label for="qa-sonos-in" style="margin-top:10px">Knopf „Sonos · WDR 2“</label>
+      <div class="inline"><input id="qa-sonos-in" type="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="shortcuts://run-shortcut?name=WDR%202%20Sonos"><button type="button" data-qasave="sonos">Speichern</button></div>
+      <span class="hint">Sonos: WDR 2 Rhein-Ruhr in der Sonos-App als Favorit sichern, dann in der Kurzbefehle-App einen Kurzbefehl „WDR 2 Sonos“ anlegen (Sonos-Aktion „Inhalte abspielen“ → Favorit WDR 2, Lautsprecher wählen, optional „Lautstärke festlegen“). Der Knopf startet ihn.</span>
       <span class="hint">Leer lassen = App direkt öffnen. Soll „Erinnerungen“ gleich eine neue Erinnerung anlegen, in der Kurzbefehle-App einen Kurzbefehl „Neue Erinnerung“ anlegen (Aktionen „Nach Eingabe fragen“ und „Erinnerung hinzufügen“) und hier eintragen: shortcuts://run-shortcut?name=Neue%20Erinnerung – wird nur auf diesem Gerät gespeichert.</span>
     </div>
     <div class="field">
@@ -1563,6 +1566,6 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=275"></script>
+<script src="app.js?v=276"></script>
 </body>
 </html>
