@@ -1142,6 +1142,21 @@ body.t-open{overflow:hidden}
   .tooldlg .td-head{background:transparent!important;padding:18px 18px 10px!important}
   .tooldlg .td-head h2{font:800 28px/1.1 var(--f-display)!important;color:#fff!important}
 }
+/* v308: iOS-26-Abgleich – Glas statt Ringe und Farbbalken */
+/* Schließen-Kreuz: schlichter Glaskreis ohne farbigen Ring (wie in iOS 26) */
+.td-x,.x-round,.view-x,.view-x.round{width:44px!important;height:44px!important;min-height:44px!important;flex:0 0 44px!important;margin:4px!important;outline:0!important;
+  background:rgba(255,255,255,.14)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 60%)!important;border:1px solid rgba(255,255,255,.22)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 2px 10px rgba(0,0,0,.25)!important}
+.view .vtop .view-x.round{background:var(--glass)!important;background-image:linear-gradient(180deg,var(--glass-hi),rgba(255,255,255,0) 60%)!important;border:1px solid var(--glass-b)!important;box-shadow:var(--glass-sh)!important;width:44px!important;height:44px!important;flex:0 0 44px!important}
+.view .vtop .view-x.round svg{stroke:var(--fg)!important}
+/* Themen-Knöpfe: Zustand nur noch als sanfte Tönung, ohne farbigen Balken oben */
+header #headnav a.hn-ok,header #headnav a.hn-warn,header #headnav a.hn-bad,header #headnav a.hn-crit,header #headnav a.hn-info,header #headnav button.hbtn{box-shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25)!important}
+header #headnav a.hn-ok{border-color:color-mix(in srgb,var(--ok) 55%,transparent)!important}
+header #headnav a.hn-warn{border-color:color-mix(in srgb,var(--warn) 60%,transparent)!important}
+header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srgb,var(--bad) 65%,transparent)!important}
+/* Kennzeichen (Datum, PKW, Uhrzeit): Kapseln statt eckiger schwarzer Kästchen */
+.tag{border-radius:999px!important;padding:3px 10px!important;background:color-mix(in srgb,var(--fg) 10%,transparent)!important;color:var(--fg)!important;font-weight:700;border:1px solid color-mix(in srgb,var(--fg) 12%,transparent)}
+.tag.ab{background:#1f4e9c!important;color:#fff!important;border-color:transparent}.tag.alt{background:var(--accent)!important;color:var(--panel)!important;border-color:transparent}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1772,6 +1787,6 @@ body.t-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=307"></script>
+<script src="app.js?v=308"></script>
 </body>
 </html>
