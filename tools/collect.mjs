@@ -422,7 +422,7 @@ tasks.push(job("bvbcal.json", async () => {
 tasks.push(job("flights.json", async () => {
   let d; try { d = await get("https://opendata.adsb.fi/api/v2/lat/51.2895/lon/6.7668/dist/16"); }
   catch { d = await get("https://api.airplanes.live/v2/point/51.2895/6.7668/16"); }
-  return { ac: (d.ac || d.aircraft || []).map(a => ({ cs: (a.flight || "").trim(), reg: a.r || "", type: a.t || "", alt: a.alt_baro, gs: a.gs, lat: a.lat, lon: a.lon })) };
+  return { ac: (d.ac || d.aircraft || []).map(a => ({ cs: (a.flight || "").trim(), reg: a.r || "", type: a.t || "", alt: a.alt_baro, gs: a.gs, lat: a.lat, lon: a.lon, trk: a.track })) };
 }));
 tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));
 // Radio: Stream-Adressen prüfen (bekannte Adressen zuerst, sonst radio-browser.info)

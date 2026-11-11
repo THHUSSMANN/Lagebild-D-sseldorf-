@@ -1185,6 +1185,14 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 .fb-meta .badge{display:inline-block;margin-bottom:6px;padding:3px 12px;border-radius:999px;font:700 13px var(--f-body);letter-spacing:.04em;text-transform:uppercase}
 .fb-meta .badge.h{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok)}.fb-meta .badge.a{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
 .tm-li .tm-venue{display:block;font:600 16px/1.25 var(--f-body);color:var(--fg);margin:1px 0 2px}
+/* v320: Regenradar und Flugkarte ruhiger: Grundkarte grau, Radar/Flugzeuge farbig, iOS-Zoom ausgeblendet */
+#radar-map .leaflet-tile-pane>.leaflet-layer:not(.radar-wms),#flights-map .leaflet-tile-pane>.leaflet-layer{filter:grayscale(1) contrast(.85) brightness(1.08)}
+:root[data-theme="dark"] #radar-map .leaflet-tile-pane>.leaflet-layer:not(.radar-wms),:root[data-theme="dark"] #flights-map .leaflet-tile-pane>.leaflet-layer{filter:grayscale(1) invert(.88) hue-rotate(180deg) contrast(.9)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #radar-map .leaflet-tile-pane>.leaflet-layer:not(.radar-wms),:root:not([data-theme="light"]) #flights-map .leaflet-tile-pane>.leaflet-layer{filter:grayscale(1) invert(.88) hue-rotate(180deg) contrast(.9)}}
+#radar-map .leaflet-control-attribution,#flights-map .leaflet-control-attribution{background:rgba(0,0,0,.35)!important;color:rgba(255,255,255,.8)!important;font-size:10px!important;border-radius:8px 0 0 0;padding:1px 6px}
+#radar-map .leaflet-control-attribution a,#flights-map .leaflet-control-attribution a{color:inherit!important}
+.radar-leg i{width:12px;height:12px;border-radius:50%}
+.plane-ic{font-size:20px;line-height:20px;text-shadow:0 1px 3px rgba(0,0,0,.6);transform-origin:center}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1370,7 +1378,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
     <div class="card-head"><h2>Regenradar</h2><span class="src">Deutscher Wetterdienst · letzte Stunde und Vorhersage bis 2 Stunden</span></div>
     <div class="map" id="radar-map" style="height:340px"></div>
     <div class="radar-bar"><button type="button" class="btn sm" id="radar-play" aria-label="Abspielen">▶</button><input type="range" id="radar-t" min="-12" max="24" step="1" value="0" aria-label="Zeitpunkt"><button type="button" class="btn sm" id="radar-now">Jetzt</button></div>
-    <div class="radar-info"><span id="radar-lbl">wird geladen …</span><span class="radar-leg"><i style="background:#9fd3ff"></i>leicht <i style="background:#2f7fff"></i>mäßig <i style="background:#ffd400"></i>stark <i style="background:#ff2a2a"></i>Unwetter</span></div>
+    <div class="radar-info"><span id="radar-lbl">wird geladen …</span><span class="radar-leg"><i style="background:#b4f0b4"></i>leicht <i style="background:#3cb43c"></i>mäßig <i style="background:#f0dc28"></i>stark <i style="background:#e63232"></i>sehr stark <i style="background:#a03cb4"></i>Unwetter</span></div>
   </section>
   <section class="card wide" data-wxp="24" hidden>
     <div class="card-head"><h2>Nächste 24 Stunden</h2>
@@ -1571,10 +1579,11 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 <div class="grid">
   <section class="card wide">
     <div class="card-head"><h2 id="cam-title">Webcams</h2><span class="src">Webcam-Seiten · Windy · Autobahn GmbH · antippen öffnet die Live-Ansicht</span></div>
-    <div class="seg tabseg" data-tabs="cam"><button type="button" data-t="live" class="on">Live</button><button type="button" data-t="windy">Windy</button><button type="button" data-t="air">Flüge</button><button type="button" data-t="ab">Autobahn</button></div>
+    <div class="seg tabseg" data-tabs="cam"><button type="button" data-t="live" class="on">Kameras</button><button type="button" data-t="air">Flüge</button><button type="button" data-t="ab">Autobahn</button></div>
     <div data-tp="cam:live"><div id="webcam-links"></div></div>
-    <div data-tp="cam:windy" hidden><div id="webcams-public"></div></div>
+    <div data-tp="cam:live"><div id="webcams-public"></div></div>
     <div data-tp="cam:air" hidden><div class="sublbl">Flugzeuge über Düsseldorf</div>
+    <div class="map" id="flights-map" style="height:320px;border-radius:14px;overflow:hidden;margin-bottom:12px"></div>
     <div id="flights" style="margin-bottom:14px"><div class="state">wird geladen …</div></div></div>
     <div data-tp="cam:ab" hidden><div class="sublbl">Autobahn-Webcams</div>
     <div id="webcams"><div class="state">wird geladen …</div></div></div>
@@ -1830,6 +1839,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=319"></script>
+<script src="app.js?v=320"></script>
 </body>
 </html>

@@ -404,13 +404,13 @@ function moonInfo(d){const syn=29.530588853,ref=Date.UTC(2000,0,6,18,14);let a=(
 
 /* Regenradar (DWD, Messung bis −1 h und Vorhersage bis +2 h) */
 let RADAR=null,RADAR_I=0,RADAR_PLAY=0,RADAR_KEY="";
-function radarBase(){const s=3e5;return Math.floor((Date.now()-6e5)/s)*s;}
+function radarBase(){const s=3e5;return Math.floor((Date.now()-9e5)/s)*s;}
 function radarSet(i){RADAR_I=i;if(!RADAR)return;const t=new Date(radarBase()+i*3e5);RADAR._wms.setParams({time:t.toISOString()});
   const hm=t.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});const r=$("radar-t");if(r&&+r.value!==i)r.value=i;
   $("radar-lbl").innerHTML=i===0?"<b>"+hm+"</b> · letztes Bild":(i<0?hm+" · vor "+(-i*5)+" Min":"<b>"+hm+"</b> · Vorhersage +"+(i*5)+" Min");}
 function radarInit(){const el=$("radar-map");if(!el||!el.offsetParent||typeof L==="undefined")return;
-  if(!RADAR){RADAR=L.map(el,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});baseTiles(false).forEach(l=>l.addTo(RADAR));
-    RADAR._wms=L.tileLayer.wms("https://maps.dwd.de/geoserver/dwd/wms",{layers:"Niederschlagsradar",format:"image/png",transparent:true,version:"1.3.0",opacity:.75,zIndex:6,attribution:"Radar: Deutscher Wetterdienst"}).addTo(RADAR);
+  if(!RADAR){RADAR=L.map(el,{zoomControl:false,attributionControl:true,scrollWheelZoom:false});baseTiles(false).forEach(l=>l.addTo(RADAR));
+    RADAR._wms=L.tileLayer.wms("https://maps.dwd.de/geoserver/dwd/wms",{layers:"Niederschlagsradar",format:"image/png",transparent:true,version:"1.3.0",opacity:.85,zIndex:6,tileSize:512,zoomOffset:-1,className:"radar-wms",updateWhenIdle:true,attribution:"Radar: Deutscher Wetterdienst"}).addTo(RADAR);
     let ok=0,bad=0;RADAR._wms.on("tileload",()=>{ok++;if(ok===1)setStatus("radar",true);}).on("tileerror",()=>{bad++;if(!ok&&bad>3)setStatus("radar",false,"Radarbilder nicht abrufbar");});
     RADAR._pin=L.circleMarker([C.lat,C.lon],{radius:6,color:"#fff",weight:2,fillColor:"#e53935",fillOpacity:1}).addTo(RADAR);
     $("radar-t").addEventListener("input",e=>{radarStop();radarSet(+e.target.value);});
@@ -444,15 +444,23 @@ function shipsInit(){const box=$("ships-box");if(!box||!box.offsetParent||SHIPS_
 
 /* Flugzeuge über Düsseldorf – erst direkt, sonst Stand des Datensammlers */
 async function loadFlights(){const box=$("flights");if(!box)return;const lat=51.2895,lon=6.7668;let ac=null,src="live";
-  try{const d=await getJSON("https://opendata.adsb.fi/api/v2/lat/"+lat+"/lon/"+lon+"/dist/16");ac=(d.ac||d.aircraft||[]).map(a=>({cs:(a.flight||"").trim(),reg:a.r||"",type:a.t||"",alt:a.alt_baro,gs:a.gs,lat:a.lat,lon:a.lon}));}
+  try{let d;try{d=await getJSON("https://opendata.adsb.fi/api/v2/lat/"+lat+"/lon/"+lon+"/dist/16");}catch(e1){d=await getJSON("https://api.airplanes.live/v2/point/"+lat+"/"+lon+"/16");}ac=(d.ac||d.aircraft||[]).map(a=>({cs:(a.flight||"").trim(),reg:a.r||"",type:a.t||"",alt:a.alt_baro,gs:a.gs,lat:a.lat,lon:a.lon,trk:a.track}));}
   catch(e){try{const d=await getData("flights.json");ac=(d.data&&d.data.ac)||[];src="Stand "+dataAge(d);}catch(e2){setStatus("flights",false,errText(e2));box.innerHTML=stateBox("Flugdaten nicht verfügbar.",link("https://globe.adsb.fi/?lat=51.29&lon=6.77&zoom=10","Live-Karte"));return;}}
   ac=ac.filter(a=>isFinite(a.lat)).map(a=>({...a,km:distKm(lat,lon,a.lat,a.lon)})).sort((a,b)=>a.km-b.km);
   const alt=a=>a.alt==="ground"?"am Boden":isFinite(a.alt)?fmt(a.alt*0.3048/1000,1)+" km":"–";
   box.innerHTML='<div class="facts">'+fact(String(ac.length),"Flugzeuge im Umkreis 30 km")+fact(String(ac.filter(a=>a.alt==="ground").length),"am Boden (Flughafen)")+'</div>'+
     (ac.length?'<div class="list">'+ac.slice(0,12).map(a=>'<div class="li"><span class="tag">'+esc(a.cs||a.reg||"?")+'</span><div class="t">'+esc(a.type||"")+(a.reg&&a.cs?' <span class="muted small">'+esc(a.reg)+'</span>':'')+'</div><div class="r muted small">'+alt(a)+(isFinite(a.gs)&&a.alt!=="ground"?" · "+fmt(a.gs*1.852)+" km/h":"")+'</div></div>').join("")+'</div>':'')+
     '<div class="muted small">'+(src==="live"?"Live":"Datensammler, "+src)+' · adsb.fi Open Data · '+link("https://globe.adsb.fi/?lat=51.29&lon=6.77&zoom=10","Live-Karte")+'</div>';
-  setStatus("flights",true,src==="live"?"":src);}
+  setStatus("flights",true,src==="live"?"":src);flightsMap(ac,lat,lon);}
 
+let FMAP=null,FLAY=null;
+function flightsMap(ac,lat,lon){const el=$("flights-map");if(!el||typeof L==="undefined")return;
+  if(!FMAP){FMAP=L.map(el,{zoomControl:false,attributionControl:true,scrollWheelZoom:false}).setView([lat,lon],10);baseTiles(false).forEach(l=>l.addTo(FMAP));FLAY=L.layerGroup().addTo(FMAP);
+    L.circleMarker([51.2895,6.7668],{radius:5,color:"#fff",weight:2,fillColor:"#e53935",fillOpacity:1}).bindTooltip("Flughafen DUS").addTo(FMAP);}
+  FLAY.clearLayers();ac.forEach(a=>{const r=isFinite(a.trk)?a.trk-45:-45;
+    L.marker([a.lat,a.lon],{icon:L.divIcon({className:"",html:'<div class="plane-ic" style="transform:rotate('+r+'deg)">✈︎</div>',iconSize:[20,20],iconAnchor:[10,10]})})
+     .bindTooltip(esc((a.cs||a.reg||"?")+(a.type?" · "+a.type:"")+(a.alt==="ground"?" · am Boden":isFinite(a.alt)?" · "+fmt(a.alt*0.3048)+" m":"")),{direction:"top"}).addTo(FLAY);});
+  setTimeout(()=>FMAP.invalidateSize(),80);}
 /* Großveranstaltungen über Ticketmaster (eigener kostenloser Schlüssel) */
 let TMKEY=load("tm")||"";
 async function loadTM(){const box=$("tm-list");if(!box)return;
