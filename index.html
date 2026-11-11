@@ -1129,6 +1129,19 @@ body.t-open{overflow:hidden}
 #wx-seg{display:flex!important;gap:4px;padding:5px;margin:0;border-radius:26px;background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 6px 20px rgba(0,0,0,.18)}
 #wx-seg button{flex:1 1 0;min-height:42px!important;padding:0 6px!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:600 15px var(--f-body)!important;color:var(--fg);border-radius:999px!important}
 #wx-seg button.on{background:var(--accent)!important;color:var(--panel)!important;box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 40%,transparent)!important}
+/* v307: Alles, was aufgeht, öffnet als Vollbild-Fenster (wie Radio und Tools) */
+#radio #r-ard:not([hidden]){position:fixed;inset:0;z-index:220;margin:0!important;overflow-y:auto;display:flex!important;flex-direction:column;gap:8px;
+  padding:calc(env(safe-area-inset-top) + 18px) max(18px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 28px) max(18px,env(safe-area-inset-left))!important;
+  background:rgba(12,20,27,.96)!important;-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);animation:rIn .22s ease}
+#radio #r-ard>*{width:100%;max-width:560px;margin-left:auto;margin-right:auto;flex:0 0 auto}
+#radio .ard-head{margin-bottom:6px}
+/* Tool-Fenster (Rechner, Wecker, Kapazität, Webcam groß) auf dem Handy bildschirmfüllend */
+@media (max-width:700px){
+  .tooldlg[open]{width:100vw!important;max-width:100vw!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;inset:0;border-radius:0!important;box-shadow:none!important;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)!important;background:rgba(12,20,27,.97)!important;color:#fff;animation:rIn .22s ease}
+  .tooldlg .td-head{background:transparent!important;padding:18px 18px 10px!important}
+  .tooldlg .td-head h2{font:800 28px/1.1 var(--f-display)!important;color:#fff!important}
+}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1162,9 +1175,9 @@ body.t-open{overflow:hidden}
         <div class="r-grp" id="r-st"><button type="button" class="rbtn" data-st="wdr2"><span class="r-ic" style="background:linear-gradient(160deg,#2f9bd6,#0b5f8f)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></span><span class="r-tx"><b>WDR 2</b><small>Rhein Ruhr</small></span><span class="r-tr r-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5z" fill="currentColor" stroke="none"/></svg></span></button><button type="button" class="rbtn" data-st="wdr4"><span class="r-ic" style="background:linear-gradient(160deg,#e0a43a,#b06a12)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></span><span class="r-tx"><b>WDR 4</b><small>Musik &amp; Unterhaltung</small></span><span class="r-tr r-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5z" fill="currentColor" stroke="none"/></svg></span></button><button type="button" class="rbtn" data-st="antenne"><span class="r-ic" style="background:linear-gradient(160deg,#e5534b,#9e1f1a)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></span><span class="r-tx"><b>Antenne Düsseldorf</b><small>Lokalradio</small></span><span class="r-tr r-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5z" fill="currentColor" stroke="none"/></svg></span></button><button type="button" class="rbtn" data-st="orfstm"><span class="r-ic" style="background:linear-gradient(160deg,#8fbf3f,#4d7f12)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></span><span class="r-tx"><b>Radio Steiermark</b><small>ORF · Graz</small></span><span class="r-tr r-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5z" fill="currentColor" stroke="none"/></svg></span></button><button type="button" class="rbtn" data-st="orfnoe"><span class="r-ic" style="background:linear-gradient(160deg,#4fa3d9,#1d5f99)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></span><span class="r-tx"><b>Radio Niederösterreich</b><small>ORF · St. Pölten</small></span><span class="r-tr r-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5z" fill="currentColor" stroke="none"/></svg></span></button><button type="button" class="rbtn" data-st="kronehit"><span class="r-ic" style="background:linear-gradient(160deg,#ff4f6d,#b5122f)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></span><span class="r-tx"><b>KRONEHIT</b><small>Hits aus Österreich</small></span><span class="r-tr r-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5z" fill="currentColor" stroke="none"/></svg></span></button><button type="button" class="rbtn" data-st="antstm"><span class="r-ic" style="background:linear-gradient(160deg,#f2a541,#c26a06)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></span><span class="r-tx"><b>Antenne Steiermark</b><small>Privatradio · Graz</small></span><span class="r-tr r-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5z" fill="currentColor" stroke="none"/></svg></span></button></div>
         <div class="r-sec">In der App <span class="r-hint">gedrückt halten und ziehen = sortieren</span></div>
         <div class="r-grp" id="r-apps"><button type="button" class="rapp" data-k="music" data-href="https://music.apple.com/de/" data-app="music://"><span class="r-ic" style="background:linear-gradient(160deg,#ff5e7a,#e2264d)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg></span><span class="r-tx"><b>Apple Music</b><small>eigene Musik &amp; Radio</small></span><span class="r-tr">↗</span></button><button type="button" class="rapp" data-k="tunein" data-href="https://tunein.com/" data-app="tunein://"><span class="r-ic" style="background:linear-gradient(160deg,#2fc4b2,#13897b)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v10M8 21h8M7.8 7.2a6 6 0 0 1 8.4 0M5 4.5a10 10 0 0 1 14 0"/><circle cx="12" cy="10" r="1.6" fill="currentColor"/></svg></span><span class="r-tx"><b>TuneIn Radio</b><small>Sender weltweit</small></span><span class="r-tr">↗</span></button><button type="button" class="rapp" data-k="ard" data-href="https://www.ardsounds.de/"><span class="r-ic" style="background:linear-gradient(160deg,#5b7cfa,#2f3fb8)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="7" rx="1.8"/><rect x="16.5" y="14" width="4.5" height="7" rx="1.8"/></svg></span><span class="r-tx"><b>ARD Sounds</b><small>Podcasts &amp; Mediathek</small></span><span class="r-tr">↗</span></button></div>
-        <div class="r-sec">ARD Sounds · Rubriken <span class="r-hint">aufklappen · gedrückt halten und ziehen = sortieren</span></div>
-        <div class="r-grp"><button type="button" class="r-fold" id="r-ard-tg" aria-expanded="false" aria-controls="r-ard"><span class="r-ic" style="background:linear-gradient(160deg,#5b7cfa,#2f3fb8)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><span class="r-tx"><b>Rubriken</b><small id="r-ard-n">True Crime, Hörspiel, Doku …</small></span><span class="r-tr r-chev">›</span></button></div>
-        <div class="r-grp" id="r-ard" hidden></div>
+        <div class="r-sec">ARD Sounds · Rubriken <span class="r-hint">antippen öffnet alle Rubriken</span></div>
+        <div class="r-grp"><button type="button" class="r-fold" id="r-ard-tg" aria-expanded="false" aria-controls="r-ard"><span class="r-ic" style="background:linear-gradient(160deg,#5b7cfa,#2f3fb8)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><span class="r-tx"><b>Rubriken</b><small id="r-ard-n">True Crime, Hörspiel, Doku …</small></span><span class="r-tr">›</span></button></div>
+        <div class="r-grp" id="r-ard" hidden role="dialog" aria-label="Rubriken"></div>
         </div>
     </div>
     <p class="harrange-hint" id="harrange-hint" hidden>Themen und Tools mit dem Finger verschieben (kurz gedrückt halten) – „Fertig“ unten speichert.</p>
@@ -1304,16 +1317,16 @@ body.t-open{overflow:hidden}
     <div class="card-head"><h2>Wetter jetzt</h2><span class="src">Open-Meteo · DWD-Station</span></div>
     <div id="wx-now"><div class="state">Wetterdaten werden geladen …</div></div>
   </section>
-  <div class="wide wx-segwrap"><div class="seg" id="wx-seg"><button type="button" data-wx="24" class="on">24 Std.</button><button type="button" data-wx="7">7 Tage</button><button type="button" data-wx="radar">Radar</button><button type="button" data-wx="wear">Kleidung</button></div></div>
+  <section class="card wide">
+    <div class="card-head"><h2>Was ziehe ich an?</h2><span class="src" id="wear-src">heute tagsüber · aus der Vorhersage</span></div>
+    <div id="wear"><div class="state">wird geladen …</div></div>
+  </section>
+  <div class="wide wx-segwrap"><div class="seg" id="wx-seg"><button type="button" data-wx="24" class="on">24 Std.</button><button type="button" data-wx="7">7 Tage</button><button type="button" data-wx="radar">Radar</button></div></div>
   <section class="card wide" id="radar-card" data-wxp="radar" hidden>
     <div class="card-head"><h2>Regenradar</h2><span class="src">Deutscher Wetterdienst · letzte Stunde und Vorhersage bis 2 Stunden</span></div>
     <div class="map" id="radar-map" style="height:340px"></div>
     <div class="radar-bar"><button type="button" class="btn sm" id="radar-play" aria-label="Abspielen">▶</button><input type="range" id="radar-t" min="-12" max="24" step="1" value="0" aria-label="Zeitpunkt"><button type="button" class="btn sm" id="radar-now">Jetzt</button></div>
     <div class="radar-info"><span id="radar-lbl">wird geladen …</span><span class="radar-leg"><i style="background:#9fd3ff"></i>leicht <i style="background:#2f7fff"></i>mäßig <i style="background:#ffd400"></i>stark <i style="background:#ff2a2a"></i>Unwetter</span></div>
-  </section>
-  <section class="card wide" data-wxp="wear" hidden>
-    <div class="card-head"><h2>Was ziehe ich an?</h2><span class="src" id="wear-src">heute tagsüber · aus der Vorhersage</span></div>
-    <div id="wear"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card wide" data-wxp="24">
     <div class="card-head"><h2>Nächste 24 Stunden</h2>
@@ -1759,6 +1772,6 @@ body.t-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=306"></script>
+<script src="app.js?v=307"></script>
 </body>
 </html>

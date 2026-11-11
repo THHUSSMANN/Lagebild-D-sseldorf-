@@ -380,8 +380,12 @@ const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.
   box.innerHTML=R.map(([k,t,slug,c1,c2])=>'<button type="button" class="rapp" data-k="'+k+'" data-href="https://www.ardsounds.de/rubrik/'+slug+'/"><span class="r-ic" style="background:linear-gradient(160deg,'+c1+','+c2+')">'+ic+'</span><span class="r-tx"><b>'+esc(t)+'</b><small>ARD Sounds</small></span><span class="r-tr">↗</span></button>').join("");
   (load("radio_ard")||[]).forEach(k=>{const b=box.querySelector('[data-k="'+k+'"]');if(b)box.appendChild(b);});
   const names=()=>{$("r-ard-n").textContent=[...box.querySelectorAll(".rapp b")].slice(0,3).map(b=>b.textContent).join(", ")+" …";};names();
-  const set=o=>{box.hidden=!o;tg.setAttribute("aria-expanded",o?"true":"false");store("radio_ard_open",o);};set(!!load("radio_ard_open"));
-  tg.addEventListener("click",e=>{e.stopPropagation();set(box.hidden);});
+  box.insertAdjacentHTML("afterbegin",'<div class="r-head ard-head"><div><h2>Rubriken</h2><p>ARD Sounds · gedrückt halten und ziehen = sortieren</p></div><button type="button" class="td-x x-round" data-ard-close aria-label="Rubriken schließen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>');
+  const set=o=>{box.hidden=!o;tg.setAttribute("aria-expanded",o?"true":"false");};set(false);
+  tg.addEventListener("click",e=>{e.stopPropagation();set(true);});
+  $("radio").appendChild(box); // außerhalb der Radio-Liste, damit das Fenster wirklich den ganzen Bildschirm füllt
+  box.addEventListener("click",e=>{if(e.target.closest("[data-ard-close]")){e.stopPropagation();set(false);return;}if(e.target.closest(".rapp"))setTimeout(()=>set(false),250);});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!box.hidden){e.stopImmediatePropagation();set(false);}},true);
   setTimeout(()=>{try{reorder(box,".rapp",()=>true,()=>{store("radio_ard",[...box.querySelectorAll(".rapp")].map(b=>b.dataset.k));names();});}catch(e){}},0);}}
 /* Google Maps ohne Safari-Rückfrage: App-Links (comgooglemaps://) in normale Google-Maps-Adressen umschreiben */
 function gmWeb(u){try{const q=new URLSearchParams(u.split("?")[1]||"");let d=q.get("daddr")||"",w="";const i=Math.max(d.lastIndexOf("+to:"),d.lastIndexOf(" to:"));if(i>=0){w=d.slice(0,i);d=d.slice(i+4);}
