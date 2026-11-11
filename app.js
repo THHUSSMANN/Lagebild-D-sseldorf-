@@ -822,18 +822,20 @@ function renderWeather(){
 }
 function chart24(T,P,L){
   if(!T.length)return stateBox("keine Stundenwerte");
-  const W=640,H=200,pl=34,pr=10,pt=16,pb=28,iw=W-pl-pr,ih=H-pt-pb;
+  /* Breite an das Gerät anpassen, damit die Schrift auf dem iPhone nicht winzig wird */
+  const W=Math.round(Math.min(640,Math.max(340,(window.innerWidth||640)-70))),narrow=W<480,H=narrow?250:220,pl=narrow?36:38,pr=12,pt=30,pb=34,iw=W-pl-pr,ih=H-pt-pb;
+  const ev=narrow?4:3;
   let mn=Math.floor(Math.min(...T))-1,mx=Math.ceil(Math.max(...T))+1;if(mx-mn<4){mx+=2;mn-=2;}
   const x=i=>pl+(i+.5)*iw/T.length,y=v=>pt+ih-(v-mn)/(mx-mn)*ih,bw=iw/T.length*.7;
-  let s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Temperatur und Regenrisiko der nächsten 24 Stunden">';
+  let s='<svg class="chart c24" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Temperatur und Regenrisiko der nächsten 24 Stunden">';
   const step=Math.max(1,Math.round((mx-mn)/4));
-  for(let v=Math.ceil(mn);v<=mx;v+=step){s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)" stroke-width="1"/><text x="'+(pl-6)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v+'°</text>';}
+  for(let v=Math.ceil(mn);v<=mx;v+=step){s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)" stroke-width="1"/><text class="ax" x="'+(pl-6)+'" y="'+(y(v)+5)+'" text-anchor="end">'+v+'°</text>';}
   P.forEach((p,i)=>{if(p>0){const bh=p/100*ih;s+='<rect x="'+(x(i)-bw/2)+'" y="'+(pt+ih-bh)+'" width="'+bw+'" height="'+bh+'" fill="var(--accent)" opacity=".22" rx="1.5"><title>'+hhmm(L[i]*1000)+': '+p+' % Regenrisiko</title></rect>';}});
   let d="",a="M"+x(0)+" "+(pt+ih);T.forEach((t,i)=>{d+=(i?"L":"M")+x(i).toFixed(1)+" "+y(t).toFixed(1);a+="L"+x(i).toFixed(1)+" "+y(t).toFixed(1);});
   a+="L"+x(T.length-1)+" "+(pt+ih)+"Z";
-  s+='<path d="'+a+'" fill="var(--accent)" opacity=".08"/><path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>';
-  T.forEach((t,i)=>{if(i%3===0){s+='<text x="'+x(i)+'" y="'+(H-8)+'" text-anchor="middle">'+hhmm(L[i]*1000)+'</text><text x="'+x(i)+'" y="'+(y(t)-8)+'" text-anchor="middle" style="fill:var(--fg);font-weight:600">'+Math.round(t)+'°</text>';}});
-  s+='<circle cx="'+x(0)+'" cy="'+y(T[0])+'" r="4" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>';
+  s+='<path d="'+a+'" fill="var(--accent)" opacity=".08"/><path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>';
+  T.forEach((t,i)=>{if(i%ev===0){s+='<text class="ax" x="'+x(i)+'" y="'+(H-9)+'" text-anchor="middle">'+hhmm(L[i]*1000).replace(/:00$/,"")+(narrow?" h":"")+'</text><circle cx="'+x(i)+'" cy="'+y(t)+'" r="3" fill="var(--accent)"/><text class="tv" x="'+x(i)+'" y="'+(y(t)-10)+'" text-anchor="middle">'+Math.round(t)+'°</text>';}});
+  s+='<circle cx="'+x(0)+'" cy="'+y(T[0])+'" r="5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>';
   return s+'</svg>';
 }
 
