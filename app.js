@@ -964,7 +964,7 @@ async function loadRhein(){
   }catch(e){const w=$("pegel-wv");if(w)w.innerHTML="";setStatus("pegel",false,errText(e));$("pegel").innerHTML=stateBox("Pegel nicht verfügbar – "+errText(e)+".",link("https://www.pegelonline.wsv.de/gast/start","PEGELONLINE"));setKpi("k-rhein","–","kein Pegel","info");}
 }
 async function loadLandespegel(){
-  const card=$("lp-card");card.hidden=!C.isDus;if(!C.isDus)return;
+  const fb=document.querySelector('.tabseg[data-tabs="pg"] [data-t="fl"]');if(fb)fb.hidden=!C.isDus;if(!C.isDus){if(fb&&fb.classList.contains("on"))tabSet("pg","rhein");return;}
   try{const d=await getData("landespegel.json");const l=(d.data||[]).filter(x=>x.value!=null).sort((a,b)=>["Düssel","Anger","Itter"].indexOf(a.water)-["Düssel","Anger","Itter"].indexOf(b.water));
     if(!l.length)throw new Error("keine Messwerte");
     $("landespegel").innerHTML=l.map(x=>{const M={MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3};const t=levelText(x.value,M,x.unit);

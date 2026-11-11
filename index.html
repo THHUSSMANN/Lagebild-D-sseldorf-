@@ -1171,6 +1171,10 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 .tabseg{display:flex!important;gap:2px;padding:4px!important;margin:0 0 14px;border-radius:999px!important;background:color-mix(in srgb,var(--fg) 9%,transparent)!important;border:1px solid color-mix(in srgb,var(--fg) 10%,transparent)!important;-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:none!important}
 .tabseg button{flex:1 1 0;min-height:40px!important;padding:0 10px!important;border:0!important;border-radius:999px!important;background:transparent!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:600 17px/1 var(--f-body)!important;color:var(--fg)!important;opacity:.85;white-space:nowrap}
 .tabseg button.on{opacity:1;background:var(--seg-on,#fff)!important;color:var(--seg-on-fg,#111)!important;box-shadow:0 1px 2px rgba(0,0,0,.12),0 3px 10px rgba(0,0,0,.14)!important}
+#webcam-links:empty::before{content:"Für diesen Ort gibt es keine eigenen Live-Kameras – schau unter „Windy“.";display:block;padding:14px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font:500 15px var(--f-body)}
+.card .tabseg{margin:4px 0 14px}
+.card .tabseg button{padding:0 8px!important;flex:1 1 auto!important}
+.tabseg button[hidden]{display:none!important}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1556,29 +1560,31 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 <div class="grid">
   <section class="card wide">
     <div class="card-head"><h2 id="cam-title">Webcams</h2><span class="src">Webcam-Seiten · Windy · Autobahn GmbH · antippen öffnet die Live-Ansicht</span></div>
-    <div id="webcam-links"></div>
-    <div id="webcams-public"></div>
-    <div class="sublbl">Flugzeuge über Düsseldorf</div>
-    <div id="flights" style="margin-bottom:14px"><div class="state">wird geladen …</div></div>
-    <div class="sublbl">Autobahn-Webcams</div>
-    <div id="webcams"><div class="state">wird geladen …</div></div>
+    <div class="seg tabseg" data-tabs="cam"><button type="button" data-t="live" class="on">Live</button><button type="button" data-t="windy">Windy</button><button type="button" data-t="air">Flüge</button><button type="button" data-t="ab">Autobahn</button></div>
+    <div data-tp="cam:live"><div id="webcam-links"></div></div>
+    <div data-tp="cam:windy" hidden><div id="webcams-public"></div></div>
+    <div data-tp="cam:air" hidden><div class="sublbl">Flugzeuge über Düsseldorf</div>
+    <div id="flights" style="margin-bottom:14px"><div class="state">wird geladen …</div></div></div>
+    <div data-tp="cam:ab" hidden><div class="sublbl">Autobahn-Webcams</div>
+    <div id="webcams"><div class="state">wird geladen …</div></div></div>
   </section>
 </div>
 </div>
 
 <div class="view" id="v-rhein" data-view="rhein" hidden>
 <section id="rhein"><div class="sec-title"><h2 id="rhein-sec">Rhein</h2></div></section>
+<div class="seg tabseg" data-tabs="pg"><button type="button" data-t="rhein" class="on">Pegel</button><button type="button" data-t="fl">Flüsse</button><button type="button" data-t="ships">Schiffe</button></div>
 <div class="grid">
-  <section class="card">
+  <section class="card wide" data-tp="pg:rhein">
     <div class="card-head"><h2 id="pegel-title">Pegel Düsseldorf</h2><span class="src" id="pegel-src">WSV PEGELONLINE · Rhein-km 744,2</span></div>
     <div id="pegel"><div class="state">Pegeldaten werden geladen …</div></div>
     <div id="pegel-wv"></div>
   </section>
-  <section class="card" id="lp-card">
+  <section class="card wide" id="lp-card" data-tp="pg:fl" hidden>
     <div class="card-head"><h2 id="lp-title">Düssel, Anger &amp; Itter</h2><span class="src">LANUK NRW · Hochwasserportal</span></div>
     <div id="landespegel"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card wide" id="ships-card">
+  <section class="card wide" id="ships-card" data-tp="pg:ships" hidden>
     <div class="card-head"><h2>Schiffe live</h2><span class="src">AIS-Karte von VesselFinder · Schiff antippen zeigt Name und Ziel</span></div>
     <div id="ships-box"><div class="state">Karte lädt beim Öffnen …</div></div>
   </section>
@@ -1802,6 +1808,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=313"></script>
+<script src="app.js?v=314"></script>
 </body>
 </html>
