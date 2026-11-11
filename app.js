@@ -364,8 +364,16 @@ $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");
   a.src=url;a.play().then(()=>{b.classList.remove("load");b.classList.add("on");}).catch(()=>{b.classList.remove("load");window.open(RADIO_SITE[k],"_blank","noopener");});
 });
 $("tools-toggle").addEventListener("click",()=>{const l=$("tools"),open=l.hidden;l.hidden=!open;$("tools-toggle").setAttribute("aria-expanded",open?"true":"false");});
-document.addEventListener("click",e=>{const t=e.target.closest("#radio-toggle,[data-radio-open]");if(!t||(typeof HEDIT!=="undefined"&&HEDIT))return;const l=$("radio-list"),open=l.hidden;l.hidden=!open;
-  document.querySelectorAll("#radio-toggle,[data-radio-open]").forEach(x=>{x.setAttribute("aria-expanded",open?"true":"false");x.classList.toggle("on",open&&x.hasAttribute("data-radio-open"));});});
+function radioShow(open){const l=$("radio-list");l.hidden=!open;document.body.classList.toggle("r-open",open);
+  document.querySelectorAll("#radio-toggle,[data-radio-open]").forEach(x=>{x.setAttribute("aria-expanded",open?"true":"false");x.classList.toggle("on",open&&x.hasAttribute("data-radio-open"));});}
+document.addEventListener("click",e=>{const t=e.target.closest("#radio-toggle,[data-radio-open]");if(!t||(typeof HEDIT!=="undefined"&&HEDIT))return;radioShow($("radio-list").hidden);});
+function radioTile(){const o=document.querySelector("#radio .rbtn.on");document.querySelectorAll("[data-radio-open] .hn-v").forEach(v=>v.textContent=o?"▶ "+o.querySelector("b").textContent.trim()+" läuft":"Sonos · WDR 2 · weitere");}
+new MutationObserver(radioTile).observe($("radio"),{subtree:true,attributes:true,attributeFilter:["class"]});
+/* schließen: Kreuz, Tipp auf leere Fläche, Auswahl eines Senders, Esc */
+document.addEventListener("click",e=>{const l=$("radio-list");if(l.hidden)return;
+  if(e.target.closest("[data-radio-close]")||e.target===l){radioShow(false);return;}
+  if(e.target.closest("#radio .rbtn,#radio .rapp"))setTimeout(()=>radioShow(false),250);});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("radio-list").hidden)radioShow(false);});
 setInterval(()=>{const on=document.querySelector("#radio .rbtn.on");const t=on?"· "+on.textContent.replace(/\s+/g," ").trim()+" läuft":"";if($("radio-now").textContent!==t)$("radio-now").textContent=t;},1000);
 $("radio-audio").addEventListener("error",()=>document.querySelectorAll("#radio .rbtn").forEach(x=>x.classList.remove("on","load")));
 // Schnellwahl der Lieblingsstädte im Kopf
@@ -2236,7 +2244,7 @@ function buildViewbar(){
     $("warnpill-v").textContent=tot?tot+(tot===1?" Warnung":" Warnungen")+" · "+L.map(x=>x.name+": "+short(x.title)).join(" · ").slice(0,90):"Keine Warnungen · alle 5 Orte ruhig";}
   else{const wt=$("k-warn"),wp=$("warnpill");if(wt&&wp){const st=(["ok","warn","bad","crit","info"].find(c=>wt.classList.contains("s-"+c)))||"info";wp.className="warnpill wp-"+st+(cur==="warnungen"?" on":"");
     $("warnpill-v").textContent=[((wt.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim(),((wt.querySelector(".note")||{}).textContent||"").trim()].filter(x=>x&&x!=="–").join(" · ").slice(0,60)||"…";}}
-  {const hn=$("headnav");if(hn&&!(typeof HEDIT!=="undefined"&&HEDIT))hn.innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden&&!["warnungen","quellen","einstellungen"].includes(t.dataset.view)).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("")+'<button type="button" class="hbtn hn-info hn-radio'+($("radio-list")&&!$("radio-list").hidden?" on":"")+'" data-radio-open aria-controls="radio-list"><span class="hn-l">Radio</span><span class="hn-v">Sonos · WDR 2 · weitere</span></button>';}
+  {const hn=$("headnav");if(hn&&!(typeof HEDIT!=="undefined"&&HEDIT))hn.innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden&&!["warnungen","quellen","einstellungen"].includes(t.dataset.view)).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("")+'<button type="button" class="hbtn hn-info hn-radio'+($("radio-list")&&!$("radio-list").hidden?" on":"")+'" data-radio-open aria-controls="radio-list"><span class="hn-l">Radio</span><span class="hn-v">'+esc((()=>{const o=document.querySelector("#radio .rbtn.on");return o?"▶ "+o.querySelector("b").textContent.trim()+" läuft":"Sonos · WDR 2 · weitere";})())+'</span></button>';}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 let ROUTEKEY=null;
