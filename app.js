@@ -456,13 +456,13 @@ async function loadFlights(){const box=$("flights");if(!box)return;const lat=51.
 let TMKEY=load("tm")||"";
 async function loadTM(){const box=$("tm-list");if(!box)return;
   if(!TMKEY){box.innerHTML='<div class="muted small">Für Konzerte, Sport und Shows in der Nähe einmal einen kostenlosen Ticketmaster-Schlüssel unter <a href="#einstellungen">Einstellungen</a> eintragen.</div>';setStatus("tm",false,"Schlüssel fehlt");return;}
-  try{const iso=d=>d.toISOString().slice(0,19)+"Z";const now=new Date(),end=new Date(Date.now()+60*864e5);
-    const U="https://app.ticketmaster.com/discovery/v2/events.json?apikey="+encodeURIComponent(TMKEY)+"&latlong="+C.lat+","+C.lon+"&radius=70&unit=km&locale=*&size=200&sort=date,asc&startDateTime="+iso(now)+"&endDateTime="+iso(end);
+  try{const R0={lat:51.2277,lon:6.7735}; /* Bezugspunkt immer Düsseldorf (Stadtmitte) */const iso=d=>d.toISOString().slice(0,19)+"Z";const now=new Date(),end=new Date(Date.now()+60*864e5);
+    const U="https://app.ticketmaster.com/discovery/v2/events.json?apikey="+encodeURIComponent(TMKEY)+"&latlong="+R0.lat+","+R0.lon+"&radius=70&unit=km&locale=*&size=200&sort=date,asc&startDateTime="+iso(now)+"&endDateTime="+iso(end);
     const d=await getJSON(U+"&page=0");let ev=((d._embedded||{}).events||[]);
     if(((d.page||{}).totalPages||1)>1){try{const d2=await getJSON(U+"&page=1");ev=ev.concat(((d2._embedded||{}).events||[]));}catch(e){}}const seen=new Set();const rows=[];
     ev.forEach(e=>{const s=(e.dates||{}).start||{};const k=e.name+"|"+s.localDate;if(seen.has(k))return;seen.add(k);
       const v=(((e._embedded||{}).venues||[])[0])||{};const city=((v.city||{}).name||"").replace(/^D(ue|ü)sseldorf.*/i,"Düsseldorf");
-      const lat=+((v.location||{}).latitude),lon=+((v.location||{}).longitude);const km=isFinite(lat)&&isFinite(lon)?distKm(C.lat,C.lon,lat,lon):(isFinite(+e.distance)?+e.distance:99);
+      const lat=+((v.location||{}).latitude),lon=+((v.location||{}).longitude);const km=isFinite(lat)&&isFinite(lon)?distKm(R0.lat,R0.lon,lat,lon):(isFinite(+e.distance)?+e.distance:99);
       rows.push({e,s,v,city,km,key:(s.localDate||"9")+(s.localTime||"99")});});
     rows.sort((a,b)=>(a.s.localDate||"9").localeCompare(b.s.localDate||"9")||a.km-b.km||a.key.localeCompare(b.key));
     if(!rows.length){box.innerHTML='<div class="muted small">Keine Ticketmaster-Veranstaltungen im Umkreis von 70 km in den nächsten 60 Tagen.</div>';setStatus("tm",true);return;}
@@ -475,7 +475,7 @@ async function loadTM(){const box=$("tm-list");if(!box)return;
         html+='<a class="li tm-li" href="'+esc(safeUrl(e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag">'+esc(s.localTime?s.localTime.slice(0,5):"—")+'</span><div class="t"><span class="tm-city">'+esc(city||"–")+(km>=1.5?' <span class="muted">· '+fmt(km)+' km</span>':'')+'</span><br><b>'+esc(e.name)+'</b><br><span class="muted small">'+esc(v.name||"")+'</span></div><div class="r muted small">'+esc(seg(e))+'</div></a>';});
       if(last)html+='</div>';
       if(rows.length>shown)html+='<button type="button" class="btn" id="tm-more" style="width:100%;margin-top:12px">Weitere Termine anzeigen ('+(rows.length-shown)+')</button>';
-      box.innerHTML=html+'<div class="muted small" style="margin-top:10px">Quelle: Ticketmaster · nächste 60 Tage, Umkreis 70 km (u. a. Köln, Dortmund) · nach Datum, am selben Tag nach Entfernung.</div>';
+      box.innerHTML=html+'<div class="muted small" style="margin-top:10px">Quelle: Ticketmaster · nächste 60 Tage, Umkreis 70 km um Düsseldorf (u. a. Köln, Dortmund) · nach Datum, am selben Tag nach Entfernung von Düsseldorf.</div>';
       const m=$("tm-more");if(m)m.addEventListener("click",()=>{shown+=40;render();});};
     render();
     setStatus("tm",true);
