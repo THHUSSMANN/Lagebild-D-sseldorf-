@@ -2134,7 +2134,7 @@ document.addEventListener("click",e=>{const d=e.target.closest("[data-rsdir]");i
   const a=e.target.closest("[data-rsalt]");if(a&&!e.target.closest("a")){RS.sel=+a.dataset.rsalt;renderReise();}});
 document.addEventListener("click",e=>{const j=e.target.closest("#rs-incs .carinc");if(!j||!RSMAP)return;e.stopImmediatePropagation();const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
   $("rs-map").scrollIntoView({behavior:"smooth",block:"center"});RSMAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent(j.querySelector(".t").innerText).openOn(RSMAP);},true);
-document.addEventListener("click",e=>{const b=e.target.closest("[data-al]");if(!b)return;const k=b.dataset.al;document.querySelectorAll("#al-seg [data-al]").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll("[data-alp]").forEach(p=>p.hidden=p.dataset.alp!==k);});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-al]");if(!b)return;const k=b.dataset.al;document.querySelectorAll("#al-seg [data-al]").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll("[data-alp]").forEach(p=>p.hidden=p.dataset.alp!==k);if(k==="ev")loadTM();});
 document.addEventListener("click",e=>{const g=e.target.closest("[data-vtgo]");if(g){const b=document.querySelector('#vt-seg [data-vts="'+g.dataset.vtgo+'"]');if(b){b.click();setTimeout(()=>$("vt-seg").scrollIntoView({behavior:"smooth",block:"start"}),30);}}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-vts]");if(!b)return;const k=b.dataset.vts;
   document.querySelectorAll("#vt-seg [data-vts]").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll("[data-vtp]").forEach(p=>p.hidden=p.dataset.vtp!==k);});

@@ -1403,10 +1403,6 @@ body.r-open{overflow:hidden}
   <div id="ev-list"><div class="state">wird geladen …</div></div>
   <div id="ev-next" hidden></div>
 </section>
-<section class="card wide" id="tm-card">
-  <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nächste Termine im Umkreis</span></div>
-  <div id="tm-list"><div class="state">wird geladen …</div></div>
-</section>
 </div>
 
 <div class="view" id="v-flaechen" data-view="flaechen" hidden>
@@ -1596,8 +1592,8 @@ body.r-open{overflow:hidden}
 </div>
 
 <div class="view" id="v-alltag" data-view="alltag" hidden>
-<section id="alltag"><div class="sec-title"><h2>Kalender, Ferien &amp; Börse</h2></div></section>
-<div class="seg" id="al-seg" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px"><button type="button" data-al="tag" class="on">Kalender</button><button type="button" data-al="fer">Ferien NRW</button><button type="button" data-al="fin">Börse</button></div>
+<section id="alltag"><div class="sec-title"><h2>Kalender, Börse &amp; Events</h2></div></section>
+<div class="seg" id="al-seg" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px"><button type="button" data-al="tag" class="on">Kalender</button><button type="button" data-al="fer">Ferien NRW</button><button type="button" data-al="fin">Börse</button><button type="button" data-al="ev">Events</button></div>
 <div class="grid al-grid">
   <section class="card wide" data-alp="tag">
     <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src" id="cal-src">Feiertage · Schulferien NRW</span></div>
@@ -1614,6 +1610,10 @@ body.r-open{overflow:hidden}
   <section class="card" data-alp="fin" hidden>
     <div class="card-head"><h2>Börse</h2><span class="src" id="mk-src">Yahoo Finance · verzögert</span></div>
     <div id="boerse"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card wide" id="tm-card" data-alp="ev" hidden>
+    <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nächste Termine im Umkreis von 25 km</span></div>
+    <div id="tm-list"><div class="state">wird geladen …</div></div>
   </section>
 </div>
 </div>
@@ -1718,6 +1718,6 @@ body.r-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=300"></script>
+<script src="app.js?v=301"></script>
 </body>
 </html>
