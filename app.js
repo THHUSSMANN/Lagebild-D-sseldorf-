@@ -452,15 +452,21 @@ async function loadFlights(){const box=$("flights");if(!box)return;const lat=51.
 let TMKEY=load("tm")||"";
 async function loadTM(){const box=$("tm-list");if(!box)return;
   if(!TMKEY){box.innerHTML='<div class="muted small">Für Konzerte, Sport und Shows in der Nähe einmal einen kostenlosen Ticketmaster-Schlüssel unter <a href="#einstellungen">Einstellungen</a> eintragen.</div>';setStatus("tm",false,"Schlüssel fehlt");return;}
-  try{const st=new Date().toISOString().slice(0,19)+"Z";
-    const d=await getJSON("https://app.ticketmaster.com/discovery/v2/events.json?apikey="+encodeURIComponent(TMKEY)+"&latlong="+C.lat+","+C.lon+"&radius=25&unit=km&locale=*&size=60&sort=date,asc&startDateTime="+st);
-    const ev=((d._embedded||{}).events||[]);const seen=new Set();
-    const rows=ev.filter(e=>{const k=e.name+"|"+((e.dates||{}).start||{}).localDate;if(seen.has(k))return false;seen.add(k);return true;}).slice(0,30);
-    if(!rows.length){box.innerHTML='<div class="muted small">Keine Ticketmaster-Veranstaltungen im Umkreis von 25 km gefunden.</div>';setStatus("tm",true);return;}
-    let lastD="";box.innerHTML='<div class="list">'+rows.map(e=>{const s=(e.dates||{}).start||{};const v=(((e._embedded||{}).venues||[])[0])||{};
-      const dt=s.localDate?new Date(s.localDate+"T12:00:00"):null;const dl=dt?dt.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}):"";
-      const head=dl!==lastD;lastD=dl;const cls=((e.classifications||[])[0]||{}).segment;
-      return '<a class="li" href="'+esc(safeUrl(e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag"'+(head?'':' style="opacity:.35"')+'>'+esc(dl)+'</span><div class="t"><b>'+esc(e.name)+'</b><br><span class="muted small">'+esc(v.name||"")+(s.localTime?" · "+esc(s.localTime.slice(0,5))+" Uhr":"")+'</span></div><div class="r muted small">'+esc(cls&&cls.name&&cls.name!=="Undefined"?cls.name:"")+'</div></a>';}).join("")+'</div><div class="muted small">Quelle: Ticketmaster · Umkreis 25 km · Eventim stellt keine öffentliche Schnittstelle bereit.</div>';
+  try{const iso=d=>d.toISOString().slice(0,19)+"Z";const now=new Date(),end=new Date(Date.now()+60*864e5);
+    const d=await getJSON("https://app.ticketmaster.com/discovery/v2/events.json?apikey="+encodeURIComponent(TMKEY)+"&latlong="+C.lat+","+C.lon+"&radius=30&unit=km&locale=*&size=150&sort=date,asc&startDateTime="+iso(now)+"&endDateTime="+iso(end));
+    const ev=((d._embedded||{}).events||[]);const seen=new Set();const groups={};
+    ev.forEach(e=>{const s=(e.dates||{}).start||{};const k=e.name+"|"+s.localDate;if(seen.has(k))return;seen.add(k);
+      const v=(((e._embedded||{}).venues||[])[0])||{};const city=((v.city||{}).name||"Sonstige").replace(/^D(ue|ü)sseldorf.*/i,"Düsseldorf");
+      const lat=+((v.location||{}).latitude),lon=+((v.location||{}).longitude);const km=isFinite(lat)&&isFinite(lon)?distKm(C.lat,C.lon,lat,lon):(isFinite(+e.distance)?+e.distance:99);
+      (groups[city]=groups[city]||{city,km:1e9,rows:[]});const g=groups[city];g.km=Math.min(g.km,km);g.rows.push({e,s,v});});
+    Object.values(groups).forEach(g=>g.rows.sort((a,b)=>((a.s.localDate||"")+(a.s.localTime||"")).localeCompare((b.s.localDate||"")+(b.s.localTime||""))));const list=Object.values(groups).sort((a,b)=>(b.city===C.town)-(a.city===C.town)||a.km-b.km);
+    if(!list.length){box.innerHTML='<div class="muted small">Keine Ticketmaster-Veranstaltungen im Umkreis von 30 km in den nächsten 60 Tagen.</div>';setStatus("tm",true);return;}
+    const day=s=>s.localDate?new Date(s.localDate+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}):"";
+    box.innerHTML=list.map(g=>'<div class="sublbl" style="margin-top:12px">'+esc(g.city)+' <span class="muted">· '+(g.km<1.5?"hier":"ca. "+fmt(g.km)+" km")+' · '+g.rows.length+' Termin'+(g.rows.length===1?"":"e")+'</span></div><div class="list">'+
+      g.rows.slice(0,12).map(({e,s,v})=>{const cls=((e.classifications||[])[0]||{}).segment;
+        return '<a class="li" href="'+esc(safeUrl(e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag">'+esc(day(s))+'</span><div class="t"><b>'+esc(e.name)+'</b><br><span class="muted small">'+esc(v.name||"")+(s.localTime?" · "+esc(s.localTime.slice(0,5))+" Uhr":"")+'</span></div><div class="r muted small">'+esc(cls&&cls.name&&cls.name!=="Undefined"?({Music:"Musik",Sports:"Sport","Arts & Theatre":"Kultur",Film:"Film",Miscellaneous:"Sonstiges"}[cls.name]||cls.name):"")+'</div></a>';}).join("")+
+      (g.rows.length>12?'<div class="muted small" style="padding:6px 2px">+ '+(g.rows.length-12)+' weitere</div>':'')+'</div>').join("")+
+      '<div class="muted small" style="margin-top:10px">Quelle: Ticketmaster · nächste 60 Tage, Umkreis 30 km · sortiert nach Entfernung, je Ort nach Datum.</div>';
     setStatus("tm",true);
   }catch(e){setStatus("tm",false,errText(e));box.innerHTML=stateBox("Veranstaltungen nicht verfügbar – "+errText(e)+(/40[13]/.test(String(e))?" (Schlüssel prüfen)":"")+".");}}
 {const i=$("tm"),b=$("tm-save");if(i&&b){i.value=TMKEY;b.addEventListener("click",()=>{TMKEY=i.value.trim();store("tm",TMKEY);loadTM();b.textContent="Gespeichert ✓";setTimeout(()=>b.textContent="Speichern",1500);});}}
