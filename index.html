@@ -1111,6 +1111,18 @@ body:not(.harrange) header .tools #toolgrid .hbtn{min-height:64px;font-size:16px
 body.t-open{overflow:hidden}
 .fin-open{width:100%;min-height:58px!important;display:flex!important;align-items:center;justify-content:center;gap:10px;margin:0 0 14px;font-size:17px!important}
 .fin-open .mi{width:22px;height:22px}
+/* v304: Feinschliff Einheitlichkeit */
+/* Reiter innerhalb einer Ansicht (z. B. Kalender · Ferien · Events) wie die Unterreiter oben: Glas-Fläche mit Kapseln */
+#al-seg{display:flex!important;gap:4px;padding:5px;border-radius:26px;background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 6px 20px rgba(0,0,0,.18)}
+#al-seg button{flex:1 1 0;min-height:42px!important;padding:0 10px!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:600 15px var(--f-body)!important;color:var(--fg);border-radius:999px!important}
+#al-seg button.on{background:var(--accent)!important;color:var(--panel)!important;box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 40%,transparent)!important}
+/* Radar-Knöpfe in Standardhöhe */
+.radar-bar .btn{min-height:44px!important;min-width:56px;font-size:15px!important}
+/* Häkchen-Felder als iOS-Schalter */
+.al-chk input[type=checkbox],#gm-web{-webkit-appearance:none;appearance:none;flex:0 0 51px;width:51px!important;height:31px!important;border-radius:999px;background:rgba(120,120,128,.32);position:relative;cursor:pointer;transition:background .2s;margin:0;border:0}
+.al-chk input[type=checkbox]::after,#gm-web::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .2s}
+.al-chk input[type=checkbox]:checked,#gm-web:checked{background:#34c759}
+.al-chk input[type=checkbox]:checked::after,#gm-web:checked::after{transform:translateX(20px)}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1720,7 +1732,7 @@ body.t-open{overflow:hidden}
     <div class="field">
       <label for="tm">Ticketmaster-Schlüssel (optional)</label>
       <div class="inline"><input id="tm" type="text" autocomplete="off" spellcheck="false" placeholder="Consumer Key"><button type="button" id="tm-save">Speichern</button></div>
-      <span class="hint">Für Konzerte, Sport und Shows unter „Veranstaltungen“. Kostenlos unter <a href="https://developer.ticketmaster.com/" target="_blank" rel="noopener">developer.ticketmaster.com</a> → Konto anlegen → „My Apps“ → „Consumer Key“.</span>
+      <span class="hint">Für Konzerte, Sport und Shows unter „Kalender &amp; Events“ → „Events“. Kostenlos unter <a href="https://developer.ticketmaster.com/" target="_blank" rel="noopener">developer.ticketmaster.com</a> → Konto anlegen → „My Apps“ → „Consumer Key“.</span>
     </div>
     <div class="field">
       <label class="al-chk" for="gm-web" style="display:flex"><input type="checkbox" id="gm-web"> Google Maps ohne Rückfrage öffnen</label>
@@ -1740,6 +1752,6 @@ body.t-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=303"></script>
+<script src="app.js?v=304"></script>
 </body>
 </html>
