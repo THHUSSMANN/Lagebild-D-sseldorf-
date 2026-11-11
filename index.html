@@ -1043,6 +1043,12 @@ header #headnav button.hn-radio.on{outline:0;background-color:var(--accent)!impo
 #sync-field .sync-btns .btn{padding:0 10px;font-size:14.5px}
 #sync-field .btn{display:flex;align-items:center;justify-content:center;text-align:center;width:100%}
 #sync-field textarea{background:var(--panel-2);color:var(--fg);border:1px solid var(--line);border-radius:12px}
+/* v299: Regenradar */
+.radar-bar{display:flex;align-items:center;gap:10px;margin-top:10px}.radar-bar input[type=range]{flex:1;accent-color:var(--accent);height:30px}
+.radar-bar .btn{min-width:52px}
+.radar-info{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;margin-top:6px;font:500 13.5px var(--f-body);color:var(--muted)}
+.radar-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 3px 0 6px;vertical-align:-1px}
+#radar-map{border-radius:14px;overflow:hidden}
 #radio .rsonos{grid-column:1/-1;min-height:54px;background-color:var(--accent);border-color:transparent}
 #radio .rsonos .mi{width:22px;height:22px}
 #radio .rbtn.on{background:#e8f6fb;color:#06222e}
@@ -1256,6 +1262,12 @@ body.r-open{overflow:hidden}
     <div class="card-head"><h2>Wetter jetzt</h2><span class="src">Open-Meteo · DWD-Station</span></div>
     <div id="wx-now"><div class="state">Wetterdaten werden geladen …</div></div>
   </section>
+  <section class="card" id="radar-card">
+    <div class="card-head"><h2>Regenradar</h2><span class="src">Deutscher Wetterdienst · letzte Stunde und Vorhersage bis 2 Stunden</span></div>
+    <div class="map" id="radar-map" style="height:340px"></div>
+    <div class="radar-bar"><button type="button" class="btn sm" id="radar-play" aria-label="Abspielen">▶</button><input type="range" id="radar-t" min="-12" max="24" step="1" value="0" aria-label="Zeitpunkt"><button type="button" class="btn sm" id="radar-now">Jetzt</button></div>
+    <div class="radar-info"><span id="radar-lbl">wird geladen …</span><span class="radar-leg"><i style="background:#9fd3ff"></i>leicht <i style="background:#2f7fff"></i>mäßig <i style="background:#ffd400"></i>stark <i style="background:#ff2a2a"></i>Unwetter</span></div>
+  </section>
   <section class="card">
     <div class="card-head"><h2>Was ziehe ich an?</h2><span class="src" id="wear-src">heute tagsüber · aus der Vorhersage</span></div>
     <div id="wear"><div class="state">wird geladen …</div></div>
@@ -1382,6 +1394,10 @@ body.r-open{overflow:hidden}
   <div id="ev-list"><div class="state">wird geladen …</div></div>
   <div id="ev-next" hidden></div>
 </section>
+<section class="card wide" id="tm-card">
+  <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nächste Termine im Umkreis</span></div>
+  <div id="tm-list"><div class="state">wird geladen …</div></div>
+</section>
 </div>
 
 <div class="view" id="v-flaechen" data-view="flaechen" hidden>
@@ -1460,6 +1476,8 @@ body.r-open{overflow:hidden}
     <div class="card-head"><h2 id="cam-title">Webcams</h2><span class="src">Webcam-Seiten · Windy · Autobahn GmbH · antippen öffnet die Live-Ansicht</span></div>
     <div id="webcam-links"></div>
     <div id="webcams-public"></div>
+    <div class="sublbl">Flugzeuge über Düsseldorf</div>
+    <div id="flights" style="margin-bottom:14px"><div class="state">wird geladen …</div></div>
     <div class="sublbl">Autobahn-Webcams</div>
     <div id="webcams"><div class="state">wird geladen …</div></div>
   </section>
@@ -1472,10 +1490,15 @@ body.r-open{overflow:hidden}
   <section class="card">
     <div class="card-head"><h2 id="pegel-title">Pegel Düsseldorf</h2><span class="src" id="pegel-src">WSV PEGELONLINE · Rhein-km 744,2</span></div>
     <div id="pegel"><div class="state">Pegeldaten werden geladen …</div></div>
+    <div id="pegel-wv"></div>
   </section>
   <section class="card" id="lp-card">
     <div class="card-head"><h2 id="lp-title">Düssel, Anger &amp; Itter</h2><span class="src">LANUK NRW · Hochwasserportal</span></div>
     <div id="landespegel"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card wide" id="ships-card">
+    <div class="card-head"><h2>Schiffe live</h2><span class="src">AIS-Karte von VesselFinder · Schiff antippen zeigt Name und Ziel</span></div>
+    <div id="ships-box"><div class="state">Karte lädt beim Öffnen …</div></div>
   </section>
 </div>
 </div>
@@ -1664,6 +1687,11 @@ body.r-open{overflow:hidden}
       <span class="hint" id="windy-st"></span>
     </div>
     <div class="field">
+      <label for="tm">Ticketmaster-Schlüssel (optional)</label>
+      <div class="inline"><input id="tm" type="text" autocomplete="off" spellcheck="false" placeholder="Consumer Key"><button type="button" id="tm-save">Speichern</button></div>
+      <span class="hint">Für Konzerte, Sport und Shows unter „Veranstaltungen“. Kostenlos unter <a href="https://developer.ticketmaster.com/" target="_blank" rel="noopener">developer.ticketmaster.com</a> → Konto anlegen → „My Apps“ → „Consumer Key“.</span>
+    </div>
+    <div class="field">
       <label class="al-chk" for="gm-web" style="display:flex"><input type="checkbox" id="gm-web"> Google Maps ohne Rückfrage öffnen</label>
       <span class="hint">Auf dem iPhone fragt Safari sonst jedes Mal „In Google Maps öffnen?“. Eingeschaltet nutzt das Dashboard normale Google-Maps-Adressen – ob dann die App oder die Webseite startet, entscheidet iOS. Kommt nur die Webseite, einfach wieder ausschalten.</span>
     </div>
@@ -1681,6 +1709,6 @@ body.r-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=298"></script>
+<script src="app.js?v=299"></script>
 </body>
 </html>

@@ -388,6 +388,12 @@ function efaPlace(k, p) { return (async () => {
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
 tasks.push(job("trips.json", trips));
+// Flugzeuge über Düsseldorf (Ersatz, falls der Browser adsb.fi nicht direkt abfragen darf)
+tasks.push(job("flights.json", async () => {
+  let d; try { d = await get("https://opendata.adsb.fi/api/v2/lat/51.2895/lon/6.7668/dist/16"); }
+  catch { d = await get("https://api.airplanes.live/v2/point/51.2895/6.7668/16"); }
+  return { ac: (d.ac || d.aircraft || []).map(a => ({ cs: (a.flight || "").trim(), reg: a.r || "", type: a.t || "", alt: a.alt_baro, gs: a.gs, lat: a.lat, lon: a.lon })) };
+}));
 tasks.push(job("pollen.json", () => get("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json")));
 // Radio: Stream-Adressen prüfen (bekannte Adressen zuerst, sonst radio-browser.info)
 tasks.push(job("radio.json", async () => {

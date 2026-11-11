@@ -60,7 +60,12 @@ const SRC={
   school:{name:"Schulferien",prov:"OpenHolidays API",url:"https://www.openholidaysapi.org/",ep:"openholidaysapi.org/SchoolHolidays"},
   boerse:{name:"Börse: Indizes, Devisen, Rohstoffe",prov:"Yahoo Finance (verzögert)",url:"https://finance.yahoo.com/",ep:"query1.finance.yahoo.com (über Datensammler)"},
   news:{name:"Regionale Nachrichten",prov:"tagesschau",url:"https://tagesschau.api.bund.dev/",ep:"tagesschau.de/api2u/news"},
-  geo:{name:"Ortssuche",prov:"Open-Meteo Geocoding",url:"https://open-meteo.com/en/docs/geocoding-api",ep:"geocoding-api.open-meteo.com/v1/search"}
+  geo:{name:"Ortssuche",prov:"Open-Meteo Geocoding",url:"https://open-meteo.com/en/docs/geocoding-api",ep:"geocoding-api.open-meteo.com/v1/search"},
+  radar:{name:"Regenradar",prov:"Deutscher Wetterdienst (GeoServer)",url:"https://maps.dwd.de/",ep:"maps.dwd.de/geoserver/dwd/wms · Niederschlagsradar"},
+  pegelwv:{name:"Rhein-Vorhersage",prov:"WSV PEGELONLINE / BfG",url:"https://www.pegelonline.wsv.de/webservice/dokuRestapi",ep:"pegelonline.wsv.de …/WV/measurements.json"},
+  ships:{name:"Schiffe (AIS-Karte)",prov:"VesselFinder (eingebettete Karte)",url:"https://www.vesselfinder.com/embed",ep:"vesselfinder.com/aismap.js"},
+  flights:{name:"Flugzeuge über Düsseldorf",prov:"adsb.fi Open Data (über Datensammler)",url:"https://github.com/adsbfi/opendata",ep:"opendata.adsb.fi/api/v2/lat/…/lon/…/dist/…"},
+  tm:{name:"Großveranstaltungen",prov:"Ticketmaster Discovery API (eigener Schlüssel)",url:"https://developer.ticketmaster.com/",ep:"app.ticketmaster.com/discovery/v2/events.json"}
 };
 const status={};
 
@@ -385,6 +390,84 @@ function gmWeb(u){try{const q=new URLSearchParams(u.split("?")[1]||"");let d=q.g
 function gmFix(root){if(!load("gm_web"))return;(root||document).querySelectorAll('a[href^="comgooglemaps://"]').forEach(a=>{a.href=gmWeb(a.getAttribute("href"));a.target="_blank";a.rel="noopener";});}
 new MutationObserver(()=>gmFix()).observe(document.body,{subtree:true,childList:true});gmFix();
 {const c=$("gm-web");if(c){c.checked=!!load("gm_web");c.addEventListener("change",()=>{store("gm_web",c.checked);if(c.checked)gmFix();else location.reload();});}}
+/* ================= Neue Quellen v299 ================= */
+/* Mondphase – ohne Schnittstelle berechnet */
+function moonInfo(d){const syn=29.530588853,ref=Date.UTC(2000,0,6,18,14);let a=((d-ref)/864e5)%syn;if(a<0)a+=syn;
+  const L=[[1,"🌑","Neumond"],[6.4,"🌒","zunehmende Sichel"],[8.4,"🌓","erstes Viertel"],[13.8,"🌔","zunehmender Mond"],[15.8,"🌕","Vollmond"],[21.1,"🌖","abnehmender Mond"],[23.1,"🌗","letztes Viertel"],[28.5,"🌘","abnehmende Sichel"],[99,"🌑","Neumond"]];
+  const x=L.find(l=>a<l[0]);let f=14.765-a;if(f<0)f+=syn;const fd=Math.round(f);
+  return {e:x[1],n:x[2],full:fd===0?"Mond · heute Vollmond":"Mond · Vollmond in "+fd+(fd===1?" Tag":" Tagen")};}
+
+/* Regenradar (DWD, Messung bis −1 h und Vorhersage bis +2 h) */
+let RADAR=null,RADAR_I=0,RADAR_PLAY=0,RADAR_KEY="";
+function radarBase(){const s=3e5;return Math.floor((Date.now()-6e5)/s)*s;}
+function radarSet(i){RADAR_I=i;if(!RADAR)return;const t=new Date(radarBase()+i*3e5);RADAR._wms.setParams({time:t.toISOString()});
+  const hm=t.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});const r=$("radar-t");if(r&&+r.value!==i)r.value=i;
+  $("radar-lbl").innerHTML=i===0?"<b>"+hm+"</b> · letztes Bild":(i<0?hm+" · vor "+(-i*5)+" Min":"<b>"+hm+"</b> · Vorhersage +"+(i*5)+" Min");}
+function radarInit(){const el=$("radar-map");if(!el||!el.offsetParent||typeof L==="undefined")return;
+  if(!RADAR){RADAR=L.map(el,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});baseTiles(false).forEach(l=>l.addTo(RADAR));
+    RADAR._wms=L.tileLayer.wms("https://maps.dwd.de/geoserver/dwd/wms",{layers:"Niederschlagsradar",format:"image/png",transparent:true,version:"1.3.0",opacity:.75,zIndex:6,attribution:"Radar: Deutscher Wetterdienst"}).addTo(RADAR);
+    let ok=0,bad=0;RADAR._wms.on("tileload",()=>{ok++;if(ok===1)setStatus("radar",true);}).on("tileerror",()=>{bad++;if(!ok&&bad>3)setStatus("radar",false,"Radarbilder nicht abrufbar");});
+    RADAR._pin=L.circleMarker([C.lat,C.lon],{radius:6,color:"#fff",weight:2,fillColor:"#e53935",fillOpacity:1}).addTo(RADAR);
+    $("radar-t").addEventListener("input",e=>{radarStop();radarSet(+e.target.value);});
+    $("radar-play").addEventListener("click",()=>{if(RADAR_PLAY){radarStop();return;}let i=-12;$("radar-play").textContent="❚❚";RADAR_PLAY=setInterval(()=>{radarSet(i);i=i>=24?-12:i+1;},650);});
+    $("radar-now").addEventListener("click",()=>{radarStop();radarSet(0);});
+    setInterval(()=>{if(!RADAR_PLAY&&!document.hidden)radarSet(RADAR_I);},5*6e4);}
+  if(RADAR_KEY!==C.key){RADAR_KEY=C.key;RADAR.setView([C.lat,C.lon],9);RADAR._pin.setLatLng([C.lat,C.lon]);}
+  setTimeout(()=>RADAR.invalidateSize(),60);radarSet(RADAR_I);}
+function radarStop(){clearInterval(RADAR_PLAY);RADAR_PLAY=0;const b=$("radar-play");if(b)b.textContent="▶";}
+
+/* Rhein-Vorhersage (Wasserstandsvorhersage WV der BfG über PEGELONLINE) */
+async function loadRheinWV(uuid,now){const box=$("pegel-wv");if(!box)return;
+  try{const d=await getJSON("https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/"+uuid+"/WV/measurements.json");
+    const f=(d||[]).filter(x=>x&&isFinite(x.value)&&new Date(x.timestamp)>Date.now());
+    if(!f.length){box.innerHTML='<div class="muted small" style="margin-top:8px">Für diesen Pegel gibt es keine Wasserstandsvorhersage.</div>';setStatus("pegelwv",true,"keine Vorhersage hier");return;}
+    const step=Math.max(1,Math.round(f.length/6));const pts=f.filter((x,i)=>i%step===0).slice(0,6);if(pts[pts.length-1]!==f[f.length-1])pts.push(f[f.length-1]);
+    const last=f[f.length-1],diff=last.value-now,arrow=diff>5?"↑ steigt":diff<-5?"↓ fällt":"→ gleichbleibend";
+    box.innerHTML='<div class="sublbl" style="margin-top:12px">Vorhersage <span class="muted">· '+arrow+' ('+(diff>0?"+":"")+fmt(diff)+' cm bis '+new Date(last.timestamp).toLocaleString("de-DE",{weekday:"short",hour:"2-digit",minute:"2-digit"})+')</span></div><div class="list">'+
+      pts.map(x=>{const dd=x.value-now;return '<div class="li"><span class="tag">'+new Date(x.timestamp).toLocaleString("de-DE",{weekday:"short",hour:"2-digit",minute:"2-digit"})+'</span><div class="t"><b>'+fmt(x.value/100,2)+' m</b>'+(x.type==="estimate"?' <span class="muted small">Abschätzung</span>':'')+'</div><div class="r muted small">'+(dd>0?"+":"")+fmt(dd)+' cm</div></div>';}).join("")+'</div>'+
+      '<div class="muted small">Quelle: Bundesanstalt für Gewässerkunde über PEGELONLINE. Vorhersagen sind Schätzungen.</div>';
+    setStatus("pegelwv",true);
+  }catch(e){box.innerHTML='';setStatus("pegelwv",false,errText(e));}}
+
+/* Schiffe: eingebettete AIS-Karte (VesselFinder), erst beim Öffnen laden */
+let SHIPS_KEY="";
+function shipsInit(){const box=$("ships-box");if(!box||!box.offsetParent||SHIPS_KEY===C.key)return;SHIPS_KEY=C.key;
+  const lat=C.isDus?51.2277:C.lat,lon=C.isDus?6.7735:C.lon;
+  const doc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;background:#dfe7ec}</style></head><body><script>var width="100%";var height="400";var latitude="'+lat+'";var longitude="'+lon+'";var zoom="12";var names=true;</'+'script><script src="https://www.vesselfinder.com/aismap.js"></'+'script></body></html>';
+  box.innerHTML='<iframe title="Schiffe live" style="width:100%;height:410px;border:0;border-radius:14px;display:block" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" loading="lazy"></iframe>';
+  const fr=box.firstChild;fr.srcdoc=doc;fr.addEventListener("load",()=>setStatus("ships",true));}
+
+/* Flugzeuge über Düsseldorf – erst direkt, sonst Stand des Datensammlers */
+async function loadFlights(){const box=$("flights");if(!box)return;const lat=51.2895,lon=6.7668;let ac=null,src="live";
+  try{const d=await getJSON("https://opendata.adsb.fi/api/v2/lat/"+lat+"/lon/"+lon+"/dist/16");ac=(d.ac||d.aircraft||[]).map(a=>({cs:(a.flight||"").trim(),reg:a.r||"",type:a.t||"",alt:a.alt_baro,gs:a.gs,lat:a.lat,lon:a.lon}));}
+  catch(e){try{const d=await getData("flights.json");ac=(d.data&&d.data.ac)||[];src="Stand "+dataAge(d);}catch(e2){setStatus("flights",false,errText(e2));box.innerHTML=stateBox("Flugdaten nicht verfügbar.",link("https://globe.adsb.fi/?lat=51.29&lon=6.77&zoom=10","Live-Karte"));return;}}
+  ac=ac.filter(a=>isFinite(a.lat)).map(a=>({...a,km:distKm(lat,lon,a.lat,a.lon)})).sort((a,b)=>a.km-b.km);
+  const alt=a=>a.alt==="ground"?"am Boden":isFinite(a.alt)?fmt(a.alt*0.3048/1000,1)+" km":"–";
+  box.innerHTML='<div class="facts">'+fact(String(ac.length),"Flugzeuge im Umkreis 30 km")+fact(String(ac.filter(a=>a.alt==="ground").length),"am Boden (Flughafen)")+'</div>'+
+    (ac.length?'<div class="list">'+ac.slice(0,12).map(a=>'<div class="li"><span class="tag">'+esc(a.cs||a.reg||"?")+'</span><div class="t">'+esc(a.type||"")+(a.reg&&a.cs?' <span class="muted small">'+esc(a.reg)+'</span>':'')+'</div><div class="r muted small">'+alt(a)+(isFinite(a.gs)&&a.alt!=="ground"?" · "+fmt(a.gs*1.852)+" km/h":"")+'</div></div>').join("")+'</div>':'')+
+    '<div class="muted small">'+(src==="live"?"Live":"Datensammler, "+src)+' · adsb.fi Open Data · '+link("https://globe.adsb.fi/?lat=51.29&lon=6.77&zoom=10","Live-Karte")+'</div>';
+  setStatus("flights",true,src==="live"?"":src);}
+
+/* Großveranstaltungen über Ticketmaster (eigener kostenloser Schlüssel) */
+let TMKEY=load("tm")||"";
+async function loadTM(){const box=$("tm-list");if(!box)return;
+  if(!TMKEY){box.innerHTML='<div class="muted small">Für Konzerte, Sport und Shows in der Nähe einmal einen kostenlosen Ticketmaster-Schlüssel unter <a href="#einstellungen">Einstellungen</a> eintragen.</div>';setStatus("tm",false,"Schlüssel fehlt");return;}
+  try{const st=new Date().toISOString().slice(0,19)+"Z";
+    const d=await getJSON("https://app.ticketmaster.com/discovery/v2/events.json?apikey="+encodeURIComponent(TMKEY)+"&latlong="+C.lat+","+C.lon+"&radius=25&unit=km&locale=*&size=60&sort=date,asc&startDateTime="+st);
+    const ev=((d._embedded||{}).events||[]);const seen=new Set();
+    const rows=ev.filter(e=>{const k=e.name+"|"+((e.dates||{}).start||{}).localDate;if(seen.has(k))return false;seen.add(k);return true;}).slice(0,30);
+    if(!rows.length){box.innerHTML='<div class="muted small">Keine Ticketmaster-Veranstaltungen im Umkreis von 25 km gefunden.</div>';setStatus("tm",true);return;}
+    let lastD="";box.innerHTML='<div class="list">'+rows.map(e=>{const s=(e.dates||{}).start||{};const v=(((e._embedded||{}).venues||[])[0])||{};
+      const dt=s.localDate?new Date(s.localDate+"T12:00:00"):null;const dl=dt?dt.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}):"";
+      const head=dl!==lastD;lastD=dl;const cls=((e.classifications||[])[0]||{}).segment;
+      return '<a class="li" href="'+esc(safeUrl(e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag"'+(head?'':' style="opacity:.35"')+'>'+esc(dl)+'</span><div class="t"><b>'+esc(e.name)+'</b><br><span class="muted small">'+esc(v.name||"")+(s.localTime?" · "+esc(s.localTime.slice(0,5))+" Uhr":"")+'</span></div><div class="r muted small">'+esc(cls&&cls.name&&cls.name!=="Undefined"?cls.name:"")+'</div></a>';}).join("")+'</div><div class="muted small">Quelle: Ticketmaster · Umkreis 25 km · Eventim stellt keine öffentliche Schnittstelle bereit.</div>';
+    setStatus("tm",true);
+  }catch(e){setStatus("tm",false,errText(e));box.innerHTML=stateBox("Veranstaltungen nicht verfügbar – "+errText(e)+(/40[13]/.test(String(e))?" (Schlüssel prüfen)":"")+".");}}
+{const i=$("tm"),b=$("tm-save");if(i&&b){i.value=TMKEY;b.addEventListener("click",()=>{TMKEY=i.value.trim();store("tm",TMKEY);loadTM();b.textContent="Gespeichert ✓";setTimeout(()=>b.textContent="Speichern",1500);});}}
+
+/* Karten und Listen erst laden, wenn die Ansicht sichtbar ist */
+function lazyViews(){setTimeout(()=>{try{radarInit();shipsInit();const f=$("flights");if(f&&f.offsetParent&&(!window.FL_AT||Date.now()-window.FL_AT>6e4)){window.FL_AT=Date.now();loadFlights();}}catch(e){}},250);}
+window.addEventListener("hashchange",lazyViews);document.addEventListener("click",lazyViews);lazyViews();
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
@@ -846,8 +929,8 @@ async function loadRhein(){
       fact(vals.length?(cm.value-vals[0]>0?"+":"")+fmt(cm.value-vals[0]):"–","Änderung 7 Tage")+
       (!C.isDus&&st.km!=null?fact(fmt(distKm(C.lat,C.lon,st.latitude,st.longitude),0)+" km","Entfernung"):"")+'</div>'+
       (C.isDus?'<div class="muted small">Schifffahrt: '+link("https://www.elwis.de/","ELWIS")+'</div>':'<div class="muted small">Nächster Pegel der Bundeswasserstraßen. Landesgewässer: '+link("https://www.hochwasserzentralen.de/","Hochwasserzentralen")+'</div>');
-    $("pegel").innerHTML=html;setStatus("pegel",true);
-  }catch(e){setStatus("pegel",false,errText(e));$("pegel").innerHTML=stateBox("Pegel nicht verfügbar – "+errText(e)+".",link("https://www.pegelonline.wsv.de/gast/start","PEGELONLINE"));setKpi("k-rhein","–","kein Pegel","info");}
+    $("pegel").innerHTML=html;setStatus("pegel",true);loadRheinWV(uuid,cm.value);
+  }catch(e){const w=$("pegel-wv");if(w)w.innerHTML="";setStatus("pegel",false,errText(e));$("pegel").innerHTML=stateBox("Pegel nicht verfügbar – "+errText(e)+".",link("https://www.pegelonline.wsv.de/gast/start","PEGELONLINE"));setKpi("k-rhein","–","kein Pegel","info");}
 }
 async function loadLandespegel(){
   const card=$("lp-card");card.hidden=!C.isDus;if(!C.isDus)return;
@@ -1783,7 +1866,7 @@ function renderCal(){
   $("cal-src").textContent="Feiertage · Schulferien "+(STATE_NAME[C.state]||"");
   const w=WX&&WX[C.wxIdx];let html="";const sn=STATE_NAME[C.state]||"";
   if(w){const d=w.daily;const len=d.daylight_duration[0];
-    html+='<div class="facts">'+fact(hhmm(d.sunrise[0]*1000),"Sonnenaufgang")+fact(hhmm(d.sunset[0]*1000),"Sonnenuntergang")+fact(Math.floor(len/3600)+" h "+Math.round(len%3600/60)+" min","Tageslicht")+fact(String(isoWeek(new Date())),"Kalenderwoche")+'</div>';}
+    html+='<div class="facts">'+fact(hhmm(d.sunrise[0]*1000),"Sonnenaufgang")+fact(hhmm(d.sunset[0]*1000),"Sonnenuntergang")+fact(Math.floor(len/3600)+" h "+Math.round(len%3600/60)+" min","Tageslicht")+fact(String(isoWeek(new Date())),"Kalenderwoche")+(()=>{const m=moonInfo(new Date());return fact(m.e+" "+m.n,m.full)})()+'</div>';}
   const today=isoDay();const nd=s=>new Date(s+"T12:00:00");const days=s=>Math.round((nd(s)-nd(today))/864e5);
   const rel=n=>n===0?"heute":n===1?"morgen":"in "+n+" Tagen";
   if(HOL&&HOL.length){const next=HOL.filter(h=>h.date>=today).slice(0,4);
@@ -2247,7 +2330,7 @@ async function refreshAll(force){
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
     tasks.push(loadUBA(),loadPollen(),loadHol());
-    tasks.push(loadWindy(),loadParking());
+    tasks.push(loadWindy(),loadParking(),loadTM());
   }
   await Promise.allSettled(tasks);
   {const um=$("upd-mini");if(um)um.innerHTML="<b>"+esc(C.isDus?"Düsseldorf":C.town)+"</b><span> · zuletzt aktualisiert "+new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"})+" Uhr</span>";}
