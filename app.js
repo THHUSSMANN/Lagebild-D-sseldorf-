@@ -368,6 +368,16 @@ const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.
  const pin=$("sync-in-paste");if(pin)pin.addEventListener("click",async()=>{let t="";try{t=await navigator.clipboard.readText();}catch(e){}
    if(t&&t.includes(PFX)){$("sync-text").value=t;go(t);}else{$("sync-text").focus();msg("Übertragungs-Text unten einfügen und „Übernehmen & neu laden“ tippen.","");}});
  const inb=$("sync-in");if(inb)inb.addEventListener("click",()=>go($("sync-text").value));}
+/* ARD Sounds · Rubriken: aufklappbar, sortierbar, Reihenfolge nur auf diesem Gerät */
+{const box=$("r-ard"),tg=$("r-ard-tg");if(box&&tg){
+  const R=[["truecrime","True Crime","true-crime-120","#4a4f6e","#1c1f33"],["doku","Doku & Reportage","doku-reportage-204","#3d7fd1","#1f4f99"],["hoerspiel","Hörspiel","hoerspiel-112","#8a5cf0","#5130b0"],["hoerbuch","Hörbuch","hoerbuch-108","#c98a3a","#8f5a17"],["wissen","Wissen","wissen-146","#2fb3a6","#137a70"],["geschichte","Geschichte","geschichte-138","#9b7a52","#5e4528"],["gesund","Gesund leben","gesund-leben-104","#5bbf6a","#2f8a3e"],["gesellschaft","Gesellschaft","gesellschaft-100","#e0773a","#a8461a"],["kultur","Kultur","kultur-156","#d0508f","#94265f"],["musik","Musik entdecken","musik-166","#ff5e7a","#c21f45"],["kinder","Für Kinder","fuer-kinder-100","#f2b632","#c07f06"]];
+  const ic='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="7" rx="1.8"/><rect x="16.5" y="14" width="4.5" height="7" rx="1.8"/></svg>';
+  box.innerHTML=R.map(([k,t,slug,c1,c2])=>'<button type="button" class="rapp" data-k="'+k+'" data-href="https://www.ardsounds.de/rubrik/'+slug+'/"><span class="r-ic" style="background:linear-gradient(160deg,'+c1+','+c2+')">'+ic+'</span><span class="r-tx"><b>'+esc(t)+'</b><small>ARD Sounds</small></span><span class="r-tr">↗</span></button>').join("");
+  (load("radio_ard")||[]).forEach(k=>{const b=box.querySelector('[data-k="'+k+'"]');if(b)box.appendChild(b);});
+  const names=()=>{$("r-ard-n").textContent=[...box.querySelectorAll(".rapp b")].slice(0,3).map(b=>b.textContent).join(", ")+" …";};names();
+  const set=o=>{box.hidden=!o;tg.setAttribute("aria-expanded",o?"true":"false");store("radio_ard_open",o);};set(!!load("radio_ard_open"));
+  tg.addEventListener("click",e=>{e.stopPropagation();set(box.hidden);});
+  setTimeout(()=>{try{reorder(box,".rapp",()=>true,()=>{store("radio_ard",[...box.querySelectorAll(".rapp")].map(b=>b.dataset.k));names();});}catch(e){}},0);}}
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
