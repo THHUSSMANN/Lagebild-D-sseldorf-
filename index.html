@@ -1157,6 +1157,16 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 /* Kennzeichen (Datum, PKW, Uhrzeit): Kapseln statt eckiger schwarzer Kästchen */
 .tag{border-radius:999px!important;padding:3px 10px!important;background:color-mix(in srgb,var(--fg) 10%,transparent)!important;color:var(--fg)!important;font-weight:700;border:1px solid color-mix(in srgb,var(--fg) 12%,transparent)}
 .tag.ab{background:#1f4e9c!important;color:#fff!important;border-color:transparent}.tag.alt{background:var(--accent)!important;color:var(--panel)!important;border-color:transparent}
+/* v309: Reiter-Leisten im iOS-26-Stil (Segmented Control): gewählter Reiter als helle Glaskapsel, größere Schrift */
+#wx-seg{margin:0 0 14px}
+.vtop .subtabs,.vtop .segsw,#al-seg,#wx-seg{display:flex!important;gap:2px;padding:4px!important;border-radius:999px!important;background:color-mix(in srgb,var(--fg) 9%,transparent)!important;border:1px solid color-mix(in srgb,var(--fg) 10%,transparent)!important;-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:none!important}
+.vtop .subtabs a,.vtop .segsw button,#al-seg button,#wx-seg button{flex:1 1 0;min-height:40px!important;padding:0 10px!important;border:0!important;border-radius:999px!important;background:transparent!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  font:600 17px/1 var(--f-body)!important;letter-spacing:-.01em;color:var(--fg)!important;opacity:.85;display:flex!important;align-items:center;justify-content:center;white-space:nowrap;transition:background .2s,box-shadow .2s}
+.vtop .subtabs a.on,.vtop .segsw button.on,#al-seg button.on,#wx-seg button.on{opacity:1;background:var(--seg-on,#fff)!important;color:var(--seg-on-fg,#111)!important;box-shadow:0 1px 2px rgba(0,0,0,.12),0 3px 10px rgba(0,0,0,.14)!important}
+:root{--seg-on:#fff;--seg-on-fg:#0b1a24}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--seg-on:rgba(255,255,255,.26);--seg-on-fg:#fff}}
+:root[data-theme="dark"]{--seg-on:rgba(255,255,255,.26);--seg-on-fg:#fff}
+.vtop .subtabs{flex-wrap:wrap;border-radius:24px!important}.vtop .subtabs a{flex:1 1 auto}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1327,23 +1337,23 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 <div class="view" id="v-wetter" data-view="wetter" hidden>
 <div class="subtabs" data-for="wetter"></div>
 <section id="wetter"><div class="sec-title"><h2 id="wx-h" class="place-h">Wetter</h2><span class="muted small" id="wx-place"></span></div></section>
+<div class="seg" id="wx-seg"><button type="button" data-wx="now" class="on">Jetzt</button><button type="button" data-wx="24">24 Std.</button><button type="button" data-wx="7">7 Tage</button><button type="button" data-wx="radar">Radar</button></div>
 <div class="grid">
-  <section class="card">
+  <section class="card wide" data-wxp="now">
     <div class="card-head"><h2>Wetter jetzt</h2><span class="src">Open-Meteo · DWD-Station</span></div>
     <div id="wx-now"><div class="state">Wetterdaten werden geladen …</div></div>
   </section>
-  <section class="card wide">
+  <section class="card wide" data-wxp="now">
     <div class="card-head"><h2>Was ziehe ich an?</h2><span class="src" id="wear-src">heute tagsüber · aus der Vorhersage</span></div>
     <div id="wear"><div class="state">wird geladen …</div></div>
   </section>
-  <div class="wide wx-segwrap"><div class="seg" id="wx-seg"><button type="button" data-wx="24" class="on">24 Std.</button><button type="button" data-wx="7">7 Tage</button><button type="button" data-wx="radar">Radar</button></div></div>
   <section class="card wide" id="radar-card" data-wxp="radar" hidden>
     <div class="card-head"><h2>Regenradar</h2><span class="src">Deutscher Wetterdienst · letzte Stunde und Vorhersage bis 2 Stunden</span></div>
     <div class="map" id="radar-map" style="height:340px"></div>
     <div class="radar-bar"><button type="button" class="btn sm" id="radar-play" aria-label="Abspielen">▶</button><input type="range" id="radar-t" min="-12" max="24" step="1" value="0" aria-label="Zeitpunkt"><button type="button" class="btn sm" id="radar-now">Jetzt</button></div>
     <div class="radar-info"><span id="radar-lbl">wird geladen …</span><span class="radar-leg"><i style="background:#9fd3ff"></i>leicht <i style="background:#2f7fff"></i>mäßig <i style="background:#ffd400"></i>stark <i style="background:#ff2a2a"></i>Unwetter</span></div>
   </section>
-  <section class="card wide" data-wxp="24">
+  <section class="card wide" data-wxp="24" hidden>
     <div class="card-head"><h2>Nächste 24 Stunden</h2>
       <div class="legend"><span><i style="background:var(--accent)"></i>Temperatur</span><span><i style="background:var(--accent);opacity:.3"></i>Regenrisiko</span></div></div>
     <div id="wx-24"><div class="state">wird geladen …</div></div>
@@ -1787,6 +1797,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=308"></script>
+<script src="app.js?v=309"></script>
 </body>
 </html>
