@@ -1853,7 +1853,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#press-sw [data-
 function renderSources(){
   let r='<table><thead><tr><th>Bereich</th><th>Anbieter</th><th>Endpunkt</th><th>Status</th></tr></thead><tbody>';
   Object.entries(SRC).forEach(([k,s])=>{const st=status[k];
-    const pill=!st?'<span class="pill"><i></i>ausstehend</span>':st.ok?'<span class="pill p-ok"><i></i>live '+hhmm(st.at)+(st.msg?" · "+esc(st.msg):"")+'</span>':'<span class="pill p-bad"><i></i>'+esc(st.msg)+'</span>';
+    const pill=!st?(k==="geo"?'<span class="pill"><i></i>nur bei Ortssuche</span>':'<span class="pill"><i></i>ausstehend</span>'):st.ok?'<span class="pill p-ok"><i></i>live '+hhmm(st.at)+(st.msg?" · "+esc(st.msg):"")+'</span>':'<span class="pill p-bad"><i></i>'+esc(st.msg)+'</span>';
     r+='<tr><td><b>'+esc(s.name)+'</b></td><td><a href="'+s.url+'" target="_blank" rel="noopener">'+esc(s.prov)+'</a></td><td class="mono">'+esc(s.ep)+'</td><td>'+pill+'</td></tr>';});
   $("sources").innerHTML=r+'</tbody></table>';
   {const v=Object.values(status),ok=v.filter(x=>x.ok).length;setKpi("k-src",ok+"<small> / "+v.length+" live</small>",v.length-ok?(v.length-ok)+" ohne Daten":"alle Quellen erreichbar",v.length-ok>3?"warn":"ok");}
