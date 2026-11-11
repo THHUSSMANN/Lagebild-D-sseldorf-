@@ -517,15 +517,23 @@ async function loadFussball(){const y=new Date().getFullYear(),season=new Date()
   const now=Date.now()-2.5*36e5;const kv=[];
   let bvbCal=[];try{const d=await getData("bvbcal.json");bvbCal=((d.data||{}).events||[]).map(calMatch);}catch(e){}
   if(!all.length&&!bvbCal.length){setStatus("fb",false,"keine Daten");FB.forEach(f=>{const b=$("fb-"+f.k);if(b)b.innerHTML=stateBox("Spielplan nicht verfügbar.",link("https://www.openligadb.de","OpenLigaDB"));});return;}
+  const fbKey=s=>(s||"").toLowerCase().replace(/^bor\.\s*/,"borussia ").replace(/[^a-zäöüß0-9]/g,"");const ICONS={};
+  all.forEach(m=>[m.team1,m.team2].forEach(x=>{if(x&&x.teamIconUrl)ICONS[fbKey(x.teamName)]=x.teamIconUrl;}));
+  FB.forEach(f=>{const hit=all.find(m=>[m.team1,m.team2].some(x=>x&&x.teamIconUrl&&f.rx.test(x.teamName)));if(hit)f.icon=[hit.team1,hit.team2].find(x=>f.rx.test(x.teamName)).teamIconUrl;});
   const dayDiff=d=>{const a=new Date(d);a.setHours(0,0,0,0);const b=new Date();b.setHours(0,0,0,0);return Math.round((a-b)/864e5);};
   const inDays=n=>n<=0?"heute":n===1?"morgen":"in "+n+" Tagen";
   FB.forEach(f=>{const is=x=>x&&x.teamName&&f.rx.test(x.teamName)&&!/\bII\b|U\s?\d{2}/.test(x.teamName);
-    const src=(f.k==="bvb"&&bvbCal.some(m=>new Date(m.matchDateTime).getTime()>now))?bvbCal:all;
+    let src=all;
+    if(f.k==="bvb"&&bvbCal.length){const own=all.filter(m=>is(m.team1)||is(m.team2));
+      /* Kalender-Spiele ergänzen, die OpenLigaDB nicht führt (z. B. Champions League) – Doppelte am selben Tag weglassen */
+      const extra=bvbCal.filter(c=>!own.some(m=>Math.abs(new Date(m.matchDateTime)-new Date(c.matchDateTime))<36e6));src=own.concat(extra);}
     const ms=src.filter(m=>(is(m.team1)||is(m.team2))&&!m.matchIsFinished&&new Date(m.matchDateTime).getTime()>now).sort((a,b)=>new Date(a.matchDateTime)-new Date(b.matchDateTime));
     const box=$("fb-"+f.k);if(!box)return;const card=box.closest(".card");if(card){card.classList.add("fb-card");card.style.setProperty("--club1",f.c1);card.style.setProperty("--club2",f.c2);card.style.setProperty("--clubfg",f.fg);}
     if(!ms.length){box.innerHTML='<div class="muted">Kein anstehendes Spiel gefunden – der Spielplan wird ergänzt, sobald OpenLigaDB ihn führt.</div>';return;}
     const dt=m=>new Date(m.matchDateTime);const dl=m=>dt(m).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});const tl=m=>dt(m).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
-    const team=(x,me)=>'<div class="fb-team'+(me?" me":"")+'">'+(x.teamIconUrl?'<img src="'+esc(safeUrl(x.teamIconUrl))+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'')+'<b>'+esc(x.teamName)+'</b></div>';
+    const icon=x=>{if(x.teamIconUrl)return x.teamIconUrl;const k=fbKey(x.teamName);return ICONS[k]||(is(x)?f.icon:"");};
+    const mono=x=>'<span class="fb-mono">'+esc((x.teamName||"?").replace(/^(FC|1\.\s*FC|SC|SV|VfL|VfB|TSG|Bor\.|Borussia|Bayer|Eintracht)\s+/i,"").split(/\s+/).map(w=>w[0]).join("").slice(0,3).toUpperCase())+'</span>';
+    const team=(x,me)=>{const ic=icon(x);return '<div class="fb-team'+(me?" me":"")+'">'+(ic?'<img src="'+esc(safeUrl(ic))+'" alt="" loading="lazy" referrerpolicy="no-referrer">':mono(x))+'<b>'+esc(x.teamName)+'</b></div>'};
     const m=ms[0],home=is(m.team1),loc=m.location||{},dd=dayDiff(m.matchDateTime);
     const nh=ms.find(x=>is(x.team1));const nhd=nh?dayDiff(nh.matchDateTime):null;
     kv.push(f.short+" "+dt(m).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}));
@@ -534,7 +542,7 @@ async function loadFussball(){const y=new Date().getFullYear(),season=new Date()
       '<div class="fb-next">'+team(m.team1,home)+'<div class="fb-vs">:</div>'+team(m.team2,!home)+'</div>'+
       '<div class="fb-where">'+esc(m._lg)+(m.group&&m.group.groupName?" · "+esc(m.group.groupName):"")+(loc.locationStadium?"<br>"+esc(loc.locationStadium):"")+(loc.locationCity?", "+esc(loc.locationCity):"")+'</div>'+
       (nh&&nh!==m?'<div class="fb-count"><b>'+nhd+'</b><span>Tage bis zum nächsten Heimspiel<br><em>'+esc(dl(nh))+' · vs. '+esc((nh.team2||{}).teamName||"")+'</em></span></div>':(home?'':'<div class="fb-count"><b>–</b><span>Kein weiteres Heimspiel im Kalender</span></div>'))+
-      (ms.length>1?'<div class="sublbl" style="margin-top:14px">Danach</div><div class="list">'+ms.slice(1,6).map(x=>{const h=is(x.team1),o=h?x.team2:x.team1;return '<div class="li fb-li '+(h?"h":"a")+'"><span class="tag">'+esc(dl(x))+'</span><div class="t"><span class="fb-ha">'+(h?"Heimspiel":"Auswärts")+'</span><b>'+(h?"vs. ":"bei ")+esc(o.teamName)+'</b><br><span class="muted small">'+esc(tl(x))+' Uhr · '+esc(x._lg)+'</span></div><div class="r muted small">'+esc(inDays(dayDiff(x.matchDateTime)))+'</div></div>';}).join("")+'</div>':'');});
+      (ms.length>1?'<div class="sublbl" style="margin-top:14px">Danach</div><div class="list">'+ms.slice(1,6).map(x=>{const h=is(x.team1),o=h?x.team2:x.team1;return '<div class="li fb-li '+(h?"h":"a")+'"><span class="tag">'+esc(dl(x))+'</span><div class="t"><span class="fb-ha">'+(h?"Heimspiel":"Auswärts")+'</span><b>'+(h?"vs. ":"bei ")+esc(o.teamName)+'</b><span class="muted small">'+esc(tl(x))+' Uhr · '+esc(x._lg)+'</span></div><div class="r muted small">'+esc(inDays(dayDiff(x.matchDateTime)))+'</div></div>';}).join("")+'</div>':'');});
   setKpi("k-fb",esc(kv.join(" · ")||"–"),"nächste Spiele","info");setStatus("fb",true);}
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
