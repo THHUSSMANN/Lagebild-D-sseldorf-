@@ -367,6 +367,10 @@ $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");
   a.src=url;a.play().then(()=>{b.classList.remove("load");b.classList.add("on");}).catch(()=>{b.classList.remove("load");window.open(RADIO_SITE[k],"_blank","noopener");});
 });
 $("tools-toggle").addEventListener("click",()=>{const l=$("tools"),open=l.hidden;l.hidden=!open;$("tools-toggle").setAttribute("aria-expanded",open?"true":"false");});
+/* App direkt öffnen; ist sie nicht da, nach kurzer Zeit die Webseite */
+document.addEventListener("click",e=>{const a=e.target.closest("a[data-app]");if(!a)return;e.preventDefault();const web=a.href;let left=false;
+  const vis=()=>{left=true;};document.addEventListener("visibilitychange",vis);window.addEventListener("blur",vis,{once:true});
+  location.href=a.dataset.app;setTimeout(()=>{document.removeEventListener("visibilitychange",vis);window.removeEventListener("blur",vis);if(!left&&!document.hidden)window.open(web,"_blank","noopener");},2500);});
 function radioShow(open){const l=$("radio-list");l.hidden=!open;document.body.classList.toggle("r-open",open);
   document.querySelectorAll("#radio-toggle,[data-radio-open]").forEach(x=>{x.setAttribute("aria-expanded",open?"true":"false");x.classList.toggle("on",open&&x.hasAttribute("data-radio-open"));});}
 document.addEventListener("click",e=>{const t=e.target.closest("#radio-toggle,[data-radio-open]");if(!t||(typeof HEDIT!=="undefined"&&HEDIT))return;radioShow($("radio-list").hidden);});
