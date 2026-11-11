@@ -499,6 +499,8 @@ document.querySelectorAll(".tabseg[data-tabs]").forEach(s=>{const v=load("tab_"+
 const FB=[{k:"f95",name:"Fortuna Düsseldorf",short:"F95"},{k:"bvb",name:"Borussia Dortmund",short:"BVB"}];
 async function loadFussball(){const y=new Date().getFullYear(),season=new Date().getMonth()>=6?y:y-1;
   const leagues=[["bl1","Bundesliga"],["bl2","2. Bundesliga"],["dfb","DFB-Pokal"]];let all=[];
+  // Champions League (und Pokal, falls anders benannt) automatisch in der OpenLigaDB-Ligaliste suchen
+  try{const av=await getJSON("https://api.openligadb.de/getavailableleagues");(av||[]).filter(l=>String(l.leagueSeason)===String(season)&&/champions\s*league|uefa\s*cl|dfb[\s-]*pokal/i.test(l.leagueName||"")&&!/frauen|women|youth|u19|jugend/i.test(l.leagueName||"")).forEach(l=>{if(!leagues.some(x=>x[0]===l.leagueShortcut))leagues.push([l.leagueShortcut,/champions/i.test(l.leagueName)?"Champions League":"DFB-Pokal"]);});}catch(e){}
   await Promise.all(leagues.map(async([l,n])=>{try{const d=await getJSON("https://api.openligadb.de/getmatchdata/"+l+"/"+season);(d||[]).forEach(m=>{m._lg=n;all.push(m);});}catch(e){}}));
   if(!all.length){setStatus("fb",false,"keine Daten");FB.forEach(f=>{const b=$("fb-"+f.k);if(b)b.innerHTML=stateBox("Spielplan nicht verfügbar.",link("https://www.openligadb.de","OpenLigaDB"));});return;}
   const now=Date.now()-2.5*36e5;const kv=[];
