@@ -1194,6 +1194,28 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 .radar-leg i{width:12px;height:12px;border-radius:50%}
 .plane-ic{font-size:20px;line-height:20px;text-shadow:0 1px 3px rgba(0,0,0,.6);transform-origin:center}
 .tabseg button{flex:1 1 auto!important;padding:0 8px!important}
+/* v322: Fußball in Vereinsfarben */
+.fb-card{border-top:6px solid var(--club1)!important;background-image:linear-gradient(180deg,color-mix(in srgb,var(--club1) 16%,transparent),transparent 140px)!important}
+.fb-card .card-head h2{display:flex;align-items:center;gap:10px}
+.fb-card .card-head h2::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--club1);box-shadow:0 0 0 3px var(--club2)}
+.fb-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;border-radius:18px;margin:2px 0 12px;font:800 22px/1.1 var(--f-display);letter-spacing:.01em}
+.fb-banner b{font:800 18px var(--f-body);opacity:.9;white-space:nowrap}
+.fb-banner.h{background:var(--club1);color:var(--clubfg);box-shadow:0 8px 22px color-mix(in srgb,var(--club1) 40%,transparent)}
+.fb-banner.a{background:transparent;color:var(--fg);border:3px solid var(--club1)}
+.fb-when{text-align:center;font:800 22px var(--f-display);margin:4px 0 6px}
+.fb-next{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;text-align:center;padding:6px 0 10px}
+.fb-team b{display:block;font:700 17px/1.2 var(--f-body)}
+.fb-team.me b{font-weight:800;color:var(--fg)}
+.fb-team:not(.me) b{opacity:.85}
+.fb-team img{width:56px;height:56px;object-fit:contain;display:block;margin:0 auto 6px}
+.fb-vs{font:800 26px var(--f-display);color:var(--club1)}
+.fb-where{text-align:center;color:var(--muted);font:500 15px/1.35 var(--f-body)}
+.fb-count{display:flex;align-items:center;gap:14px;margin-top:14px;padding:12px 16px;border-radius:18px;background:color-mix(in srgb,var(--club1) 14%,transparent);border:1px solid color-mix(in srgb,var(--club1) 45%,transparent)}
+.fb-count b{font:800 40px/1 var(--f-display);color:var(--fg);min-width:54px;text-align:center}
+.fb-count span{font:600 15px/1.3 var(--f-body)}.fb-count em{font-style:normal;color:var(--muted);font-weight:500}
+.fb-li .fb-ha{display:inline-block;margin-bottom:2px;padding:1px 9px;border-radius:999px;font:700 11.5px var(--f-body);letter-spacing:.04em;text-transform:uppercase}
+.fb-li.h .fb-ha{background:var(--club1);color:var(--clubfg)}.fb-li.a .fb-ha{border:1.5px solid var(--club1);color:var(--fg)}
+.fb-li .fb-ha+b{display:block}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1735,7 +1757,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 <div class="view" id="v-fussball" data-view="fussball" hidden>
 <section id="fussball"><div class="sec-title"><h2>Fußball</h2><span class="muted small">Nächste Spiele · OpenLigaDB</span></div></section>
 <div class="grid">
-  <section class="card wide"><div class="card-head"><h2>Fortuna Düsseldorf</h2><span class="src" id="fb-f95-src">Liga · DFB-Pokal</span></div><div id="fb-f95"><div class="state">wird geladen …</div></div></section>
+  <section class="card wide"><div class="card-head"><h2>Fortuna Düsseldorf</h2><span class="src" id="fb-f95-src">3. Liga · DFB-Pokal</span></div><div id="fb-f95"><div class="state">wird geladen …</div></div></section>
   <section class="card wide"><div class="card-head"><h2>Borussia Dortmund</h2><span class="src" id="fb-bvb-src">Liga · DFB-Pokal · Champions League</span></div><div id="fb-bvb"><div class="state">wird geladen …</div></div></section>
 </div>
 </div>
@@ -1840,6 +1862,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=321"></script>
+<script src="app.js?v=322"></script>
 </body>
 </html>

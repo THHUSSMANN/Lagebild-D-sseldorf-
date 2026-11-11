@@ -392,9 +392,10 @@ tasks.push(job("trips.json", trips));
 tasks.push(job("bvbcal.json", async () => {
   const URLS = ["https://i.cal.to/ical/3/borussiadortmund/bundesliga-spielplan/de/d20dad09.619990dc-68cb5b4d.ics",
                 "https://i.cal.to/ical/3/borussiadortmund/bundesliga-spielplan/de/d20dad09.619990dc-15b8d7b8.ics"]; // Bundesliga + Champions League
-  const raws = (await Promise.all(URLS.map(u => get(u, { type: "text" }).catch(() => "")))).filter(Boolean);
-  if (!raws.length) throw new Error("Kalender nicht erreichbar");
-  const raw = raws.join("\n");
+  const raws = await Promise.all(URLS.map(u => get(u, { type: "text" }).catch(() => "")));
+  if (!raws.some(Boolean)) throw new Error("Kalender nicht erreichbar");
+  // jede Quelle markieren (src 0 = Bundesliga-Abo, 1 = Abo mit Champions League)
+  const raw = raws.map((r, i) => r.replace(/BEGIN:VEVENT/g, "BEGIN:VEVENT\nX-SRC:" + i)).join("\n");
   const lines = raw.replace(/\r\n[ \t]/g, "").replace(/\n[ \t]/g, "").split(/\r?\n/);
   const ev = []; let cur = null;
   const unesc = s => (s || "").replace(/\\n/gi, "\n").replace(/\\,/g, ",").replace(/\;/g, ";").replace(/\\\\/g, "\\").trim();
@@ -411,6 +412,7 @@ tasks.push(job("bvbcal.json", async () => {
     else if (name === "LOCATION") cur.location = unesc(val);
     else if (name === "DESCRIPTION") cur.desc = unesc(val).slice(0, 300);
     else if (name === "CATEGORIES") cur.cat = unesc(val);
+    else if (name === "X-SRC") cur.src = +val;
   }
   const now = Date.now() - 3 * 36e5;
   const seen = new Set(); const uniq = ev.filter(e => { const k = e.start + "|" + (e.summary || ""); if (seen.has(k)) return false; seen.add(k); return true; });
