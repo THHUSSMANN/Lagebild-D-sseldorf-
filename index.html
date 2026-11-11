@@ -973,6 +973,17 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
   background-color:var(--accent)!important;color:var(--panel)!important;border-color:transparent!important;
   background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%)!important;box-shadow:0 4px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.35)!important}
 .view .inline>button:active,.view .r>button:active,.view .segsw button:active,.view .gpsbtn:active,.view .elsearch button:active{transform:scale(.965)}
+/* ---------- Einheitliche Schließen-Kreuze (Vorbild: Kapazität & Rettungswege) ---------- */
+.td-x,.x-round,.view-x,.view-x.round{width:48px!important;height:48px!important;min-height:48px!important;flex:0 0 48px;display:inline-flex!important;align-items:center;justify-content:center;
+  border-radius:50%!important;padding:0!important;font-size:0!important;color:#fff!important;
+  background:#1c2a35!important;background-image:none!important;border:1.5px solid rgba(255,255,255,.28)!important;
+  outline:3px solid var(--accent)!important;outline-offset:3px;box-shadow:0 6px 16px rgba(0,0,0,.25)!important;margin:5px}
+.td-x:hover,.view-x:hover{background:#26394a!important}
+.td-x:active,.x-round:active,.view-x:active{transform:scale(.94)}
+.view-x svg,.x-round svg{width:20px!important;height:20px!important;stroke:#fff!important}
+#rs-start{grid-template-columns:1fr 1fr!important;margin-bottom:10px}
+#rs-start button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px}
+.rs-st-l{margin:4px 2px 6px}
 </style>
 </head>
 <body>
@@ -1163,6 +1174,7 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
   <div class="seg" id="rs-mode"><button type="button" data-rsm="auto" class="on"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11l1.6-4.2A2 2 0 0 1 8.5 5.5h7a2 2 0 0 1 1.9 1.3L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M5 17v2M19 17v2"/><circle cx="7.5" cy="14" r="1"/><circle cx="16.5" cy="14" r="1"/></svg>PKW</button><button type="button" data-rsm="bahn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M9 21l1.5-4M15 21l-1.5-4"/><circle cx="9" cy="13.5" r="1"/><circle cx="15" cy="13.5" r="1"/></svg>Bahn</button><button type="button" data-rsm="oepnv"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="2.5"/><path d="M4 11h16M8 18v2.5M16 18v2.5M9 6.5h6"/><circle cx="8" cy="14.5" r="1"/><circle cx="16" cy="14.5" r="1"/></svg>ÖPNV</button><button type="button" class="rs-uber" data-uber aria-label="Uber öffnen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14l2-5a2 2 0 0 1 1.9-1.3h8.2A2 2 0 0 1 18 9l2 5"/><rect x="3" y="14" width="18" height="4" rx="1.5"/><path d="M6 18v2M18 18v2"/><path d="M9 4h6"/></svg>Uber</button></div>
   <div data-rsp="auto">
   <div class="rs-quick" id="rs-quick"></div>
+  <div class="seg" id="rs-start" aria-label="Startpunkt"></div>
   <div class="seg" id="rs-dir"></div>
   <div id="rs-alts"><div class="state">wird berechnet …</div></div>
   <div id="rs-map" class="map rsmap" role="img" aria-label="Karte der Fahrt"></div>
@@ -1536,6 +1548,6 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=273"></script>
+<script src="app.js?v=274"></script>
 </body>
 </html>

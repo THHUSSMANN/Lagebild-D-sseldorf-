@@ -1384,8 +1384,8 @@ let ROUTE_ITEMS=[],AB_SETS={},AB_SEL=null;
 // „Meine Autobahnstrecken“ automatisch aus den PKW-Routen (TomTom) ab dem gewählten Ort
 let AUTOR=[];
 function renderAutoPrio(){const box=$("prio");if(!box||typeof RS==="undefined"||!RS.city)return false;
-  const dirs=RSDIRS.filter(x=>x[2]===RS.city);ROUTE_ITEMS=[];AUTOR=[];const O=FIXHOME[RS.city];
-  {const h=$("prio-h");if(h)h.innerHTML='Meine Strecken ab '+esc(CITYN[RS.city])+' <span class="muted small">· Route TomTom, Meldungen Autobahn GmbH</span>';}
+  const dirs=rsDirs();ROUTE_ITEMS=[];AUTOR=[];const O=(RS.gps&&RS.pos)?RS.pos:FIXHOME[RS.city];
+  {const h=$("prio-h");if(h)h.innerHTML='Meine Strecken ab '+esc(RS.gps&&RS.pos?"Standort":CITYN[RS.city])+' <span class="muted small">· Route TomTom, Meldungen Autobahn GmbH</span>';}
   const cards=dirs.map((d,i)=>{const D=RS.data[d[0]];const a=D&&D.alts&&D.alts[0];const to=CITYN[d[3]];
     if(!a)return '<div class="route unk"><span class="tag">PKW</span><span class="rt">→ '+esc(to)+'</span><span class="rv muted">'+(D&&D.err?"nicht verfügbar"+(/HTTP 4(03|29)/.test(D.err)?" · TomTom-Kontingent":""):"wird berechnet …")+'</span></div>';
     const items=[...(a.ab||[]).map(w=>({...w,_c:w.cl?1:0})),...(a.rw||[]).map(w=>({...w,_rw:1}))].map(w=>({...w,km:distKm(O.lat,O.lon,w.lat,w.lon)}));
@@ -1556,9 +1556,9 @@ async function loadAutobahn(){
 // ================= Tankerkönig =================
 // Unterwegs: automatisch der aktuelle Standort, wenn er mehr als 2 km vom gewählten Ort entfernt ist
 let AUTOPOS=null,AUTOAT=0,FUELPOS=null;const AUTOMAN={};
-function nearPos(){return new Promise(res=>{if(!window.isSecureContext||!navigator.geolocation)return res(null);
-  if(AUTOPOS&&Date.now()-AUTOAT<120000)return res(AUTOPOS);
-  navigator.geolocation.getCurrentPosition(p=>{AUTOPOS={lat:p.coords.latitude,lon:p.coords.longitude};AUTOAT=Date.now();res(AUTOPOS);},()=>res(null),{enableHighAccuracy:false,timeout:8000,maximumAge:120000});});}
+function nearPos(fresh){return new Promise(res=>{if(!window.isSecureContext||!navigator.geolocation)return res(null);
+  if(!fresh&&AUTOPOS&&Date.now()-AUTOAT<120000)return res(AUTOPOS);
+  navigator.geolocation.getCurrentPosition(p=>{AUTOPOS={lat:p.coords.latitude,lon:p.coords.longitude};AUTOAT=Date.now();res(AUTOPOS);},()=>res(null),{enableHighAccuracy:false,timeout:8000,maximumAge:fresh?0:120000});});}
 async function autoAway(){try{if(navigator.permissions){const st=await navigator.permissions.query({name:"geolocation"});if(st.state==="denied")return null;}}catch(e){}
   const p=await nearPos();if(!p||!isFinite(C.lat))return null;return distKm(p.lat,p.lon,C.lat,C.lon)>2?p:null;}
 async function fuelAuto(){if(AUTOMAN.fu)return;const p=await autoAway();const was=FUELPOS;FUELPOS=p;if(!!was!==!!p||(p&&was&&distKm(p.lat,p.lon,was.lat,was.lon)>0.3))loadFuel();}
@@ -1864,7 +1864,7 @@ function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=20?2:a.dl>=
   s.n=(s.cand===lv?s.n:0)+1;s.cand=lv;if(s.n>=2)RS.sv[k]=mk();}
 const RSDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,CITYN[a]+" → "+CITYN[b],a,b]);
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
-  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise ab "+(CITYN[(typeof RS!=="undefined"&&RS.city)||""]||C.town):"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
+  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise ab "+((typeof RS!=="undefined"&&RS.gps&&RS.pos)?"Standort":(CITYN[(typeof RS!=="undefined"&&RS.city)||""]||C.town)):"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
 // App: exakte Koordinaten statt Adresstext (Google findet sonst z. B. Alpen-Menzelen/Salzhausen nicht sicher)
@@ -1873,13 +1873,20 @@ const gmView=(o,d,via)=>{const A=isFinite(o.lat)?o.lat+","+o.lon:o.label,B=isFin
 // Uber: Abholung am aktuellen Standort, Ziel = Adresse der Fahrt
 const uberUrl=d=>"https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]="+d.lat+"&dropoff[longitude]="+d.lon+"&dropoff[nickname]="+encodeURIComponent(d.label.split(",").slice(-1)[0].trim())+"&dropoff[formatted_address]="+encodeURIComponent(d.label);
 const hm=min=>min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0")+" min":min+" min";
-function rsEnds(k){const r=RSDIRS.find(x=>x[0]===k)||RSDIRS[0];return [FIXHOME[r[2]],FIXHOME[r[3]]];}
+/* Start am aktuellen Standort: Ziele = alle Wohnorte, außer dem, an dem man gerade ist (< 2 km) */
+RS.gps=load("rs_gps")===true;RS.pos=null;
+function rsDirs(){if(RS.gps&&RS.pos)return Object.keys(CITYN).filter(c=>distKm(RS.pos.lat,RS.pos.lon,FIXHOME[c].lat,FIXHOME[c].lon)>2).map(c=>["@"+c,"Standort → "+CITYN[c],"@",c]);return RSDIRS.filter(x=>x[2]===RS.city);}
+function rsEnds(k){if(k&&k[0]==="@"&&RS.pos)return [{lat:+RS.pos.lat.toFixed(5),lon:+RS.pos.lon.toFixed(5),label:""},FIXHOME[k.slice(1)]];const r=RSDIRS.find(x=>x[0]===k)||RSDIRS[0];return [FIXHOME[r[2]],FIXHOME[r[3]]];}
+function rsStart(){const el=$("rs-start");if(el)setBtns(el,'<button type="button" data-rshome="1"'+(RS.gps?"":' class="on"')+'>Ab '+esc(CITYN[RS.city]||"Wohnort")+'</button><button type="button" data-rsgps="1"'+(RS.gps?' class="on"':"")+'>Ab Standort</button>');}
+function cityChips(){return Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join("");}
+async function rsPos(f){const p=await nearPos(f);if(!p)return false;const old=RS.pos;RS.pos=p;if(old&&distKm(old.lat,old.lon,p.lat,p.lon)>1)Object.keys(RS.data).forEach(k=>{if(k[0]==="@")delete RS.data[k];});return true;}
 const gmUrl=(o,d,via,nav)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+(o.label?encodeURIComponent(o.label):o.lat+","+o.lon):"")+"&destination="+(d.label?encodeURIComponent(d.label):d.lat+","+d.lon)+(via?"&waypoints="+via[0].toFixed(5)+","+via[1].toFixed(5):"")+(nav?"&dir_action=navigate":"");
 async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));
-  if(!force&&Date.now()-RS.at<10*60*1000&&RSDIRS.filter(x=>x[2]===RS.city).every(x=>RS.data[x[0]])){renderReise();return;}
+  if(RS.gps){const n=RS.pos;if(!(await rsPos())){RS.gps=false;store("rs_gps",false);}else if(!n)force=true;}
+  if(!force&&Date.now()-RS.at<10*60*1000&&rsDirs().every(x=>RS.data[x[0]])){renderReise();return;}
   RS.at=Date.now();renderReise();
   if(!TTKEY){$("rs-alts").innerHTML=stateBox("Für die Fahrzeit den TomTom-Schlüssel unter Einstellungen eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
-  const city=RS.city;for(const [k,t] of RSDIRS.filter(x=>x[2]===city).sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){if(RS.city&&RS.city!==city)break;/* nur bei echtem Ortswechsel abbrechen */const [o,d]=rsEnds(k);
+  const city=RS.city;for(const [k,t] of rsDirs().sort((a,b)=>(b[0]===RS.dir)-(a[0]===RS.dir))){if(RS.city&&RS.city!==city)break;/* nur bei echtem Ortswechsel abbrechen */const [o,d]=rsEnds(k);
     try{const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&maxAlternatives=2&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
       /* TomTom lehnt bei zu vielen Abfragen pro Sekunde ab (HTTP 429): bis zu 4 Versuche mit wachsender Pause */
       let r,le;for(const w of [0,1500,3500,7000]){if(w)await new Promise(z=>setTimeout(z,w));try{r=await getJSON(url,20000);break;}catch(e){le=e;if(!/\b(429|5\d\d)\b|Timeout|abgebrochen|fetch/i.test(String(e&&e.message||e)))break;}}
@@ -1900,11 +1907,15 @@ const TDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,a,"nach "+CITYN[b],STN[a][1]+" → "
 // Bahn: je Ort Hin- und Rückfahrt zu jedem anderen Ort als eigener Knopf; Fahrten erst nach Antippen
 function tdirsOf(k){return TDIRS.filter(x=>x[1]===k);} // nur Fahrten ab dem gewählten Ort
 function rsCity(k){RS.city=k;EFAK=EFACITY[k];STOPIDX=null;
-  setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===k?" on":"")+'">'+n+'</button>').join(""));
-  const ok=RSDIRS.filter(x=>x[2]===k);if(!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
+  setBtns($("rs-city"),cityChips());
+  const ok=rsDirs();if(ok.length&&!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}
   if(RS.tdir&&!tdirsOf(k).some(x=>x[0]===RS.tdir))RS.tdir=null;
   rsMode(RS.mode||"auto");}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(!b)return;const k=b.dataset.rscity;
+document.addEventListener("click",async e=>{const g=e.target.closest("[data-rsgps]");if(!g)return;e.preventDefault();
+  if(!(await rsPos(1))){$("rs-alts").innerHTML=stateBox("Standort nicht verfügbar – bitte die Ortung für Safari bzw. die App erlauben.");return;}
+  RS.gps=true;store("rs_gps",true);RS.dir=null;RS.sel=0;RS.at=0;renderReise();loadReise(true);});
+document.addEventListener("click",e=>{if(!e.target.closest("[data-rshome]"))return;e.preventDefault();RS.gps=false;store("rs_gps",false);RS.dir=null;RS.sel=0;renderReise();loadReise();});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(!b)return;const k=b.dataset.rscity;if(RS.gps){RS.gps=false;store("rs_gps",false);RS.dir=null;}
   const y=window.scrollY;const keep=()=>{if(Math.abs(window.scrollY-y)>4)window.scrollTo(0,y);};
   EFAK=EFACITY[k];RS.city=k;RS.at=0;
   RS.lock=1;try{if(k==="dus"){if(!C.isDus)choose("dus-4");}else if(C.key!==k)choose("p-"+k);}finally{RS.lock=0;}
@@ -1941,19 +1952,19 @@ const NAVTO=(lat,lon,lbl)=>' <a class="nav-go el-ad" href="'+(IOS?"comgooglemaps
 const GMICON='<svg class="gmi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.5s-7-6-7-11.6a7 7 0 0 1 14 0c0 5.6-7 11.6-7 11.6z"/><circle cx="12" cy="9.8" r="2.6"/></svg>';
 function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catch(e){}
   if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));return;}
-  {const ok=RSDIRS.filter(x=>x[2]===RS.city);if(ok.length&&!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}if(RS.tdir&&!tdirsOf(RS.city).some(x=>x[0]===RS.tdir))RS.tdir=null;}
-  $("rs-quick").innerHTML="";
+  {const ok=rsDirs();if(ok.length&&!ok.some(x=>x[0]===RS.dir)){RS.dir=ok[0][0];RS.sel=0;}if(RS.tdir&&!tdirsOf(RS.city).some(x=>x[0]===RS.tdir))RS.tdir=null;}
+  $("rs-quick").innerHTML="";rsStart();
   // Verzögerung farbig: ab 10 min gelb, ab 20 min rot pulsierend
   const sev=a=>{if(!a)return "";const cl=(a.ab||[]).some(w=>w.cl);return cl||a.dl>=20?"dl-bad":a.dl>=10?"dl-warn":"";};
   let worst="";
-  setBtns($("rs-dir"),RSDIRS.filter(x=>x[2]===RS.city).map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const st=RS.sv[k];const sv=st?st.sv:(a&&a.dl>=20?"dl-bad":a&&a.dl>=10?"dl-warn":"");if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=st?st.cl:false;
+  setBtns($("rs-dir"),rsDirs().map(([k,t,,to])=>{const a=D[k]&&D[k].alts&&D[k].alts[0];const st=RS.sv[k];const sv=st?st.sv:(a&&a.dl>=20?"dl-bad":a&&a.dl>=10?"dl-warn":"");if(sv==="dl-bad"||(sv&&!worst))worst=sv;const cl=st?st.cl:false;
     return '<button type="button" data-rsdir="'+k+'" class="cc-'+to+(RS.dir===k?" on":"")+(sv?" "+sv:"")+'">'+GMICON+t+'<small>'+(a?hm(a.min)+(a.dl>0?" · +"+a.dl+" min":" · frei"):D[k]&&D[k].err?"nicht verfügbar":"wird berechnet …")+'</small></button>';}).join(""));
-  {const P=TILE_PARTS.traffic;const all=RSDIRS.filter(x=>x[2]===RS.city).every(x=>D[x[0]]&&D[x[0]].alts);const nc=worst==="dl-bad"?"bad":worst==="dl-warn"?"warn":all?"ok":null;if(P._rcls!==nc){P._rcls=nc;composeTile("k-traffic","traffic");}}
+  {const P=TILE_PARTS.traffic;const all=rsDirs().every(x=>D[x[0]]&&D[x[0]].alts);const nc=worst==="dl-bad"?"bad":worst==="dl-warn"?"warn":all?"ok":null;if(P._rcls!==nc){P._rcls=nc;composeTile("k-traffic","traffic");}}
   const cur=D[RS.dir];const box=$("rs-alts"),inc=$("rs-incs");
   if(!cur){box.innerHTML='<div class="state">Fahrzeit wird berechnet …</div>';inc.innerHTML="";drawReise();return;}
   if(cur.err){box.innerHTML=stateBox("Fahrzeit derzeit nicht verfügbar – "+cur.err+".");inc.innerHTML="";drawReise();return;}
   if(RS.sel>=cur.alts.length)RS.sel=0;const [o,d]=rsEnds(RS.dir);
-  box.innerHTML='<h3 class="sub2 vl-h rs-h">'+GMICON+esc((RSDIRS.find(x=>x[0]===RS.dir)||[,""])[1])+'</h3><div class="muted small" style="margin:2px 2px 6px">'+(cur.alts.length>1?cur.alts.length+" Routen, die schnellste zuerst. Route antippen zeigt sie in der Karte und ihre Störungen darunter.":"Eine Route gefunden.")+'</div>'+
+  box.innerHTML='<h3 class="sub2 vl-h rs-h">'+GMICON+esc((rsDirs().find(x=>x[0]===RS.dir)||RSDIRS.find(x=>x[0]===RS.dir)||[,""])[1])+'</h3><div class="muted small" style="margin:2px 2px 6px">'+(cur.alts.length>1?cur.alts.length+" Routen, die schnellste zuerst. Route antippen zeigt sie in der Karte und ihre Störungen darunter.":"Eine Route gefunden.")+'</div>'+
     cur.alts.map(a=>{const m=(a.rw||[]).length;
       return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=20?"bad":a.dl>=10?"warn":a.dl>0?"lo":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
         '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
@@ -2240,12 +2251,12 @@ function route0(){
   if(typeof foldCount==="function")foldCount();
   // „Ich bin in …“ gilt für den ganzen Bereich Reise & Verkehr (Reise, Verkehrslage, Parken, Tanken, E-Laden)
   if(["staus","parken","tanken","eladen"].includes(v)){const rc=document.querySelector(".rv-city"),vw=$("v-"+v);if(rc&&vw){const st=vw.querySelector(".subtabs");if(st&&rc.nextElementSibling!==st)st.before(rc);else if(!st&&rc.parentNode!==vw)vw.prepend(rc);}
-    if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));}if(EFAK!==EFACITY[RS.city]){EFAK=EFACITY[RS.city];STOPIDX=null;}if(RS.mode==="oepnv"&&v==="staus")rsOe();setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}
+    if(!RS.city){rsCity(C.isDus?"dus":(CITYN[C.key]?C.key:"dus"));}if(EFAK!==EFACITY[RS.city]){EFAK=EFACITY[RS.city];STOPIDX=null;}if(RS.mode==="oepnv"&&v==="staus")rsOe();setBtns($("rs-city"),cityChips());}
   if(v==="eladen"&&(ELKEY!==RS.city||!ELP)){if(ELP&&ELP.k!=="gps"&&ELP.k!==RS.city)ELP=null;loadEL();}
   if(v==="eladen"&&!AUTOMAN.el&&!(ELP&&ELP.k==="gps"))autoAway().then(p=>{if(p&&location.hash==="#eladen"&&!(ELP&&ELP.k==="gps")&&!AUTOMAN.el)elGPS();});
   if(v==="parken"){pkShow(PKS==="gps"?"gps":RS.city||"dus");if(PKS!=="gps"&&!AUTOMAN.pk)autoAway().then(p=>{if(p&&location.hash==="#parken"&&PKS!=="gps"&&!AUTOMAN.pk)pkShow("gps");});}
   if(v==="tanken")fuelAuto();
-  if(inView){if(ROUTEKEY!==v+"/"+pane){const top=()=>{const m=document.querySelector("main");window.scrollTo(0,m?Math.max(0,m.getBoundingClientRect().top+window.scrollY-6):0);};top();requestAnimationFrame(top);setTimeout(top,80);}if(v==="staus"){setStauTitle();if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),Object.entries(CITYN).map(([c,n])=>'<button type="button" data-rscity="'+c+'" class="cc-'+c+(c===RS.city?" on":"")+'">'+n+'</button>').join(""));}if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
+  if(inView){if(ROUTEKEY!==v+"/"+pane){const top=()=>{const m=document.querySelector("main");window.scrollTo(0,m?Math.max(0,m.getBoundingClientRect().top+window.scrollY-6):0);};top();requestAnimationFrame(top);setTimeout(top,80);}if(v==="staus"){setStauTitle();if(!RS.city)RS.city=C.isDus?"dus":(CITYN[C.key]?C.key:"dus");setBtns($("rs-city"),cityChips());}if(v==="staus"&&pane==="reise")setTimeout(()=>loadReise(false),30);
     if(v==="staus"&&pane==="karte"){const vc=RS.city||(C.isDus?"dus":(TOWNS[C.key]?C.key:"dus"));if(MAPGO!==vc&&!/^r\d$/.test(MAPGO||""))setTimeout(()=>mapGo(vc),80);setTimeout(()=>{try{ensureMap();if(MAP){MAP.invalidateSize();if(!MAPFOCUS&&!MAPGO)fitMap();MAPFOCUS=0;}}catch(e){}},60);}}
 }
 
@@ -2374,7 +2385,7 @@ const rwBreite=(p,div,w)=>p>0?Math.max(rwMin(p,div),p/div*(w||1.2)):0;
   FL.push(["Freie Fläche",0,"",""]);const FREE=FL.length-1; // neutrales Feld für jede beliebige Fläche
   const num=v=>{v=String(v??"").trim().replace(/\s/g,"");if(!v)return NaN;if(/,/.test(v))v=v.replace(/\./g,"").replace(",",".");else if(/^\d{1,3}(\.\d{3})+$/.test(v))v=v.replace(/\./g,"");const n=parseFloat(v);return isFinite(n)?n:NaN;};
   const f0=n=>Math.round(n).toLocaleString("de-DE"),f2=n=>n.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
-  let S=load("fl_state")||{};S.inc=S.inc||{};S.abz=S.abz||{};S.br=S.br||{};S.note=S.note||{};S.p20=S.p20||{};
+  let S=load("fl_state")||{};S.inc=S.inc||{};S.abz=S.abz||{};S.br=S.br||{};/* leere Gesamtfläche bei festen Flächen = Standardwert wiederherstellen */const brFix=()=>{let c=0;Object.keys(S.br).forEach(k=>{if(+k!==FREE&&String(S.br[k]).trim()===""){delete S.br[k];c=1;}});return c;};brFix();S.note=S.note||{};S.p20=S.p20||{};
   const incOf=i=>i===FREE?S.inc[i]===true:S.inc[i]!==false;const nmOf=i=>i===FREE?(S.nm||"Freie Fläche"):FL[i][0];const nrOf=i=>i===FREE?"+":String(i+1);
   const mapA=(f,nm)=>f[2]?'<a class="fl-map" href="'+esc(f[2])+'" target="_blank" rel="noopener" title="In Düsseldorf Maps zeigen" aria-label="'+esc(nm)+' in Düsseldorf Maps zeigen">'+FLPIN+'</a>':"";
   const save=()=>store("fl_state",S);
@@ -2394,7 +2405,7 @@ const rwBreite=(p,div,w)=>p>0?Math.max(rwMin(p,div),p/div*(w||1.2)):0;
   const ordr=()=>{const o=(Array.isArray(S.ord)?S.ord:[]).filter(i=>i>=0&&i<FL.length);if(!o.includes(FREE))o.unshift(FREE);FL.forEach((f,i)=>{if(!o.includes(i))o.push(i);});return o;};
   const tileTxt=i=>{const P=par();if(i===FREE&&!(num(S.br[i])>0))return '<span>Eigene Fläche eingeben und berechnen</span>';const d=P.d.includes(2)?2:P.d[0];return '<span>'+f0(netOf(i))+' m² netto</span><span><b>'+f0(Math.floor(netOf(i)*d))+'</b> Personen</span>';};
   function grid(){const g=$("fl-grid");if(!g)return;g.innerHTML=ordr().map(i=>{const f=FL[i];return '<div class="fl-t'+(!incOf(i)?" off":"")+(i===FREE?" free":"")+'" data-ft="'+i+'" role="button" tabindex="0"><span class="fl-th"><span class="fa-nr">'+nrOf(i)+'</span>'+mapA(f,nmOf(i))+'</span><span class="fl-tn" data-tn>'+esc(nmOf(i))+'</span><small data-tt>'+tileTxt(i)+'</small></div>';}).join("");}
-  function showSel(i){FLSEL=i;const sec=$("fl-list").closest(".fl");sec.classList.toggle("det",i!=null);
+  function showSel(i){if(brFix()){save();render();}FLSEL=i;const sec=$("fl-list").closest(".fl");sec.classList.toggle("det",i!=null);
     document.querySelectorAll("#fl-list [data-fi]").forEach(x=>x.classList.toggle("sel",+x.dataset.fi===i));
     const v=$("v-flaechen");if(v&&!v.hidden)window.scrollTo(0,Math.max(0,v.getBoundingClientRect().top+scrollY-6));}
   function render(){const P=par();$("fl-div").value=S.div??"600";$("fl-w").value=S.w??"1,20";$("fl-d").value=S.d??"1; 2; 3; 4";$("fl-pz").value=S.pz??"20";
