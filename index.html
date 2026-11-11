@@ -1011,11 +1011,11 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
 #headnav .hn-radio .hn-l,#headnav .hn-radio .hn-v{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #headnav .hn-radio.on{outline:2px solid var(--accent)}
 /* Radio als Vollbild-Auswahl */
-#radio .rlist:not([hidden]){position:fixed;inset:0;z-index:200;display:flex!important;flex-direction:column;gap:10px;overflow-y:auto;
+#radio .rlist:not([hidden]){position:fixed;inset:0;z-index:200;display:flex!important;flex-direction:column;flex-wrap:nowrap!important;gap:10px;overflow-y:auto;
   padding:calc(env(safe-area-inset-top) + 18px) max(18px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 28px) max(18px,env(safe-area-inset-left));
   background:rgba(12,20,27,.9);-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);animation:rIn .22s ease}
 @keyframes rIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-#radio .rlist>*{width:100%;max-width:560px;margin-left:auto;margin-right:auto}
+#radio .rlist>*{width:100%;max-width:560px;margin-left:auto;margin-right:auto;flex:0 0 auto}
 #radio .r-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
 #radio .r-head h2{margin:0;color:#fff;font:800 28px/1.1 var(--f-display)}
 #radio .r-head p{margin:4px 0 0;color:rgba(255,255,255,.6);font-size:14px}
@@ -1622,6 +1622,6 @@ body.r-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=282"></script>
+<script src="app.js?v=283"></script>
 </body>
 </html>
