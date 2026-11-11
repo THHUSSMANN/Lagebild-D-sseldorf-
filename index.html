@@ -1088,6 +1088,15 @@ body.r-open{overflow:hidden}
 #radio .rbtn.on .r-play svg{display:none}
 #radio .rbtn.on .r-play::before{content:"❚❚";font-size:11px;color:#fff}
 #radio .rbtn.load .r-play::before{content:"…";color:#fff}#radio .rbtn.load .r-play svg{display:none}
+/* v300: Radio-Liste im gleichen iOS-26-Glasstil wie alle Knöpfe – jede Zeile ein eigener Glasknopf */
+#radio .r-grp{background:none!important;border:0!important;box-shadow:none!important;overflow:visible!important;display:flex;flex-direction:column;gap:8px;border-radius:0}
+#radio .r-grp>*+*{border-top:0!important}
+#radio .r-grp>.rbtn,#radio .r-grp>.rapp,#radio .r-grp>.r-fold{border-radius:18px!important;background-color:rgba(255,255,255,.08)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%)!important;border:1px solid rgba(255,255,255,.18)!important;-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.25)!important;min-height:60px;padding:8px 14px!important;transition:transform .12s ease}
+#radio .r-grp>.rbtn:active,#radio .r-grp>.rapp:active,#radio .r-grp>.r-fold:active{transform:scale(.97)}
+#radio .rsonos{background-color:rgba(77,182,214,.18)!important}
+#radio .r-grp>.rbtn.on{background:linear-gradient(90deg,rgba(77,182,214,.45),rgba(77,182,214,.18))!important;border-color:rgba(77,182,214,.8)!important;box-shadow:0 0 0 1px rgba(77,182,214,.35),0 8px 22px rgba(77,182,214,.3)!important}
+#radio .r-grp>.h-chosen{transform:scale(1.03)!important;box-shadow:0 12px 28px rgba(0,0,0,.45)!important}
+#radio #r-ard{margin-top:8px}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1709,6 +1718,6 @@ body.r-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=299"></script>
+<script src="app.js?v=300"></script>
 </body>
 </html>
