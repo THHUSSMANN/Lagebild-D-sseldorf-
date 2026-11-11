@@ -1123,6 +1123,7 @@ body.t-open{overflow:hidden}
 .al-chk input[type=checkbox]::after,#gm-web::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .2s}
 .al-chk input[type=checkbox]:checked,#gm-web:checked{background:#34c759}
 .al-chk input[type=checkbox]:checked::after,#gm-web:checked::after{transform:translateX(20px)}
+.tm-li .tm-city{font:700 13px var(--f-body);letter-spacing:.02em;color:var(--accent);text-transform:uppercase}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1631,7 +1632,7 @@ body.t-open{overflow:hidden}
     <div id="ferien"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card wide" id="tm-card" data-alp="ev" hidden>
-    <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nach Entfernung sortiert</span></div>
+    <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nach Datum sortiert</span></div>
     <div id="tm-list"><div class="state">wird geladen …</div></div>
   </section>
 </div>
@@ -1752,6 +1753,6 @@ body.t-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=304"></script>
+<script src="app.js?v=305"></script>
 </body>
 </html>
