@@ -394,7 +394,11 @@ tasks.push(job("radio.json", async () => {
   const ST = [
     ["wdr2", "WDR 2 Rhein und Ruhr", ["https://wdr-wdr2-rheinruhr.icecastssl.wdr.de/wdr/wdr2/rheinruhr/mp3/128/stream.mp3", "https://wdr-wdr2-rheinruhr.icecast.wdr.de/wdr/wdr2/rheinruhr/mp3/128/stream.mp3"], "WDR 2 Rhein und Ruhr"],
     ["wdr4", "WDR 4", ["https://wdr-wdr4-live.icecastssl.wdr.de/wdr/wdr4/live/mp3/128/stream.mp3", "https://wdr-wdr4-live.icecast.wdr.de/wdr/wdr4/live/mp3/128/stream.mp3"], "WDR 4"],
-    ["antenne", "Antenne Düsseldorf", ["https://antenneduesseldorf-live.cast.addradio.de/antenneduesseldorf/live/mp3/high", "https://edge.audio.3qsdn.com/antenneduesseldorf", "https://stream.antenneduesseldorf.de/live/mp3-192"], "Antenne Duesseldorf", "https://www.antenneduesseldorf.de/"]
+    ["antenne", "Antenne Düsseldorf", ["https://antenneduesseldorf-live.cast.addradio.de/antenneduesseldorf/live/mp3/high", "https://edge.audio.3qsdn.com/antenneduesseldorf", "https://stream.antenneduesseldorf.de/live/mp3-192"], "Antenne Duesseldorf", "https://www.antenneduesseldorf.de/"],
+    ["orfstm", "Radio Steiermark", ["https://orf-live.ors-shoutcast.at/stm-q2a", "https://orf-live.ors-shoutcast.at/stm-q1a"], "Radio Steiermark ORF"],
+    ["orfnoe", "Radio Niederösterreich", ["https://orf-live.ors-shoutcast.at/noe-q2a", "https://orf-live.ors-shoutcast.at/noe-q1a"], "Radio Niederösterreich ORF"],
+    ["kronehit", "KRONEHIT", ["https://secureonair.krone.at/kronehit-hp.mp3", "https://secureonair.krone.at/kronehit.mp3"], "KRONEHIT"],
+    ["antstm", "Antenne Steiermark", ["https://live.antenne.at/as", "https://antenne-steiermark.radio.at/live"], "Antenne Steiermark"]
   ];
   const ok = async u => { const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 8000);
     try { const r = await fetch(u, { headers: UA, signal: ctl.signal }); const ct = r.headers.get("content-type") || ""; ctl.abort(); return r.ok && /audio|mpeg|aac|ogg|octet/i.test(ct) ? u : null; } catch { return null; } finally { clearTimeout(t); } };

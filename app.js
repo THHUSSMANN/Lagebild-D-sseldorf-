@@ -352,7 +352,10 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
 })();
 // Radio
 let RADIO=null;
-const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/"};
+const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/",orfstm:"https://steiermark.orf.at/radio/",orfnoe:"https://noe.orf.at/radio/",kronehit:"https://www.kronehit.at/",antstm:"https://www.antenne.at/"};
+/* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
+{const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
+  setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
 (async()=>{try{RADIO=(await getData("radio.json")).data;}catch(e){}})();
 $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");if(!b)return;const a=$("radio-audio"),k=b.dataset.st;
   const all=document.querySelectorAll("#radio .rbtn");
