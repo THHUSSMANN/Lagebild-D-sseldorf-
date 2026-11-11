@@ -1024,6 +1024,25 @@ body.radio-on #headnav .hn-radio .hn-v::before{content:"";display:inline-block;w
 @keyframes req{50%{background-size:3px 85%,3px 35%,3px 100%}100%{background-size:3px 55%,3px 100%,3px 30%}}
 @keyframes rglow{50%{box-shadow:0 0 0 1px rgba(255,255,255,.25),0 6px 30px color-mix(in srgb,var(--rc1,#2f9bd6) 80%,transparent)}}
 @media (prefers-reduced-motion:reduce){body.radio-on #headnav .hn-radio,body.radio-on #headnav .hn-radio .hn-v::before{animation:none}}
+/* ---- Gesamt-Check v297: einheitliche Optik ---- */
+/* Radio-Kachel exakt wie die anderen Themen-Knöpfe */
+header #headnav button.hbtn{border-radius:16px!important;background-color:rgba(255,255,255,.08);background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%);border:1px solid rgba(255,255,255,.18);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:inset 0 3px 0 color-mix(in srgb,var(--accent) 70%,transparent),0 6px 16px rgba(0,0,0,.25);transition:transform .12s ease;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;padding:8px 12px;min-height:56px;text-align:left;color:var(--head-fg,#fff);font:inherit}
+header #headnav button.hbtn:active{transform:scale(.965)}
+header #headnav button.hn-radio.on{outline:0;background-color:var(--accent)!important;color:var(--panel)!important}
+/* Umschalter in der Kopfleiste (z. B. Polizei/Nachrichten) wie die Unterreiter in einer Glas-Fläche */
+.vtop .segsw{display:flex!important;gap:4px;padding:5px;border-radius:26px;background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 6px 20px rgba(0,0,0,.18)}
+.vtop .segsw button{flex:1 1 auto;min-height:42px!important;padding:0 14px!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:600 15px var(--f-body)!important;color:var(--fg);white-space:nowrap;border-radius:999px!important}
+.vtop .segsw button.on{background:var(--accent)!important;color:var(--panel)!important;box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 40%,transparent)!important}
+/* Knopf-Beschriftungen nicht umbrechen */
+.seg button,.segsw button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#rs-city button,#rs-dir button,#rs-tdir button{white-space:normal}
+/* Überschriften mit Ortsangabe: Ort unter den Titel statt daneben */
+.sec-title{flex-wrap:wrap;row-gap:2px}.sec-title .muted{flex-basis:100%}
+/* Strecken-Zeilen: Ziel nicht zerreißen */
+.route .rt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#sync-field .sync-btns .btn{padding:0 10px;font-size:14.5px}
+#sync-field .btn{display:flex;align-items:center;justify-content:center;text-align:center;width:100%}
+#sync-field textarea{background:var(--panel-2);color:var(--fg);border:1px solid var(--line);border-radius:12px}
 #radio .rsonos{grid-column:1/-1;min-height:54px;background-color:var(--accent);border-color:transparent}
 #radio .rsonos .mi{width:22px;height:22px}
 #radio .rbtn.on{background:#e8f6fb;color:#06222e}
@@ -1397,7 +1416,7 @@ body.r-open{overflow:hidden}
 </div>
 
 <div class="view" id="v-blaulicht" data-view="blaulicht" hidden>
-<div class="segsw" id="press-sw"><button type="button" data-ps="bl" class="on">Polizei &amp; Feuerwehr</button><button type="button" data-ps="news">Nachrichten</button></div>
+<div class="segsw" id="press-sw"><button type="button" data-ps="bl" class="on">Blaulicht</button><button type="button" data-ps="news">Nachrichten</button></div>
 <section class="card wide" id="blaulicht" data-ps-card="bl">
   <div class="card-head"><h2 id="bl-title">Pressemitteilungen Polizei &amp; Feuerwehr</h2><span class="src">Presseportal Blaulicht (offizielle Meldungen)</span></div>
   <div id="bl"><div class="state">wird geladen …</div></div>
@@ -1546,7 +1565,7 @@ body.r-open{overflow:hidden}
 
 <div class="view" id="v-alltag" data-view="alltag" hidden>
 <section id="alltag"><div class="sec-title"><h2>Kalender, Ferien &amp; Börse</h2></div></section>
-<div class="seg" id="al-seg" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px"><button type="button" data-al="tag" class="on">Tag &amp; Kalender</button><button type="button" data-al="fer">Schulferien NRW</button><button type="button" data-al="fin">Gold &amp; Börse</button></div>
+<div class="seg" id="al-seg" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px"><button type="button" data-al="tag" class="on">Kalender</button><button type="button" data-al="fer">Ferien NRW</button><button type="button" data-al="fin">Börse</button></div>
 <div class="grid al-grid">
   <section class="card wide" data-alp="tag">
     <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src" id="cal-src">Feiertage · Schulferien NRW</span></div>
@@ -1582,9 +1601,9 @@ body.r-open{overflow:hidden}
   <div class="settings">
     <div class="field" id="sync-field">
       <label>Auf iPad und Mac übertragen</label>
-      <div class="sync-btns"><button type="button" id="sync-out">⇪ Einstellungen übertragen</button><button type="button" id="sync-in-paste">⇩ Einstellungen übernehmen</button></div>
+      <div class="sync-btns"><button type="button" class="btn" id="sync-out">⇪ Übertragen</button><button type="button" class="btn" id="sync-in-paste">⇩ Übernehmen</button></div>
       <textarea id="sync-text" rows="3" placeholder="Hier den Übertragungs-Text einfügen …" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
-      <button type="button" id="sync-in" class="sync-go">Übernehmen &amp; neu laden</button>
+      <button type="button" id="sync-in" class="btn sync-go">Übernehmen &amp; neu laden</button>
       <span class="hint" id="sync-msg">Überträgt Reihenfolge, Radio, Orte, Haltestellen, Routen, Alarme und Schlüssel. Auf diesem Gerät „übertragen“ (z. B. per AirDrop oder Notizen), auf dem anderen Gerät „übernehmen“. Enthält deine Schlüssel – nur an eigene Geräte schicken.</span>
     </div>
     <div class="field">
@@ -1645,6 +1664,10 @@ body.r-open{overflow:hidden}
       <span class="hint" id="windy-st"></span>
     </div>
     <div class="field">
+      <label class="al-chk" for="gm-web" style="display:flex"><input type="checkbox" id="gm-web"> Google Maps ohne Rückfrage öffnen</label>
+      <span class="hint">Auf dem iPhone fragt Safari sonst jedes Mal „In Google Maps öffnen?“. Eingeschaltet nutzt das Dashboard normale Google-Maps-Adressen – ob dann die App oder die Webseite startet, entscheidet iOS. Kommt nur die Webseite, einfach wieder ausschalten.</span>
+    </div>
+    <div class="field">
       <label for="theme">Darstellung</label>
       <select id="theme"><option value="">wie System</option><option value="light">hell</option><option value="dark">dunkel</option></select>
       <span class="hint">Auf iPhone/iPad: Teilen → „Zum Home-Bildschirm“ für den App-Modus.</span>
@@ -1658,6 +1681,6 @@ body.r-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=296"></script>
+<script src="app.js?v=297"></script>
 </body>
 </html>

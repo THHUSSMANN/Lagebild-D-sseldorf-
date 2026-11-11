@@ -378,6 +378,13 @@ const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.
   const set=o=>{box.hidden=!o;tg.setAttribute("aria-expanded",o?"true":"false");store("radio_ard_open",o);};set(!!load("radio_ard_open"));
   tg.addEventListener("click",e=>{e.stopPropagation();set(box.hidden);});
   setTimeout(()=>{try{reorder(box,".rapp",()=>true,()=>{store("radio_ard",[...box.querySelectorAll(".rapp")].map(b=>b.dataset.k));names();});}catch(e){}},0);}}
+/* Google Maps ohne Safari-Rückfrage: App-Links (comgooglemaps://) in normale Google-Maps-Adressen umschreiben */
+function gmWeb(u){try{const q=new URLSearchParams(u.split("?")[1]||"");let d=q.get("daddr")||"",w="";const i=Math.max(d.lastIndexOf("+to:"),d.lastIndexOf(" to:"));if(i>=0){w=d.slice(0,i);d=d.slice(i+4);}
+  const m={driving:"driving",transit:"transit",walking:"walking",bicycling:"bicycling"}[q.get("directionsmode")]||"driving";
+  return "https://www.google.com/maps/dir/?api=1&travelmode="+m+(q.get("saddr")?"&origin="+encodeURIComponent(q.get("saddr")):"")+"&destination="+encodeURIComponent(d)+(w?"&waypoints="+encodeURIComponent(w):"");}catch(e){return u;}}
+function gmFix(root){if(!load("gm_web"))return;(root||document).querySelectorAll('a[href^="comgooglemaps://"]').forEach(a=>{a.href=gmWeb(a.getAttribute("href"));a.target="_blank";a.rel="noopener";});}
+new MutationObserver(()=>gmFix()).observe(document.body,{subtree:true,childList:true});gmFix();
+{const c=$("gm-web");if(c){c.checked=!!load("gm_web");c.addEventListener("change",()=>{store("gm_web",c.checked);if(c.checked)gmFix();else location.reload();});}}
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
@@ -2329,7 +2336,7 @@ document.querySelectorAll(".view").forEach(v=>{const p=VIEWPARENT[v.dataset.view
   // überall nur das runde ✕ (bei Unterseiten führt es eine Ebene zurück)
   x.classList.add("round");x.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';x.title=p?p[1].replace(/^‹\s*/,""):"Schließen";
   const bar=document.createElement("div");bar.className="vtop";x.after(bar);
-  const st=v.querySelector(":scope > .subtabs, :scope > .segsw");if(st&&st===bar.nextElementSibling)bar.append(st);else{const sp=document.createElement("span");sp.className="vtop-sp";bar.append(sp);}
+  const st=v.querySelector(":scope > .subtabs, :scope > .segsw");if(st)bar.append(st);else{const sp=document.createElement("span");sp.className="vtop-sp";bar.append(sp);}
   bar.append(x);});
 // aktiven Unterreiter in der Leiste sichtbar halten
 new MutationObserver(()=>{document.querySelectorAll(".vtop .subtabs a.on").forEach(a=>{const b=a.parentNode;if(a.offsetLeft<b.scrollLeft||a.offsetLeft+a.offsetWidth>b.scrollLeft+b.clientWidth)b.scrollTo({left:a.offsetLeft-12,behavior:"smooth"});});}).observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]});
