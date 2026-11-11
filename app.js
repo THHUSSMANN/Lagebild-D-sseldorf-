@@ -65,6 +65,7 @@ const SRC={
   pegelwv:{name:"Rhein-Vorhersage",prov:"WSV PEGELONLINE / BfG",url:"https://www.pegelonline.wsv.de/webservice/dokuRestapi",ep:"pegelonline.wsv.de …/WV/measurements.json"},
   ships:{name:"Schiffe (AIS-Karte)",prov:"VesselFinder (eingebettete Karte)",url:"https://www.vesselfinder.com/embed",ep:"vesselfinder.com/aismap.js"},
   flights:{name:"Flugzeuge über Düsseldorf",prov:"adsb.fi Open Data (über Datensammler)",url:"https://github.com/adsbfi/opendata",ep:"opendata.adsb.fi/api/v2/lat/…/lon/…/dist/…"},
+  fb:{name:"Fußball (Fortuna, BVB)",prov:"OpenLigaDB (frei, ohne Schlüssel)",url:"https://www.openligadb.de",ep:"api.openligadb.de/getmatchdata/…"},
   tm:{name:"Großveranstaltungen",prov:"Ticketmaster Discovery API (eigener Schlüssel)",url:"https://developer.ticketmaster.com/",ep:"app.ticketmaster.com/discovery/v2/events.json"}
 };
 const status={};
@@ -427,9 +428,9 @@ async function loadRheinWV(uuid,now){const box=$("pegel-wv");if(!box)return;
     if(!f.length){box.innerHTML='<div class="muted small" style="margin-top:8px">Für diesen Pegel gibt es keine Wasserstandsvorhersage.</div>';setStatus("pegelwv",true,"keine Vorhersage hier");return;}
     const step=Math.max(1,Math.round(f.length/6));const pts=f.filter((x,i)=>i%step===0).slice(0,6);if(pts[pts.length-1]!==f[f.length-1])pts.push(f[f.length-1]);
     const last=f[f.length-1],diff=last.value-now,arrow=diff>5?"↑ steigt":diff<-5?"↓ fällt":"→ gleichbleibend";
-    box.innerHTML='<div class="sublbl" style="margin-top:12px">Vorhersage <span class="muted">· '+arrow+' ('+(diff>0?"+":"")+fmt(diff)+' cm bis '+new Date(last.timestamp).toLocaleString("de-DE",{weekday:"short",hour:"2-digit",minute:"2-digit"})+')</span></div><div class="list">'+
+    box.innerHTML='<div class="sublbl" style="margin-top:0">Tendenz <span class="muted">· '+arrow+' ('+(diff>0?"+":"")+fmt(diff)+' cm bis '+new Date(last.timestamp).toLocaleString("de-DE",{weekday:"short",hour:"2-digit",minute:"2-digit"})+')</span></div><div class="list">'+
       pts.map(x=>{const dd=x.value-now;return '<div class="li"><span class="tag">'+new Date(x.timestamp).toLocaleString("de-DE",{weekday:"short",hour:"2-digit",minute:"2-digit"})+'</span><div class="t"><b>'+fmt(x.value/100,2)+' m</b>'+(x.type==="estimate"?' <span class="muted small">Abschätzung</span>':'')+'</div><div class="r muted small">'+(dd>0?"+":"")+fmt(dd)+' cm</div></div>';}).join("")+'</div>'+
-      '<div class="muted small">Quelle: Bundesanstalt für Gewässerkunde über PEGELONLINE. Vorhersagen sind Schätzungen.</div>';
+      '<div class="muted small">Vorhersagen sind Schätzungen.</div>';
     setStatus("pegelwv",true);
   }catch(e){box.innerHTML='';setStatus("pegelwv",false,errText(e));}}
 
@@ -461,7 +462,7 @@ async function loadTM(){const box=$("tm-list");if(!box)return;
     const d=await getJSON(U+"&page=0");let ev=((d._embedded||{}).events||[]);
     if(((d.page||{}).totalPages||1)>1){try{const d2=await getJSON(U+"&page=1");ev=ev.concat(((d2._embedded||{}).events||[]));}catch(e){}}const seen=new Set();const rows=[];
     ev.forEach(e=>{const s=(e.dates||{}).start||{};const k=e.name+"|"+s.localDate;if(seen.has(k))return;seen.add(k);
-      const v=(((e._embedded||{}).venues||[])[0])||{};const city=((v.city||{}).name||"").replace(/^D(ue|ü)sseldorf.*/i,"Düsseldorf");
+      const v=(((e._embedded||{}).venues||[])[0])||{};const city=(((v.city||{}).name||"").replace(/^D(ue|ü|u)sseldorf.*/i,"Düsseldorf").replace(/^Cologne$/i,"Köln").replace(/^Munich$/i,"München").replace(/^Muenster$/i,"Münster").replace(/^Moenchengladbach$/i,"Mönchengladbach"));
       const lat=+((v.location||{}).latitude),lon=+((v.location||{}).longitude);const km=isFinite(lat)&&isFinite(lon)?distKm(R0.lat,R0.lon,lat,lon):(isFinite(+e.distance)?+e.distance:99);
       rows.push({e,s,v,city,km,key:(s.localDate||"9")+(s.localTime||"99")});});
     rows.sort((a,b)=>(a.s.localDate||"9").localeCompare(b.s.localDate||"9")||a.km-b.km||a.key.localeCompare(b.key));
@@ -472,7 +473,7 @@ async function loadTM(){const box=$("tm-list");if(!box)return;
     let shown=40;
     const render=()=>{let last="",html="";rows.slice(0,shown).forEach(({e,s,v,city,km})=>{
         if(s.localDate!==last){if(last)html+='</div>';last=s.localDate;html+='<div class="sublbl" style="margin-top:12px">'+esc(dayH(s.localDate))+'</div><div class="list">';}
-        html+='<a class="li tm-li" href="'+esc(safeUrl(e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag">'+esc(s.localTime?s.localTime.slice(0,5):"—")+'</span><div class="t"><span class="tm-city">'+esc(city||"–")+(km>=1.5?' <span class="muted">· '+fmt(km)+' km</span>':'')+'</span><br><b>'+esc(e.name)+'</b><br><span class="muted small">'+esc(v.name||"")+'</span></div><div class="r muted small">'+esc(seg(e))+'</div></a>';});
+        html+='<a class="li tm-li" href="'+esc(safeUrl(e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag">'+esc(s.localTime?s.localTime.slice(0,5):"—")+'</span><div class="t"><span class="tm-city">'+esc(city||"–")+(km>=1.5?' <span class="muted">· '+fmt(km)+' km</span>':'')+'</span><span class="tm-venue">'+esc(v.name||"")+'</span><b>'+esc(e.name)+'</b></div><div class="r muted small">'+esc(seg(e))+'</div></a>';});
       if(last)html+='</div>';
       if(rows.length>shown)html+='<button type="button" class="btn" id="tm-more" style="width:100%;margin-top:12px">Weitere Termine anzeigen ('+(rows.length-shown)+')</button>';
       box.innerHTML=html+'<div class="muted small" style="margin-top:10px">Quelle: Ticketmaster · nächste 60 Tage, Umkreis 70 km um den gewählten Ort · nach Datum, am selben Tag nach Entfernung.</div>';
@@ -494,6 +495,25 @@ function tabSet(g,v){const seg=document.querySelector('.tabseg[data-tabs="'+g+'"
   seg.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===v));document.querySelectorAll('[data-tp^="'+g+':"]').forEach(p=>p.hidden=p.dataset.tp!==g+":"+v);store("tab_"+g,v);}
 document.addEventListener("click",e=>{const b=e.target.closest(".tabseg [data-t]");if(b)tabSet(b.closest(".tabseg").dataset.tabs,b.dataset.t);});
 document.querySelectorAll(".tabseg[data-tabs]").forEach(s=>{const v=load("tab_"+s.dataset.tabs);if(v)tabSet(s.dataset.tabs,v);});
+/* Fußball: nächste Spiele von Fortuna Düsseldorf und Borussia Dortmund (OpenLigaDB, frei, ohne Schlüssel) */
+const FB=[{k:"f95",name:"Fortuna Düsseldorf",short:"F95"},{k:"bvb",name:"Borussia Dortmund",short:"BVB"}];
+async function loadFussball(){const y=new Date().getFullYear(),season=new Date().getMonth()>=6?y:y-1;
+  const leagues=[["bl1","Bundesliga"],["bl2","2. Bundesliga"],["dfb","DFB-Pokal"]];let all=[];
+  await Promise.all(leagues.map(async([l,n])=>{try{const d=await getJSON("https://api.openligadb.de/getmatchdata/"+l+"/"+season);(d||[]).forEach(m=>{m._lg=n;all.push(m);});}catch(e){}}));
+  if(!all.length){setStatus("fb",false,"keine Daten");FB.forEach(f=>{const b=$("fb-"+f.k);if(b)b.innerHTML=stateBox("Spielplan nicht verfügbar.",link("https://www.openligadb.de","OpenLigaDB"));});return;}
+  const now=Date.now()-2.5*36e5;const kv=[];
+  FB.forEach(f=>{const is=x=>x&&x.teamName&&x.teamName.includes(f.name)&&!/\bII\b|U\s?\d/.test(x.teamName);
+    const ms=all.filter(m=>(is(m.team1)||is(m.team2))&&!m.matchIsFinished&&new Date(m.matchDateTime).getTime()>now).sort((a,b)=>new Date(a.matchDateTime)-new Date(b.matchDateTime));
+    const box=$("fb-"+f.k);if(!box)return;
+    if(!ms.length){box.innerHTML='<div class="muted">Kein anstehendes Spiel gefunden.</div>';return;}
+    const dt=m=>new Date(m.matchDateTime);const dl=m=>dt(m).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});const tl=m=>dt(m).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+    const team=x=>'<div class="fb-team">'+(x.teamIconUrl?'<img src="'+esc(safeUrl(x.teamIconUrl))+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'')+'<b>'+esc(x.teamName)+'</b></div>';
+    const m=ms[0],home=is(m.team1),loc=m.location||{};
+    kv.push(f.short+" "+dt(m).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}));
+    box.innerHTML='<div class="fb-meta"><span class="badge '+(home?"h":"a")+'">'+(home?"Heimspiel":"Auswärtsspiel")+'</span><br>'+esc(dl(m))+' · '+esc(tl(m))+' Uhr</div><div class="fb-next">'+team(m.team1)+'<div class="fb-vs">:</div>'+team(m.team2)+'</div>'+
+      '<div class="muted small" style="text-align:center">'+esc(m._lg)+(m.group&&m.group.groupName?" · "+esc(m.group.groupName):"")+(loc.locationStadium?" · "+esc(loc.locationStadium):"")+(loc.locationCity?", "+esc(loc.locationCity):"")+'</div>'+
+      (ms.length>1?'<div class="sublbl" style="margin-top:12px">Danach</div><div class="list">'+ms.slice(1,4).map(x=>{const h=is(x.team1),o=h?x.team2:x.team1;return '<div class="li"><span class="tag">'+esc(dl(x))+'</span><div class="t"><b>'+(h?"vs. ":"bei ")+esc(o.teamName)+'</b><br><span class="muted small">'+esc(tl(x))+' Uhr · '+esc(x._lg)+'</span></div><div class="r muted small">'+(h?"Heim":"Auswärts")+'</div></div>';}).join("")+'</div>':'');});
+  setKpi("k-fb",esc(kv.join(" · ")||"–"),"nächste Spiele","info");setStatus("fb",true);}
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
@@ -2361,7 +2381,7 @@ async function refreshAll(force){
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
     tasks.push(loadUBA(),loadPollen(),loadHol());
-    tasks.push(loadWindy(),loadParking(),loadTM());
+    tasks.push(loadWindy(),loadParking(),loadTM(),loadFussball());
   }
   await Promise.allSettled(tasks);
   {const um=$("upd-mini");if(um)um.innerHTML="<b>"+esc(C.isDus?"Düsseldorf":C.town)+"</b><span> · zuletzt aktualisiert "+new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"})+" Uhr</span>";}
