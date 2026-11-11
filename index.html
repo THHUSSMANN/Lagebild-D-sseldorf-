@@ -1756,9 +1756,10 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 
 <div class="view" id="v-fussball" data-view="fussball" hidden>
 <section id="fussball"><div class="sec-title"><h2>Fußball</h2><span class="muted small">Nächste Spiele · OpenLigaDB</span></div></section>
+<div class="seg tabseg" data-tabs="fb"><button type="button" data-t="f95" class="on">Fortuna</button><button type="button" data-t="bvb">BVB</button></div>
 <div class="grid">
-  <section class="card wide"><div class="card-head"><h2>Fortuna Düsseldorf</h2><span class="src" id="fb-f95-src">3. Liga · DFB-Pokal</span></div><div id="fb-f95"><div class="state">wird geladen …</div></div></section>
-  <section class="card wide"><div class="card-head"><h2>Borussia Dortmund</h2><span class="src" id="fb-bvb-src">Liga · DFB-Pokal · Champions League</span></div><div id="fb-bvb"><div class="state">wird geladen …</div></div></section>
+  <section class="card wide" data-tp="fb:f95"><div class="card-head"><h2>Fortuna Düsseldorf</h2><span class="src" id="fb-f95-src">3. Liga · DFB-Pokal</span></div><div id="fb-f95"><div class="state">wird geladen …</div></div></section>
+  <section class="card wide" data-tp="fb:bvb" hidden><div class="card-head"><h2>Borussia Dortmund</h2><span class="src" id="fb-bvb-src">Liga · DFB-Pokal · Champions League</span></div><div id="fb-bvb"><div class="state">wird geladen …</div></div></section>
 </div>
 </div>
 
@@ -1862,6 +1863,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=322"></script>
+<script src="app.js?v=323"></script>
 </body>
 </html>
