@@ -504,8 +504,13 @@ async function loadFussball(){const y=new Date().getFullYear(),season=new Date()
   await Promise.all(leagues.map(async([l,n])=>{try{const d=await getJSON("https://api.openligadb.de/getmatchdata/"+l+"/"+season);(d||[]).forEach(m=>{m._lg=n;all.push(m);});}catch(e){}}));
   if(!all.length){setStatus("fb",false,"keine Daten");FB.forEach(f=>{const b=$("fb-"+f.k);if(b)b.innerHTML=stateBox("Spielplan nicht verfügbar.",link("https://www.openligadb.de","OpenLigaDB"));});return;}
   const now=Date.now()-2.5*36e5;const kv=[];
-  FB.forEach(f=>{const is=x=>x&&x.teamName&&x.teamName.includes(f.name)&&!/\bII\b|U\s?\d/.test(x.teamName);
-    const ms=all.filter(m=>(is(m.team1)||is(m.team2))&&!m.matchIsFinished&&new Date(m.matchDateTime).getTime()>now).sort((a,b)=>new Date(a.matchDateTime)-new Date(b.matchDateTime));
+  // BVB: offizieller Kalender (iCal, vom Datensammler geholt) – enthält alle Wettbewerbe; Vorrang vor OpenLigaDB
+  let bvbCal=[];try{const d=await getData("bvbcal.json");bvbCal=((d.data||{}).events||[]).map(e=>{const s=e.summary||"";const p=s.replace(/\s*\(([^)]*)\)\s*$/,"").split(/\s+(?:-|–|:|vs\.?)\s+/);
+    const comp=(/(Champions League|DFB-Pokal|Bundesliga|Supercup|Testspiel|Europa League)/i.exec((e.cat||"")+" "+s+" "+(e.desc||""))||[])[1]||"";
+    return {matchDateTime:e.start,matchIsFinished:false,team1:{teamName:(p[0]||s).trim()},team2:{teamName:(p[1]||"").trim()},_lg:comp||"Spiel",location:{locationStadium:e.location||""}};});}catch(e){}
+  FB.forEach(f=>{const is=x=>x&&x.teamName&&(x.teamName.includes(f.name)||(f.k==="bvb"&&/^(BVB|Dortmund|Borussia Dortmund)$/i.test(x.teamName)))&&!/\bII\b|U\s?\d/.test(x.teamName);
+    const src=(f.k==="bvb"&&bvbCal.some(m=>new Date(m.matchDateTime).getTime()>now))?bvbCal:all;
+    const ms=src.filter(m=>(is(m.team1)||is(m.team2))&&!m.matchIsFinished&&new Date(m.matchDateTime).getTime()>now).sort((a,b)=>new Date(a.matchDateTime)-new Date(b.matchDateTime));
     const box=$("fb-"+f.k);if(!box)return;
     if(!ms.length){box.innerHTML='<div class="muted">Kein anstehendes Spiel gefunden.</div>';return;}
     const dt=m=>new Date(m.matchDateTime);const dl=m=>dt(m).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});const tl=m=>dt(m).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});

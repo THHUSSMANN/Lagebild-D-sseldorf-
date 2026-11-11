@@ -388,6 +388,31 @@ function efaPlace(k, p) { return (async () => {
 tasks.push(job("nina-all.json", ninaAll));
 tasks.push(job("einsaetze-kreis-re.json", kreisRe));
 tasks.push(job("trips.json", trips));
+// BVB-Spielplan aus dem offiziellen Kalender-Abo (iCal über cal.to/Calovo, vom Nutzer bereitgestellt)
+tasks.push(job("bvbcal.json", async () => {
+  const raw = await get("https://i.cal.to/ical/3/borussiadortmund/bundesliga-spielplan/de/d20dad09.619990dc-68cb5b4d.ics", { type: "text" });
+  const lines = raw.replace(/\r\n[ \t]/g, "").replace(/\n[ \t]/g, "").split(/\r?\n/);
+  const ev = []; let cur = null;
+  const unesc = s => (s || "").replace(/\\n/gi, "\n").replace(/\\,/g, ",").replace(/\;/g, ";").replace(/\\\\/g, "\\").trim();
+  const dt = (v, p) => { const m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/.exec(v || ""); if (!m) return null;
+    const iso = m[1] + "-" + m[2] + "-" + m[3] + "T" + (m[4] || "00") + ":" + (m[5] || "00") + ":" + (m[6] || "00");
+    return m[7] ? iso + "Z" : iso; /* ohne Z = Ortszeit (Europe/Berlin) */ };
+  for (const l of lines) {
+    if (l === "BEGIN:VEVENT") { cur = {}; continue; }
+    if (l === "END:VEVENT") { if (cur && cur.start) ev.push(cur); cur = null; continue; }
+    if (!cur) continue;
+    const i = l.indexOf(":"); if (i < 0) continue; const key = l.slice(0, i), val = l.slice(i + 1), name = key.split(";")[0];
+    if (name === "DTSTART") cur.start = dt(val);
+    else if (name === "SUMMARY") cur.summary = unesc(val);
+    else if (name === "LOCATION") cur.location = unesc(val);
+    else if (name === "DESCRIPTION") cur.desc = unesc(val).slice(0, 300);
+    else if (name === "CATEGORIES") cur.cat = unesc(val);
+  }
+  const now = Date.now() - 3 * 36e5;
+  const fut = ev.filter(e => new Date(e.start).getTime() > now).sort((a, b) => a.start.localeCompare(b.start)).slice(0, 12);
+  if (!ev.length) throw new Error("keine Termine im Kalender");
+  return { events: fut, total: ev.length };
+}));
 // Flugzeuge über Düsseldorf (Ersatz, falls der Browser adsb.fi nicht direkt abfragen darf)
 tasks.push(job("flights.json", async () => {
   let d; try { d = await get("https://opendata.adsb.fi/api/v2/lat/51.2895/lon/6.7668/dist/16"); }
