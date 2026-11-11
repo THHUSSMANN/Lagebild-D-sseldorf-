@@ -1167,6 +1167,10 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--seg-on:rgba(255,255,255,.26);--seg-on-fg:#fff}}
 :root[data-theme="dark"]{--seg-on:rgba(255,255,255,.26);--seg-on-fg:#fff}
 .vtop .subtabs{flex-wrap:wrap;border-radius:24px!important}.vtop .subtabs a{flex:1 1 auto}
+/* v312: allgemeine Reiter (Luft · Pollen u. a.) im selben iOS-Stil */
+.tabseg{display:flex!important;gap:2px;padding:4px!important;margin:0 0 14px;border-radius:999px!important;background:color-mix(in srgb,var(--fg) 9%,transparent)!important;border:1px solid color-mix(in srgb,var(--fg) 10%,transparent)!important;-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:none!important}
+.tabseg button{flex:1 1 0;min-height:40px!important;padding:0 10px!important;border:0!important;border-radius:999px!important;background:transparent!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:600 17px/1 var(--f-body)!important;color:var(--fg)!important;opacity:.85;white-space:nowrap}
+.tabseg button.on{opacity:1;background:var(--seg-on,#fff)!important;color:var(--seg-on-fg,#111)!important;box-shadow:0 1px 2px rgba(0,0,0,.12),0 3px 10px rgba(0,0,0,.14)!important}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1522,16 +1526,17 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 
 <div class="view" id="v-luft" data-view="luft" hidden>
 <section id="luft"><div class="sec-title"><h2>Luft &amp; Pollen</h2></div></section>
+<div class="seg tabseg" data-tabs="lu"><button type="button" data-t="luft" class="on">Luft</button><button type="button" data-t="pollen">Pollen</button></div>
 <div class="grid">
-  <section class="card">
+  <section class="card" data-tp="lu:luft">
     <div class="card-head"><h2>Luftqualität (Modell)</h2><span class="src">Copernicus CAMS · EAQI</span></div>
     <div id="air"><div class="state">Luftdaten werden geladen …</div></div>
   </section>
-  <section class="card">
+  <section class="card" data-tp="lu:luft">
     <div class="card-head"><h2>Messstationen</h2><span class="src">Umweltbundesamt / LANUV</span></div>
     <div id="uba"><div class="state">Messwerte werden geladen …</div></div>
   </section>
-  <section class="card wide">
+  <section class="card wide" data-tp="lu:pollen" hidden>
     <div class="card-head"><h2>Pollenflug</h2><span class="src">DWD-Gefahrenindex Rhein.-Westf. Tiefland</span></div>
     <div id="pollen"><div class="state">Pollendaten werden geladen …</div></div>
   </section>
@@ -1797,6 +1802,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=311"></script>
+<script src="app.js?v=312"></script>
 </body>
 </html>

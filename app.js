@@ -489,6 +489,11 @@ window.addEventListener("hashchange",lazyViews);document.addEventListener("click
 function wxTab(k){document.querySelectorAll("#wx-seg [data-wx]").forEach(b=>b.classList.toggle("on",b.dataset.wx===k));document.querySelectorAll("[data-wxp]").forEach(p=>p.hidden=p.dataset.wxp!==k);store("wx_tab",k);if(k==="radar")setTimeout(()=>{try{radarInit();}catch(e){}},50);}
 document.addEventListener("click",e=>{const b=e.target.closest("#wx-seg [data-wx]");if(b)wxTab(b.dataset.wx);});
 {const k=load("wx_tab");if(k&&document.querySelector('#wx-seg [data-wx="'+k+'"]'))wxTab(k);}
+/* Allgemeine Reiter: <div class="tabseg" data-tabs="x"> + Bereiche mit data-tp="x:wert" (Auswahl wird gemerkt) */
+function tabSet(g,v){const seg=document.querySelector('.tabseg[data-tabs="'+g+'"]');if(!seg||!seg.querySelector('[data-t="'+v+'"]'))return;
+  seg.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===v));document.querySelectorAll('[data-tp^="'+g+':"]').forEach(p=>p.hidden=p.dataset.tp!==g+":"+v);store("tab_"+g,v);}
+document.addEventListener("click",e=>{const b=e.target.closest(".tabseg [data-t]");if(b)tabSet(b.closest(".tabseg").dataset.tabs,b.dataset.t);});
+document.querySelectorAll(".tabseg[data-tabs]").forEach(s=>{const v=load("tab_"+s.dataset.tabs);if(v)tabSet(s.dataset.tabs,v);});
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
