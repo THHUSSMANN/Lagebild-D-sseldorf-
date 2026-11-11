@@ -356,6 +356,8 @@ const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
+{const box=$("r-apps");if(box){box.addEventListener("dragstart",e=>e.preventDefault());(load("radio_apps")||[]).forEach(k=>{const b=box.querySelector('[data-k="'+k+'"]');if(b)box.appendChild(b);});
+  setTimeout(()=>{try{reorder(box,".rapp",()=>true,()=>store("radio_apps",[...box.querySelectorAll(".rapp")].map(b=>b.dataset.k)));}catch(e){}},0);}}
 (async()=>{try{RADIO=(await getData("radio.json")).data;}catch(e){}})();
 $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");if(!b)return;const a=$("radio-audio"),k=b.dataset.st;
   const all=document.querySelectorAll("#radio .rbtn");
@@ -2334,9 +2336,9 @@ let TSORT=null;
   const ar=g.querySelector('[data-tool="arrange"]');[...g.children].filter(x=>!ord.includes(x.dataset.tool)&&x!==ar).forEach(x=>g.insertBefore(x,ar));if(ar)g.appendChild(ar);}}
 document.addEventListener("click",e=>{if(!document.body.classList.contains("arranging"))return;const t=e.target.closest("#toolgrid [data-tool]");if(t&&t.dataset.tool!=="arrange"){e.preventDefault();e.stopImmediatePropagation();}},true);
 // Eigenes Verschieben per Finger (ohne Fremdbibliothek): kurz gedrückt halten, dann ziehen
-function reorder(box,sel,act,done){if(!box)return null;let drag=null,tm=0,sx=0,sy=0,moved=false;
+function reorder(box,sel,act,done,hold){if(!box)return null;let drag=null,tm=0,sx=0,sy=0,moved=false;
   const start=(x,y,t)=>{if(!(act?act():HEDIT))return;const it=t.closest&&t.closest(sel);if(!it||!box.contains(it))return;sx=x;sy=y;moved=false;clearTimeout(tm);
-    tm=setTimeout(()=>{drag=it;it.classList.add("h-chosen");box.classList.add("h-dragging");try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}},200);};
+    tm=setTimeout(()=>{drag=it;it.classList.add("h-chosen");box.classList.add("h-dragging");try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}},hold||200);};
   const move=(x,y,e)=>{if(!drag){if(Math.hypot(x-sx,y-sy)>10)clearTimeout(tm);return;}if(e.cancelable)e.preventDefault();moved=true;
     drag.style.visibility="hidden";const hit=document.elementFromPoint(x,y);drag.style.visibility="";
     const o=hit&&hit.closest(sel);if(!o||o===drag||o.parentNode!==box)return;
@@ -2363,6 +2365,13 @@ $("arrange-tool").addEventListener("click",()=>{HEDIT=!HEDIT;document.body.class
   if(!HEDIT){const tiles=$("tiles");[...$("headnav").querySelectorAll("[data-v]")].forEach(x=>{const t=tiles.querySelector('.tile[data-view="'+x.dataset.v+'"]');if(t)tiles.appendChild(t);});
     saveTileOrder();store("tool_order",[...$("toolgrid").children].map(x=>x.dataset.tool));}});
 document.addEventListener("click",e=>{if(!HEDIT)return;const t=e.target.closest("#headnav a,#toolgrid [data-tool]");if(t&&!(t.dataset&&t.dataset.tool==="arrange")){e.preventDefault();e.stopImmediatePropagation();}},true);
+/* Immer sortierbar: Knopf gedrückt halten und ziehen – kein „Anordnen“-Modus mehr nötig */
+{const hn=$("headnav"),tg=$("toolgrid");
+  const saveHead=()=>{const tiles=$("tiles");[...hn.querySelectorAll("[data-v]")].forEach(x=>{const t=tiles.querySelector('.tile[data-view="'+x.dataset.v+'"]');if(t)tiles.appendChild(t);});saveTileOrder();};
+  const saveTools=()=>store("tool_order",[...tg.children].map(x=>x.dataset.tool));
+  [hn,tg].forEach(b=>{b.addEventListener("dragstart",e=>e.preventDefault());b.addEventListener("contextmenu",e=>e.preventDefault());});
+  reorder(hn,"[data-v]",()=>!HEDIT,saveHead,320);reorder(tg,"[data-tool]:not([data-tool='arrange'])",()=>!HEDIT,saveTools,320);
+  const ar=$("arrange-tool");if(ar)ar.hidden=true;}
 $("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});
 applyTileOrder();{const kb=$("k-bahn");if(kb)kb.hidden=true;}route();
 applyPlaceUi();renderSources();tick();setInterval(tick,1000);
