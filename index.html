@@ -1193,6 +1193,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 #radar-map .leaflet-control-attribution a,#flights-map .leaflet-control-attribution a{color:inherit!important}
 .radar-leg i{width:12px;height:12px;border-radius:50%}
 .plane-ic{font-size:20px;line-height:20px;text-shadow:0 1px 3px rgba(0,0,0,.6);transform-origin:center}
+.tabseg button{flex:1 1 auto!important;padding:0 8px!important}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1592,7 +1593,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </div>
 
 <div class="view" id="v-rhein" data-view="rhein" hidden>
-<section id="rhein"><div class="sec-title"><h2 id="rhein-sec">Rhein</h2></div></section>
+<section id="rhein"><div class="sec-title"><h2 id="rhein-sec">Pegel Rhein</h2></div></section>
 <div class="seg tabseg" data-tabs="pg"><button type="button" data-t="rhein" class="on">Jetzt</button><button type="button" data-t="wv">Prognose</button><button type="button" data-t="fl">Bäche</button><button type="button" data-t="ships">Schiffe</button></div>
 <div class="grid">
   <section class="card wide" data-tp="pg:rhein">
@@ -1608,7 +1609,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
     <div id="landespegel"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card wide" id="ships-card" data-tp="pg:ships" hidden>
-    <div class="card-head"><h2>Schiffe live</h2><span class="src">AIS-Karte von VesselFinder · Schiff antippen zeigt Name und Ziel</span></div>
+    <div class="card-head"><h2>Schiffe auf dem Rhein</h2><span class="src">VesselFinder · Schiff antippen zeigt Name, Typ und Ziel</span></div>
     <div id="ships-box"><div class="state">Karte lädt beim Öffnen …</div></div>
   </section>
 </div>
@@ -1839,6 +1840,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=320"></script>
+<script src="app.js?v=321"></script>
 </body>
 </html>

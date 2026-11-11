@@ -438,7 +438,7 @@ async function loadRheinWV(uuid,now){const box=$("pegel-wv");if(!box)return;
 let SHIPS_KEY="";
 function shipsInit(){const box=$("ships-box");if(!box||!box.offsetParent||SHIPS_KEY===C.key)return;SHIPS_KEY=C.key;
   const lat=C.isDus?51.2277:C.lat,lon=C.isDus?6.7735:C.lon;
-  const doc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;background:#dfe7ec}</style></head><body><script>var width="100%";var height="400";var latitude="'+lat+'";var longitude="'+lon+'";var zoom="12";var names=true;</'+'script><script src="https://www.vesselfinder.com/aismap.js"></'+'script></body></html>';
+  const doc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;background:#dfe7ec}</style></head><body><script>var width="100%";var height="400";var latitude="'+lat+'";var longitude="'+lon+'";var zoom="13";var names=false;</'+'script><script src="https://www.vesselfinder.com/aismap.js"></'+'script></body></html>';
   box.innerHTML='<iframe title="Schiffe live" style="width:100%;height:410px;border:0;border-radius:14px;display:block" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" loading="lazy"></iframe>';
   const fr=box.firstChild;fr.srcdoc=doc;fr.addEventListener("load",()=>setStatus("ships",true));}
 
@@ -620,7 +620,7 @@ function applyPlaceUi(){
   $("gmaps").href=gmapsUrl();
   setStauTitle();
   if($("ab-list"))$("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
-  $("rhein-sec").textContent=C.isDus?"Rhein & Grundwasser":"Gewässer";
+  $("rhein-sec").textContent=C.isDus?"Pegel Rhein":"Pegel & Gewässer";
   $("efa-card").hidden=!C.efaDefault;
   $("stop").value=STOPS[C.key]||C.efaDefault||"";STOPIDX=null;if(C.efaDefault)loadStopIndex();
   $("stop-lbl").textContent="Haltestelle für Abfahrten in "+C.town;
