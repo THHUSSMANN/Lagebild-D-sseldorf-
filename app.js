@@ -483,7 +483,12 @@ $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");
   all.forEach(x=>x.classList.remove("on","load"));b.classList.add("load");
   a.src=url;a.play().then(()=>{b.classList.remove("load");b.classList.add("on");}).catch(()=>{b.classList.remove("load");window.open(RADIO_SITE[k],"_blank","noopener");});
 });
-$("tools-toggle").addEventListener("click",()=>{const l=$("tools"),open=l.hidden;l.hidden=!open;$("tools-toggle").setAttribute("aria-expanded",open?"true":"false");});
+function toolsShow(open){const l=$("tools");l.hidden=!open;$("tools-toggle").setAttribute("aria-expanded",open?"true":"false");document.body.classList.toggle("t-open",open&&!document.body.classList.contains("harrange"));}
+$("tools-toggle").addEventListener("click",()=>toolsShow($("tools").hidden));
+document.addEventListener("click",e=>{if(e.target.closest("[data-tools-close]")){toolsShow(false);return;}
+  const t=e.target.closest("#toolgrid [data-tool]");if(t&&!document.body.classList.contains("harrange")&&!document.body.classList.contains("arranging")&&t.dataset.tool!=="arrange")setTimeout(()=>{if(!document.body.classList.contains("harrange"))toolsShow(false);},150);});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("tools").hidden&&!document.body.classList.contains("harrange"))toolsShow(false);});
+window.addEventListener("hashchange",()=>{if(!$("tools").hidden&&!document.body.classList.contains("harrange")&&location.hash!=="")toolsShow(false);});
 /* App direkt öffnen; ist sie nicht da, nach kurzer Zeit die Webseite */
 document.addEventListener("click",e=>{const a=e.target.closest("a[data-app],button[data-href]");if(!a)return;e.preventDefault();const web=a.href||a.dataset.href;if(!a.dataset.app){window.open(web,"_blank","noopener");return;}let left=false;
   const vis=()=>{left=true;};document.addEventListener("visibilitychange",vis);window.addEventListener("blur",vis,{once:true});
@@ -620,7 +625,7 @@ $("fin-save").addEventListener("click",()=>{const raw=$("fin").value.trim();cons
   if(v&&load("fin_link")!==v){finMsg("Der Browser lässt das Speichern nicht zu (privates Surfen aktiv?). Bitte normal in Safari bzw. über das Symbol auf dem Home-Bildschirm öffnen.",false);return;}
   $("fin").value=/^shareddocuments:/.test(v)?raw:v;finMsg(v?(/^shareddocuments:/.test(v)?"Als Dateipfad gespeichert ✓ – „Kontostand“ öffnet die Datei in der Dateien-App. ":"")+"Gespeichert ✓ – „Kontostand“ unter Tools öffnet jetzt diese Datei. Hinweis: Safari und das Home-Bildschirm-Symbol speichern getrennt.":"Link gelöscht.",true);});
 {const fi=$("fin");if(fi)fi.addEventListener("paste",()=>setTimeout(()=>$("fin-save").click(),50));}
-$("fin-btn").addEventListener("click",()=>{let l=finNorm(load("fin_link"));
+$("fin-open").addEventListener("click",()=>{let l=finNorm(load("fin_link"));
   // Auf iPhone/iPad ohne gespeicherten Link: Kurzbefehl „Kontostand“ öffnet die Datei direkt (kein Link nötig)
   if(!/^https?:/i.test(l||"")&&(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))){location.href="shortcuts://run-shortcut?name="+encodeURIComponent("Kontostand");return;}
   if(!l){const raw=prompt("iCloud-Link zu deiner Finanztabelle einfügen (beginnt mit https://www.icloud.com/…; wird nur auf diesem Gerät gespeichert):")||"";l=finNorm(raw);
@@ -2410,10 +2415,10 @@ document.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.metaKey
   const h=a.getAttribute("href");e.preventDefault();history.pushState(null,"",h.length>1?h:location.pathname+location.search);route();});
 try{history.scrollRestoration="manual";}catch(e){}window.scrollTo(0,0);
 // Schließen führt zur übergeordneten Ansicht zurück (Schnittstellen → Einstellungen), sonst zur Übersicht
-const VIEWPARENT={quellen:["einstellungen","‹ Zurück zu Einstellungen"],einstellungen:["","‹ Zurück zu Tools"],flaechen:["","‹ Zurück zu Tools"]};
+const VIEWPARENT={quellen:["einstellungen","‹ Zurück zu Einstellungen"],einstellungen:["","‹ Zurück zu Tools"],flaechen:["","‹ Zurück zu Tools"],finanzen:["","‹ Zurück zu Tools"]};
 // Einstellungen schließen → Übersicht mit geöffneten Tools, Knopf im Blick
-document.addEventListener("click",e=>{const x=e.target.closest("#v-einstellungen .view-x,#v-flaechen .view-x");if(!x)return;
-  setTimeout(()=>{$("tools").hidden=false;$("tools-toggle").setAttribute("aria-expanded","true");const t=document.querySelector('#toolgrid [data-tool="'+(x.closest("#v-flaechen")?"flaechen":"settings")+'"]')||$("tools-toggle");t.scrollIntoView({behavior:"smooth",block:"center"});},120);});
+document.addEventListener("click",e=>{const x=e.target.closest("#v-einstellungen .view-x,#v-flaechen .view-x,#v-finanzen .view-x");if(!x)return;
+  setTimeout(()=>{toolsShow(true);},120);});
 document.querySelectorAll(".view").forEach(v=>{const p=VIEWPARENT[v.dataset.view];const x=document.createElement("a");x.href="#"+(p?p[0]:"");x.className="view-x";x.setAttribute("aria-label",p?p[1]:"Schließen, zurück zur Übersicht");x.innerHTML=p?p[1]:"✕ Schließen";v.prepend(x);
   // iOS-26-Leiste: Unterreiter + runder Schließen-Knopf in einer Zeile
   // überall nur das runde ✕ (bei Unterseiten führt es eine Ebene zurück)

@@ -1097,6 +1097,20 @@ body.r-open{overflow:hidden}
 #radio .r-grp>.rbtn.on{background:linear-gradient(90deg,rgba(77,182,214,.45),rgba(77,182,214,.18))!important;border-color:rgba(77,182,214,.8)!important;box-shadow:0 0 0 1px rgba(77,182,214,.35),0 8px 22px rgba(77,182,214,.3)!important}
 #radio .r-grp>.h-chosen{transform:scale(1.03)!important;box-shadow:0 12px 28px rgba(0,0,0,.45)!important}
 #radio #r-ard{margin-top:8px}
+/* v302: Tools als Vollbild-Fenster wie Radio und die anderen Ansichten */
+header .tools .t-head{display:none}
+body:not(.harrange) header .tools:not([hidden]){position:fixed;inset:0;z-index:200;margin:0;display:flex;flex-direction:column;gap:12px;overflow-y:auto;
+  padding:calc(env(safe-area-inset-top) + 18px) max(18px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 28px) max(18px,env(safe-area-inset-left));
+  background:rgba(12,20,27,.9);-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);animation:rIn .22s ease}
+body:not(.harrange) header .tools:not([hidden])>*{width:100%;max-width:560px;margin-left:auto;margin-right:auto;flex:0 0 auto}
+body:not(.harrange) header .tools .t-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+header .tools .t-head h2{margin:0;color:#fff;font:800 28px/1.1 var(--f-display)}
+header .tools .t-head p{margin:4px 0 0;color:rgba(255,255,255,.6);font-size:14px}
+body:not(.harrange) header .tools #toolgrid{gap:10px}
+body:not(.harrange) header .tools #toolgrid .hbtn{min-height:64px;font-size:16px;border-radius:18px!important}
+body.t-open{overflow:hidden}
+.fin-open{width:100%;min-height:58px!important;display:flex!important;align-items:center;justify-content:center;gap:10px;margin:0 0 14px;font-size:17px!important}
+.fin-open .mi{width:22px;height:22px}
 #radio .rsonos{background:linear-gradient(90deg,rgba(77,182,214,.22),rgba(77,182,214,.06))!important}
 #radio .r-hint{display:block;margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #r-st.h-dragging .rbtn{transition:none}#r-st .h-chosen,#r-apps .h-chosen{background:rgba(77,182,214,.25)!important;transform:scale(1.02)}
@@ -1137,7 +1151,8 @@ body.r-open{overflow:hidden}
     </div>
     <p class="harrange-hint" id="harrange-hint" hidden>Themen und Tools mit dem Finger verschieben (kurz gedrückt halten) – „Fertig“ unten speichert.</p>
     <button type="button" class="hbtn tools-toggle" id="tools-toggle" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-.6-.6-2.3z"/></svg>Tools <span class="rcaret">▾</span></button>
-    <div class="tools" id="tools" hidden>
+    <div class="tools" id="tools" hidden role="dialog" aria-label="Tools">
+    <div class="t-head"><div><h2>Tools</h2><p>Werkzeuge, Links &amp; Einstellungen</p></div><button type="button" class="td-x x-round" data-tools-close aria-label="Tools schließen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="ctrl" id="toolgrid">
       <a data-tool="eventcal" class="hbtn" href="https://dus.eventcal.io" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2"/></svg>EventCal</a>
       <a data-tool="eventdoc" class="hbtn" href="https://dus.eventdoc.io/de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M9 12h6M9 15.5h6M9 9h2"/></svg>EventDoc</a>
@@ -1145,7 +1160,7 @@ body.r-open{overflow:hidden}
       <a data-tool="dusmaps" class="hbtn" href="https://maps.duesseldorf.de" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5 9 4l6 2.5 5.5-2.5v13.5L15 20l-6-2.5-5.5 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>Düsseldorf Maps</a>
       <button type="button" data-tool="calc" class="hbtn" id="calc-btn" aria-label="Taschenrechner"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>Rechner</button>
       <button type="button" data-tool="alarm" class="hbtn" id="alarm-btn" aria-label="Wecker"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>Wecker</button>
-      <button type="button" data-tool="fin" class="hbtn" id="fin-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="7.5" width="16" height="12" rx="2.5"/><path d="M20 11.5h-4a2 2 0 0 0 0 4h4"/><circle cx="16.3" cy="13.5" r=".6"/></svg>Kontostand</button>
+      <a data-tool="fin" class="hbtn" id="fin-btn" href="#finanzen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="7.5" width="16" height="12" rx="2.5"/><path d="M20 11.5h-4a2 2 0 0 0 0 4h4"/><circle cx="16.3" cy="13.5" r=".6"/></svg>Finanzen</a>
       <button type="button" data-tool="radio" class="hbtn rtoggle" id="radio-toggle" aria-expanded="false" hidden><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
       <button type="button" data-tool="bsicher" class="hbtn" id="bs-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h9v16H4z"/><path d="M14 12h7m-3-3 3 3-3 3"/><circle cx="8.5" cy="12" r="1"/></svg><span class="hb2">Kapazität &amp;<br>Rettungswege</span></button>
       <a data-tool="flaechen" class="hbtn" href="#flaechen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M4 12h16M12 5v14"/><circle cx="8" cy="8.5" r="1"/><circle cx="16" cy="15.5" r="1"/></svg>Event-Flächen</a>
@@ -1246,7 +1261,7 @@ body.r-open{overflow:hidden}
     <div role="button" tabindex="0" class="kpi tile" data-view="luft" id="k-aq"><div class="lbl">Luft &amp; Pollen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="webcams" id="k-cam"><div class="lbl">Webcams</div><div class="val">–</div><div class="note">Live-Bilder</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="rhein" id="k-rhein"><div class="lbl" id="k-rhein-lbl">Pegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="alltag" id="k-strom"><div class="lbl">Kalender &amp; Börse</div><div class="val">–</div><div class="note">Feiertage, Ferien, Börse</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="alltag" id="k-strom"><div class="lbl">Kalender &amp; Events</div><div class="val">–</div><div class="note">Feiertage, Ferien, Events</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="quellen" id="k-src"><div class="lbl">Schnittstellen</div><div class="val">–</div><div class="note">Status der Quellen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einstellungen" id="k-set"><div class="lbl">Einstellungen</div><div class="val" style="font-size:22px">Orte &amp; mehr</div><div class="note">Haltestelle, Strecken, Schlüssel</div></div>
   </div>
@@ -1592,8 +1607,8 @@ body.r-open{overflow:hidden}
 </div>
 
 <div class="view" id="v-alltag" data-view="alltag" hidden>
-<section id="alltag"><div class="sec-title"><h2>Kalender, Börse &amp; Events</h2></div></section>
-<div class="seg" id="al-seg" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px"><button type="button" data-al="tag" class="on">Kalender</button><button type="button" data-al="fer">Ferien NRW</button><button type="button" data-al="fin">Börse</button><button type="button" data-al="ev">Events</button></div>
+<section id="alltag"><div class="sec-title"><h2>Kalender &amp; Events</h2></div></section>
+<div class="seg" id="al-seg" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px"><button type="button" data-al="tag" class="on">Kalender</button><button type="button" data-al="fer">Ferien NRW</button><button type="button" data-al="ev">Events</button></div>
 <div class="grid al-grid">
   <section class="card wide" data-alp="tag">
     <div class="card-head"><h2>Tag &amp; Kalender</h2><span class="src" id="cal-src">Feiertage · Schulferien NRW</span></div>
@@ -1603,17 +1618,24 @@ body.r-open{overflow:hidden}
     <div class="card-head"><h2 id="fer-title">Schulferien bis 2028</h2><span class="src">OpenHolidays API</span></div>
     <div id="ferien"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card" data-alp="fin" hidden>
-    <div class="card-head"><h2>Gold</h2><span class="src">Yahoo Finance · verzögert</span></div>
-    <div id="gold"><div class="state">wird geladen …</div></div>
-  </section>
-  <section class="card" data-alp="fin" hidden>
-    <div class="card-head"><h2>Börse</h2><span class="src" id="mk-src">Yahoo Finance · verzögert</span></div>
-    <div id="boerse"><div class="state">wird geladen …</div></div>
-  </section>
   <section class="card wide" id="tm-card" data-alp="ev" hidden>
     <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nächste Termine im Umkreis von 25 km</span></div>
     <div id="tm-list"><div class="state">wird geladen …</div></div>
+  </section>
+</div>
+</div>
+
+<div class="view" id="v-finanzen" data-view="finanzen" hidden>
+<section id="finanzen"><div class="sec-title"><h2>Finanzen</h2></div></section>
+<button type="button" class="btn fin-open" id="fin-open"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="7.5" width="16" height="12" rx="2.5"/><path d="M20 11.5h-4a2 2 0 0 0 0 4h4"/><circle cx="16.3" cy="13.5" r=".6"/></svg>Kontostand öffnen</button>
+<div class="grid">
+  <section class="card">
+    <div class="card-head"><h2>Gold</h2><span class="src">Yahoo Finance · verzögert</span></div>
+    <div id="gold"><div class="state">wird geladen …</div></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Börse</h2><span class="src" id="mk-src">Yahoo Finance · verzögert</span></div>
+    <div id="boerse"><div class="state">wird geladen …</div></div>
   </section>
 </div>
 </div>
@@ -1718,6 +1740,6 @@ body.r-open{overflow:hidden}
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=301"></script>
+<script src="app.js?v=302"></script>
 </body>
 </html>
