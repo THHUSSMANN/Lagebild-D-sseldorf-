@@ -1148,15 +1148,16 @@ function playLive(el,x){
    .catch(()=>{el.classList.remove("loading");window.open(x.u,"_blank","noopener");});
 }
 // ================= Öffentliche Webcams (Windy) =================
+function windySt(t,c){const w=$("windy-st");if(!w)return;w.textContent=t;w.style.color=c==="ok"?"#2e9e5b":c==="err"?"#d93a3a":"";w.style.fontWeight=c?"600":"";}
 async function loadWindy(){
   const box=$("webcams-public");
-  if(!WINDY){box.innerHTML='<div class="muted small" style="margin-bottom:6px">Weitere öffentliche Webcams (Stadt, Rhein, Umgebung) nach Eintrag eines kostenlosen Windy-Schlüssels unter <a href="#einstellungen">Einstellungen</a>.</div>';setStatus("windy",false,"Schlüssel fehlt");return;}
+  if(!WINDY){box.innerHTML='<div class="muted small" style="margin-bottom:6px">Weitere öffentliche Webcams (Stadt, Rhein, Umgebung) nach Eintrag eines kostenlosen Windy-Schlüssels unter <a href="#einstellungen">Einstellungen</a>.</div>';setStatus("windy",false,"Schlüssel fehlt");windySt("");return;}windySt("… Windy wird geprüft","");
   try{const r=await fetch("https://api.windy.com/webcams/api/v3/webcams?nearby="+C.center.lat+","+C.center.lon+","+(C.isDus?15:25)+"&include=images,urls,location&limit=12&lang=de",{headers:{"x-windy-api-key":WINDY}});
     if(!r.ok)throw new Error("HTTP "+r.status);const d=await r.json();const cams=d.webcams||[];
     box.innerHTML=cams.length?'<div class="sublbl">Öffentliche Webcams</div><div class="cams" style="margin-bottom:10px">'+cams.map(c=>{const img=c.images&&(c.images.current&&(c.images.current.preview||c.images.current.thumbnail));const url=c.urls&&(c.urls.detail||c.urls.provider);
       return '<a class="cam" href="'+esc(safeUrl(url))+'" target="_blank" rel="noopener"><img loading="lazy" alt="Webcam '+esc(c.title)+'" src="'+esc(safeUrl(img))+'"><span>'+esc(c.title)+'</span></a>';}).join("")+'</div>':'<div class="muted small">Keine öffentlichen Webcams im Umkreis gefunden.</div>';CAM_N.pub=cams.length;camTile();
-    setStatus("windy",true);
-  }catch(e){setStatus("windy",false,errText(e));box.innerHTML=stateBox("Öffentliche Webcams nicht verfügbar – "+errText(e)+".");}
+    setStatus("windy",true);windySt("✓ Windy ist aktiv – "+cams.length+" Webcams rund um "+(C.name||"den Ort")+". Zu sehen unter „Webcams“.","ok");
+  }catch(e){setStatus("windy",false,errText(e));windySt("✕ Windy antwortet nicht: "+errText(e)+(/40[13]/.test(String(e))?" – Schlüssel prüfen (Webcams API gewählt? evtl. ein paar Minuten warten).":""),"err");box.innerHTML=stateBox("Öffentliche Webcams nicht verfügbar – "+errText(e)+".");}
 }
 async function loadSammler(){try{const d=await getData("status.json");const bad=Object.entries(d.data||{}).filter(([k,v])=>v!=="ok");setStatus("sammler",!bad.length||bad.length<5,"Lauf "+dataAge(d)+(bad.length?" · "+bad.length+" Quelle(n) mit Fehler":""));}catch(e){setStatus("sammler",false,"noch keine Daten – GitHub Pages auf „GitHub Actions“ umstellen");}}
 
