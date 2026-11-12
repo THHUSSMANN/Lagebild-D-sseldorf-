@@ -2423,7 +2423,7 @@ async function refreshAll(force){
 }
 let pending=false,lastRun=0;
 function tick(){$("clock").textContent=new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit",second:"2-digit"});
-  $("sub").textContent=new Date().toLocaleDateString("de-DE",{...TZ,weekday:"long",day:"numeric",month:"long",year:"numeric"})+" · KW "+isoWeek(new Date());}
+  const nar=innerWidth<600;$("sub").textContent=new Date().toLocaleDateString("de-DE",nar?{...TZ,weekday:"short",day:"numeric",month:"short"}:{...TZ,weekday:"long",day:"numeric",month:"long",year:"numeric"})+" · KW "+isoWeek(new Date());}
 $("refresh").addEventListener("click",()=>refreshAll(true));
 // ================= Übersicht, Ansichten, Anordnen =================
 const TILE_DEFAULT=[...document.querySelectorAll("#tiles .tile")].map(t=>t.dataset.view);

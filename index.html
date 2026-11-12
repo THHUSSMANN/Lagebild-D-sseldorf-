@@ -1252,6 +1252,23 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
   header .brand .dt .sub{font-size:16.5px}
   header .warnpill{min-height:46px}
 }
+/* v333: Startseite passt aufs iPhone – nichts mehr unter der Safari-Leiste */
+@media (max-width:600px){
+  header .brand .dt{flex-wrap:nowrap;gap:10px;align-items:baseline;min-width:0}
+  header .clock{font-size:25px}
+  header .brand .dt .sub{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  header .warnpill{min-height:44px;padding:8px 14px;margin:8px 0 0}
+  .qapps{margin-top:8px!important}
+  .qapp{min-height:50px;padding:4px;gap:2px}
+  .qapp .mi{width:20px;height:20px}
+  header .hrow{margin:2px 0 4px;gap:6px}
+  header .places{padding:6px 0 0}
+  header .fav{min-height:40px;padding:4px 12px}
+  header #headnav{gap:6px!important;margin:0!important}
+  header #headnav a.hbtn{min-height:48px;padding:5px 12px}
+  header .tools-toggle{margin:2px 0 0;min-height:42px}
+  footer.ft-min{padding:10px 0 calc(env(safe-area-inset-bottom) + 84px)!important}
+}
 </style>
 </head>
 <body>
@@ -1896,6 +1913,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=332"></script>
+<script src="app.js?v=333"></script>
 </body>
 </html>
