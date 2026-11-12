@@ -2764,3 +2764,7 @@ document.addEventListener("click",e=>{if(!e.target.closest(".vlback"))return;e.p
 
 })();
 
+
+/* Aktiven Reiter oben sichtbar mittig halten (einzeilige iOS-Leiste) */
+function vtopCenter(){document.querySelectorAll(".vtop .subtabs").forEach(b=>{const a=b.querySelector("a.on");if(a&&b.scrollWidth>b.clientWidth)b.scrollLeft=a.offsetLeft-(b.clientWidth-a.offsetWidth)/2;});}
+addEventListener("hashchange",()=>setTimeout(vtopCenter,60));addEventListener("load",()=>setTimeout(vtopCenter,300));
