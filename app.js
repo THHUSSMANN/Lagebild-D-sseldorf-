@@ -436,11 +436,23 @@ async function loadRheinWV(uuid,now){const box=$("pegel-wv");if(!box)return;
 
 /* Schiffe: eingebettete AIS-Karte (VesselFinder), erst beim Öffnen laden */
 let SHIPS_KEY="";
-function shipsInit(){const box=$("ships-box");if(!box||!box.offsetParent||SHIPS_KEY===C.key)return;SHIPS_KEY=C.key;
-  const lat=C.isDus?51.2277:C.lat,lon=C.isDus?6.7735:C.lon;
+let SHIPS_GPS=null;
+function shipsInit(pos){const box=$("ships-box");if(!box||!box.offsetParent)return;if(pos)SHIPS_GPS=pos;else pos=SHIPS_GPS;const key=pos?"gps:"+pos.lat.toFixed(3)+","+pos.lon.toFixed(3):C.key;if(SHIPS_KEY===key)return;SHIPS_KEY=key;
+  const lat=pos?pos.lat:C.isDus?51.2277:C.lat,lon=pos?pos.lon:C.isDus?6.7735:C.lon;
+  const cb=document.querySelector('#ships-pos [data-shp="city"]');if(cb){cb.hidden=!pos;cb.textContent="↩ "+(C.town||C.name||"Stadt");}
+  const gb=document.querySelector('#ships-pos [data-shp="gps"]');if(gb)gb.classList.toggle("on",!!pos);
   const doc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;background:#dfe7ec}</style></head><body><script>var width="100%";var height="400";var latitude="'+lat+'";var longitude="'+lon+'";var zoom="13";var names=false;</'+'script><script src="https://www.vesselfinder.com/aismap.js"></'+'script></body></html>';
   box.innerHTML='<iframe title="Schiffe live" style="width:100%;height:410px;border:0;border-radius:14px;display:block" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" loading="lazy"></iframe>';
   const fr=box.firstChild;fr.srcdoc=doc;fr.addEventListener("load",()=>setStatus("ships",true));}
+
+/* Schiffskarte: auf aktuellen Standort springen */
+document.addEventListener("click",e=>{const b=e.target.closest("#ships-pos [data-shp]");if(!b)return;
+  if(b.dataset.shp==="city"){SHIPS_GPS=null;SHIPS_KEY=null;shipsInit();return;}
+  if(!navigator.geolocation){alert("Standort wird von diesem Gerät nicht unterstützt.");return;}
+  const g=b.innerHTML;b.disabled=true;b.lastChild.textContent="Standort wird ermittelt …";
+  navigator.geolocation.getCurrentPosition(p=>{b.disabled=false;b.innerHTML=g;shipsInit({lat:p.coords.latitude,lon:p.coords.longitude});},
+    err=>{b.disabled=false;b.innerHTML=g;const s=$("ships-box");if(s)s.insertAdjacentHTML("afterbegin",'<p class="muted small" style="margin:0 0 8px">Standort nicht verfügbar'+(err.code===1?' – bitte in Safari den Standortzugriff für diese Seite erlauben.':'.')+'</p>');},
+    {enableHighAccuracy:true,timeout:12000,maximumAge:60000});});
 
 /* Flugzeuge über Düsseldorf – erst direkt, sonst Stand des Datensammlers */
 async function loadFlights(){const box=$("flights");if(!box)return;const lat=51.2895,lon=6.7668;let ac=null,src="live";

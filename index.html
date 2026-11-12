@@ -685,6 +685,7 @@ body.alarm .warnpill{animation:alarm 1.1s ease-in-out infinite;color:#fff;border
 #vl-body[data-k="bau"] [data-kat]:not([data-kat~="bau"]),#vl-body[data-k="bau"] .vl-sec:not(:has([data-kat~="bau"])){display:none!important}
 
 /* Standort-Knopf (Parken, E-Laden) */
+#ships-pos button{flex:1 1 0;min-width:0;white-space:nowrap}#ships-pos button[hidden]{display:none!important}
 .gpsbtn{display:flex!important;align-items:center;justify-content:center;gap:10px;min-height:50px;font-size:16px!important;font-weight:700!important;color:var(--fg)!important;background:var(--panel-2)!important;border:1px solid var(--line)!important}
 .gpsbtn .pin{width:24px;height:24px;flex:none;fill:#e0302b;stroke:#fff;stroke-width:1.4}
 .gpsbtn .pin circle{fill:#fff;stroke:none}
@@ -1678,6 +1679,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
   </section>
   <section class="card wide" id="ships-card" data-tp="pg:ships" hidden>
     <div class="card-head"><h2>Schiffe auf dem Rhein</h2><span class="src">VesselFinder · Schiff antippen zeigt Name, Typ und Ziel</span></div>
+    <div class="seg" id="ships-pos" style="display:flex;gap:8px;margin-bottom:12px"><button type="button" class="gpsbtn" data-shp="gps"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.5s-7-6-7-11.6a7 7 0 0 1 14 0c0 5.6-7 11.6-7 11.6z"/><circle cx="12" cy="9.8" r="2.6"/></svg>Mein Standort</button><button type="button" class="gpsbtn" data-shp="city" hidden>Zurück</button></div>
     <div id="ships-box"><div class="state">Karte lädt beim Öffnen …</div></div>
   </section>
 </div>
@@ -1913,6 +1915,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=333"></script>
+<script src="app.js?v=334"></script>
 </body>
 </html>
