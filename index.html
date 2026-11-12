@@ -1169,10 +1169,14 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 :root{--seg-on:#fff;--seg-on-fg:#0b1a24}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--seg-on:rgba(255,255,255,.26);--seg-on-fg:#fff}}
 :root[data-theme="dark"]{--seg-on:rgba(255,255,255,.26);--seg-on-fg:#fff}
-/* v327: Reiter oben immer einzeilig wie iOS 26 – bei vielen Reitern seitlich wischen statt zweite Zeile */
-.vtop .subtabs{flex-wrap:nowrap!important;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch;border-radius:999px!important}
+/* v331: Reiter oben immer einzeilig wie iOS 26. Ab 4 Reitern: ✕ in eigene Zeile rechts oben, Leiste volle Breite – alle Reiter sichtbar */
+.vtop .subtabs{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;border-radius:999px!important}
 .vtop .subtabs::-webkit-scrollbar{display:none}
-.vtop .subtabs a{flex:1 0 auto!important;padding:0 16px!important;scroll-snap-align:center}
+.vtop .subtabs a{flex:1 1 auto!important;min-width:0;padding:0 10px!important}
+.vtop:has(.subtabs a:nth-child(4)){flex-wrap:wrap;row-gap:6px}
+.vtop:has(.subtabs a:nth-child(4)) .view-x.round{order:-1;margin-left:auto!important}
+.vtop:has(.subtabs a:nth-child(4)) .subtabs{flex:1 1 100%;order:1}
+@media (max-width:430px){.vtop:has(.subtabs a:nth-child(5)) .subtabs a{padding:0 6px!important;font-size:14.5px!important}}
 /* v312: allgemeine Reiter (Luft · Pollen u. a.) im selben iOS-Stil */
 .tabseg{display:flex!important;gap:2px;padding:4px!important;margin:0 0 14px;border-radius:999px!important;background:color-mix(in srgb,var(--fg) 9%,transparent)!important;border:1px solid color-mix(in srgb,var(--fg) 10%,transparent)!important;-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:none!important}
 .tabseg button{flex:1 1 0;min-height:40px!important;padding:0 10px!important;border:0!important;border-radius:999px!important;background:transparent!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:600 17px/1 var(--f-body)!important;color:var(--fg)!important;opacity:.85;white-space:nowrap}
@@ -1892,6 +1896,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=330"></script>
+<script src="app.js?v=331"></script>
 </body>
 </html>
