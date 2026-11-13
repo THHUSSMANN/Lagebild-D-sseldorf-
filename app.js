@@ -1844,7 +1844,7 @@ async function loadEFA(){const EK=ec().key;
   let stop=STOPS[ec().key]||ec().efaDefault;{const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
   const m=stopMatch(stop);EFASTOP=stop;efaGo();
   const avail=(STOPIDX&&STOPIDX.available)||[];
-  $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,""))+'</button>').join(""):"";
+  $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join(""):"";
   $("efa-dir").value=DIRF[ec().key]||"";
   $("efa-title").textContent=(ec().isDus?"Rheinbahn · ":"Abfahrten ")+(m.name||stop).replace(/^Düsseldorf[, ]*/,"");
   $("efa-src").textContent=ec().isDus?"Bus, U- und Straßenbahn · Echtzeit":"Bus & Bahn vor Ort · Echtzeit";
@@ -1870,13 +1870,13 @@ function renderEFA(){const d=EFADATA;if(!d)return;
       '<div class="muted small">Nur Verbindungen ohne Umstieg · Echtzeit abgerufen '+dataAge(d)+'</div>';
     return;}const now=Date.now()-60e3;const f=normStop(DIRF[ec().key]||"");
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
-  if(f)rows=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);
+  let noHit=false;if(f){const fr=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);if(fr.length)rows=fr;else noHit=true;}
   rows=rows.slice(0,14);
   EFASTOP=d.data.stop||"";efaGo();
   if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Linie fährt Richtung „"+esc(DIRF[ec().key])+"“. Für eine Verbindung mit Umsteigen den Knopf oben antippen.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
     if(!(ec().isDus||ec().key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
-  $("efa").innerHTML=busTripsHtml(d.data.stop)+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
+  $("efa").innerHTML=busTripsHtml(d.data.stop)+(noHit?'<div class="muted small" style="margin-bottom:6px">Keine Linie fährt direkt Richtung „'+esc(DIRF[ec().key])+'“ – hier alle Abfahrten:</div>':'')+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
 }
 let BUSF=null;
 function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
