@@ -1284,6 +1284,12 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 #efa-stops.stop-seg{display:flex!important;flex-wrap:nowrap;gap:2px;margin:10px 0 12px}
 #efa-stops.stop-seg:empty{display:none!important}
 #efa-stops.stop-seg button{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px!important;font-size:15px!important}
+/* v346: Alle Auswahl-Leisten in allen Fenstern gleich (iOS-26-Segment): Glas-Spur, gewählter Teil als helle Kapsel, 16 px */
+.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):has(>:nth-child(2)),.tabseg,.vtop .subtabs,#al-seg,#wx-seg{display:flex!important;flex-wrap:nowrap!important;gap:2px!important;padding:4px!important;border-radius:999px!important;background:color-mix(in srgb,var(--fg) 9%,transparent)!important;border:1px solid color-mix(in srgb,var(--fg) 10%,transparent)!important}
+.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):has(>:nth-child(2))>button,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):has(>:nth-child(2))>a,.tabseg button,#al-seg button,#wx-seg button{flex:1 1 0;min-width:0;min-height:40px!important;padding:0 10px!important;border:0!important;border-radius:999px!important;background:transparent!important;background-image:none!important;box-shadow:none!important;color:var(--fg)!important;opacity:.85;font:600 16px/1.15 var(--f-body)!important;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):has(>:nth-child(2))>button.on,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):has(>:nth-child(2))>a.on,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):has(>:nth-child(2))>button[aria-pressed="true"],.tabseg button.on,#al-seg button.on,#wx-seg button.on{opacity:1;background:var(--seg-on,#fff)!important;color:var(--seg-on-fg,#111)!important;box-shadow:0 1px 2px rgba(0,0,0,.12),0 3px 10px rgba(0,0,0,.14)!important}
+.vtop .subtabs a{font-size:16px!important}
+@media (max-width:430px){.vtop:has(.subtabs a:nth-child(5)) .subtabs a{padding:0 6px!important;font-size:14.5px!important}}
 </style>
 </head>
 <body>
@@ -1929,6 +1935,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=345"></script>
+<script src="app.js?v=347"></script>
 </body>
 </html>
