@@ -588,7 +588,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("a[data-app],butt
 function radioShow(open){const l=$("radio-list");l.hidden=!open;document.body.classList.toggle("r-open",open);
   document.querySelectorAll("#radio-toggle,[data-radio-open]").forEach(x=>{x.setAttribute("aria-expanded",open?"true":"false");x.classList.toggle("on",open&&x.hasAttribute("data-radio-open"));});}
 document.addEventListener("click",e=>{const t=e.target.closest("#radio-toggle,[data-radio-open]");if(!t||(typeof HEDIT!=="undefined"&&HEDIT))return;radioShow($("radio-list").hidden);});
-function radioTile(){const o=document.querySelector("#radio .rbtn.on");document.querySelectorAll("[data-radio-open] .hn-v").forEach(v=>v.textContent=o?o.querySelector("b").textContent.trim()+" läuft":"Sonos · WDR 2 · WDR 4");document.querySelectorAll(".qa-rv").forEach(v=>v.textContent=o?o.querySelector("b").textContent.trim():"Radio");
+function radioTile(){const o=document.querySelector("#radio .rbtn.on");document.querySelectorAll("[data-radio-open] .hn-v").forEach(v=>v.textContent=o?o.querySelector("b").textContent.trim()+" läuft":"Sonos · WDR 2 · WDR 4");document.querySelectorAll(".qa-rv").forEach(v=>v.textContent=o?o.querySelector("b").textContent.trim():"Musik");
   document.body.classList.toggle("radio-on",!!o);if(o){const ic=o.querySelector(".r-ic");const m=ic&&(ic.getAttribute("style")||"").match(/#[0-9a-f]{6}/gi);if(m&&m.length>1){document.body.style.setProperty("--rc1",m[0]);document.body.style.setProperty("--rc2",m[1]);}}}
 new MutationObserver(radioTile).observe($("radio"),{subtree:true,attributes:true,attributeFilter:["class"]});
 /* schließen: Kreuz, Tipp auf leere Fläche, Auswahl eines Senders, Esc */
