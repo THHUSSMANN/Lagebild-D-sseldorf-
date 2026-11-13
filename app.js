@@ -2286,7 +2286,7 @@ function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],["datteln","Datt
   return F.map(([k,n,la,lo])=>{const H=HOMES[k];return {k,name:n,lat:H&&isFinite(H.lat)?H.lat:la,lon:H&&isFinite(H.lon)?H.lon:lo};});}
 function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr";w.innerHTML='<button type="button" data-elw="gps" class="gpsbtn'+(ELP&&ELP.k==="gps"?" on":"")+'"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>An meinem Standort suchen</button>';}
 function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
-  [["all","Alle Ladesäulen"],["fast","Schnelllader (ab 50 kW)"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
+  [["all","Alle Ladesäulen"],["fast","Schnelllader 50+ kW"]].map(([v,l])=>'<button type="button" data-elf="'+v+'" class="'+(ELF===v?"on":"")+'">'+l+'</button>').join("")+'</div>';}
 // Ladesäulenregister der Bundesnetzagentur für ganz Deutschland, in 0,5°-Kacheln vom eigenen Server
 let EVIDX=null;const EVC={};
 async function evNear(la,lo,r){try{if(!EVIDX)EVIDX=getJSON("data/ev/index.json?t="+Math.floor(Date.now()/36e5),15000).catch(e=>{EVIDX=null;throw e;});const I=await EVIDX;if(!I||!Array.isArray(I.keys))return null;
