@@ -2,7 +2,8 @@
   "_hinweis": "Haltestellen, deren Abfahrten der Datensammler alle 10 Minuten abruft. Die erste ist der Standard des Orts.",
   "dus": [
     "Düsseldorf Nikolaus-Knopp-Platz",
-    "Düsseldorf Heinrich-Heine-Allee"
+    "Düsseldorf Heinrich-Heine-Allee",
+    "Düsseldorf Oststraße"
   ],
   "datteln": [
     "Datteln Lohstr.",
