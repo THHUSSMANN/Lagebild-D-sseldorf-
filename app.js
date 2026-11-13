@@ -1870,6 +1870,9 @@ function renderEFA(){const d=EFADATA;if(!d)return;
       '<div class="muted small">Nur Verbindungen ohne Umstieg · Echtzeit abgerufen '+dataAge(d)+'</div>';
     return;}const now=Date.now()-60e3;const f=normStop(DIRF[ec().key]||"");
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
+  /* Heine-Allee & Oststraße: nur die linksrheinischen Linien U75/U76/U77 Richtung Oberkassel/Heerdt/Neuss/Krefeld */
+  {const sn=normStop(d.data.stop||"");if(ec().isDus&&(sn.includes("heinrichheine")||sn.includes("oststr")))
+    rows=rows.filter(x=>/^U ?7[567]$/i.test(String(x.line).trim())&&!/lierenfeld|holthausen|vennhauser|eller|benrath|hbf$|hauptbahnhof$/i.test((x.dir||"").replace(/^Neuss.*/,"")));}
   let noHit=false;if(f){const fr=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);if(fr.length)rows=fr;else noHit=true;}
   rows=rows.slice(0,ec().isDus?16:14);
   EFASTOP=d.data.stop||"";efaGo();
