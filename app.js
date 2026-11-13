@@ -481,7 +481,11 @@ async function loadTM(){const box=$("tm-list");if(!box)return;
     const U="https://app.ticketmaster.com/discovery/v2/events.json?apikey="+encodeURIComponent(TMKEY)+"&latlong="+R0.lat+","+R0.lon+"&radius=70&unit=km&locale=*&size=200&sort=date,asc&startDateTime="+iso(now)+"&endDateTime="+iso(end);
     const d=await getJSON(U+"&page=0");let ev=((d._embedded||{}).events||[]);
     if(((d.page||{}).totalPages||1)>1){try{const d2=await getJSON(U+"&page=1");ev=ev.concat(((d2._embedded||{}).events||[]));}catch(e){}}const seen=new Set();const rows=[];
-    ev.forEach(e=>{const s=(e.dates||{}).start||{};const k=e.name+"|"+s.localDate;if(seen.has(k))return;seen.add(k);
+    const today0=isoDay(new Date());
+    ev.forEach(e=>{const s=(e.dates||{}).start||{};
+      /* Mehrfach-/Jahreskarten, Gutscheine, Parktickets und Termine, die schon begonnen haben, weglassen */
+      if(!s.localDate||s.localDate<today0)return;if(/jahreskarte|mehrfach|saisonkarte|dauerkarte|gutschein|geschenk|voucher|parkticket|parken|season ticket/i.test(e.name||""))return;
+      const k=e.name+"|"+s.localDate;if(seen.has(k))return;seen.add(k);
       const v=(((e._embedded||{}).venues||[])[0])||{};const city=(((v.city||{}).name||"").replace(/^D(ue|ü|u)sseldorf.*/i,"Düsseldorf").replace(/^Cologne$/i,"Köln").replace(/^Munich$/i,"München").replace(/^Muenster$/i,"Münster").replace(/^Moenchengladbach$/i,"Mönchengladbach"));
       const lat=+((v.location||{}).latitude),lon=+((v.location||{}).longitude);const km=isFinite(lat)&&isFinite(lon)?distKm(R0.lat,R0.lon,lat,lon):(isFinite(+e.distance)?+e.distance:99);
       rows.push({e,s,v,city,km,key:(s.localDate||"9")+(s.localTime||"99")});});
