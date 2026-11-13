@@ -169,7 +169,7 @@ if(!load("def_heerdt")){if(sel==="dus-1")sel="dus-4";store("def_heerdt",1);store
   store("sel",sel);}catch(e){}})();
 let EFAK=null;function ec(){return EFAK||C;}
 const EFACITY={dus:{key:"dus",isDus:true,efaDefault:"Düsseldorf Nikolaus-Knopp-Platz"},datteln:{key:"datteln",isDus:false,efaDefault:"Datteln Busbahnhof"},dortmund:{key:"dortmund",isDus:false,efaDefault:"Dortmund Hbf"},alpen:{key:"alpen",isDus:false,efaDefault:"Alpen Bahnhof"},salzhausen:{key:"salzhausen",isDus:false,efaDefault:null}};
-let STOPS=load("stops")||{};let DIRF={};try{localStorage.removeItem("lbd_dirf");}catch(e){} // Ziel im ÖPNV-Feld gilt nur bis zum Neuladenlet STOPIDX=null,EFADATA=null;
+let STOPS=load("stops")||{};/* Ziel im ÖPNV-Feld gilt nur bis zum Neuladen */ let DIRF={};try{localStorage.removeItem("lbd_dirf");}catch(e){}let STOPIDX=null,EFADATA=null;
 if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
