@@ -169,7 +169,7 @@ if(!load("def_heerdt")){if(sel==="dus-1")sel="dus-4";store("def_heerdt",1);store
   store("sel",sel);}catch(e){}})();
 let EFAK=null;function ec(){return EFAK||C;}
 const EFACITY={dus:{key:"dus",isDus:true,efaDefault:"Düsseldorf Nikolaus-Knopp-Platz"},datteln:{key:"datteln",isDus:false,efaDefault:"Datteln Busbahnhof"},dortmund:{key:"dortmund",isDus:false,efaDefault:"Dortmund Hbf"},alpen:{key:"alpen",isDus:false,efaDefault:"Alpen Bahnhof"},salzhausen:{key:"salzhausen",isDus:false,efaDefault:null}};
-let STOPS=load("stops")||{};let DIRF=load("dirf")||{};let STOPIDX=null,EFADATA=null;
+let STOPS=load("stops")||{};let DIRF={};try{localStorage.removeItem("lbd_dirf");}catch(e){} // Ziel im ÖPNV-Feld gilt nur bis zum Neuladenlet STOPIDX=null,EFADATA=null;
 if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
@@ -678,7 +678,7 @@ $("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim
 $("windy-save").addEventListener("click",()=>{WINDY=$("windy").value.trim();store("windy",WINDY);loadWindy();});$("theme").value=theme;
 $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!v||!C.efaDefault)return;STOPS[C.key]=v;store("stops",STOPS);loadEFA();
   const m=stopMatch(v);$("stop-hint").innerHTML=m.file?"Übernommen – Abfahrten werden angezeigt.":m.id?"Diese Haltestelle wird noch nicht automatisch abgerufen. Live-Abfahrten öffnen sich über den Link in der Bus-Ansicht; sag Claude Bescheid, dann wird sie fest ergänzt.":"Haltestelle nicht im Verzeichnis gefunden – bitte aus der Vorschlagsliste wählen.";});
-$("efa-dir").addEventListener("input",()=>{DIRF[C.key]=$("efa-dir").value;store("dirf",DIRF);renderEFA();efaGo();});
+$("efa-dir").addEventListener("input",()=>{DIRF[C.key]=$("efa-dir").value;renderEFA();efaGo();});
 // Ziel eingeben → Verbindung mit Bus & Bahn in Google Maps (ab aktueller Haltestelle)
 let EFASTOP="";
 function efaGo(){const a=$("efa-go");if(!a)return;const q=($("efa-dir").value||"").trim();if(q.length<3||!EFASTOP){a.hidden=true;return;}
