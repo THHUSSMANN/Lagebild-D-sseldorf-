@@ -1871,7 +1871,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;
     return;}const now=Date.now()-60e3;const f=normStop(DIRF[ec().key]||"");
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
   let noHit=false;if(f){const fr=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);if(fr.length)rows=fr;else noHit=true;}
-  rows=rows.slice(0,14);
+  rows=rows.slice(0,ec().isDus?16:14);
   EFASTOP=d.data.stop||"";efaGo();
   if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Linie fährt Richtung „"+esc(DIRF[ec().key])+"“. Für eine Verbindung mit Umsteigen den Knopf oben antippen.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
@@ -1892,7 +1892,9 @@ function depTable(rows){
     /* U75 gelb: am Nikolaus-Knopp-Platz Richtung Stadt (Vennhauser Allee), an der Heinrich-Heine-Allee zurück Richtung Heerdt/Neuss */
     const u75=/^U ?75$/i.test(String(x.line).trim());
     /* Oststraße: jede Linie Richtung Neuss gelb */
-    const hl=ec().isDus&&(st.includes("oststr")?/neuss/i.test(x.dir||""):u75&&(st.includes("heinrichheine")?/neuss/i.test(x.dir||""):/vennhauser/i.test(x.dir||"")));
+    /* U75 gelb: am Knopp-Platz in die Stadt (alles außer Neuss), an Heine-Allee und Oststraße zurück Richtung Neuss */
+    const toNeuss=/neuss/i.test(x.dir||"");
+    const hl=ec().isDus&&u75&&(st.includes("knopp")?!toNeuss:toNeuss);
     r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(x.planned?hhmm(x.planned):"–")+'</b></td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
       (x.cancelled?'<span class="pill p-bad"><i></i>fällt aus</span>':del==null?'<span class="muted">–</span>':del>0?'<span style="color:var(--bad);font-weight:600">+'+del+'</span>':'<span style="color:var(--ok)">0</span>')+'</td></tr>';});
   return r+'</tbody></table>';
