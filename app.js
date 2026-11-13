@@ -1888,7 +1888,9 @@ function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
 function depTable(rows){
   let r='<table><thead><tr><th>Zeit</th><th>Linie</th><th>Richtung</th><th class="num">Gleis/Steig</th><th class="num">+min</th></tr></thead><tbody>';
   rows.forEach(x=>{const del=x.delay!=null?x.delay:(x.planned&&x.est?Math.round((new Date(x.est)-new Date(x.planned))/6e4):null);
-    const hl=ec().isDus&&/^U ?75$/i.test(String(x.line).trim())&&/vennhauser/i.test(x.dir||"");
+    const st=normStop((EFADATA&&EFADATA.data&&EFADATA.data.stop)||"");
+    /* U75 gelb: am Nikolaus-Knopp-Platz Richtung Stadt (Vennhauser Allee), an der Heinrich-Heine-Allee zurück Richtung Heerdt/Neuss */
+    const hl=ec().isDus&&/^U ?75$/i.test(String(x.line).trim())&&(st.includes("heinrichheine")?/neuss/i.test(x.dir||""):/vennhauser/i.test(x.dir||""));
     r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(x.planned?hhmm(x.planned):"–")+'</b></td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
       (x.cancelled?'<span class="pill p-bad"><i></i>fällt aus</span>':del==null?'<span class="muted">–</span>':del>0?'<span style="color:var(--bad);font-weight:600">+'+del+'</span>':'<span style="color:var(--ok)">0</span>')+'</td></tr>';});
   return r+'</tbody></table>';
