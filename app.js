@@ -360,9 +360,9 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
 let RADIO=null;
 const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/",orfstm:"https://steiermark.orf.at/radio/",orfnoe:"https://noe.orf.at/radio/",kronehit:"https://www.kronehit.at/",antstm:"https://www.antenne.at/"};
 /* Einstellungen auf andere Geräte übertragen (Text per AirDrop/Notizen, kein Server) */
-{const SKIP=["placecache","addrcache"],PFX="LAGEBILD1:";
+{const SKIP=["placecache","addrcache","nb_cities"],PFX="LAGEBILD1:";
  const msg=(t,c)=>{const m=$("sync-msg");if(!m)return;m.textContent=t;m.className="hint "+(c||"");};
- const pack=()=>{const d={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||!k.startsWith("lbd_")||SKIP.includes(k.slice(4)))continue;d[k]=localStorage.getItem(k);}
+ const pack=()=>{const d={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||!k.startsWith("lbd_")||SKIP.includes(k.slice(4)))continue;const v=localStorage.getItem(k);if(v&&v.length>8000)continue;d[k]=v;}
    return PFX+btoa(unescape(encodeURIComponent(JSON.stringify({v:1,t:new Date().toISOString(),d}))));};
  /* robust: Leerzeichen/Zeilenumbrüche, doppelt eingefügter Text oder Zusatztext (z. B. Titel aus Notizen) werden ignoriert; der neueste gültige Block gewinnt */
  const unpack=t=>{t=(t||"").replace(/\s+/g,"").replace(/[\u200B-\u200D\uFEFF]/g,"");const ms=t.split(PFX).slice(1).map(x=>(/^[A-Za-z0-9+\/_-]+={0,2}/.exec(x)||[""])[0]).filter(Boolean);if(!ms.length)throw 0;
@@ -377,6 +377,39 @@ const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.
  const pin=$("sync-in-paste");if(pin)pin.addEventListener("click",async()=>{let t="";try{t=await navigator.clipboard.readText();}catch(e){}
    if(t&&t.includes(PFX)){$("sync-text").value=t;go(t);}else{$("sync-text").focus();msg("Übertragungs-Text unten einfügen und „Übernehmen & neu laden“ tippen.","");}});
  const inb=$("sync-in");if(inb)inb.addEventListener("click",()=>go($("sync-text").value));
+ /* Übertragung per Code: Empfänger zeigt 6-stelligen Code und wartet; Sender verschlüsselt mit dem Code (AES-GCM)
+    und schickt einmalig über ntfy.sh (ohne Zwischenspeicherung) – nichts wird dauerhaft auf einem Server abgelegt. */
+ const enc=new TextEncoder(),dec=new TextDecoder();
+ const b64=u=>{let s="";u.forEach(b=>s+=String.fromCharCode(b));return btoa(s);},unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+ const topicOf=async c=>"lagebild-sync-"+[...new Uint8Array(await crypto.subtle.digest("SHA-256",enc.encode("lbd-sync|"+c)))].slice(0,12).map(b=>b.toString(16).padStart(2,"0")).join("");
+ const keyOf=async(c,salt)=>crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:150000,hash:"SHA-256"},await crypto.subtle.importKey("raw",enc.encode(c),"PBKDF2",false,["deriveKey"]),{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+ const box=$("sync-codebox");let es=null,esT=null;
+ const stopRecv=()=>{if(es){es.close();es=null;}clearTimeout(esT);};
+ const apply=o=>{Object.entries(o.d||{}).forEach(([k,v])=>{if(k.startsWith("lbd_"))try{localStorage.setItem(k,v);}catch(e){}});
+   box.hidden=false;box.innerHTML='<div class="code" style="font-size:30px">✓</div>Übernommen ('+Object.keys(o.d||{}).length+' Einstellungen) – lädt neu …';msg("","");setTimeout(()=>location.reload(),1200);};
+ const recv=$("sync-recv");if(recv)recv.addEventListener("click",async()=>{stopRecv();
+   const code=String(crypto.getRandomValues(new Uint32Array(1))[0]%1000000).padStart(6,"0");const topic=await topicOf(code);
+   box.hidden=false;box.innerHTML='Auf dem iPhone „Senden“ tippen und diesen Code eingeben:<div class="code">'+code.slice(0,3)+' '+code.slice(3)+'</div><span class="muted small">wartet … (10 Minuten gültig)</span>';msg("","");
+   es=new EventSource("https://ntfy.sh/"+topic+"/sse");
+   es.onmessage=async ev=>{try{const m=JSON.parse(ev.data);if(m.event!=="message"||!m.message)return;const p=JSON.parse(m.message);
+       const key=await keyOf(code,unb64(p.s));const raw=new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(p.i)},key,unb64(p.c)));
+       let txt;if(p.z){const st=new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"));txt=await new Response(st).text();}else txt=dec.decode(raw);
+       stopRecv();apply(JSON.parse(txt));}catch(e){msg("Empfangen, aber nicht lesbar – bitte noch einmal versuchen.","err");}};
+   es.onerror=()=>{};esT=setTimeout(()=>{stopRecv();box.hidden=true;msg("Code abgelaufen – bitte neu „Empfangen“ tippen.","err");},600000);});
+ const send=$("sync-send");if(send)send.addEventListener("click",()=>{stopRecv();box.hidden=false;
+   box.innerHTML='Code vom anderen Gerät eingeben:<input id="sync-code" inputmode="numeric" pattern="[0-9]*" maxlength="7" autocomplete="one-time-code" placeholder="000 000"><div class="sync-btns"><button type="button" class="btn" id="sync-code-go">Senden</button></div>';
+   const inp=$("sync-code");inp.focus();
+   const go2=async()=>{const code=(inp.value||"").replace(/\D/g,"");if(code.length!==6){msg("Bitte den 6-stelligen Code eingeben.","err");return;}
+     try{msg("Wird gesendet …","");const d={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||!k.startsWith("lbd_")||SKIP.includes(k.slice(4)))continue;const v=localStorage.getItem(k);if(v&&v.length>8000)continue;d[k]=v;}
+       let raw=enc.encode(JSON.stringify({v:1,t:new Date().toISOString(),d})),z=0;
+       if(typeof CompressionStream!=="undefined"){raw=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());z=1;}
+       const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+       const c=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},await keyOf(code,salt),raw));
+       const body=JSON.stringify({s:b64(salt),i:b64(iv),c:b64(c),z});if(body.length>3900)throw new Error("zu viele Daten");
+       const r=await fetch("https://ntfy.sh/"+(await topicOf(code))+"?cache=no",{method:"POST",body});if(!r.ok)throw new Error("HTTP "+r.status);
+       box.innerHTML='<div class="code" style="font-size:30px">✓</div>Gesendet. Das andere Gerät übernimmt die Einstellungen und lädt neu.';msg("","");
+     }catch(e){msg("Senden fehlgeschlagen ("+(e.message||e)+"). Läuft auf dem anderen Gerät „Empfangen“ mit diesem Code?","err");}};
+   $("sync-code-go").addEventListener("click",go2);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go2();}});});
  const clr=$("sync-clear");if(clr)clr.addEventListener("click",()=>{$("sync-text").value="";msg("Feld geleert.","");$("sync-text").focus();});}
 /* ARD Sounds · Rubriken: aufklappbar, sortierbar, Reihenfolge nur auf diesem Gerät */
 {const box=$("r-ard"),tg=$("r-ard-tg");if(box&&tg){

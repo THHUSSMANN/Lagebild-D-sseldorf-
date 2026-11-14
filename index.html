@@ -1018,6 +1018,11 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
 #sync-field .sync-go{width:100%;margin-top:6px}
 #sync-field textarea+.sync-btns{margin-top:6px}
 #sync-msg.ok{color:#5bd38a}#sync-msg.err{color:#ff6b6b}
+#sync-field .sync-btns{margin-top:8px}
+#sync-codebox{margin-top:10px;padding:14px;border-radius:16px;background:color-mix(in srgb,var(--fg) 7%,transparent);border:1px solid color-mix(in srgb,var(--fg) 12%,transparent);text-align:center}
+#sync-codebox .code{font:700 40px/1.1 ui-monospace,monospace;letter-spacing:.18em;margin:6px 0}
+#sync-codebox input{width:100%;box-sizing:border-box;text-align:center;font:700 32px/1.2 ui-monospace,monospace;letter-spacing:.2em;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg)}
+#sync-alt{margin-top:10px}#sync-alt summary{cursor:pointer;color:var(--muted,#8a96a3);font-size:14px;padding:6px 0}
 #radio .r-grp>.r-fold{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;min-height:64px;padding:10px 16px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;width:100%}
 #radio .r-chev{transition:transform .2s}#radio .r-fold[aria-expanded="true"] .r-chev{transform:rotate(90deg)}
 #radio #r-ard{margin-top:8px}
@@ -1853,10 +1858,16 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
   <div class="settings">
     <div class="field" id="sync-field">
       <label>Auf iPad und Mac übertragen</label>
-      <div class="sync-btns"><button type="button" class="btn" id="sync-out">⇪ Übertragen</button><button type="button" class="btn" id="sync-in-paste">⇩ Übernehmen</button></div>
-      <textarea id="sync-text" rows="3" placeholder="Hier den Übertragungs-Text einfügen …" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
-      <div class="sync-btns"><button type="button" id="sync-clear" class="btn">✕ Feld leeren</button><button type="button" id="sync-in" class="btn">Übernehmen &amp; neu laden</button></div>
-      <span class="hint" id="sync-msg">Überträgt Reihenfolge, Radio, Orte, Haltestellen, Routen, Alarme und Schlüssel. Auf diesem Gerät „übertragen“ (z. B. per AirDrop oder Notizen), auf dem anderen Gerät „übernehmen“. Enthält deine Schlüssel – nur an eigene Geräte schicken.</span>
+      <span class="hint">So geht's: Zuerst auf dem <b>Empfänger</b> (z. B. iPad) „Empfangen“ tippen – es erscheint ein 6-stelliger Code. Dann auf dem <b>iPhone</b> „Senden“ tippen und den Code eingeben. Fertig.</span>
+      <div class="sync-btns"><button type="button" class="btn" id="sync-send">📤 Senden</button><button type="button" class="btn" id="sync-recv">📥 Empfangen</button></div>
+      <div id="sync-codebox" hidden></div>
+      <span class="hint" id="sync-msg"></span>
+      <details id="sync-alt"><summary>Alternativ per Text (AirDrop/Notizen)</summary>
+        <div class="sync-btns"><button type="button" class="btn" id="sync-out">⇪ Text erzeugen</button><button type="button" class="btn" id="sync-in-paste">⇩ Text einfügen</button></div>
+        <textarea id="sync-text" rows="3" placeholder="Hier den Übertragungs-Text einfügen …" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+        <div class="sync-btns"><button type="button" id="sync-clear" class="btn">✕ Feld leeren</button><button type="button" id="sync-in" class="btn">Übernehmen &amp; neu laden</button></div>
+      </details>
+      <span class="hint">Überträgt Reihenfolge, Radio, Orte, Haltestellen, Routen, Alarme und Schlüssel – verschlüsselt, nur zwischen deinen Geräten.</span>
     </div>
     <div class="field">
       <label for="place-q">Ort hinzufügen</label>
