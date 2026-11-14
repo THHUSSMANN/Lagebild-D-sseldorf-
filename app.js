@@ -1888,9 +1888,22 @@ async function loadEFA(){const EK=ec().key;
   const file=m.file||(stop===ec().efaDefault?"efa-"+ec().key+".json":null);
   if(!file||!EFAKEYS.includes(ec().key)){EFADATA=null;
     $("efa").innerHTML=stateBox("„"+esc(m.name||stop)+"“ wird noch nicht automatisch abgerufen.",(m.id?link("https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(m.id),"Live-Abfahrten öffnen")+" · ":"")+"Claude kann sie fest ergänzen.");return;}
-  try{if(!BUSF)BUSF=await getData("busfahrten.json").then(x=>x.data||[]).catch(()=>[]);const ED=await getData(file);if(ec().key!==EK)return;EFADATA=ED;renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));}
+  try{if(!BUSF)BUSF=await getData("busfahrten.json").then(x=>x.data||[]).catch(()=>[]);const ED=await getData(file);if(ec().key!==EK)return;EFADATA=ED;renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));
+    efaLive(m.id||(ED.data&&ED.data.id),EK,stop);}
   catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link(ec().isDus?"https://www.rheinbahn.de/":"https://www.vrr.de/",ec().isDus?"Rheinbahn":"VRR-Fahrplanauskunft"));}
 }
+/* Abfahrten live direkt beim VRR holen (Sekunden statt bis zu 40 min alte Sammeldaten); klappt das nicht, bleiben die gesammelten Daten */
+let EFALIVE_T=null;
+async function efaLive(id,EK,stop){if(!id)return;
+  try{const d=await getJSON("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=stop&name_dm="+encodeURIComponent(id)+"&mode=direct&useRealtime=1&limit=160&itdDateTimeDepArr=dep&useAllStops=1",8000);
+    if(ec().key!==EK||EFASTOP!==stop)return;
+    const L=d.locations&&d.locations[0];const name=L&&(L.disassembledName||L.name)||(EFADATA&&EFADATA.data&&EFADATA.data.stop)||stop;
+    const rows=(d.stopEvents||[]).map(e=>{const tr=e.transportation||{};return{planned:e.departureTimePlanned,est:e.departureTimeEstimated,line:tr.disassembledName||tr.number||tr.name||"",dir:tr.destination&&tr.destination.name||"",
+      plat:e.location&&e.location.properties&&(e.location.properties.platform||e.location.properties.platformName)||"",cancelled:(e.realtimeStatus||[]).includes("TRIP_CANCELLED")};});
+    if(!rows.length)return;
+    EFADATA={generated:new Date().toISOString(),live:true,data:{stop:name,id,rows}};renderEFA();setStatus("efa",true,"live");
+  }catch(e){/* VRR nicht erreichbar → gesammelte Daten bleiben stehen */}
+  clearTimeout(EFALIVE_T);EFALIVE_T=setTimeout(()=>{const box=$("efa");if(box&&box.offsetParent&&EFASTOP===stop)efaLive(id,EK,stop);},60000);}
 function renderEFA(){const d=EFADATA;if(!d)return;
   const pairs=(BUSF||[]).filter(x=>x.key===ec().key);
   $("efa-dir").parentElement.hidden=pairs.length>0;$("efa-stops").hidden=false;
@@ -1925,7 +1938,7 @@ let BUSF=null;
 /* Abruf älter als 15 min (GitHub verzögert geplante Läufe): deutlicher Hinweis + Live-Abfahrten beim VRR */
 function efaStale(d){const age=(Date.now()-new Date(d.generated))/6e4;if(!(age>15))return"";const st=(d.data&&d.data.stop)||EFASTOP||"";const mm=stopMatch(st);
   const u="https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(mm.id||st);
-  return '<div class="state" style="margin-bottom:10px;border-left:3px solid var(--warn,#e0a800)"><b>Abfahrten '+dataAge(d)+' abgerufen</b> – Verspätungen können fehlen. <a href="'+u+'" target="_blank" rel="noopener">Live beim VRR ↗</a></div>';}
+  if(d.live)return '';return '<div class="state" style="margin-bottom:10px;border-left:3px solid var(--warn,#e0a800)"><b>Abfahrten '+dataAge(d)+' abgerufen</b> – Verspätungen können fehlen. <a href="'+u+'" target="_blank" rel="noopener">Live beim VRR ↗</a></div>';}
 function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
   const t=BUSF.filter(x=>x.key===ec().key&&(normStop(x.from)===n||normStop(x.fromQ).endsWith(n)||n.endsWith(normStop(x.from))));
   const now=Date.now()-60e3;
