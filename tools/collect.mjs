@@ -359,6 +359,34 @@ async function fernCombos(from, to) {
 
 // ---------- Ablauf ----------
 await fs.mkdir(OUT, { recursive: true });
+// Schnellmodus „oepnv“ (alle 10 min von außen angestoßen): zuletzt veröffentlichte Daten übernehmen,
+// nur die Abfahrten neu holen – dauert ca. 1–2 Minuten statt 12.
+if (process.env.MODUS === "oepnv") {
+  let names = [];
+  try { const st = await get(LIVE + "status.json", { ms: 20000 }); names = Object.keys(st.data || {}).filter(n => /\.json$/.test(n)); } catch (e) { console.log("::warning::status.json nicht lesbar: " + e.message); }
+  for (const extra of ["osm-poi.json", "push-state.json"]) if (!names.includes(extra)) names.push(extra);
+  const q = [...names]; let copied = 0;
+  await Promise.all(Array.from({ length: 8 }, async () => { while (q.length) { const n = q.shift();
+    try { const d = await get(LIVE + n, { ms: 20000 }); await fs.writeFile(path.join(OUT, n), JSON.stringify(d)); copied++; } catch {} } }));
+  console.log("::notice::Schnellmodus: " + copied + "/" + names.length + " Dateien übernommen, " + await evCopy());
+  let cfg = {}; try { cfg = JSON.parse(await fs.readFile(new URL("../config/haltestellen.json", import.meta.url), "utf8")); } catch {}
+  const deps = [];
+  for (const [k, p] of Object.entries(PLACES)) { if (!p.efa) continue;
+    const list = Array.isArray(cfg[k]) && cfg[k].length ? cfg[k] : [p.efa];
+    // Haltestellenliste neu, falls in config/haltestellen.json ergänzt
+    let idx = null; try { idx = JSON.parse(await fs.readFile(path.join(OUT, "stops-" + k + ".json"), "utf8")); } catch {}
+    const avail = [];
+    for (const [i, name] of list.entries()) { const file = i === 0 ? "efa-" + k + ".json" : "efa-" + k + "-" + i + ".json";
+      deps.push(job(file, async () => { const r = await efa(name); avail[i] = { q: name, name: r.stop, file }; return r; })); }
+    deps.push((async () => { await Promise.all(deps); if (idx && idx.data) { const old = idx.data.available || []; idx.data.available = list.map((n, i) => avail[i] || old.find(a => a.q === n)).filter(Boolean); idx.generated = new Date().toISOString(); await fs.writeFile(path.join(OUT, "stops-" + k + ".json"), JSON.stringify(idx)); } })());
+  }
+  await Promise.allSettled(deps);
+  await job("busfahrten.json", busfahrtenData);
+  let prevStatus = {}; try { prevStatus = (await get(LIVE + "status.json", { ms: 15000 })).data || {}; } catch {}
+  await write("status.json", { ...prevStatus, ...results });
+  console.log(JSON.stringify(results, null, 1));
+  process.exit(0);
+}
 const tasks = [];
 for (const [k, p] of Object.entries(PLACES)) {
   tasks.push(job("blaulicht-" + k + ".json", () => blaulicht(k, p)));
@@ -494,7 +522,8 @@ await job("landespegel.json", async () => {
   return out;
 });
 // ---------- Direkte Busfahrten (z. B. Datteln Lohstr. → Busbahnhof) ----------
-await job("busfahrten.json", async () => {
+await job("busfahrten.json", busfahrtenData);
+async function busfahrtenData() {
   let cfg = {}; try { cfg = JSON.parse(await fs.readFile(new URL("../config/haltestellen.json", import.meta.url), "utf8"))._fahrten || {}; } catch {}
   const out = [];
   for (const [k, pairs] of Object.entries(cfg)) for (const [from, to] of pairs) {
@@ -513,7 +542,7 @@ await job("busfahrten.json", async () => {
     } catch (e) { console.log("::notice::Busfahrten " + from + " → " + to + " Fehler: " + e.message); }
   }
   return out;
-});
+}
 // ---------- Weitere Medien je Ort ----------
 await job("medien.json", async () => {
   const WDR = ["https://www1.wdr.de/nachrichten/uebersicht-nachrichten-100.feed", "https://www1.wdr.de/nachrichten/index.feed", "https://www1.wdr.de/uebersicht-100.feed"];

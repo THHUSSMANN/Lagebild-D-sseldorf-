@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      modus:
+        description: "voll = alle Quellen, oepnv = nur Abfahrten (schnell)"
+        required: false
+        default: "voll"
 
 permissions:
   contents: read
@@ -32,6 +37,7 @@ jobs:
           mkdir -p _site/data && cp static/*.json _site/data/
       - name: Daten sammeln
         env:
+          MODUS: ${{ github.event.inputs.modus || 'voll' }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC || 'lagebild-thh-de66cb14565a' }}
         run: node tools/collect.mjs _site/data
       - uses: actions/upload-pages-artifact@v3
