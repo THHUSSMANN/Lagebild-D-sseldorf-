@@ -1936,6 +1936,12 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
       <span class="hint">Für Konzerte, Sport und Shows unter „Kalender &amp; Events“ → „Events“. Kostenlos unter <a href="https://developer.ticketmaster.com/" target="_blank" rel="noopener">developer.ticketmaster.com</a> → Konto anlegen → „My Apps“ → „Consumer Key“.</span>
     </div>
     <div class="field">
+      <label for="efaproxy">Abfahrten-Vermittler (optional, Cloudflare)</label>
+      <div class="inline"><input id="efaproxy" type="url" autocomplete="off" spellcheck="false" placeholder="https://vrr-proxy.….workers.dev"><button type="button" id="efaproxy-save">Speichern</button></div>
+      <span class="hint">Macht die ÖPNV-Abfahrten besonders zuverlässig live. Code liegt im Projekt unter tools/cloudflare-worker-vrr.js. Ohne Eintrag versucht das Lagebild den VRR direkt und dann die DB-Auskunft.</span>
+      <span class="hint" id="efaproxy-st"></span>
+    </div>
+    <div class="field">
       <label class="al-chk" for="gm-web" style="display:flex"><input type="checkbox" id="gm-web"> Google Maps ohne Rückfrage öffnen</label>
       <span class="hint">Auf dem iPhone fragt Safari sonst jedes Mal „In Google Maps öffnen?“. Eingeschaltet nutzt das Dashboard normale Google-Maps-Adressen – ob dann die App oder die Webseite startet, entscheidet iOS. Kommt nur die Webseite, einfach wieder ausschalten.</span>
     </div>
@@ -1953,6 +1959,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=348"></script>
+<script src="app.js?v=349"></script>
 </body>
 </html>

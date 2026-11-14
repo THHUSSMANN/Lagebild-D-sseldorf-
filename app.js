@@ -1868,7 +1868,7 @@ async function loadFuel(){
 const normStop=x=>String(x||"").toLowerCase().replace(/straße/g,"str.").replace(/[^a-z0-9äöüß]/g,"");
 function stopMatch(v){const n=normStop(v);const I=STOPIDX||{available:[],all:[]};
   const a=I.available.find(x=>normStop(x.name)===n||normStop(x.q)===n||normStop(x.name).endsWith(n));
-  if(a)return {file:a.file,name:a.name};
+  if(a)return {file:a.file,name:a.name,id:a.id};
   const s=I.all.find(x=>normStop(x.name)===n)||I.all.find(x=>normStop(x.name).includes(n));
   return s?{id:s.id,name:s.name}:{};}
 async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includes(ec().key))return;
@@ -1889,21 +1889,32 @@ async function loadEFA(){const EK=ec().key;
   if(!file||!EFAKEYS.includes(ec().key)){EFADATA=null;
     $("efa").innerHTML=stateBox("„"+esc(m.name||stop)+"“ wird noch nicht automatisch abgerufen.",(m.id?link("https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(m.id),"Live-Abfahrten öffnen")+" · ":"")+"Claude kann sie fest ergänzen.");return;}
   try{if(!BUSF)BUSF=await getData("busfahrten.json").then(x=>x.data||[]).catch(()=>[]);const ED=await getData(file);if(ec().key!==EK)return;EFADATA=ED;renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));
-    efaLive(m.id||(ED.data&&ED.data.id),EK,stop);}
+    efaLive(m.id||(ED.data&&ED.data.id)||null,EK,stop,++EFASEQ);}
   catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link(ec().isDus?"https://www.rheinbahn.de/":"https://www.vrr.de/",ec().isDus?"Rheinbahn":"VRR-Fahrplanauskunft"));}
 }
-/* Abfahrten live direkt beim VRR holen (Sekunden statt bis zu 40 min alte Sammeldaten); klappt das nicht, bleiben die gesammelten Daten */
-let EFALIVE_T=null;
-async function efaLive(id,EK,stop){if(!id)return;
-  try{const d=await getJSON("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=stop&name_dm="+encodeURIComponent(id)+"&mode=direct&useRealtime=1&limit=160&itdDateTimeDepArr=dep&useAllStops=1",8000);
-    if(ec().key!==EK||EFASTOP!==stop)return;
-    const L=d.locations&&d.locations[0];const name=L&&(L.disassembledName||L.name)||(EFADATA&&EFADATA.data&&EFADATA.data.stop)||stop;
-    const rows=(d.stopEvents||[]).map(e=>{const tr=e.transportation||{};return{planned:e.departureTimePlanned,est:e.departureTimeEstimated,line:tr.disassembledName||tr.number||tr.name||"",dir:tr.destination&&tr.destination.name||"",
-      plat:e.location&&e.location.properties&&(e.location.properties.platform||e.location.properties.platformName)||"",cancelled:(e.realtimeStatus||[]).includes("TRIP_CANCELLED")};});
-    if(!rows.length)return;
-    EFADATA={generated:new Date().toISOString(),live:true,data:{stop:name,id,rows}};renderEFA();setStatus("efa",true,"live");
-  }catch(e){/* VRR nicht erreichbar → gesammelte Daten bleiben stehen */}
-  clearTimeout(EFALIVE_T);EFALIVE_T=setTimeout(()=>{const box=$("efa");if(box&&box.offsetParent&&EFASTOP===stop)efaLive(id,EK,stop);},60000);}
+/* Abfahrten live – Reihenfolge: 1) eigener Cloudflare-Vermittler, 2) VRR direkt, 3) DB-Auskunft (transport.rest), 4) gesammelte Daten */
+let EFASEQ=0,EFALIVE_T=null,EFAPROXY=(load("efaproxy")||"").trim();const HAFASID=load("hafasid")||{};
+const efaRows=d=>(d.stopEvents||[]).map(e=>{const tr=e.transportation||{};return{planned:e.departureTimePlanned,est:e.departureTimeEstimated,line:tr.disassembledName||tr.number||tr.name||"",dir:tr.destination&&tr.destination.name||"",
+  plat:e.location&&e.location.properties&&(e.location.properties.platform||e.location.properties.platformName)||"",cancelled:(e.realtimeStatus||[]).includes("TRIP_CANCELLED")};});
+async function efaFrom(base,id,name){const d=await getJSON(base+"/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm="+(id?"stop":"any")+"&name_dm="+encodeURIComponent(id||name)+"&mode=direct&useRealtime=1&limit=160&itdDateTimeDepArr=dep&useAllStops=1",7000);
+  const L=d.locations&&d.locations[0];const rows=efaRows(d);if(!rows.length)throw new Error("leer");return{name:L&&(L.disassembledName||L.name),rows};}
+async function hafasDeps(stopName){const TR="https://v6.db.transport.rest";
+  let hid=HAFASID[stopName];
+  if(!hid){const q=stopName.replace(/\s+U$/,"");const l=await getJSON(TR+"/locations?query="+encodeURIComponent(q.includes("Düsseldorf")?q:"Düsseldorf "+q)+"&results=1&addresses=false&poi=false",7000);
+    hid=l&&l[0]&&l[0].id;if(!hid)throw new Error("Haltestelle unbekannt");HAFASID[stopName]=hid;store("hafasid",HAFASID);}
+  const d=await getJSON(TR+"/stops/"+encodeURIComponent(hid)+"/departures?duration=90&results=120&remarks=false",8000);
+  const rows=(d.departures||d||[]).map(x=>({planned:x.plannedWhen,est:x.when||x.plannedWhen,line:((x.line&&x.line.name)||"").replace(/^(U|Bus|STR|Tram)\s+/i,(m,a)=>/^u$/i.test(a)?"U":""),dir:x.direction||"",plat:x.platform||x.plannedPlatform||"",cancelled:!!x.cancelled,delay:x.delay!=null?Math.round(x.delay/60):null}));
+  if(!rows.length)throw new Error("leer");return{rows};}
+async function efaLive(id,EK,stop,seq){
+  const stopName=(EFADATA&&EFADATA.data&&EFADATA.data.stop)||stop;let res=null,src="";
+  const tries=[];if(EFAPROXY)tries.push(["Vermittler",()=>efaFrom(EFAPROXY.replace(/\/+$/,""),id,stop)]);
+  tries.push(["VRR",()=>efaFrom("https://efa.vrr.de",id,stop)]);
+  tries.push(["DB",()=>hafasDeps(stopName)]);
+  for(const [n,f] of tries){try{res=await f();src=n;break;}catch(e){}}
+  if(res&&ec().key===EK&&seq===EFASEQ){EFADATA={generated:new Date().toISOString(),live:true,src,data:{stop:res.name||stopName,id,rows:res.rows}};renderEFA();setStatus("efa",true,"live · "+src);}
+  clearTimeout(EFALIVE_T);EFALIVE_T=setTimeout(()=>{const box=$("efa");if(box&&box.offsetParent&&seq===EFASEQ)efaLive(id,EK,stop,seq);},45000);}
+{const i=$("efaproxy"),b=$("efaproxy-save"),st=$("efaproxy-st");if(i&&b){i.value=EFAPROXY;b.addEventListener("click",async()=>{EFAPROXY=i.value.trim();store("efaproxy",EFAPROXY);b.textContent="Gespeichert ✓";setTimeout(()=>b.textContent="Speichern",1500);
+  if(st&&EFAPROXY){st.textContent="Test läuft …";try{await getJSON(EFAPROXY.replace(/\/+$/,"")+"/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&type_sf=any&name_sf=D%C3%BCsseldorf%20Hbf",8000);st.textContent="✓ Vermittler antwortet";}catch(e){st.textContent="✗ keine Antwort – Adresse prüfen";}}});}}
 function renderEFA(){const d=EFADATA;if(!d)return;
   const pairs=(BUSF||[]).filter(x=>x.key===ec().key);
   $("efa-dir").parentElement.hidden=pairs.length>0;$("efa-stops").hidden=false;
@@ -1932,7 +1943,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Linie fährt Richtung „"+esc(DIRF[ec().key])+"“. Für eine Verbindung mit Umsteigen den Knopf oben antippen.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
     if(!(ec().isDus||ec().key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
-  $("efa").innerHTML=busTripsHtml(d.data.stop)+efaStale(d)+(noHit?'<div class="muted small" style="margin-bottom:6px">Keine Linie fährt direkt Richtung „'+esc(DIRF[ec().key])+'“ – hier alle Abfahrten:</div>':'')+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
+  $("efa").innerHTML=busTripsHtml(d.data.stop)+efaStale(d)+(noHit?'<div class="muted small" style="margin-bottom:6px">Keine Linie fährt direkt Richtung „'+esc(DIRF[ec().key])+'“ – hier alle Abfahrten:</div>':'')+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · '+(d.live?'<b style="color:var(--ok)">● live</b> ('+esc(d.src==='DB'?'DB-Auskunft':d.src==='VRR'?'VRR':'eigener Vermittler')+')':'Echtzeit abgerufen '+dataAge(d))+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
 }
 let BUSF=null;
 /* Abruf älter als 15 min (GitHub verzögert geplante Läufe): deutlicher Hinweis + Live-Abfahrten beim VRR */
@@ -1955,7 +1966,7 @@ function depTable(rows){
     /* U75 gelb: am Knopp-Platz in die Stadt (alles außer Neuss), an Heine-Allee und Oststraße zurück Richtung Neuss */
     const toNeuss=/neuss/i.test(x.dir||"");
     const hl=ec().isDus&&(st.includes("barbarossa")?toNeuss:u75&&(st.includes("knopp")?!toNeuss:toNeuss));
-    r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(x.planned?hhmm(x.planned):"–")+'</b></td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
+    const tA=x.est||x.planned;r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(tA?hhmm(tA):"–")+'</b>'+(del>0&&x.planned?'<br><s class="muted small">'+hhmm(x.planned)+'</s>':'')+'</td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
       (x.cancelled?'<span class="pill p-bad"><i></i>fällt aus</span>':del==null?'<span class="muted">–</span>':del>0?'<span style="color:var(--bad);font-weight:600">+'+del+'</span>':'<span style="color:var(--ok)">0</span>')+'</td></tr>';});
   return r+'</tbody></table>';
 }

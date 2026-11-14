@@ -135,7 +135,7 @@ async function efa(stop) {
   const d = await get("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=stop&name_dm=" + encodeURIComponent(best.id) + "&mode=direct&useRealtime=1&limit=160&itdDateTimeDepArr=dep&useAllStops=1");
   d.locations = d.locations && d.locations.length ? d.locations : [best];
   const loc = d.locations && d.locations[0] && (d.locations[0].disassembledName || d.locations[0].name) || stop;
-  return { stop: loc, rows: (d.stopEvents || []).map(e => { const t = e.transportation || {};
+  return { stop: loc, id: best.id, rows: (d.stopEvents || []).map(e => { const t = e.transportation || {};
     return { planned: e.departureTimePlanned, est: e.departureTimeEstimated, line: t.disassembledName || t.number || t.name || "", dir: t.destination && t.destination.name || "",
       plat: e.location && e.location.properties && (e.location.properties.platform || e.location.properties.platformName) || "", cancelled: (e.realtimeStatus || []).includes("TRIP_CANCELLED") }; }) };
 }
@@ -377,7 +377,7 @@ if (process.env.MODUS === "oepnv") {
     let idx = null; try { idx = JSON.parse(await fs.readFile(path.join(OUT, "stops-" + k + ".json"), "utf8")); } catch {}
     const avail = [];
     for (const [i, name] of list.entries()) { const file = i === 0 ? "efa-" + k + ".json" : "efa-" + k + "-" + i + ".json";
-      deps.push(job(file, async () => { const r = await efa(name); avail[i] = { q: name, name: r.stop, file }; return r; })); }
+      deps.push(job(file, async () => { const r = await efa(name); avail[i] = { q: name, name: r.stop, file, id: r.id }; return r; })); }
     deps.push((async () => { await Promise.all(deps); if (idx && idx.data) { const old = idx.data.available || []; idx.data.available = list.map((n, i) => avail[i] || old.find(a => a.q === n)).filter(Boolean); idx.generated = new Date().toISOString(); await fs.writeFile(path.join(OUT, "stops-" + k + ".json"), JSON.stringify(idx)); } })());
   }
   await Promise.allSettled(deps);
