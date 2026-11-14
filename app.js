@@ -1871,7 +1871,10 @@ function renderEFA(){const d=EFADATA;if(!d)return;
     return;}const now=Date.now()-60e3;const f=normStop(DIRF[ec().key]||"");
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
   /* Heine-Allee & Oststraße: nur die linksrheinischen Linien U75/U76/U77 Richtung Oberkassel/Heerdt/Neuss/Krefeld */
-  {const sn=normStop(d.data.stop||"");if(ec().isDus&&(sn.includes("heinrichheine")||sn.includes("oststr")))
+  {const sn=normStop(d.data.stop||"");
+  /* Barbarossaplatz: nur Richtung Neuss */
+  if(ec().isDus&&sn.includes("barbarossa"))rows=rows.filter(x=>/neuss/i.test(x.dir||""));
+  else if(ec().isDus&&(sn.includes("heinrichheine")||sn.includes("oststr")))
     rows=rows.filter(x=>/^U ?7[567]$/i.test(String(x.line).trim())&&!/lierenfeld|holthausen|vennhauser|eller|benrath|hbf$|hauptbahnhof$/i.test((x.dir||"").replace(/^Neuss.*/,"")));}
   let noHit=false;if(f){const fr=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);if(fr.length)rows=fr;else noHit=true;}
   rows=rows.slice(0,ec().isDus?16:14);
@@ -1897,7 +1900,7 @@ function depTable(rows){
     /* Oststraße: jede Linie Richtung Neuss gelb */
     /* U75 gelb: am Knopp-Platz in die Stadt (alles außer Neuss), an Heine-Allee und Oststraße zurück Richtung Neuss */
     const toNeuss=/neuss/i.test(x.dir||"");
-    const hl=ec().isDus&&u75&&(st.includes("knopp")?!toNeuss:toNeuss);
+    const hl=ec().isDus&&(st.includes("barbarossa")?toNeuss:u75&&(st.includes("knopp")?!toNeuss:toNeuss));
     r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(x.planned?hhmm(x.planned):"–")+'</b></td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
       (x.cancelled?'<span class="pill p-bad"><i></i>fällt aus</span>':del==null?'<span class="muted">–</span>':del>0?'<span style="color:var(--bad);font-weight:600">+'+del+'</span>':'<span style="color:var(--ok)">0</span>')+'</td></tr>';});
   return r+'</tbody></table>';
