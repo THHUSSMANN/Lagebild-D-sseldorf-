@@ -1886,9 +1886,13 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Linie fährt Richtung „"+esc(DIRF[ec().key])+"“. Für eine Verbindung mit Umsteigen den Knopf oben antippen.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
     if(!(ec().isDus||ec().key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
-  $("efa").innerHTML=busTripsHtml(d.data.stop)+(noHit?'<div class="muted small" style="margin-bottom:6px">Keine Linie fährt direkt Richtung „'+esc(DIRF[ec().key])+'“ – hier alle Abfahrten:</div>':'')+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
+  $("efa").innerHTML=busTripsHtml(d.data.stop)+efaStale(d)+(noHit?'<div class="muted small" style="margin-bottom:6px">Keine Linie fährt direkt Richtung „'+esc(DIRF[ec().key])+'“ – hier alle Abfahrten:</div>':'')+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
 }
 let BUSF=null;
+/* Abruf älter als 15 min (GitHub verzögert geplante Läufe): deutlicher Hinweis + Live-Abfahrten beim VRR */
+function efaStale(d){const age=(Date.now()-new Date(d.generated))/6e4;if(!(age>15))return"";const st=(d.data&&d.data.stop)||EFASTOP||"";const mm=stopMatch(st);
+  const u="https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(mm.id||st);
+  return '<div class="state" style="margin-bottom:10px;border-left:3px solid var(--warn,#e0a800)"><b>Abfahrten '+dataAge(d)+' abgerufen</b> – Verspätungen können fehlen. <a href="'+u+'" target="_blank" rel="noopener">Live beim VRR ↗</a></div>';}
 function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
   const t=BUSF.filter(x=>x.key===ec().key&&(normStop(x.from)===n||normStop(x.fromQ).endsWith(n)||n.endsWith(normStop(x.from))));
   const now=Date.now()-60e3;
