@@ -1016,6 +1016,7 @@ body:not(:has(.view:not([hidden]))) main.pad{padding-top:0;padding-bottom:0}
 #sync-field button{min-height:44px;border-radius:12px;font:600 15px var(--f-body)}
 #sync-field textarea{width:100%;box-sizing:border-box;margin-top:8px;font:13px ui-monospace,monospace;border-radius:10px;padding:8px}
 #sync-field .sync-go{width:100%;margin-top:6px}
+#sync-field textarea+.sync-btns{margin-top:6px}
 #sync-msg.ok{color:#5bd38a}#sync-msg.err{color:#ff6b6b}
 #radio .r-grp>.r-fold{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;min-height:64px;padding:10px 16px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;width:100%}
 #radio .r-chev{transition:transform .2s}#radio .r-fold[aria-expanded="true"] .r-chev{transform:rotate(90deg)}
@@ -1854,7 +1855,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
       <label>Auf iPad und Mac übertragen</label>
       <div class="sync-btns"><button type="button" class="btn" id="sync-out">⇪ Übertragen</button><button type="button" class="btn" id="sync-in-paste">⇩ Übernehmen</button></div>
       <textarea id="sync-text" rows="3" placeholder="Hier den Übertragungs-Text einfügen …" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
-      <button type="button" id="sync-in" class="btn sync-go">Übernehmen &amp; neu laden</button>
+      <div class="sync-btns"><button type="button" id="sync-clear" class="btn">✕ Feld leeren</button><button type="button" id="sync-in" class="btn">Übernehmen &amp; neu laden</button></div>
       <span class="hint" id="sync-msg">Überträgt Reihenfolge, Radio, Orte, Haltestellen, Routen, Alarme und Schlüssel. Auf diesem Gerät „übertragen“ (z. B. per AirDrop oder Notizen), auf dem anderen Gerät „übernehmen“. Enthält deine Schlüssel – nur an eigene Geräte schicken.</span>
     </div>
     <div class="field">

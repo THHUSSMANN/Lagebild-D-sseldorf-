@@ -364,16 +364,20 @@ const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.
  const msg=(t,c)=>{const m=$("sync-msg");if(!m)return;m.textContent=t;m.className="hint "+(c||"");};
  const pack=()=>{const d={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||!k.startsWith("lbd_")||SKIP.includes(k.slice(4)))continue;d[k]=localStorage.getItem(k);}
    return PFX+btoa(unescape(encodeURIComponent(JSON.stringify({v:1,t:new Date().toISOString(),d}))));};
- const unpack=t=>{t=(t||"").replace(/\s+/g,"");const i=t.indexOf(PFX);if(i<0)throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(t.slice(i+PFX.length)))));if(!o||!o.d)throw 0;return o;};
+ /* robust: Leerzeichen/Zeilenumbrüche, doppelt eingefügter Text oder Zusatztext (z. B. Titel aus Notizen) werden ignoriert; der neueste gültige Block gewinnt */
+ const unpack=t=>{t=(t||"").replace(/\s+/g,"").replace(/[\u200B-\u200D\uFEFF]/g,"");const ms=t.split(PFX).slice(1).map(x=>(/^[A-Za-z0-9+\/_-]+={0,2}/.exec(x)||[""])[0]).filter(Boolean);if(!ms.length)throw 0;
+   let best=null;for(const b of ms){for(let n=b.length-(b.length%4);n>=Math.max(4,b.length-8);n-=4){try{const o=JSON.parse(decodeURIComponent(escape(atob(b.slice(0,n).replace(/-/g,"+").replace(/_/g,"/")))));if(o&&o.d&&(!best||String(o.t||"")>=String(best.t||"")))best=o;break;}catch(e){}}}
+   if(!best)throw 0;return best;};
  const out=$("sync-out");if(out)out.addEventListener("click",async()=>{const t=pack();$("sync-text").value=t;
    try{if(navigator.share){await navigator.share({title:"Lagebild – Einstellungen",text:t});msg("Übertragen. Auf dem anderen Gerät „Einstellungen übernehmen“ tippen.","ok");return;}}catch(e){if(e&&e.name==="AbortError")return;}
    try{await navigator.clipboard.writeText(t);msg("Kopiert. Auf dem anderen Gerät einfügen und „Übernehmen“ tippen.","ok");}catch(e){$("sync-text").select();msg("Text oben markiert – bitte kopieren.","");}});
- const go=t=>{let o;try{o=unpack(t);}catch(e){msg("Das ist kein gültiger Übertragungs-Text.","err");return;}
+ const go=t=>{let o;try{o=unpack(t);}catch(e){msg("Das ist kein gültiger Übertragungs-Text. Bitte „Feld leeren“ und den Text vom anderen Gerät noch einmal komplett einfügen (er beginnt mit LAGEBILD1:).","err");return;}
    Object.entries(o.d).forEach(([k,v])=>{if(k.startsWith("lbd_"))try{localStorage.setItem(k,v);}catch(e){}});
    msg("Übernommen ("+Object.keys(o.d).length+" Einstellungen) – lädt neu …","ok");setTimeout(()=>location.reload(),800);};
  const pin=$("sync-in-paste");if(pin)pin.addEventListener("click",async()=>{let t="";try{t=await navigator.clipboard.readText();}catch(e){}
    if(t&&t.includes(PFX)){$("sync-text").value=t;go(t);}else{$("sync-text").focus();msg("Übertragungs-Text unten einfügen und „Übernehmen & neu laden“ tippen.","");}});
- const inb=$("sync-in");if(inb)inb.addEventListener("click",()=>go($("sync-text").value));}
+ const inb=$("sync-in");if(inb)inb.addEventListener("click",()=>go($("sync-text").value));
+ const clr=$("sync-clear");if(clr)clr.addEventListener("click",()=>{$("sync-text").value="";msg("Feld geleert.","");$("sync-text").focus();});}
 /* ARD Sounds · Rubriken: aufklappbar, sortierbar, Reihenfolge nur auf diesem Gerät */
 {const box=$("r-ard"),tg=$("r-ard-tg");if(box&&tg){
   const R=[["truecrime","True Crime","true-crime-120","#4a4f6e","#1c1f33"],["doku","Doku & Reportage","doku-reportage-204","#3d7fd1","#1f4f99"],["politik","Politik & Hintergrund","politik-hintergrund-100","#6b7a99","#38435c"],["hoerspiel","Hörspiel","hoerspiel-112","#8a5cf0","#5130b0"],["hoerbuch","Hörbuch","hoerbuch-108","#c98a3a","#8f5a17"],["wissen","Wissen","wissen-146","#2fb3a6","#137a70"],["geschichte","Geschichte","geschichte-138","#9b7a52","#5e4528"],["gesund","Gesund leben","gesund-leben-104","#5bbf6a","#2f8a3e"],["liebe","Leben & Liebe","liebe-sex-psychologie-100","#ff7aa8","#c2306a"],["gesellschaft","Gesellschaft","gesellschaft-100","#e0773a","#a8461a"],["kultur","Kultur","kultur-156","#d0508f","#94265f"],["musik","Musik entdecken","musik-166","#ff5e7a","#c21f45"],["kinder","Für Kinder","fuer-kinder-100","#f2b632","#c07f06"],["ukraine","Kriege & Konflikte","ukraine-300","#3a7bd5","#e0b400"]];
