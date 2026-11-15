@@ -364,7 +364,8 @@ await fs.mkdir(OUT, { recursive: true });
 if (process.env.MODUS === "probe") {
   const H = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", "Accept-Language": "de-DE,de;q=0.9" };
   const U = (process.env.PROBE_URLS || "").split(/\s+/).filter(Boolean);
-  for (const u of U) { try { const r = await fetch(u, { headers: H, redirect: "follow" }); const t = await r.text();
+  for (const uu of U) { const [u, rx] = uu.split("@@"); try { const r = await fetch(u, { headers: H, redirect: "follow" }); const t = await r.text();
+      if (rx) { const fl = t.replace(/<style[\s\S]*?<\/style>|<svg[\s\S]*?<\/svg>/gi, "").replace(/\s+/g, " "); const re = new RegExp(rx, "gi"); let m, k = 0, last = -9e9; while ((m = re.exec(fl)) && k < 3) { if (m.index - last < 2500) continue; last = m.index; k++; console.log("::notice::S " + u + " [" + k + "] " + fl.slice(Math.max(0, m.index - 300), m.index + 1500).replace(/::/g, ":")); } console.log("::notice::P " + u + " → " + r.status + " " + t.length + "B treffer=" + (fl.match(re) || []).length); continue; }
       const flat = t.replace(/<style[\s\S]*?<\/style>|<svg[\s\S]*?<\/svg>/gi, "").replace(/\s+/g, " ");
       const apis = [...new Set([...t.matchAll(/["'(]((?:https?:)?\/\/?[^"'()\s]*(?:api|json|ajax|wp-json|graphql|feed|ics|rss)[^"'()\s]*)/gi)].map(m => m[1]))].slice(0, 25);
       console.log("::notice::P " + u + " → " + r.status + " " + r.url + " " + t.length + "B ct=" + r.headers.get("content-type") + " APIS: " + apis.join(" | ").replace(/::/g, ":"));
