@@ -453,6 +453,17 @@ svg.c24 text.tv{font:800 17px var(--f-display);fill:var(--fg)}
 #tm-seg>button small{font:500 12px/1.2 var(--f-body)!important;opacity:.75}
 #tm-seg>button.on{background:var(--accent)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0))!important;color:#0b1a24!important;border-color:transparent!important}
 #tm-seg>button:active{transform:scale(.965)}
+.ul-count{display:flex;align-items:baseline;gap:10px;margin:4px 0 10px}.ul-count b{font:800 44px/1 var(--f-display)}
+.ul-trip{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--fg) 5%,transparent);margin-bottom:8px}
+.ul-trip .ul-ic{font-size:22px;grid-row:span 2}.ul-trip b{font-size:16px}.ul-trip .ul-t{font:700 15px var(--f-display);font-variant-numeric:tabular-nums;text-align:right}
+.ul-trip .ul-tag{display:inline-block;padding:1px 8px;border-radius:999px;font:700 11.5px/18px var(--f-body);background:#ffcc00;color:#1a1400}
+.ul-wxgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.ul-wxbox{padding:12px;border-radius:16px;background:color-mix(in srgb,var(--fg) 5%,transparent)}
+.ul-wxbox .big{font:800 30px/1.1 var(--f-display)}
+.ul-cam iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:14px;background:#000}
+.ul-links{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.ul-form{display:grid;gap:10px;margin-top:12px}.ul-form label{display:grid;gap:4px;font-size:13px;color:var(--muted,#8a96a3)}
+.ul-form input,.ul-form textarea{font:15px var(--f-body);padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg)}
+.ul-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #sp-seg{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:12px}
 .fb-par{display:inline-block;margin-top:3px;padding:1px 8px;border-radius:999px;font:700 11.5px/18px var(--f-body);background:#ffcc00;color:#1a1400}
 .tm-club{margin-top:14px}
@@ -1484,6 +1495,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
     <div role="button" tabindex="0" class="kpi tile" data-view="rhein" id="k-rhein"><div class="lbl" id="k-rhein-lbl">Pegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="alltag" id="k-strom"><div class="lbl">Events Kultur</div><div class="val">–</div><div class="note">Kultur · Kalender · Ferien</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="fussball" id="k-fb"><div class="lbl">Events Sport</div><div class="val">–</div><div class="note">Fortuna · DEG · BVB</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="urlaub" id="k-urlaub"><div class="lbl">Urlaub</div><div class="val">–</div><div class="note">Wagrain</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="quellen" id="k-src"><div class="lbl">Schnittstellen</div><div class="val">–</div><div class="note">Status der Quellen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einstellungen" id="k-set"><div class="lbl">Einstellungen</div><div class="val" style="font-size:22px">Orte &amp; mehr</div><div class="note">Haltestelle, Strecken, Schlüssel</div></div>
   </div>
@@ -1882,6 +1894,34 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </div>
 </div>
 
+<div class="view" id="v-urlaub" data-view="urlaub" hidden>
+<section id="urlaub"><div class="sec-title"><h2 id="ul-title">Urlaub</h2><span class="muted small" id="ul-sub"></span></div></section>
+<div class="seg" id="ul-seg" style="margin-bottom:12px"></div>
+<div class="grid" id="ul-grid">
+  <section class="card wide"><div class="card-head"><h2>Überblick</h2><span class="src" id="ul-src"></span></div><div id="ul-top"><div class="state">wird geladen …</div></div></section>
+  <section class="card wide"><div class="card-head"><h2>An- &amp; Abreise</h2><span class="src">Deutsche Bahn</span></div><div id="ul-trips"></div></section>
+  <section class="card wide"><div class="card-head"><h2>Wetter &amp; Schnee</h2><span class="src">Open-Meteo · Tal und Berg</span></div><div id="ul-wx"><div class="state">wird geladen …</div></div></section>
+  <section class="card wide"><div class="card-head"><h2>Webcams</h2><span class="src">feratel</span></div><div id="ul-cams"></div></section>
+  <section class="card wide"><div class="card-head"><h2>Hotel &amp; Links</h2></div><div id="ul-links"></div></section>
+  <section class="card wide"><div class="card-head"><h2>Urlaub bearbeiten</h2><span class="src">nur auf diesem Gerät · wird mit „Übertragen“ mitgeschickt</span></div>
+    <details id="ul-edit"><summary class="btn" style="display:block;text-align:center">✎ Daten ändern oder neuen Urlaub anlegen</summary>
+      <div class="ul-form">
+        <label>Titel<input id="ulf-title" placeholder="z. B. Urlaub Wagrain"></label>
+        <label>Ort (für Wetter)<input id="ulf-place" placeholder="z. B. Wagrain"></label>
+        <div class="ul-2"><label>Von<input type="date" id="ulf-from"></label><label>Bis<input type="date" id="ulf-to"></label></div>
+        <label>Unterkunft – Name | Link | Adresse<input id="ulf-hotel" placeholder="Sporthotel Wagrain | https://… | Adresse"></label>
+        <label>Hinreise (Von | Nach | Datum | Ab | An | Hinweis)<input id="ulf-hin" placeholder="Düsseldorf Hbf | St. Johann im Pongau | 2026-12-19 | 07:22 | 14:56 | Sparpreis 1. Kl."></label>
+        <label>Rückreise (Von | Nach | Datum | Ab | An | Hinweis)<input id="ulf-rueck"></label>
+        <label>Webcams (je Zeile: Titel | Link)<textarea id="ulf-cams" rows="3"></textarea></label>
+        <label>Weitere Links (je Zeile: Titel | Link)<textarea id="ulf-links" rows="3"></textarea></label>
+        <label>Berg für Schneehöhe (Name | Höhe in m)<input id="ulf-berg" placeholder="Grafenberg | 1700"></label>
+        <div class="sync-btns"><button type="button" class="btn" id="ulf-save">Speichern</button><button type="button" class="btn" id="ulf-new">Als neuen Urlaub anlegen</button></div>
+        <div class="sync-btns"><button type="button" class="btn" id="ulf-del">Diesen Urlaub löschen</button></div>
+        <span class="hint" id="ulf-msg"></span>
+      </div></details></section>
+</div>
+</div>
+
 <div class="view" id="v-quellen" data-view="quellen" hidden>
 <section id="quellen" class="card wide">
   <div class="card-head"><h2>Schnittstellen &amp; Status</h2><span class="src">alle frei nutzbar; Tankerkönig mit kostenlosem Schlüssel</span></div>
@@ -1998,6 +2038,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=362"></script>
+<script src="app.js?v=363"></script>
 </body>
 </html>
