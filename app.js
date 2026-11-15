@@ -513,6 +513,7 @@ function flightsMap(ac,lat,lon){const el=$("flights-map");if(!el||typeof L==="un
 /* Großveranstaltungen über Ticketmaster (eigener kostenloser Schlüssel) */
 let TMKEY=load("tm")||"";
 let TMSCOPE=load("tmscope")||"umkreis";
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tmmore]");if(!b)return;const r=b.nextElementSibling;if(r)r.hidden=false;b.remove();});
 function sportVis(on){document.querySelectorAll("[data-sport]").forEach(el=>{if(!on){el.hidden=true;return;}if(el.matches(".tabseg")){el.hidden=false;return;}const t=el.dataset.tp,seg=document.querySelector('.tabseg[data-tabs="fb"] .on');el.hidden=!(seg&&t==="fb:"+seg.dataset.t);});}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tmscope]");if(!b)return;TMSCOPE=b.dataset.tmscope;store("tmscope",TMSCOPE);loadTM();});
 async function loadTM(){const box=$("tm-list");if(!box)return;const SPORT=TMSCOPE==="sport",DUSONLY=TMSCOPE==="dus"||SPORT;sportVis(SPORT);
@@ -548,7 +549,7 @@ async function loadTM(){const box=$("tm-list");if(!box)return;const SPORT=TMSCOP
       const wd=d=>new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
       const block=(k,title,sub)=>{const L=rows.filter(r=>r.sp&&r.sp.team===k);if(!L.length)return'';const ic=L[0].sp.icon;
         return '<div class="tm-club"><div class="tm-club-h">'+img(ic)+'<div><b>'+esc(title)+'</b><span class="muted small">'+esc(sub)+' · '+L.length+' Heimspiele</span></div></div><div class="list">'+
-          L.map(r=>'<a class="li tm-li tm-sport" href="'+esc(safeUrl(r.e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag">'+esc(wd(r.s.localDate))+'</span><div class="t"><b>'+esc(r.e.name.replace(/^(DEG|Fortuna Düsseldorf) – /,"vs. "))+'</b><span class="muted small">'+esc(r.s.localTime?r.s.localTime+" Uhr":"Zeit folgt")+(r.sp.league?' · '+esc(r.sp.league):'')+'</span></div><div class="r">'+img(r.sp.icon2)+'</div></a>').join("")+'</div></div>';};
+          L.map((r,i)=>(i===6?'</div><button type="button" class="btn" data-tmmore style="width:100%;margin:8px 0">Alle '+L.length+' Heimspiele anzeigen</button><div class="list" hidden>':'')+'<a class="li tm-li tm-sport" href="'+esc(safeUrl(r.e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag">'+esc(wd(r.s.localDate))+'</span><div class="t"><b>'+esc(r.e.name.replace(/^(DEG|Fortuna Düsseldorf) – /,"vs. "))+'</b><span class="muted small">'+esc(r.s.localTime?r.s.localTime+" Uhr":"Zeit folgt")+(r.sp.league?' · '+esc(r.sp.league):'')+'</span></div><div class="r">'+img(r.sp.icon2)+'</div></a>').join("")+'</div></div>';};
       const h=block("deg","Düsseldorfer EG","PSD Bank Dome · DEL2");
       box.innerHTML=(h||'<div class="muted small">Keine Heimspiele gefunden.</div>')+'<div class="muted small" style="margin-top:10px">DEG-Heimspiele aus dem DEL2-Spielplan · Fortuna und BVB unten.</div>';
       setStatus("tm",true,"Fortuna & DEG");return;}
