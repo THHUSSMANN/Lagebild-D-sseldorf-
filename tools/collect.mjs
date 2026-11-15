@@ -361,6 +361,17 @@ async function fernCombos(from, to) {
 await fs.mkdir(OUT, { recursive: true });
 // Schnellmodus „oepnv“ (alle 10 min von außen angestoßen): zuletzt veröffentlichte Daten übernehmen,
 // nur die Abfahrten neu holen – dauert ca. 1–2 Minuten statt 12.
+if (process.env.MODUS === "probe") {
+  const H = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", "Accept-Language": "de-DE,de;q=0.9" };
+  const U = (process.env.PROBE_URLS || "").split(/\s+/).filter(Boolean);
+  for (const u of U) { try { const r = await fetch(u, { headers: H, redirect: "follow" }); const t = await r.text();
+      const flat = t.replace(/<style[\s\S]*?<\/style>|<svg[\s\S]*?<\/svg>/gi, "").replace(/\s+/g, " ");
+      const apis = [...new Set([...t.matchAll(/["'(]((?:https?:)?\/\/?[^"'()\s]*(?:api|json|ajax|wp-json|graphql|feed|ics|rss)[^"'()\s]*)/gi)].map(m => m[1]))].slice(0, 25);
+      console.log("::notice::P " + u + " → " + r.status + " " + r.url + " " + t.length + "B ct=" + r.headers.get("content-type") + " APIS: " + apis.join(" | ").replace(/::/g, ":"));
+      const i = flat.search(/(\d{1,2})\.(\d{1,2})\.(20)?\d\d|datetime=|startDate|"date"/); console.log("::notice::S " + u + " " + flat.slice(Math.max(0, i - 400), i + 1100).replace(/::/g, ":"));
+    } catch (e) { console.log("::notice::P " + u + " FEHLER " + e.message); } }
+  process.exit(0);
+}
 if (process.env.MODUS === "events") { // nur Düsseldorfer Spielstätten neu, Rest vom letzten Stand
   let names = []; try { const st = await get(LIVE + "status.json", { ms: 20000 }); names = Object.keys(st.data || {}).filter(n => /\.json$/.test(n)); } catch {}
   const q = [...names]; await Promise.all(Array.from({ length: 8 }, async () => { while (q.length) { const n = q.shift(); try { await fs.writeFile(path.join(OUT, n), JSON.stringify(await get(LIVE + n, { ms: 20000 }))); } catch {} } }));

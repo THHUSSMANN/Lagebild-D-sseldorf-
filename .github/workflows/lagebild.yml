@@ -11,6 +11,10 @@ on:
         description: "voll = alle Quellen, oepnv = nur Abfahrten (schnell)"
         required: false
         default: "voll"
+      urls:
+        description: "nur für Modus probe"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -38,6 +42,7 @@ jobs:
       - name: Daten sammeln
         env:
           MODUS: ${{ github.event.inputs.modus || 'voll' }}
+          PROBE_URLS: ${{ github.event.inputs.urls || '' }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC || 'lagebild-thh-de66cb14565a' }}
         run: node tools/collect.mjs _site/data
       - uses: actions/upload-pages-artifact@v3
