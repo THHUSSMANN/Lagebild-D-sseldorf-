@@ -719,6 +719,7 @@ async function eventsDus() {
   await Promise.all(V.map(async ([venue, urls]) => {
     for (const u of urls) {
       try { const html = await get(u, { type: "text", headers: H, ms: 25000 });
+        if (process.env.MODUS === "events") { try { await fs.mkdir(path.join(OUT, "raw"), { recursive: true }); await fs.writeFile(path.join(OUT, "raw", venue.replace(/[^a-z0-9]+/gi, "_") + "_" + urls.indexOf(u) + ".html"), html); } catch {} }
         const evs = [];
         for (const m of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) { try { flat(JSON.parse(m[1].trim()), evs); } catch {} }
         const rows = evs.map(e => ({ venue: (e.location && (e.location.name || (Array.isArray(e.location) && e.location[0] && e.location[0].name))) || venue, house: venue, name: strip(String(e.name || "")), start: e.startDate, url: e.url || (e.offers && (e.offers.url || (e.offers[0] && e.offers[0].url))) || u }))
