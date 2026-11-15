@@ -642,6 +642,11 @@ async function loadDEG(){const box=$("fb-deg");if(!box)return;let L=[];
   markParallel();}
 
 /* ===== Urlaub: eigene Reisen mit Countdown, Bahnfahrten, Wetter/Schnee (Tal & Berg), Webcams und Links – gespeichert auf dem Gerät ===== */
+/* bahn.de-Suchlink, der direkt die Verbindungen zeigt: bahn.de braucht dafür die Bahnhofsnummern (EVA) */
+const EVA_KNOWN={"Düsseldorf Hbf":"8000085","Recklinghausen Hbf":"8000307","Dortmund Hbf":"8000080","St. Johann im Pongau":"8100043","Salzburg Hbf":"8100002","Winsen (Luhe)":"8000420"};
+function dbLink(from,to,date,time,kl,fe,te){const ie=n=>{try{return IRISEVA[n]||"";}catch(e){return "";}};const fev=fe||EVA_KNOWN[from]||ie(from),tev=te||EVA_KNOWN[to]||ie(to);
+  const id=(n,e)=>encodeURIComponent("A=1@O="+n+"@"+(e?"L="+e+"@":""));const hd=(date||isoDay())+"T"+(time||"08:00")+":00";
+  return "https://www.bahn.de/buchung/fahrplan/suche#sts=true&so="+encodeURIComponent(from)+"&zo="+encodeURIComponent(to)+"&kl="+(kl||2)+"&r=13:16:KLASSENLOS:1&soid="+id(from,fev)+"&zoid="+id(to,tev)+"&sot=ST&zot=ST"+(fev?"&soei="+fev:"")+(tev?"&zoei="+tev:"")+"&hd="+encodeURIComponent(hd)+"&hza=D&hz=%5B%5D&ar=false&s=true&d=false&vm=00,01,02,03,04,05,06,07,08,09&fm=false&bp=false";}
 const UL_DEFAULT=[{id:"wagrain-2026",title:"Urlaub Wagrain",place:"Wagrain",lat:47.3356,lon:13.2989,from:"2026-12-19",to:"2026-12-26",
   hotel:{name:"Sporthotel Wagrain",url:"https://www.sporthotel.at/de",addr:"Wagrain, Salzburger Land"},
   hin:{from:"Düsseldorf Hbf",to:"St. Johann im Pongau",date:"2026-12-19",dep:"07:22",arr:"14:56",note:"Sparpreis Europa, 1. Kl. · Sitzplatz reserviert"},
@@ -666,7 +671,7 @@ async function loadUrlaub(){ulKpi();const u=ulCur();if(!$("ul-top"))return;
   const trip=(t,lbl,ic)=>{if(!t||!t.from)return"";const k=ulDays(t.date);
     return '<div class="ul-trip"><span class="ul-ic">'+ic+'</span><div><b>'+esc(lbl)+' · '+esc(ulDate(t.date))+'</b><div class="muted small">'+esc(t.from)+' → '+esc(t.to)+'</div></div><div class="ul-t">'+esc(t.dep||"")+' – '+esc(t.arr||"")+'</div>'+
       '<div style="grid-column:2/4">'+(t.note?'<span class="'+(/nicht gebucht|gemerkt/i.test(t.note)?"ul-tag":"muted small")+'">'+esc(t.note)+'</span> ':'')+(k>=0&&k<=1?'<span class="ul-tag">Prüfe Echtzeit vor Abfahrt</span>':'')+
-      '<div class="sync-btns" style="margin-top:6px"><a class="btn" href="https://www.bahn.de/buchung/fahrplan/suche#sts=true&so='+encodeURIComponent(t.from)+'&zo='+encodeURIComponent(t.to)+'&hd='+encodeURIComponent(t.date+"T"+(t.dep||"08:00")+":00")+'" target="_blank" rel="noopener">Verbindung bei bahn.de</a></div></div></div>';};
+      '<div class="sync-btns" style="margin-top:6px"><a class="btn" href="'+esc(dbLink(t.from,t.to,t.date,t.dep,/1\. ?Kl/i.test(t.note||"")?1:2))+'" target="_blank" rel="noopener">Verbindung bei bahn.de</a></div></div></div>';};
   $("ul-trips").innerHTML=(trip(u.hin,"Hinreise","🚆")+trip(u.rueck,"Rückreise","🏠"))||'<div class="muted">Keine Bahnfahrten eingetragen.</div>';
   $("ul-cams").innerHTML=(u.cams||[]).length?(u.cams||[]).map((c,i)=>'<div class="ul-cam" style="margin-bottom:10px"><b>'+esc(c.t)+'</b>'+(i===0?'<iframe src="'+esc(safeUrl(c.u))+'" loading="lazy" allowfullscreen referrerpolicy="no-referrer"></iframe>':'')+'<div class="sync-btns" style="margin-top:6px"><a class="btn" href="'+esc(safeUrl(c.u))+'" target="_blank" rel="noopener">Webcam öffnen ↗</a></div></div>').join(""):'<div class="muted">Keine Webcams eingetragen.</div>';
   $("ul-links").innerHTML=(u.links||[]).length?'<div class="ul-links">'+u.links.map(l=>'<a class="btn" href="'+esc(safeUrl(l.u))+'" target="_blank" rel="noopener">'+esc(l.t)+' ↗</a>').join("")+'</div>':'<div class="muted">Keine Links eingetragen.</div>';
@@ -1448,7 +1453,7 @@ async function loadTrips(opt){opt=opt||{};
 }
 function tripQuery(){const f=$("trip-from").value.trim(),t=$("trip-to").value.trim();return {f,t};}
 $("trip-form").addEventListener("submit",e=>{e.preventDefault();const {f,t}=tripQuery();if(!f){$("trip-from").focus();return;}if(!t){$("trip-to").focus();return;}
-  window.open("https://www.bahn.de/buchung/fahrplan/suche#sts=true&so="+encodeURIComponent(f)+"&zo="+encodeURIComponent(t)+"&kl=2&r=13:16:KLASSENLOS:1&hd="+encodeURIComponent(new Date().toISOString().slice(0,19)),"_blank","noopener");});
+  const n=new Date();window.open(dbLink(f,t,isoDay(n),n.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"}),2),"_blank","noopener");});
 $("trip-gm").addEventListener("click",()=>{const {f,t}=tripQuery();if(!f){$("trip-from").focus();return;}if(!t){$("trip-to").focus();return;}
   window.open("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(f)+"&destination="+encodeURIComponent(t)+"&travelmode=transit","_blank","noopener");});
 
