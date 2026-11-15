@@ -787,7 +787,7 @@ async function eventsDus() {
   } catch (e) { console.log("::notice::Spielstätte DEG: " + e.message); }
   try { let ms = [];
     for (const u of ["https://api.openligadb.de/getmatchesbyteam/Fortuna%20D%C3%BCsseldorf/0/30"]) { try { ms = await get(u, { ms: 20000 }); if (Array.isArray(ms) && ms.length) break; } catch (e) { console.log("::notice::Fortuna " + u + ": " + e.message); } }
-    let n = 0; for (const m of ms || []) { const h = (m.team1 && m.team1.teamName) || ""; if (!/Fortuna D(ü|ue)sseldorf/i.test(h)) continue; const g = (m.team2 && m.team2.teamName) || "";
+    let n = 0; for (const m of ms || []) { const h = (m.team1 && m.team1.teamName) || ""; if (!/^Fortuna D(ü|ue)sseldorf$/i.test(h.trim())) continue; const g = (m.team2 && m.team2.teamName) || "";
       const st = m.matchDateTime || ""; if (!st) continue; n++; out.push({ team: "f95", icon: m.team1.teamIconUrl || "", icon2: (m.team2 && m.team2.teamIconUrl) || "", league: (m.leagueName || ""), name: "Fortuna Düsseldorf – " + g, start: st.slice(0, 19), url: "https://www.f95.de/", venue: "Merkur Spiel-Arena", kind: "Fußball" }); }
     console.log("::notice::Spielstätte Fortuna (OpenLigaDB): " + n + " Heimspiele von " + (ms || []).length);
   } catch (e) { console.log("::notice::Spielstätte Fortuna: " + e.message); }
