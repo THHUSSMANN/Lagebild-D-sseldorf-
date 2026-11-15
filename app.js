@@ -1245,7 +1245,7 @@ const CITYPAIRS=(()=>{const core=["dus","datteln","dortmund"],o=[];for(const a o
 const RSTRIP=Object.fromEntries(CITYPAIRS.map(([a,b])=>[a+">"+b,STN[a][0]+"-"+STN[b][0]]));
 /* Bahnverbindungen live: Regional-/S-Bahn-Verbindungen über den eigenen VRR-Vermittler frisch holen und mit den gesammelten Daten
    (inkl. DB-Fernverkehr aus IRIS) zusammenführen – Verspätungen und Ausfälle sind so sekundenaktuell */
-const TRIPLIVE={},TRIPLIVE_BUSY={};let TRIPLIVE_T=null;const TRIPSTOP=load("tripstops")||{};
+const TRIPLIVE={},TRIPLIVE_BUSY={};let FERNDONE=null;let TRIPLIVE_T=null;const TRIPSTOP=load("tripstops")||{};
 const tsName=x=>{if(!x)return"";let p=x;while(p&&p.type&&p.type!=="stop"&&p.parent)p=p.parent;const n=(p&&p.name)||x.name||"";const pa=n.split(", ");return pa.length===2&&pa[1].startsWith(pa[0])?pa[1]:n;};
 async function tripStopId(name){if(TRIPSTOP[name])return TRIPSTOP[name];const base=(typeof EFAPROXY!=="undefined"&&EFAPROXY)||"";if(!base)throw 0;
   const sf=await getJSON(base.replace(/\/+$/,"")+"/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf="+encodeURIComponent(name),7000);
@@ -1261,6 +1261,32 @@ async function tripLiveFetch(t){TRIPLIVE_BUSY[t.key]=1;try{const base=((typeof E
       const ride=legs.filter(x=>!x.walk);const f=ride[0]||legs[0]||{},z=ride[ride.length-1]||legs[legs.length-1]||{};
       return{trainsOnly:ride.every(l=>/^(ICE|IC|EC|ECE|RE|RB|S|RRX|NX|FLX|NJ|TGV|THA)\s?\d*/i.test(l.line)||/zug|bahn/i.test(l.name)),dep:f.dep,depEst:f.depEst,arr:z.arr,arrEst:z.arrEst,changes:Math.max(0,ride.length-1),legs};}).filter(j=>j.dep&&j.trainsOnly);
     if(!js.length)return false;TRIPLIVE[t.key]={at:Date.now(),js};return true;}catch(e){return false;}finally{delete TRIPLIVE_BUSY[t.key];}}
+/* ICE/IC live: DB-IRIS über den Vermittler (/iris/…) – Ist-Zeiten, Gleis und Ausfall je Zug an Abfahrts- und Ankunftsbahnhof */
+const IRISC={},IRISEVA=load("iriseva")||{};let IRIS_OK=null;
+const irisT=t=>{if(!t)return null;const y=2000+ +t.slice(0,2),mo=+t.slice(2,4)-1,d=+t.slice(4,6),h=+t.slice(6,8),mi=+t.slice(8,10);
+  const g=new Date(Date.UTC(y,mo,d,12));const off=(()=>{const z=new Intl.DateTimeFormat("en-US",{timeZone:"Europe/Berlin",timeZoneName:"shortOffset"}).formatToParts(g).find(x=>x.type==="timeZoneName").value.match(/GMT([+-]\d+)/);return z?+z[1]*60:60;})();
+  return new Date(Date.UTC(y,mo,d,h,mi)-off*6e4).toISOString();};
+const irisParse=x=>{const o={};for(const m of x.matchAll(/<s id="([^"]+)"[^>]*>([\s\S]*?)<\/s>/g)){const b=m[2];const g=(str,k)=>(str.match(new RegExp(k+'="([^"]*)"'))||[])[1];
+  const tl=(b.match(/<tl ([^>]*)\/?>/)||[])[1]||"",dp=(b.match(/<dp ([^>]*)\/?>/)||[])[1]||"",ar=(b.match(/<ar ([^>]*)\/?>/)||[])[1]||"";
+  o[m[1]]={c:g(tl,"c"),n:g(tl,"n"),dpT:g(dp,"pt"),dpCt:g(dp,"ct"),dpCs:g(dp,"cs"),dpPp:g(dp,"cp")||g(dp,"pp"),arT:g(ar,"pt"),arCt:g(ar,"ct"),arCs:g(ar,"cs"),arPp:g(ar,"cp")||g(ar,"pp")};}return o;};
+async function irisText(path){const base=((typeof EFAPROXY!=="undefined"&&EFAPROXY)||"").replace(/\/+$/,"");const r=await fetch(base+"/iris/"+path);if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}
+async function irisStation(name){const k=name.replace(/\s+/g," ").trim();const c=IRISC[k];if(c&&Date.now()-c.at<45000)return c.map;
+  let eva=IRISEVA[k];if(!eva){const x=await irisText("station/"+encodeURIComponent(k.replace(/^Winsen ?\(Luhe\)$/,"Winsen(Luhe)")));const m=x.match(/eva="(\d+)"/);if(!m)throw 0;eva=m[1];IRISEVA[k]=eva;store("iriseva",IRISEVA);}
+  const all={};const hrs=[0,1,2,3].map(h=>{const p=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",year:"2-digit",month:"2-digit",day:"2-digit",hour:"2-digit",hour12:false}).formatToParts(new Date(Date.now()+h*3600e3)).reduce((o,x)=>(o[x.type]=x.value,o),{});return p.year+p.month+p.day+"/"+p.hour;});
+  await Promise.all(hrs.map(async h=>{try{Object.assign(all,irisParse(await irisText("plan/"+eva+"/"+h)));}catch(e){}}));
+  try{const ch=irisParse(await irisText("fchg/"+eva));for(const [id,v] of Object.entries(ch))if(all[id]){const a=all[id];for(const f of ["dpCt","arCt","dpCs","arCs","dpPp","arPp"])if(v[f])a[f]=v[f];}}catch(e){}
+  const map={};for(const v of Object.values(all))if(v.c&&v.n)map[v.c+" "+v.n]=v;IRISC[k]={at:Date.now(),map};return map;}
+const FERN=/^(ICE|IC|EC|ECE|NJ|FLX)\s?\d+/i;
+async function fernLive(list){let ch=false;const names=new Set();
+  list.forEach(t=>(t.journeys||[]).forEach(j=>j.legs.forEach(l=>{if(!l.walk&&FERN.test(l.line)){names.add(l.from);names.add(l.to);}})));
+  if(!names.size)return false;const maps={};await Promise.all([...names].map(async n=>{try{maps[n]=await irisStation(n);}catch(e){}}));
+  if(!Object.keys(maps).length){IRIS_OK=false;return false;}IRIS_OK=true;
+  list.forEach(t=>(t.journeys||[]).forEach(j=>{let touched=false;j.legs.forEach(l=>{if(l.walk||!FERN.test(l.line))return;const key=l.line.replace(/\s+/," ").trim().replace(/^(\D+)(\d)/,"$1 $2");
+      const a=maps[l.from]&&maps[l.from][key],b=maps[l.to]&&maps[l.to][key];
+      if(a&&a.dpT){l.depEst=irisT(a.dpCt||a.dpT);if(a.dpPp)l.plat=a.dpPp;if(a.dpCs==="c")l.cancelled=true;touched=true;l.irisLive=true;}
+      if(b&&b.arT){l.arrEst=irisT(b.arCt||b.arT);if(b.arPp)l.arrPlat=b.arPp;if(b.arCs==="c")l.cancelled=true;touched=true;l.irisLive=true;}});
+    if(touched){const r=j.legs.filter(x=>!x.walk);if(r[0])j.depEst=r[0].depEst;if(r.length)j.arrEst=r[r.length-1].arrEst;ch=true;}}));
+  return ch;}
 function tripLiveMerge(t){const L=TRIPLIVE[t.key];if(!L||Date.now()-L.at>180000)return t;
   const sig=j=>j.dep+"|"+j.legs.filter(l=>!l.walk).map(l=>l.line).join(">");const m=new Map(L.js.map(j=>[sig(j),j]));
   const minLive=Math.min(...L.js.map(j=>new Date(j.dep).getTime())),maxLive=Math.max(...L.js.map(j=>new Date(j.dep).getTime()));
@@ -1272,8 +1298,10 @@ async function loadTrips(opt){opt=opt||{};
   if(!keys.length){box.innerHTML="";box.hidden=true;return;}
   box.hidden=false;
   try{const d=await getData("trips.json");const list=(d.data||[]).filter(t=>keys.includes(t.key)).sort((a,b)=>keys.indexOf(a.key)-keys.indexOf(b.key)).map(t=>tripLiveMerge(t));
+    if(opt._fern)await fernLive(list);
     {const stale=list.filter(t=>t.from&&t.to&&!(TRIPLIVE[t.key]&&Date.now()-TRIPLIVE[t.key].at<45000)&&!TRIPLIVE_BUSY[t.key]);
      if(stale.length)Promise.all(stale.map(t=>tripLiveFetch(t))).then(ch=>{if(ch.some(Boolean)&&box.isConnected&&box.offsetParent!==null)loadTrips(opt);});
+     if(!opt._fern)fernLive(list).then(c=>{if(c&&box.isConnected&&box.offsetParent!==null){FERNDONE=list;loadTrips({...opt,_fern:1});}});
      clearTimeout(TRIPLIVE_T);TRIPLIVE_T=setTimeout(()=>{if(box.isConnected&&box.offsetParent!==null)loadTrips(opt);},50000);}
     const liveAll=list.length&&list.every(t=>t.live);
     const t2=x=>x?hhmm(x):"–";
@@ -1310,7 +1338,7 @@ async function loadTrips(opt){opt=opt||{};
             '<div class="lg-row"><span>'+tm(l.dep,l.depEst)+'</span><span>'+esc(l.from)+'</span>'+plat(l.plat)+'</div>'+
             '<div class="lg-row"><span>'+tm(l.arr,l.arrEst)+'</span><span>'+esc(l.to)+'</span>'+plat(l.arrPlat)+'</div></div>';}).join("");
         return '<details class="trip'+(cancelled?" cx":risk?" warn":"")+'">'+summary+'<div class="trip-body">'+steps+'</div></details>';}).join("")+'</div>';}).join("")+
-      '<div class="muted small">Antippen für Reiseverlauf mit Gleisen und Umstiegen · '+(liveAll?'<b style="color:var(--ok)">● live</b> (VRR-Echtzeit, Fernverkehr Stand '+dataAge(d)+')':'Echtzeit abgerufen '+dataAge(d))+'</div>';
+      '<div class="muted small">Antippen für Reiseverlauf mit Gleisen und Umstiegen · '+(liveAll?'<b style="color:var(--ok)">● live</b> ('+(IRIS_OK?'VRR & DB-Fernverkehr':'VRR-Echtzeit, Fernverkehr Stand '+dataAge(d))+')':'Echtzeit abgerufen '+dataAge(d))+'</div>';
     setStatus("trips",true,"Stand "+dataAge(d));
   }catch(e){setStatus("trips",false,errText(e));box.innerHTML=stateBox("Verbindungen nicht verfügbar – "+errText(e)+".",link("https://www.bahn.de/","bahn.de"));}
 }
