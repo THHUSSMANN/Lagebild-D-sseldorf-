@@ -1471,7 +1471,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
     <div role="button" tabindex="0" class="kpi tile" data-view="webcams" id="k-cam"><div class="lbl">Webcams</div><div class="val">–</div><div class="note">Live-Bilder</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="rhein" id="k-rhein"><div class="lbl" id="k-rhein-lbl">Pegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="alltag" id="k-strom"><div class="lbl">Kalender &amp; Events</div><div class="val">–</div><div class="note">Feiertage, Ferien, Events</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="fussball" id="k-fb"><div class="lbl">Fußball</div><div class="val">–</div><div class="note">Fortuna · BVB</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="fussball" id="k-fb"><div class="lbl">Sport</div><div class="val">–</div><div class="note">Fortuna · BVB · DEG</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="quellen" id="k-src"><div class="lbl">Schnittstellen</div><div class="val">–</div><div class="note">Status der Quellen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einstellungen" id="k-set"><div class="lbl">Einstellungen</div><div class="val" style="font-size:22px">Orte &amp; mehr</div><div class="note">Haltestelle, Strecken, Schlüssel</div></div>
   </div>
@@ -1839,9 +1839,12 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
   </section>
   <section class="card wide" id="tm-card" data-alp="ev" hidden>
     <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nach Datum sortiert</span></div>
-    <div class="seg" id="tm-seg"><button type="button" data-tmscope="umkreis">Umkreis 70 km</button><button type="button" data-tmscope="dus">Düsseldorf</button><button type="button" data-tmscope="sport">Fortuna &amp; DEG</button></div>
+    <div class="seg" id="tm-seg"><button type="button" data-tmscope="umkreis">Umkreis 70 km</button><button type="button" data-tmscope="dus">Düsseldorf</button><button type="button" data-tmscope="sport">Sport</button></div>
     <div id="tm-list"><div class="state">wird geladen …</div></div>
   </section>
+  <div class="seg tabseg" data-tabs="fb" data-sport hidden style="grid-column:1/-1"><button type="button" data-t="f95" class="on">Fortuna</button><button type="button" data-t="bvb">BVB</button></div>
+  <section class="card wide" data-tp="fb:f95" data-sport hidden><div class="card-head"><h2>Fortuna Düsseldorf</h2><span class="src" id="fb-f95-src">3. Liga · DFB-Pokal</span></div><div id="fb-f95"><div class="state">wird geladen …</div></div></section>
+  <section class="card wide" data-tp="fb:bvb" data-sport hidden><div class="card-head"><h2>Borussia Dortmund</h2><span class="src" id="fb-bvb-src">Liga · DFB-Pokal · Champions League</span></div><div id="fb-bvb"><div class="state">wird geladen …</div></div></section>
 </div>
 </div>
 
@@ -1857,15 +1860,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
     <div class="card-head"><h2>Börse</h2><span class="src" id="mk-src">Yahoo Finance · verzögert</span></div>
     <div id="boerse"><div class="state">wird geladen …</div></div>
   </section>
-</div>
-</div>
-
-<div class="view" id="v-fussball" data-view="fussball" hidden>
-<section id="fussball"><div class="sec-title"><h2>Fußball</h2><span class="muted small">Nächste Spiele · OpenLigaDB</span></div></section>
-<div class="seg tabseg" data-tabs="fb"><button type="button" data-t="f95" class="on">Fortuna</button><button type="button" data-t="bvb">BVB</button></div>
-<div class="grid">
-  <section class="card wide" data-tp="fb:f95"><div class="card-head"><h2>Fortuna Düsseldorf</h2><span class="src" id="fb-f95-src">3. Liga · DFB-Pokal</span></div><div id="fb-f95"><div class="state">wird geladen …</div></div></section>
-  <section class="card wide" data-tp="fb:bvb" hidden><div class="card-head"><h2>Borussia Dortmund</h2><span class="src" id="fb-bvb-src">Liga · DFB-Pokal · Champions League</span></div><div id="fb-bvb"><div class="state">wird geladen …</div></div></section>
 </div>
 </div>
 
@@ -1985,6 +1979,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=358"></script>
+<script src="app.js?v=359"></script>
 </body>
 </html>
