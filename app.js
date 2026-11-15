@@ -2256,7 +2256,7 @@ function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="
     rsOe();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
     const td=$("rs-tdir");
-    setBtns(td,tdirsOf(RS.city).map(([k,a,,sub,b])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(a===RS.city?b:a)+(RS.tdir===k?" on":"")+'">'+sub+'</button>').join(""));
+    setBtns(td,tdirsOf(RS.city).map(([k,a,to,sub,b])=>'<button type="button" data-rstd="'+k+'" class="cc-'+(a===RS.city?b:a)+(RS.tdir===k?" on":"")+'">'+esc(to)+'<small>'+esc(sub.replace(/ Hbf/g," Hbf"))+'</small></button>').join(""));
     $("trips-card").hidden=!RS.tdir;if(!RS.tdir)return;
     const t=RSTRIP[RS.tdir]||"";const st=(()=>{const d=TDIRS.find(x=>x[0]===RS.tdir);return d?d[3]:"";})();
     const src=document.querySelector("#trips-card .src");if(src)src.textContent=st+" · Nah- und Fernverkehr · Echtzeit";loadTrips();}else drawReise();}
