@@ -542,6 +542,15 @@ async function loadTM(){const box=$("tm-list");if(!box)return;const SPORT=TMSCOP
     const dayH=d=>d===today?"Heute":d===tmr?"Morgen":new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
     const seg=e=>{const c=((e.classifications||[])[0]||{}).segment;return c&&c.name&&c.name!=="Undefined"?({Music:"Musik",Sports:"Sport","Arts & Theatre":"Kultur",Film:"Film",Miscellaneous:"Sonstiges"}[c.name]||c.name):"";};
     let shown=40;
+    if(SPORT){/* zwei getrennte Blöcke: erst Fortuna, dann DEG – je mit Logo-Kopf und Liste der Heimspiele */
+      const img=u=>u?'<img src="'+esc(safeUrl(u))+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'';
+      const wd=d=>new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
+      const block=(k,title,sub)=>{const L=rows.filter(r=>r.sp&&r.sp.team===k);if(!L.length)return'';const ic=L[0].sp.icon;
+        return '<div class="tm-club"><div class="tm-club-h">'+img(ic)+'<div><b>'+esc(title)+'</b><span class="muted small">'+esc(sub)+' · '+L.length+' Heimspiele</span></div></div><div class="list">'+
+          L.map(r=>'<a class="li tm-li tm-sport" href="'+esc(safeUrl(r.e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag">'+esc(wd(r.s.localDate))+'</span><div class="t"><b>'+esc(r.e.name.replace(/^(DEG|Fortuna Düsseldorf) – /,"vs. "))+'</b><span class="muted small">'+esc(r.s.localTime?r.s.localTime+" Uhr":"Zeit folgt")+(r.sp.league?' · '+esc(r.sp.league):'')+'</span></div><div class="r">'+img(r.sp.icon2)+'</div></a>').join("")+'</div></div>';};
+      const h=block("f95","Fortuna Düsseldorf","Merkur Spiel-Arena")+block("deg","Düsseldorfer EG","PSD Bank Dome · DEL2");
+      box.innerHTML=(h||'<div class="muted small">Keine Heimspiele gefunden.</div>')+'<div class="muted small" style="margin-top:10px">Heimspiele · Fortuna: OpenLigaDB · DEG: DEL2-Spielplan.</div>';
+      setStatus("tm",true,"Fortuna & DEG");return;}
     const render=()=>{let last="",html="";rows.slice(0,shown).forEach(r=>{const {e,s,v,city,km}=r;
         if(s.localDate!==last){if(last)html+='</div>';last=s.localDate;html+='<div class="sublbl" style="margin-top:12px">'+esc(dayH(s.localDate))+'</div><div class="list">';}
         const sp=r.sp,img=u=>u?'<img src="'+esc(safeUrl(u))+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'';
