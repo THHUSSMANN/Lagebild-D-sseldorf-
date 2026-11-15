@@ -1118,6 +1118,15 @@ header .tools .t-head h2{margin:0;color:#fff;font:800 28px/1.1 var(--f-display)}
 header .tools .t-head p{margin:4px 0 0;color:rgba(255,255,255,.6);font-size:14px}
 body:not(.harrange) header .tools #toolgrid{gap:10px}
 body:not(.harrange) header .tools #toolgrid .hbtn{min-height:64px;font-size:16px;border-radius:18px!important}
+/* Tools auf iPad/Mac: Kacheln mit Symbol oben, Text darunter, 5 je Zeile – nichts wird abgeschnitten */
+@media (min-width:700px){
+  body:not(.harrange) header .tools:not([hidden])>*{max-width:920px}
+  body:not(.harrange) header .tools #toolgrid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:12px}
+  body:not(.harrange) header .tools #toolgrid .hbtn:not([data-tool="arrange"]){flex-direction:column;justify-content:center;align-items:center;gap:8px;min-height:104px;padding:12px 8px!important;text-align:center;white-space:normal!important;line-height:1.2;font-size:15px!important;overflow:hidden}
+  body:not(.harrange) header .tools #toolgrid .hbtn:not([data-tool="arrange"]) .mi{width:28px;height:28px;margin:0!important;flex:none}
+  body:not(.harrange) header .tools #toolgrid .hbtn:not([data-tool="arrange"])>span{display:block;max-width:100%;overflow-wrap:anywhere}
+  body:not(.harrange) header .tools #toolgrid #bs-btn .hb2{text-align:center;font-size:1em;line-height:1.2}
+}
 body.t-open{overflow:hidden}
 .fin-open{width:100%;min-height:58px!important;display:flex!important;align-items:center;justify-content:center;gap:10px;margin:0 0 14px;font-size:17px!important}
 .fin-open .mi{width:22px;height:22px}
@@ -1959,6 +1968,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=350"></script>
+<script src="app.js?v=351"></script>
 </body>
 </html>
