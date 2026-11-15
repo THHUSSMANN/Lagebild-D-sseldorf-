@@ -699,8 +699,8 @@ document.addEventListener("click",async e=>{const s=e.target.closest("#ul-seg [d
   store("urlaube",UL);store("urlaub_sel",ULSEL);$("ulf-msg").textContent="Gespeichert.";$("ul-edit").open=false;loadUrlaub();});
 /* Kennzeichnung: spielt am selben Tag ein weiteres Team, erscheint ein gelber Hinweis */
 function markParallel(){document.querySelectorAll("#v-fussball [data-day][data-team]").forEach(el=>{el.querySelectorAll(".fb-par").forEach(x=>x.remove());
-  const d=el.dataset.day,me=el.dataset.team;const o=Object.keys(SP).filter(k=>k!==me).flatMap(k=>SP[k].filter(g=>g.day===d).map(g=>SPN[k]+(g.time?" "+g.time:"")+(g.home&&k!=="bvb"?" (Heimspiel in Düsseldorf)":g.home?" (Heimspiel)":" (auswärts)")));
-  if(!o.length)return;const b=document.createElement("span");b.className="fb-par";b.textContent="⚠︎ parallel: "+o.join(" · ");(el.querySelector(".t")||el).appendChild(b);});}
+  const d=el.dataset.day,me=el.dataset.team;const o=Object.keys(SP).filter(k=>k!==me).flatMap(k=>SP[k].filter(g=>g.day===d).map(g=>SPN[k]+(g.time?" "+g.time:"")+(g.home&&k!=="bvb"?" · in Düsseldorf":g.home?" · Dortmund":" · auswärts")));
+  if(!o.length)return;const b=document.createElement("span");b.className="fb-par";b.textContent="Gleicher Tag: "+o.join(" | ");(el.querySelector(".t")||el).appendChild(b);});}
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
