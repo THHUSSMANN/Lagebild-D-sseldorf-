@@ -46,10 +46,12 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC || 'lagebild-thh-de66cb14565a' }}
         run: node tools/collect.mjs _site/data
       - uses: actions/upload-pages-artifact@v3
+        if: github.event.inputs.modus != 'probe'
         with:
           path: _site
   veroeffentlichen:
     needs: bauen
+    if: github.event.inputs.modus != 'probe'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
