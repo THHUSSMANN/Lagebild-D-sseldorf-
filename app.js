@@ -512,11 +512,11 @@ function flightsMap(ac,lat,lon){const el=$("flights-map");if(!el||typeof L==="un
   setTimeout(()=>FMAP.invalidateSize(),80);}
 /* Großveranstaltungen über Ticketmaster (eigener kostenloser Schlüssel) */
 let TMKEY=load("tm")||"";
-let TMSCOPE=load("tmscope")||"umkreis";
+let TMSCOPE=load("tmscope")||"dus";if(TMSCOPE==="sport")TMSCOPE="dus";
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tmmore]");if(!b)return;const r=b.nextElementSibling;if(r)r.hidden=false;b.remove();});
 function sportVis(on){document.querySelectorAll("[data-sport]").forEach(el=>{if(!on){el.hidden=true;return;}if(el.matches(".tabseg")){el.hidden=false;return;}const t=el.dataset.tp,seg=document.querySelector('.tabseg[data-tabs="fb"] .on');el.hidden=!(seg&&t==="fb:"+seg.dataset.t);});}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tmscope]");if(!b)return;TMSCOPE=b.dataset.tmscope;store("tmscope",TMSCOPE);loadTM();});
-async function loadTM(){const box=$("tm-list");if(!box)return;const SPORT=TMSCOPE==="sport",DUSONLY=TMSCOPE==="dus"||SPORT;sportVis(SPORT);
+async function loadTM(){const box=$("tm-list");if(!box)return;const SPORT=false,DUSONLY=TMSCOPE==="dus";
   document.querySelectorAll("#tm-seg [data-tmscope]").forEach(b=>b.classList.toggle("on",b.dataset.tmscope===TMSCOPE));{const sr=$("tm-src");if(sr)sr.textContent=SPORT?"Heimspiele & nächste Spiele":DUSONLY?"Ticketmaster & Spielpläne · nach Tagen":"Ticketmaster · nach Tagen";}
   /* Programm der Düsseldorfer Spielstätten (Oper, Schauspielhaus, Arena, PSD Bank Dome, Mitsubishi Electric Halle, Castello, Capitol, zakk …) aus dem Sammler */
   let house=[];if(DUSONLY){try{house=(await getData("events-dus.json")).data||[];}catch(e){}}
@@ -533,10 +533,11 @@ async function loadTM(){const box=$("tm-list");if(!box)return;const SPORT=TMSCOP
       const v=(((e._embedded||{}).venues||[])[0])||{};const city=(((v.city||{}).name||"").replace(/^D(ue|ü|u)sseldorf.*/i,"Düsseldorf").replace(/^Cologne$/i,"Köln").replace(/^Munich$/i,"München").replace(/^Muenster$/i,"Münster").replace(/^Moenchengladbach$/i,"Mönchengladbach"));
       const lat=+((v.location||{}).latitude),lon=+((v.location||{}).longitude);const km=isFinite(lat)&&isFinite(lon)?distKm(R0.lat,R0.lon,lat,lon):(isFinite(+e.distance)?+e.distance:99);
       rows.push({e,s,v,city,km,key:(s.localDate||"9")+(s.localTime||"99")});});
+    {const TEAMRX=/fortuna d(ü|ue)sseldorf|d(ü|ue)sseldorfer eg|\bDEG\b|borussia dortmund|\bBVB\b/i;for(let i=rows.length-1;i>=0;i--)if(TEAMRX.test(rows[i].e.name||""))rows.splice(i,1);}
     if(DUSONLY){const nk=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"").slice(0,18);
       const have=new Set();for(let i=rows.length-1;i>=0;i--){if(rows[i].city!=="Düsseldorf"){rows.splice(i,1);continue;}have.add(nk(rows[i].e.name)+"|"+rows[i].s.localDate);}
       if(SPORT)rows.length=0;
-      house.forEach(h=>{const ld=String(h.start).slice(0,10);if(ld<today0||(!SPORT&&ld>isoDay(end)))return;if(SPORT&&!h.team)return;const k=nk(h.name)+"|"+ld;if(have.has(k))return;have.add(k);
+      house.forEach(h=>{const ld=String(h.start).slice(0,10);if(ld<today0||(!SPORT&&ld>isoDay(end)))return;if(h.team)return;const k=nk(h.name)+"|"+ld;if(have.has(k))return;have.add(k);
         rows.push({sp:h.team?h:null,e:{name:h.name,url:h.url,classifications:[{segment:{name:h.kind||""}}]},s:{localDate:ld,localTime:h.allDay||String(h.start).length<16?"":String(h.start).slice(11,16)},v:{name:h.venue},city:"Düsseldorf",km:0,key:ld+(String(h.start).slice(11,16)||"99")});});}
     rows.sort((a,b)=>(a.s.localDate||"9").localeCompare(b.s.localDate||"9")||(DUSONLY?(a.s.localTime||"99").localeCompare(b.s.localTime||"99"):a.km-b.km)||a.key.localeCompare(b.key));
     if(!rows.length){box.innerHTML='<div class="muted small">Keine Veranstaltungen '+(DUSONLY?'in Düsseldorf':'im Umkreis von 70 km')+' in den nächsten 60 Tagen.</div>';setStatus("tm",true);return;}
@@ -615,13 +616,34 @@ async function loadFussball(){const y=new Date().getFullYear(),season=new Date()
     const m=ms[0],home=is(m.team1),loc=m.location||{},dd=dayDiff(m.matchDateTime);
     const nh=ms.find(x=>is(x.team1));const nhd=nh?dayDiff(nh.matchDateTime):null;
     kv.push(f.short+" "+dt(m).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}));
+    SP[f.k]=ms.map(x=>({day:isoDay(dt(x)),time:tl(x),home:is(x.team1),opp:((is(x.team1)?x.team2:x.team1)||{}).teamName||""}));
     box.innerHTML='<div class="fb-banner '+(home?"h":"a")+'"><span>'+(home?"🏟️ Heimspiel":"🚌 Auswärtsspiel")+'</span><b>'+esc(inDays(dd))+'</b></div>'+
-      '<div class="fb-when">'+esc(dl(m))+' · '+esc(tl(m))+' Uhr</div>'+
+      '<div class="fb-when" data-day="'+isoDay(dt(m))+'" data-team="'+f.k+'">'+esc(dl(m))+' · '+esc(tl(m))+' Uhr</div>'+
       '<div class="fb-next">'+team(m.team1,home)+'<div class="fb-vs">:</div>'+team(m.team2,!home)+'</div>'+
       '<div class="fb-where">'+esc(m._lg)+(m.group&&m.group.groupName?" · "+esc(m.group.groupName):"")+(loc.locationStadium?"<br>"+esc(loc.locationStadium):"")+(loc.locationCity?", "+esc(loc.locationCity):"")+'</div>'+
       (nh&&nh!==m?'<div class="fb-count"><b>'+nhd+'</b><span>Tage bis zum nächsten Heimspiel<br><em>'+esc(dl(nh))+' · vs. '+esc((nh.team2||{}).teamName||"")+'</em></span></div>':(home?'':'<div class="fb-count"><b>–</b><span>Kein weiteres Heimspiel im Kalender</span></div>'))+
-      (ms.length>1?'<div class="sublbl" style="margin-top:14px">Danach</div><div class="list">'+ms.slice(1,6).map(x=>{const h=is(x.team1),o=h?x.team2:x.team1;return '<div class="li fb-li '+(h?"h":"a")+'"><span class="tag">'+esc(dl(x))+'</span><div class="t"><span class="fb-ha">'+(h?"Heimspiel":"Auswärts")+'</span><b>'+(h?"vs. ":"bei ")+esc(o.teamName)+'</b><span class="muted small">'+esc(tl(x))+' Uhr · '+esc(x._lg)+'</span></div><div class="r fb-in">'+esc(inDays(dayDiff(x.matchDateTime)))+'</div></div>';}).join("")+'</div>':'');});
-  setKpi("k-fb",esc(kv.join(" · ")||"–"),"nächste Spiele","info");setStatus("fb",true);}
+      (ms.length>1?'<div class="sublbl" style="margin-top:14px">Danach</div><div class="list">'+ms.slice(1,6).map(x=>{const h=is(x.team1),o=h?x.team2:x.team1;return '<div class="li fb-li '+(h?"h":"a")+'" data-day="'+isoDay(dt(x))+'" data-team="'+f.k+'"><span class="tag">'+esc(dl(x))+'</span><div class="t"><span class="fb-ha">'+(h?"Heimspiel":"Auswärts")+'</span><b>'+(h?"vs. ":"bei ")+esc(o.teamName)+'</b><span class="muted small">'+esc(tl(x))+' Uhr · '+esc(x._lg)+'</span></div><div class="r fb-in">'+esc(inDays(dayDiff(x.matchDateTime)))+'</div></div>';}).join("")+'</div>':'');});
+  setKpi("k-fb",esc(kv.join(" · ")||"–"),"nächste Spiele","info");setStatus("fb",true);markParallel();}
+/* DEG: Heimspiele aus dem DEL2-Spielplan (Sammler) im gleichen Kartenstil wie Fortuna/BVB */
+const SP={f95:[],deg:[],bvb:[]},SPN={f95:"Fortuna",deg:"DEG",bvb:"BVB"};
+async function loadDEG(){const box=$("fb-deg");if(!box)return;let L=[];
+  try{L=((await getData("events-dus.json")).data||[]).filter(r=>r.team==="deg"&&new Date(r.start).getTime()>Date.now()-2.5*36e5).sort((a,b)=>a.start.localeCompare(b.start));}catch(e){}
+  const card=box.closest(".card");if(card){card.classList.add("fb-card");card.style.setProperty("--club1","#d40019");card.style.setProperty("--club2","#ffd200");card.style.setProperty("--clubfg","#fff");}
+  if(!L.length){box.innerHTML='<div class="muted">Kein anstehendes Heimspiel gefunden.</div>';return;}
+  const day=r=>r.start.slice(0,10),tm=r=>/T\d\d:\d\d/.test(r.start)?r.start.slice(11,16):"",dl=r=>new Date(day(r)+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
+  const dd=r=>{const a=new Date(day(r)+"T00:00:00"),b=new Date();b.setHours(0,0,0,0);return Math.round((a-b)/864e5);},inD=n=>n<=0?"heute":n===1?"morgen":"in "+n+" Tagen";
+  const opp=r=>r.name.replace(/^DEG – /,""),img=u=>u?'<img src="'+esc(safeUrl(u))+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="fb-mono">?</span>';
+  SP.deg=L.map(r=>({day:day(r),time:tm(r),home:true,opp:opp(r)}));const m=L[0];
+  box.innerHTML='<div class="fb-banner h"><span>🏟️ Heimspiel</span><b>'+esc(inD(dd(m)))+'</b></div>'+
+    '<div class="fb-when" data-day="'+day(m)+'" data-team="deg">'+esc(dl(m))+(tm(m)?' · '+esc(tm(m))+' Uhr':'')+'</div>'+
+    '<div class="fb-next"><div class="fb-team me">'+img(m.icon)+'<b>Düsseldorfer EG</b></div><div class="fb-vs">:</div><div class="fb-team">'+img(m.icon2)+'<b>'+esc(opp(m))+'</b></div></div>'+
+    '<div class="fb-where">DEL2 · PSD Bank Dome, Düsseldorf</div>'+
+    (L.length>1?'<div class="sublbl" style="margin-top:14px">Weitere Heimspiele</div><div class="list">'+L.slice(1,9).map(r=>'<a class="li fb-li h" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit" data-day="'+day(r)+'" data-team="deg"><span class="tag">'+esc(dl(r))+'</span><div class="t"><span class="fb-ha">Heimspiel</span><b>vs. '+esc(opp(r))+'</b><span class="muted small">'+esc(tm(r)?tm(r)+" Uhr":"Zeit folgt")+' · DEL2</span></div><div class="r fb-in">'+esc(inD(dd(r)))+'</div></a>').join("")+'</div>':'');
+  markParallel();}
+/* Kennzeichnung: spielt am selben Tag ein weiteres Team, erscheint ein gelber Hinweis */
+function markParallel(){document.querySelectorAll("#v-fussball [data-day][data-team]").forEach(el=>{el.querySelectorAll(".fb-par").forEach(x=>x.remove());
+  const d=el.dataset.day,me=el.dataset.team;const o=Object.keys(SP).filter(k=>k!==me).flatMap(k=>SP[k].filter(g=>g.day===d).map(g=>SPN[k]+(g.time?" "+g.time:"")+(g.home&&k!=="bvb"?" (Heimspiel in Düsseldorf)":g.home?" (Heimspiel)":" (auswärts)")));
+  if(!o.length)return;const b=document.createElement("span");b.className="fb-par";b.textContent="⚠︎ parallel: "+o.join(" · ");(el.querySelector(".t")||el).appendChild(b);});}
 /* Sender frei sortierbar (gedrückt halten und ziehen), Reihenfolge nur auf diesem Gerät */
 {const box=$("r-st");if(box){const o=load("radio_ord")||[];o.forEach(k=>{const b=box.querySelector('[data-st="'+k+'"]');if(b)box.appendChild(b);});
   setTimeout(()=>{try{reorder(box,".rbtn",()=>true,()=>store("radio_ord",[...box.querySelectorAll(".rbtn")].map(b=>b.dataset.st)));}catch(e){}},0);}}
@@ -2603,7 +2625,7 @@ async function refreshAll(force){
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
     tasks.push(loadUBA(),loadPollen(),loadHol());
-    tasks.push(loadWindy(),loadParking(),loadTM(),loadFussball());
+    tasks.push(loadWindy(),loadParking(),loadTM(),loadFussball(),loadDEG());
   }
   await Promise.allSettled(tasks);
   {const um=$("upd-mini");if(um)um.innerHTML="<b>"+esc(C.isDus?"Düsseldorf":C.town)+"</b><span> · zuletzt aktualisiert "+new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"})+" Uhr</span>";}
@@ -2652,8 +2674,7 @@ let ROUTEKEY=null;
 window.addEventListener("hashchange",route);
 function route(){try{route0();}finally{const h=location.hash.slice(1);ROUTEKEY=(h.split("/")[0]||"")+"/"+(h.split("/")[1]||"reise");}}
 function route0(){
-  {const h=location.hash.slice(1);if(h==="fussball"){history.replaceState(null,"","#alltag");setTimeout(()=>{TMSCOPE="sport";store("tmscope","sport");const b=document.querySelector('#al-seg [data-al="ev"]');if(b)b.click();},30);}
-  if(h==="verkehr"||h==="staus/meld"){history.replaceState(null,"","#staus/karte");}
+  {const h=location.hash.slice(1);if(h==="verkehr"||h==="staus/meld"){history.replaceState(null,"","#staus/karte");}
   if(h==="stadtverkehr"||h==="stadtdatteln"){const k=h==="stadtverkehr"?"dus":"datteln";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
   let v=location.hash.slice(1);const pane=v.split("/")[1]||"reise";v=v.split("/")[0];
   document.querySelectorAll("#staus [data-pane]").forEach(p=>p.hidden=p.dataset.pane!==pane);
