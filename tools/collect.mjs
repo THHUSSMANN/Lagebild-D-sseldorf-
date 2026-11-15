@@ -691,47 +691,61 @@ console.log("::notice::Push-Ergebnis: " + results["push"] + " (Thema " + (proces
 await write("status.json", results);
 console.log(JSON.stringify(results, null, 1));
 
-// ---------- Düsseldorfer Spielstätten: Programm aus den Webseiten (schema.org-Event-Daten) ----------
+// ---------- Düsseldorfer Spielstätten: Programm direkt aus den Webseiten ----------
+// Je Seite: schema.org (JSON-LD und Microdata), D.LIVE-Eventlinks (…/event/name-TT-MM-JJJJ), zakk-Liste, Capitol-Kacheln.
 async function eventsDus() {
   const V = [
-    ["Opernhaus Düsseldorf", ["https://www.operamrhein.de/spielplan/", "https://www.operamrhein.de/de_DE/spielplan"]],
-    ["Tonhalle", ["https://www.tonhalle.de/programm/", "https://www.tonhalle.de/"]],
-    ["Capitol Theater", ["https://www.capitol-theater.de/programm/", "https://www.capitol-theater.de/"]],
-    ["Merkur Spiel-Arena", ["https://www.merkur-spiel-arena.de/veranstaltungen", "https://www.merkur-spiel-arena.de/"]],
-    ["PSD Bank Dome", ["https://www.psd-bank-dome.de/veranstaltungen", "https://www.psd-bank-dome.de/"]],
-    ["Mitsubishi Electric Halle", ["https://www.mitsubishi-electric-halle.de/veranstaltungen", "https://www.mitsubishi-electric-halle.de/"]],
-    ["Castello", ["https://www.castello-duesseldorf.de/veranstaltungen", "https://www.castello-duesseldorf.de/"]],
-    ["D.LIVE", ["https://www.d-live.de/veranstaltungen", "https://www.d-live.de/"]],
-    ["Tor 3", ["https://www.tor3.com/", "https://www.tor3.de/"]],
-    ["Ratinger Hof", ["https://www.ratinger-hof.de/", "https://ratingerhof.de/"]],
-    ["zakk", ["https://www.zakk.de/programm", "https://www.zakk.de/"]],
-    ["Savoy Theater", ["https://www.savoy-theater.de/", "https://www.savoy-theater.de/programm"]],
-    ["Schauspielhaus", ["https://www.dhaus.de/programm/spielplan/", "https://www.dhaus.de/"]],
-    ["Stahlwerk", ["https://www.stahlwerk.de/"]],
-    ["Pitcher", ["https://www.pitcher-duesseldorf.de/"]],
-    ["Rheinterrasse", ["https://www.rheinterrasse.de/veranstaltungen"]]
+    ["Opernhaus", "Oper", ["https://www.operamrhein.de/spielplan/", "https://www.operamrhein.de/"]],
+    ["Schauspielhaus", "Theater", ["https://www.dhaus.de/programm/spielplan/", "https://www.dhaus.de/"]],
+    ["Tonhalle", "Konzert", ["https://www.tonhalle.de/"]],
+    ["Capitol Theater", "Show", ["https://www.capitol-theater.de/"]],
+    ["Merkur Spiel-Arena", "Arena", ["https://www.merkur-spiel-arena.de/"]],
+    ["PSD Bank Dome", "Arena", ["https://www.psd-bank-dome.de/"]],
+    ["Mitsubishi Electric Halle", "Konzert", ["https://www.mitsubishi-electric-halle.de/"]],
+    ["Castello", "Show", ["https://www.castello-duesseldorf.de/"]],
+    ["zakk", "Club", ["https://www.zakk.de/programm"]],
+    ["Savoy Theater", "Show", ["https://www.savoy-theater.de/"]],
+    ["Stahlwerk", "Club", ["https://www.stahlwerk.de/"]],
+    ["Ratinger Hof", "Club", ["https://ratingerhof.de/"]],
+    ["Tor 3", "Club", ["https://www.tor3.de/", "https://tor3.de/"]]
   ];
   const H = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", "Accept-Language": "de-DE,de;q=0.9", Accept: "text/html" };
-  const flat = (x, out) => { if (!x || typeof x !== "object") return out; if (Array.isArray(x)) { x.forEach(y => flat(y, out)); return out; }
-    const t = [].concat(x["@type"] || []).join(","); if (/Event/i.test(t) && x.startDate) out.push(x);
-    for (const k of ["@graph", "itemListElement", "item", "subEvent", "event", "events"]) if (x[k]) flat(x[k], out); return out; };
-  const out = []; const now = Date.now(), until = now + 120 * 864e5;
-  await Promise.all(V.map(async ([venue, urls]) => {
+  const now = Date.now(), until = now + 120 * 864e5;
+  const ok = r => r.name && r.start && !isNaN(new Date(r.start)) && new Date(r.start).getTime() >= now - 4 * 3600e3 && new Date(r.start).getTime() <= until;
+  const abs = (u, base) => { try { return new URL(u, base).href; } catch { return base; } };
+  const ymd = (d, m, y) => (y.length === 2 ? "20" + y : y) + "-" + m.padStart(2, "0") + "-" + d.padStart(2, "0");
+  const parsers = [
+    (html, base, venue) => { const evs = []; const flat = x => { if (!x || typeof x !== "object") return; if (Array.isArray(x)) return x.forEach(flat);
+        if (/Event/i.test([].concat(x["@type"] || []).join(",")) && x.startDate) evs.push({ name: strip(String(x.name || "")), start: x.startDate, url: x.url || base });
+        for (const k of ["@graph", "itemListElement", "item", "subEvent", "event", "events"]) if (x[k]) flat(x[k]); };
+      for (const m of html.matchAll(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) { try { flat(JSON.parse(m[1].trim())); } catch {} } return evs; },
+    (html, base) => { const evs = []; const parts = html.split(/itemtype=["']https?:\/\/schema\.org\/(?:\w*Event)["']/i).slice(1);
+      for (const p of parts) { const chunk = p.slice(0, 6000); const sd = (chunk.match(/itemprop=["']startDate["'][^>]*content=["']([^"']+)/i) || chunk.match(/content=["']([^"']+)["'][^>]*itemprop=["']startDate/i) || [])[1];
+        let nm = (chunk.match(/itemprop=["']name["'][^>]*content=["']([^"']+)/i) || [])[1] || (chunk.match(/itemprop=["']name["'][^>]*>([\s\S]*?)<\//i) || [])[1] || "";
+        nm = strip(nm); if (/schauspielhaus|opernhaus|tonhalle/i.test(nm) && nm.length < 40) { const n2 = [...chunk.matchAll(/itemprop=["']name["'][^>]*>([\s\S]*?)<\//gi)].map(x => strip(x[1])).find(x => x && !/schauspielhaus|opernhaus|deutsche oper/i.test(x)); if (n2) nm = n2; }
+        const ur = (chunk.match(/itemprop=["']url["'][^>]*(?:href|content)=["']([^"']+)/i) || chunk.match(/<a [^>]*href=["']([^"'#]+)["']/i) || [])[1];
+        if (sd && nm) evs.push({ name: nm, start: sd, url: abs(ur || base, base) }); } return evs; },
+    (html, base) => { const evs = []; const seen = new Set();
+      for (const m of html.matchAll(/<a [^>]*href=["']([^"']*\/event\/([a-z0-9-]+?)-(\d{2})-(\d{2})-(\d{4}))["'][^>]*>([\s\S]*?)<\/a>/gi)) { const key = m[1]; if (seen.has(key)) continue; seen.add(key);
+        const txt = strip(m[6]); const ctx = html.slice(Math.max(0, m.index - 1500), m.index); const h = [...ctx.matchAll(/class="header[^"]*"[^>]*>([\s\S]*?)<\/p>/g)].pop();
+        let nm = h ? strip(h[1]).replace(/\s*\|\s*\d{2}\.\d{2}\.\d{4}.*$/, "") : ""; if (!nm || nm.length < 3) nm = txt && !/mehr erfahren|tickets|details/i.test(txt) ? txt : m[2].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+        evs.push({ name: nm, start: ymd(m[3], m[4], m[5]), url: abs(m[1], base), allDay: true }); } return evs; },
+    (html, base) => { const evs = []; for (const m of html.matchAll(/<li class="single-ticket[^"]*" data-value="(\d{2})\.(\d{2})\.(\d{4})">([\s\S]*?)<\/li>\s*(?=<li|<\/ul)/g)) {
+        const b = m[4]; const a = b.match(/<h2><a href="([^"]+)">([\s\S]*?)<\/a><\/h2>/); if (!a) continue; const tm = (b.match(/(\d{1,2}):(\d{2})\s*Uhr/) || b.match(/\b(\d{1,2}):(\d{2})\b/) || []);
+        evs.push({ name: strip(a[2]), start: ymd(m[1], m[2], m[3]) + (tm[1] ? "T" + tm[1].padStart(2, "0") + ":" + tm[2] + ":00" : ""), url: abs(a[1], base), allDay: !tm[1] }); } return evs; },
+    (html, base) => { const evs = []; for (const m of html.matchAll(/<a href="(\/?veranstaltung\/[^"#]+)[^"]*">[\s\S]{0,1500}?text-transform:uppercase;">([\s\S]*?)<\/span>([\s\S]{0,600}?)<\/p>/g)) {
+        for (const d of m[3].matchAll(/(\d{2})\.(\d{2})\.(\d{2,4})/g)) evs.push({ name: strip(m[2]), start: ymd(d[1], d[2], d[3]), url: abs(m[1], base), allDay: true }); } return evs; }
+  ];
+  const out = [];
+  await Promise.all(V.map(async ([venue, kind, urls]) => {
     for (const u of urls) {
-      try { const html = await get(u, { type: "text", headers: H, ms: 25000 });
-        if (process.env.MODUS === "events") { try { await fs.mkdir(path.join(OUT, "raw"), { recursive: true }); await fs.writeFile(path.join(OUT, "raw", venue.replace(/[^a-z0-9]+/gi, "_") + "_" + urls.indexOf(u) + ".html"), html); } catch {} }
-        if (process.env.MODUS === "events") { const h2 = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<svg[\s\S]*?<\/svg>/gi, "").replace(/\s+/g, " ");
-          const re = /\b(\d{1,2})\.\s?(\d{1,2})\.(\s?20\d\d)?|\b(Mo|Di|Mi|Do|Fr|Sa|So)\.?,? \d{1,2}\.|\b\d{1,2}\. (Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)|20\d\d-\d\d-\d\d/g; let m, k = 0, lastI = -9999;
-          while ((m = re.exec(h2)) && k < 3) { if (m.index - lastI < 1500) continue; lastI = m.index; k++; console.log("::notice::PROBE " + venue + "#" + urls.indexOf(u) + " [" + k + "] " + h2.slice(Math.max(0, m.index - 500), m.index + 700).replace(/::/g, ":")); } }
-        const evs = [];
-        for (const m of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) { try { flat(JSON.parse(m[1].trim()), evs); } catch {} }
-        const rows = evs.map(e => ({ venue: (e.location && (e.location.name || (Array.isArray(e.location) && e.location[0] && e.location[0].name))) || venue, house: venue, name: strip(String(e.name || "")), start: e.startDate, url: e.url || (e.offers && (e.offers.url || (e.offers[0] && e.offers[0].url))) || u }))
-          .filter(r => r.name && r.start && !isNaN(new Date(r.start)) && new Date(r.start).getTime() >= now - 3 * 3600e3 && new Date(r.start).getTime() <= until);
-        console.log("::notice::Spielstätte " + venue + " " + u + ": " + html.length + " Zeichen, " + evs.length + " Events (" + rows.length + " künftig)" + (rows[0] ? " z. B. " + rows[0].start + " " + rows[0].name : ""));
-        if (rows.length) { out.push(...rows); break; }
+      try { const html = await get(u, { type: "text", headers: H, ms: 25000 }); let rows = [];
+        for (const p of parsers) { try { rows.push(...p(html, u, venue).filter(ok)); } catch {} }
+        console.log("::notice::Spielstätte " + venue + " " + u + ": " + rows.length + " Termine" + (rows[0] ? " z. B. " + rows[0].start + " " + rows[0].name : ""));
+        if (rows.length) { out.push(...rows.map(r => ({ ...r, venue, kind }))); break; }
       } catch (e) { console.log("::notice::Spielstätte " + venue + " " + u + ": " + (e.message || e)); }
     }
   }));
   const seen = new Set();
-  return out.filter(r => { const k = r.name.toLowerCase() + "|" + r.start.slice(0, 16); if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => new Date(a.start) - new Date(b.start));
+  return out.filter(r => { const k = r.venue + "|" + r.name.toLowerCase().slice(0, 40) + "|" + r.start.slice(0, 10); if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => a.start.localeCompare(b.start));
 }
