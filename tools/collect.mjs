@@ -361,6 +361,14 @@ async function fernCombos(from, to) {
 await fs.mkdir(OUT, { recursive: true });
 // Schnellmodus „oepnv“ (alle 10 min von außen angestoßen): zuletzt veröffentlichte Daten übernehmen,
 // nur die Abfahrten neu holen – dauert ca. 1–2 Minuten statt 12.
+if (process.env.MODUS === "events") { // nur Düsseldorfer Spielstätten neu, Rest vom letzten Stand
+  let names = []; try { const st = await get(LIVE + "status.json", { ms: 20000 }); names = Object.keys(st.data || {}).filter(n => /\.json$/.test(n)); } catch {}
+  const q = [...names]; await Promise.all(Array.from({ length: 8 }, async () => { while (q.length) { const n = q.shift(); try { await fs.writeFile(path.join(OUT, n), JSON.stringify(await get(LIVE + n, { ms: 20000 }))); } catch {} } }));
+  console.log("::notice::" + await evCopy());
+  await job("events-dus.json", eventsDus);
+  let prevStatus = {}; try { prevStatus = (await get(LIVE + "status.json", { ms: 15000 })).data || {}; } catch {}
+  await write("status.json", { ...prevStatus, ...results }); process.exit(0);
+}
 if (process.env.MODUS === "oepnv") {
   let names = [];
   try { const st = await get(LIVE + "status.json", { ms: 20000 }); names = Object.keys(st.data || {}).filter(n => /\.json$/.test(n)); } catch (e) { console.log("::warning::status.json nicht lesbar: " + e.message); }
@@ -449,6 +457,7 @@ tasks.push(job("bvbcal.json", async () => {
   return { events: fut, total: ev.length };
 }));
 // Flugzeuge über Düsseldorf (Ersatz, falls der Browser adsb.fi nicht direkt abfragen darf)
+tasks.push(job("events-dus.json", eventsDus));
 tasks.push(job("flights.json", async () => {
   let d; try { d = await get("https://opendata.adsb.fi/api/v2/lat/51.2895/lon/6.7668/dist/16"); }
   catch { d = await get("https://api.airplanes.live/v2/point/51.2895/6.7668/16"); }
@@ -681,3 +690,44 @@ try { results["push"] = await pushAlarms(); } catch (e) { results["push"] = "Feh
 console.log("::notice::Push-Ergebnis: " + results["push"] + " (Thema " + (process.env.NTFY_TOPIC ? "gesetzt" : "fehlt") + ")");
 await write("status.json", results);
 console.log(JSON.stringify(results, null, 1));
+
+// ---------- Düsseldorfer Spielstätten: Programm aus den Webseiten (schema.org-Event-Daten) ----------
+async function eventsDus() {
+  const V = [
+    ["Opernhaus Düsseldorf", ["https://www.operamrhein.de/spielplan/", "https://www.operamrhein.de/de_DE/spielplan"]],
+    ["Tonhalle", ["https://www.tonhalle.de/programm/", "https://www.tonhalle.de/"]],
+    ["Capitol Theater", ["https://www.capitol-theater.de/programm/", "https://www.capitol-theater.de/"]],
+    ["Merkur Spiel-Arena", ["https://www.merkur-spiel-arena.de/veranstaltungen", "https://www.merkur-spiel-arena.de/"]],
+    ["PSD Bank Dome", ["https://www.psd-bank-dome.de/veranstaltungen", "https://www.psd-bank-dome.de/"]],
+    ["Mitsubishi Electric Halle", ["https://www.mitsubishi-electric-halle.de/veranstaltungen", "https://www.mitsubishi-electric-halle.de/"]],
+    ["Castello", ["https://www.castello-duesseldorf.de/veranstaltungen", "https://www.castello-duesseldorf.de/"]],
+    ["D.LIVE", ["https://www.d-live.de/veranstaltungen", "https://www.d-live.de/"]],
+    ["Tor 3", ["https://www.tor3.com/", "https://www.tor3.de/"]],
+    ["Ratinger Hof", ["https://www.ratinger-hof.de/", "https://ratingerhof.de/"]],
+    ["zakk", ["https://www.zakk.de/programm", "https://www.zakk.de/"]],
+    ["Savoy Theater", ["https://www.savoy-theater.de/", "https://www.savoy-theater.de/programm"]],
+    ["Schauspielhaus", ["https://www.dhaus.de/programm/spielplan/", "https://www.dhaus.de/"]],
+    ["Stahlwerk", ["https://www.stahlwerk.de/"]],
+    ["Pitcher", ["https://www.pitcher-duesseldorf.de/"]],
+    ["Rheinterrasse", ["https://www.rheinterrasse.de/veranstaltungen"]]
+  ];
+  const H = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", "Accept-Language": "de-DE,de;q=0.9", Accept: "text/html" };
+  const flat = (x, out) => { if (!x || typeof x !== "object") return out; if (Array.isArray(x)) { x.forEach(y => flat(y, out)); return out; }
+    const t = [].concat(x["@type"] || []).join(","); if (/Event/i.test(t) && x.startDate) out.push(x);
+    for (const k of ["@graph", "itemListElement", "item", "subEvent", "event", "events"]) if (x[k]) flat(x[k], out); return out; };
+  const out = []; const now = Date.now(), until = now + 120 * 864e5;
+  await Promise.all(V.map(async ([venue, urls]) => {
+    for (const u of urls) {
+      try { const html = await get(u, { type: "text", headers: H, ms: 25000 });
+        const evs = [];
+        for (const m of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) { try { flat(JSON.parse(m[1].trim()), evs); } catch {} }
+        const rows = evs.map(e => ({ venue: (e.location && (e.location.name || (Array.isArray(e.location) && e.location[0] && e.location[0].name))) || venue, house: venue, name: strip(String(e.name || "")), start: e.startDate, url: e.url || (e.offers && (e.offers.url || (e.offers[0] && e.offers[0].url))) || u }))
+          .filter(r => r.name && r.start && !isNaN(new Date(r.start)) && new Date(r.start).getTime() >= now - 3 * 3600e3 && new Date(r.start).getTime() <= until);
+        console.log("::notice::Spielstätte " + venue + " " + u + ": " + html.length + " Zeichen, " + evs.length + " Events (" + rows.length + " künftig)" + (rows[0] ? " z. B. " + rows[0].start + " " + rows[0].name : ""));
+        if (rows.length) { out.push(...rows); break; }
+      } catch (e) { console.log("::notice::Spielstätte " + venue + " " + u + ": " + (e.message || e)); }
+    }
+  }));
+  const seen = new Set();
+  return out.filter(r => { const k = r.name.toLowerCase() + "|" + r.start.slice(0, 16); if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => new Date(a.start) - new Date(b.start));
+}
