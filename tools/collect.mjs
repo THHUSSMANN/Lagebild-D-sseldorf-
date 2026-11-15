@@ -707,7 +707,7 @@ console.log(JSON.stringify(results, null, 1));
 // Je Seite: schema.org (JSON-LD und Microdata), D.LIVE-Eventlinks (…/event/name-TT-MM-JJJJ), zakk-Liste, Capitol-Kacheln.
 async function eventsDus() {
   const V = [
-    ["Opernhaus", "Oper", ["https://www.operamrhein.de/spielplan/", "https://www.operamrhein.de/"]],
+    ["Opernhaus", "Oper", ["https://www.operamrhein.de/spielplan/kalender/"], "oper"],
     ["Schauspielhaus", "Theater", ["https://www.dhaus.de/programm/spielplan/", "https://www.dhaus.de/"]],
     ["Tonhalle", "Konzert", ["https://www.tonhalle.de/"]],
     ["Capitol Theater", "Show", ["https://www.capitol-theater.de/"]],
@@ -718,8 +718,6 @@ async function eventsDus() {
     ["zakk", "Club", ["https://www.zakk.de/programm"]],
     ["Savoy Theater", "Show", ["https://www.savoy-theater.de/"]],
     ["Stahlwerk", "Club", ["https://www.stahlwerk.de/"]],
-    ["Ratinger Hof", "Club", ["https://ratingerhof.de/"]],
-    ["Tor 3", "Club", ["https://www.tor3.de/", "https://tor3.de/"]]
   ];
   const H = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", "Accept-Language": "de-DE,de;q=0.9", Accept: "text/html" };
   const now = Date.now(), until = now + 120 * 864e5;
@@ -750,12 +748,22 @@ async function eventsDus() {
         for (const d of m[3].matchAll(/(\d{2})\.(\d{2})\.(\d{2,4})/g)) evs.push({ name: strip(m[2]), start: ymd(d[1], d[2], d[3]), url: abs(m[1], base), allDay: true }); } return evs; }
   ];
   const out = [];
-  await Promise.all(V.map(async ([venue, kind, urls]) => {
+  const oper = (html, base) => { const evs = [];
+    for (const b of html.split('class="performance__col performance__col--date"').slice(1)) { const c = b.slice(0, 5000);
+      const sd = (c.match(/itemprop="startDate" content="([^"]+)"/) || [])[1]; const loc = strip((c.match(/class="performance__location[^"]*">([\s\S]*?)<\/div>/) || [])[1] || "");
+      const ti = strip((c.match(/class="performance__title"[\s\S]*?<h3[^>]*>([\s\S]*?)<\/h3>/) || [])[1] || ""); const href = (c.match(/<a href="([^"]+)" class="performance__link"/) || [])[1];
+      const cat = strip((c.match(/class="performance__category">([\s\S]*?)<\/span>/) || [])[1] || "");
+      if (!sd || !ti || /duisburg/i.test(loc)) continue; evs.push({ name: ti, start: sd, url: abs(href || base, base), place: loc, cat }); } return evs; };
+  const timeHead = (html, base) => { const evs = [];
+    for (const m of html.matchAll(/<time[^>]*datetime="(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?[^"]*"[\s\S]{0,800}?<h[2-4][^>]*>\s*<a [^>]*?(?:title="([^"]*)")?[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)) {
+      const nm = strip(m[3] || m[5]); if (nm) evs.push({ name: nm, start: m[1] + (m[2] ? "T" + m[2] + ":00" : ""), url: abs(m[4], base), allDay: !m[2] }); } return evs; };
+  parsers.push(timeHead);
+  await Promise.all(V.map(async ([venue, kind, urls, only]) => {
     for (const u of urls) {
       try { const html = await get(u, { type: "text", headers: H, ms: 25000 }); let rows = [];
-        for (const p of parsers) { try { rows.push(...p(html, u, venue).filter(ok)); } catch {} }
+        for (const p of (only === "oper" ? [oper] : parsers)) { try { rows.push(...p(html, u, venue).filter(ok)); } catch {} }
         console.log("::notice::Spielstätte " + venue + " " + u + ": " + rows.length + " Termine" + (rows[0] ? " z. B. " + rows[0].start + " " + rows[0].name : ""));
-        if (rows.length) { out.push(...rows.map(r => ({ ...r, venue, kind }))); break; }
+        if (rows.length) { out.push(...rows.map(r => ({ ...r, venue, kind: r.cat || kind }))); break; }
       } catch (e) { console.log("::notice::Spielstätte " + venue + " " + u + ": " + (e.message || e)); }
     }
   }));
