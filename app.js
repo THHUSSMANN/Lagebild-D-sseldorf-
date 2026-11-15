@@ -517,7 +517,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-tmmore]");
 function sportVis(on){document.querySelectorAll("[data-sport]").forEach(el=>{if(!on){el.hidden=true;return;}if(el.matches(".tabseg")){el.hidden=false;return;}const t=el.dataset.tp,seg=document.querySelector('.tabseg[data-tabs="fb"] .on');el.hidden=!(seg&&t==="fb:"+seg.dataset.t);});}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tmscope]");if(!b)return;TMSCOPE=b.dataset.tmscope;store("tmscope",TMSCOPE);loadTM();});
 async function loadTM(){const box=$("tm-list");if(!box)return;const SPORT=TMSCOPE==="sport",DUSONLY=TMSCOPE==="dus"||SPORT;sportVis(SPORT);
-  document.querySelectorAll("#tm-seg [data-tmscope]").forEach(b=>b.classList.toggle("on",b.dataset.tmscope===TMSCOPE));
+  document.querySelectorAll("#tm-seg [data-tmscope]").forEach(b=>b.classList.toggle("on",b.dataset.tmscope===TMSCOPE));{const sr=$("tm-src");if(sr)sr.textContent=SPORT?"Heimspiele & nächste Spiele":DUSONLY?"Ticketmaster & Spielpläne · nach Tagen":"Ticketmaster · nach Tagen";}
   /* Programm der Düsseldorfer Spielstätten (Oper, Schauspielhaus, Arena, PSD Bank Dome, Mitsubishi Electric Halle, Castello, Capitol, zakk …) aus dem Sammler */
   let house=[];if(DUSONLY){try{house=(await getData("events-dus.json")).data||[];}catch(e){}}
   if(!TMKEY&&!(DUSONLY&&house.length)){box.innerHTML='<div class="muted small">Für Konzerte, Sport und Shows in der Nähe einmal einen kostenlosen Ticketmaster-Schlüssel unter <a href="#einstellungen">Einstellungen</a> eintragen.</div>';setStatus("tm",false,"Schlüssel fehlt");return;}

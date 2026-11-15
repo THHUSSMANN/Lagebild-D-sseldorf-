@@ -446,6 +446,13 @@ svg.c24 text.tv{font:800 17px var(--f-display);fill:var(--fg)}
 #rs-tdir{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 @media (min-width:700px){#rs-tdir{grid-template-columns:repeat(4,minmax(0,1fr))}}
 #rs-tdir>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:60px!important;padding:8px 10px!important;white-space:normal!important;overflow:visible;text-overflow:clip;text-align:center;font:700 16px/1.2 var(--f-display)!important}
+#tm-seg{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 6px;padding:0;background:none;border:0}
+#tm-seg>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:56px;padding:6px 8px!important;border-radius:999px!important;white-space:normal!important;text-align:center;
+  font:700 15px/1.15 var(--f-display)!important;color:var(--fg)!important;background:color-mix(in srgb,var(--fg) 8%,transparent)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0))!important;
+  border:1px solid color-mix(in srgb,var(--fg) 14%,transparent)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2px 8px rgba(0,0,0,.12)!important;transition:transform .15s}
+#tm-seg>button small{font:500 12px/1.2 var(--f-body)!important;opacity:.75}
+#tm-seg>button.on{background:var(--accent)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0))!important;color:#0b1a24!important;border-color:transparent!important}
+#tm-seg>button:active{transform:scale(.965)}
 .tm-club{margin-top:14px}
 .tm-club-h{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;background:color-mix(in srgb,var(--fg) 6%,transparent);border:1px solid color-mix(in srgb,var(--fg) 10%,transparent);margin-bottom:8px}
 .tm-club-h img{width:44px;height:44px;object-fit:contain;border-radius:12px;background:#fff;padding:4px;box-shadow:0 1px 6px rgba(0,0,0,.15)}
@@ -1325,9 +1332,9 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 #efa-stops.stop-seg>button.on{background:var(--accent)!important;background-image:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0))!important;color:#0b1a24!important;border-color:transparent!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 14px color-mix(in srgb,var(--accent) 45%,transparent)!important}
 #efa-stops.stop-seg>button:active{transform:scale(.965)}
 /* v346: Alle Auswahl-Leisten in allen Fenstern gleich (iOS-26-Segment): Glas-Spur, gewählter Teil als helle Kapsel, 16 px */
-.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):has(>:nth-child(2)),.tabseg,.vtop .subtabs,#al-seg,#wx-seg{display:flex!important;flex-wrap:nowrap!important;gap:2px!important;padding:4px!important;border-radius:999px!important;background:color-mix(in srgb,var(--fg) 9%,transparent)!important;border:1px solid color-mix(in srgb,var(--fg) 10%,transparent)!important}
-.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):has(>:nth-child(2))>button,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):has(>:nth-child(2))>a,.tabseg button,#al-seg button,#wx-seg button{flex:1 1 0;min-width:0;min-height:40px!important;padding:0 10px!important;border:0!important;border-radius:999px!important;background:transparent!important;background-image:none!important;box-shadow:none!important;color:var(--fg)!important;opacity:.85;font:600 16px/1.15 var(--f-body)!important;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):has(>:nth-child(2))>button.on,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):has(>:nth-child(2))>a.on,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):has(>:nth-child(2))>button[aria-pressed="true"],.tabseg button.on,#al-seg button.on,#wx-seg button.on{opacity:1;background:var(--seg-on,#fff)!important;color:var(--seg-on-fg,#111)!important;box-shadow:0 1px 2px rgba(0,0,0,.12),0 3px 10px rgba(0,0,0,.14)!important}
+.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2)),.tabseg,.vtop .subtabs,#al-seg,#wx-seg{display:flex!important;flex-wrap:nowrap!important;gap:2px!important;padding:4px!important;border-radius:999px!important;background:color-mix(in srgb,var(--fg) 9%,transparent)!important;border:1px solid color-mix(in srgb,var(--fg) 10%,transparent)!important}
+.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2))>button,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2))>a,.tabseg button,#al-seg button,#wx-seg button{flex:1 1 0;min-width:0;min-height:40px!important;padding:0 10px!important;border:0!important;border-radius:999px!important;background:transparent!important;background-image:none!important;box-shadow:none!important;color:var(--fg)!important;opacity:.85;font:600 16px/1.15 var(--f-body)!important;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2))>button.on,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2))>a.on,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2))>button[aria-pressed="true"],.tabseg button.on,#al-seg button.on,#wx-seg button.on{opacity:1;background:var(--seg-on,#fff)!important;color:var(--seg-on-fg,#111)!important;box-shadow:0 1px 2px rgba(0,0,0,.12),0 3px 10px rgba(0,0,0,.14)!important}
 .vtop .subtabs a{font-size:16px!important}
 @media (max-width:430px){.vtop:has(.subtabs a:nth-child(5)) .subtabs a{padding:0 6px!important;font-size:14.5px!important}}
 </style>
@@ -1841,8 +1848,8 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
     <div id="ferien"><div class="state">wird geladen …</div></div>
   </section>
   <section class="card wide" id="tm-card" data-alp="ev" hidden>
-    <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nach Datum sortiert</span></div>
-    <div class="seg" id="tm-seg"><button type="button" data-tmscope="umkreis">Umkreis 70 km</button><button type="button" data-tmscope="dus">Düsseldorf</button><button type="button" data-tmscope="sport">Sport</button></div>
+    <div class="card-head"><h2>Show, Kultur &amp; Sport</h2><span class="src" id="tm-src">nach Datum sortiert</span></div>
+    <div class="seg" id="tm-seg"><button type="button" data-tmscope="umkreis">Show/Kultur<small>Umkreis 70 km</small></button><button type="button" data-tmscope="dus">Show/Kultur<small>Düsseldorf</small></button><button type="button" data-tmscope="sport">Sport<small>Fortuna · DEG · BVB</small></button></div>
     <div id="tm-list"><div class="state">wird geladen …</div></div>
   </section>
   <div class="seg tabseg" data-tabs="fb" data-sport hidden style="grid-column:1/-1"><button type="button" data-t="f95" class="on">Fortuna</button><button type="button" data-t="bvb">BVB</button></div>
@@ -1982,6 +1989,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=360"></script>
+<script src="app.js?v=361"></script>
 </body>
 </html>
