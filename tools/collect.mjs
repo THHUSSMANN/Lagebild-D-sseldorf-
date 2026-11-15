@@ -720,6 +720,9 @@ async function eventsDus() {
     for (const u of urls) {
       try { const html = await get(u, { type: "text", headers: H, ms: 25000 });
         if (process.env.MODUS === "events") { try { await fs.mkdir(path.join(OUT, "raw"), { recursive: true }); await fs.writeFile(path.join(OUT, "raw", venue.replace(/[^a-z0-9]+/gi, "_") + "_" + urls.indexOf(u) + ".html"), html); } catch {} }
+        if (process.env.MODUS === "events") { const h2 = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<svg[\s\S]*?<\/svg>/gi, "").replace(/\s+/g, " ");
+          const re = /\b(\d{1,2})\.\s?(\d{1,2})\.(\s?20\d\d)?|\b(Mo|Di|Mi|Do|Fr|Sa|So)\.?,? \d{1,2}\.|\b\d{1,2}\. (Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)|20\d\d-\d\d-\d\d/g; let m, k = 0, lastI = -9999;
+          while ((m = re.exec(h2)) && k < 3) { if (m.index - lastI < 1500) continue; lastI = m.index; k++; console.log("::notice::PROBE " + venue + "#" + urls.indexOf(u) + " [" + k + "] " + h2.slice(Math.max(0, m.index - 500), m.index + 700).replace(/::/g, ":")); } }
         const evs = [];
         for (const m of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) { try { flat(JSON.parse(m[1].trim()), evs); } catch {} }
         const rows = evs.map(e => ({ venue: (e.location && (e.location.name || (Array.isArray(e.location) && e.location[0] && e.location[0].name))) || venue, house: venue, name: strip(String(e.name || "")), start: e.startDate, url: e.url || (e.offers && (e.offers.url || (e.offers[0] && e.offers[0].url))) || u }))
