@@ -787,7 +787,7 @@ async function eventsDus() {
   // ---- fehlende Anfangszeiten von den Detailseiten holen (mit Zwischenspeicher aus dem letzten Lauf) ----
   const prev = new Map(); try { ((await get(LIVE + "events-dus.json", { ms: 15000 })).data || []).forEach(r => { if (r.url && /T\d\d:\d\d/.test(r.start)) prev.set(r.url + "|" + r.start.slice(0, 10), r.start); }); } catch {}
   const need = out.filter(r => !/T\d\d:\d\d/.test(r.start) && r.url && /^https?:/.test(r.url));
-  let hit = 0, fetched = 0; const q = need.slice(0, 160);
+  let hit = 0, fetched = 0; const q = need.slice(0, 260);
   const timeOf = html => { const c = html.replace(/\s+/g, " ");
     let m = c.match(/Einlass:<br>\s*Beginn:<br><\/div><div[^>]*>\s*\d{1,2}:\d{2}<br>\s*(\d{1,2}):(\d{2})/) || c.match(/Beginn:?\s*(?:<[^>]+>\s*)*(\d{1,2})[:.](\d{2})/i) || c.match(/event-time">\s*(\d{1,2})(?:[:.](\d{2}))?\s*Uhr/) || c.match(/Beginn[^0-9<]{0,12}(\d{1,2})(?:[:.](\d{2}))?\s*Uhr/i);
     return m ? String(+m[1]).padStart(2, "0") + ":" + (m[2] || "00") : null; };
