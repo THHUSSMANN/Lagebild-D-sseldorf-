@@ -714,7 +714,7 @@ $("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim
   ensureMap();loadTomTom();});
 $("windy-save").addEventListener("click",()=>{WINDY=$("windy").value.trim();store("windy",WINDY);loadWindy();});$("theme").value=theme;
 $("stop-save").addEventListener("click",()=>{const v=$("stop").value.trim();if(!v||!C.efaDefault)return;STOPS[C.key]=v;store("stops",STOPS);loadEFA();
-  const m=stopMatch(v);$("stop-hint").innerHTML=m.file?"Übernommen – Abfahrten werden angezeigt.":m.id?"Diese Haltestelle wird noch nicht automatisch abgerufen. Live-Abfahrten öffnen sich über den Link in der Bus-Ansicht; sag Claude Bescheid, dann wird sie fest ergänzt.":"Haltestelle nicht im Verzeichnis gefunden – bitte aus der Vorschlagsliste wählen.";});
+  const m=stopMatch(v);$("stop-hint").innerHTML=m.file?"Übernommen – Abfahrten werden angezeigt.":m.id?"Übernommen – Abfahrten kommen live vom VRR.":"Haltestelle nicht im Verzeichnis gefunden – bitte aus der Vorschlagsliste wählen.";});
 $("efa-dir").addEventListener("input",()=>{DIRF[C.key]=$("efa-dir").value;renderEFA();efaGo();});
 // Ziel eingeben → Verbindung mit Bus & Bahn in Google Maps (ab aktueller Haltestelle)
 let EFASTOP="";
@@ -1930,11 +1930,12 @@ function stopMatch(v){const n=normStop(v);const I=STOPIDX||{available:[],all:[]}
 async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includes(ec().key))return;
   try{STOPIDX=(await getData("stops-"+ec().key+".json")).data;
   }catch(e){STOPIDX={available:[],all:[]};}}
+function proxyOn(){try{return !!EFAPROXY;}catch(e){return false;}}
 async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){$("efa-title").textContent="Abfahrten";$("efa-stops").innerHTML="";$("efa").innerHTML=stateBox("Für diesen Ort gibt es keine Echtzeit-Abfahrten im VRR.",'<a href="https://www.hvv.de/de/fahrplaene/abruf-fahrplaninfos/abfahrten" target="_blank" rel="noopener">HVV-Abfahrten ↗</a>');setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
   // gespeicherte Haltestelle nur verwenden, wenn sie für diesen Ort wirklich abgerufen wird (sonst Standard, z. B. Nikolaus-Knopp-Platz)
-  let stop=STOPS[ec().key]||ec().efaDefault;{const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
+  let stop=STOPS[ec().key]||ec().efaDefault;{const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file&&!(mm.id&&proxyOn())){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
   const m=stopMatch(stop);EFASTOP=stop;efaGo();
   const avail=(STOPIDX&&STOPIDX.available)||[];
   $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join(""):"";
@@ -1942,6 +1943,9 @@ async function loadEFA(){const EK=ec().key;
   $("efa-title").textContent=(ec().isDus?"Rheinbahn · ":"Abfahrten ")+(m.name||stop).replace(/^Düsseldorf[, ]*/,"");
   $("efa-src").textContent=ec().isDus?"Bus, U- und Straßenbahn · Echtzeit":"Bus & Bahn vor Ort · Echtzeit";
   const file=m.file||(stop===ec().efaDefault?"efa-"+ec().key+".json":null);
+  if(!file&&m.id&&proxyOn()&&EFAKEYS.includes(ec().key)){/* jede beliebige VRR-Haltestelle: direkt live über den Vermittler */
+    EFADATA=null;$("efa").innerHTML='<div class="state">Live-Abfahrten werden geladen …</div>';
+    EFADATA={generated:new Date().toISOString(),data:{stop:m.name||stop,id:m.id,rows:[]}};efaLive(m.id,EK,stop,++EFASEQ);return;}
   if(!file||!EFAKEYS.includes(ec().key)){EFADATA=null;
     $("efa").innerHTML=stateBox("„"+esc(m.name||stop)+"“ wird noch nicht automatisch abgerufen.",(m.id?link("https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(m.id),"Live-Abfahrten öffnen")+" · ":"")+"Claude kann sie fest ergänzen.");return;}
   try{if(!BUSF)BUSF=await getData("busfahrten.json").then(x=>x.data||[]).catch(()=>[]);const ED=await getData(file);if(ec().key!==EK)return;EFADATA=ED;renderEFA();setStatus("efa",true,"Stand "+dataAge(EFADATA));
