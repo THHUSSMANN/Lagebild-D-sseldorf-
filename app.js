@@ -1243,11 +1243,39 @@ const STN={dus:["dus","Düsseldorf Hbf"],datteln:["re","Recklinghausen Hbf"],dor
 const CITYN={dus:"Düsseldorf",datteln:"Datteln",dortmund:"Dortmund",alpen:"Alpen-Menzelen",salzhausen:"Salzhausen"};
 const CITYPAIRS=(()=>{const core=["dus","datteln","dortmund"],o=[];for(const a of core)for(const b of core)if(a!==b)o.push([a,b]);for(const x of ["alpen","salzhausen"])for(const b of core){o.push([x,b]);o.push([b,x]);}o.push(["alpen","salzhausen"],["salzhausen","alpen"]);return o;})();
 const RSTRIP=Object.fromEntries(CITYPAIRS.map(([a,b])=>[a+">"+b,STN[a][0]+"-"+STN[b][0]]));
+/* Bahnverbindungen live: Regional-/S-Bahn-Verbindungen über den eigenen VRR-Vermittler frisch holen und mit den gesammelten Daten
+   (inkl. DB-Fernverkehr aus IRIS) zusammenführen – Verspätungen und Ausfälle sind so sekundenaktuell */
+const TRIPLIVE={},TRIPLIVE_BUSY={};let TRIPLIVE_T=null;const TRIPSTOP=load("tripstops")||{};
+const tsName=x=>{if(!x)return"";let p=x;while(p&&p.type&&p.type!=="stop"&&p.parent)p=p.parent;const n=(p&&p.name)||x.name||"";const pa=n.split(", ");return pa.length===2&&pa[1].startsWith(pa[0])?pa[1]:n;};
+async function tripStopId(name){if(TRIPSTOP[name])return TRIPSTOP[name];const base=(typeof EFAPROXY!=="undefined"&&EFAPROXY)||"";if(!base)throw 0;
+  const sf=await getJSON(base.replace(/\/+$/,"")+"/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf="+encodeURIComponent(name),7000);
+  const l=(sf.locations||[]).filter(x=>x.type==="stop").sort((a,b)=>(b.isBest?1:0)-(a.isBest?1:0))[0];if(!l)throw 0;TRIPSTOP[name]=l.id;store("tripstops",TRIPSTOP);return l.id;}
+async function tripLiveFetch(t){TRIPLIVE_BUSY[t.key]=1;try{const base=((typeof EFAPROXY!=="undefined"&&EFAPROXY)||"").replace(/\/+$/,"");if(!base)return false;
+    const a=await tripStopId(t.from),b=await tripStopId(t.to);
+    const excl="&excludedMeans=checkbox"+[2,3,4,5,6,7,8,9,10,11,19].map(n=>"&exclMOT_"+n+"=1").join("");
+    const d=await getJSON(base+"/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin="+encodeURIComponent(a)+"&type_destination=any&name_destination="+encodeURIComponent(b)+"&itdTripDateTimeDepArr=dep&calcNumberOfTrips=8&useRealtime=1&lineRestriction=400&routeType=LEASTTIME"+excl,9000);
+    const js=(d.journeys||[]).map(j=>{const legs=(j.legs||[]).map(l=>{const tr=l.transportation||{},pc=tr.product&&tr.product.class;const pr=o=>o&&o.properties||{};
+        return{line:tr.disassembledName||tr.number||tr.name||"",name:tr.name||"",walk:pc===99||pc===100||/fu(ß|ss)weg/i.test(tr.name||""),dir:tr.destination&&tr.destination.name||"",from:tsName(l.origin),to:tsName(l.destination),
+          dep:l.origin&&l.origin.departureTimePlanned,depEst:l.origin&&l.origin.departureTimeEstimated,arr:l.destination&&l.destination.arrivalTimePlanned,arrEst:l.destination&&l.destination.arrivalTimeEstimated,
+          plat:pr(l.origin).platformName||pr(l.origin).platform||"",arrPlat:pr(l.destination).platformName||pr(l.destination).platform||"",cancelled:(l.realtimeStatus||[]).includes("TRIP_CANCELLED")};});
+      const ride=legs.filter(x=>!x.walk);const f=ride[0]||legs[0]||{},z=ride[ride.length-1]||legs[legs.length-1]||{};
+      return{trainsOnly:ride.every(l=>/^(ICE|IC|EC|ECE|RE|RB|S|RRX|NX|FLX|NJ|TGV|THA)\s?\d*/i.test(l.line)||/zug|bahn/i.test(l.name)),dep:f.dep,depEst:f.depEst,arr:z.arr,arrEst:z.arrEst,changes:Math.max(0,ride.length-1),legs};}).filter(j=>j.dep&&j.trainsOnly);
+    if(!js.length)return false;TRIPLIVE[t.key]={at:Date.now(),js};return true;}catch(e){return false;}finally{delete TRIPLIVE_BUSY[t.key];}}
+function tripLiveMerge(t){const L=TRIPLIVE[t.key];if(!L||Date.now()-L.at>180000)return t;
+  const sig=j=>j.dep+"|"+j.legs.filter(l=>!l.walk).map(l=>l.line).join(">");const m=new Map(L.js.map(j=>[sig(j),j]));
+  const minLive=Math.min(...L.js.map(j=>new Date(j.dep).getTime())),maxLive=Math.max(...L.js.map(j=>new Date(j.dep).getTime()));
+  const out=(t.journeys||[]).map(j=>{const lj=m.get(sig(j));if(lj){m.delete(sig(j));return lj;}return j;});
+  m.forEach(j=>out.push(j));out.sort((x,y)=>new Date(x.dep)-new Date(y.dep));
+  return{...t,journeys:out,live:true,liveRange:[minLive,maxLive]};}
 async function loadTrips(opt){opt=opt||{};
   const keys=opt.keys||(typeof RS!=="undefined"&&RS.tdir?[RSTRIP[RS.tdir]]:(TRIP_KEYS[C.key]||[]));const box=opt.box||$("trips");
   if(!keys.length){box.innerHTML="";box.hidden=true;return;}
   box.hidden=false;
-  try{const d=await getData("trips.json");const list=(d.data||[]).filter(t=>keys.includes(t.key)).sort((a,b)=>keys.indexOf(a.key)-keys.indexOf(b.key));
+  try{const d=await getData("trips.json");const list=(d.data||[]).filter(t=>keys.includes(t.key)).sort((a,b)=>keys.indexOf(a.key)-keys.indexOf(b.key)).map(t=>tripLiveMerge(t));
+    {const stale=list.filter(t=>t.from&&t.to&&!(TRIPLIVE[t.key]&&Date.now()-TRIPLIVE[t.key].at<45000)&&!TRIPLIVE_BUSY[t.key]);
+     if(stale.length)Promise.all(stale.map(t=>tripLiveFetch(t))).then(ch=>{if(ch.some(Boolean)&&box.isConnected&&box.offsetParent!==null)loadTrips(opt);});
+     clearTimeout(TRIPLIVE_T);TRIPLIVE_T=setTimeout(()=>{if(box.isConnected&&box.offsetParent!==null)loadTrips(opt);},50000);}
+    const liveAll=list.length&&list.every(t=>t.live);
     const t2=x=>x?hhmm(x):"–";
     const del=(p,e)=>{if(!p||!e)return"";const m=Math.round((new Date(e)-new Date(p))/6e4);return m>0?' <span style="color:var(--bad);font-weight:600">+'+m+'</span>':"";};
     const now=Date.now()-60e3;
@@ -1282,7 +1310,7 @@ async function loadTrips(opt){opt=opt||{};
             '<div class="lg-row"><span>'+tm(l.dep,l.depEst)+'</span><span>'+esc(l.from)+'</span>'+plat(l.plat)+'</div>'+
             '<div class="lg-row"><span>'+tm(l.arr,l.arrEst)+'</span><span>'+esc(l.to)+'</span>'+plat(l.arrPlat)+'</div></div>';}).join("");
         return '<details class="trip'+(cancelled?" cx":risk?" warn":"")+'">'+summary+'<div class="trip-body">'+steps+'</div></details>';}).join("")+'</div>';}).join("")+
-      '<div class="muted small">Antippen für Reiseverlauf mit Gleisen und Umstiegen · Echtzeit abgerufen '+dataAge(d)+'</div>';
+      '<div class="muted small">Antippen für Reiseverlauf mit Gleisen und Umstiegen · '+(liveAll?'<b style="color:var(--ok)">● live</b> (VRR-Echtzeit, Fernverkehr Stand '+dataAge(d)+')':'Echtzeit abgerufen '+dataAge(d))+'</div>';
     setStatus("trips",true,"Stand "+dataAge(d));
   }catch(e){setStatus("trips",false,errText(e));box.innerHTML=stateBox("Verbindungen nicht verfügbar – "+errText(e)+".",link("https://www.bahn.de/","bahn.de"));}
 }
@@ -1918,7 +1946,7 @@ async function efaLive(id,EK,stop,seq){
 function renderEFA(){const d=EFADATA;if(!d)return;
   const pairs=(BUSF||[]).filter(x=>x.key===ec().key);
   $("efa-dir").parentElement.hidden=pairs.length>0;$("efa-stops").hidden=false;
-  if(pairs.length){const now=Date.now()-60e3;
+  if(pairs.length){const now=Date.now()-60e3;busLive(pairs);
     const short=x=>x.replace(/^(Datteln|Dortmund),?\s*/,"").replace(/^Bus Bf$/,"Busbahnhof").replace(/^Lohstr\.$/,"Lohstraße");
     const nx=pairs.map(x=>({x,r:x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now)}));
     const f=nx[0]&&nx[0].r[0];
@@ -1928,7 +1956,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;
     $("efa-stops").innerHTML=nx.map(({x},i)=>'<button type="button" data-bdir="'+i+'" class="'+(i===di?"on":"")+'">'+esc(short(x.from))+' → '+esc(short(x.to))+'</button>').join("");
     $("efa").innerHTML=nx.filter((_,i)=>i===di).map(({x,r})=>'<div class="sublbl">'+esc(short(x.from))+' → '+esc(short(x.to))+'</div>'+(r.length?'<div class="list" style="margin-bottom:12px">'+r.slice(0,6).map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
       return '<div class="li"><span class="tag">'+esc(r.line)+'</span><div class="t"><b>'+hhmm(r.dep)+'</b>'+(dm>0?' <span style="color:var(--bad);font-weight:600">+'+dm+'</span>':'')+' → an '+hhmm(r.arrEst||r.arr)+'</div><div class="r muted small">'+(r.plat?'Steig '+esc(r.plat):'')+'</div><div class="d">Richtung '+esc(r.dir)+'</div></div>';}).join("")+'</div>':'<div class="muted small" style="margin-bottom:12px">Keine direkte Fahrt in den nächsten Stunden.</div>')).join("")+
-      '<div class="muted small">Nur Verbindungen ohne Umstieg · Echtzeit abgerufen '+dataAge(d)+'</div>';
+      '<div class="muted small">Nur Verbindungen ohne Umstieg · '+(pairs.every(x=>x.live)?'<b style="color:var(--ok)">● live</b> (VRR)':'Echtzeit abgerufen '+dataAge(d))+'</div>';
     return;}const now=Date.now()-60e3;const f=normStop(DIRF[ec().key]||"");
   let rows=(d.data.rows||[]).filter(x=>new Date(x.est||x.planned).getTime()>=now);
   /* Heine-Allee & Oststraße: nur die linksrheinischen Linien U75/U76/U77 Richtung Oberkassel/Heerdt/Neuss/Krefeld */
@@ -1946,6 +1974,18 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   $("efa").innerHTML=busTripsHtml(d.data.stop)+efaStale(d)+(noHit?'<div class="muted small" style="margin-bottom:6px">Keine Linie fährt direkt Richtung „'+esc(DIRF[ec().key])+'“ – hier alle Abfahrten:</div>':'')+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · '+(d.live?'<b style="color:var(--ok)">● live</b> ('+esc(d.src==='DB'?'DB-Auskunft':d.src==='VRR'?'VRR':'eigener Vermittler')+')':'Echtzeit abgerufen '+dataAge(d))+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
 }
 let BUSF=null;
+/* Direkte Busfahrten (Datteln Lohstr. ⇄ Busbahnhof, Westfalenstadion → Hbf) live über den VRR-Vermittler */
+let BUSLIVE_AT=0,BUSLIVE_BUSY=false,BUSLIVE_T=null;
+async function busLive(pairs){if(BUSLIVE_BUSY||Date.now()-BUSLIVE_AT<45000)return;BUSLIVE_BUSY=true;let ch=false;
+  try{const base=((typeof EFAPROXY!=="undefined"&&EFAPROXY)||"").replace(/\/+$/,"");if(!base)return;
+    await Promise.all(pairs.map(async x=>{try{const a=await tripStopId(x.fromQ||x.from),b=await tripStopId(x.toQ||x.to);
+      const d=await getJSON(base+"/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin="+encodeURIComponent(a)+"&type_destination=any&name_destination="+encodeURIComponent(b)+"&itdTripDateTimeDepArr=dep&calcNumberOfTrips=6&maxChanges=0&useRealtime=1",9000);
+      const seen=new Set();const rows=(d.journeys||[]).map(j=>(j.legs||[]).filter(l=>l.transportation&&l.transportation.product&&l.transportation.product.class!==100&&l.transportation.product.class!==99)).filter(l=>l.length===1).map(([l])=>({
+        line:l.transportation.disassembledName||l.transportation.number||"",dir:(l.transportation.destination||{}).name||"",dep:l.origin.departureTimePlanned,depEst:l.origin.departureTimeEstimated,arr:l.destination.arrivalTimePlanned,arrEst:l.destination.arrivalTimeEstimated,
+        plat:l.origin.properties&&(l.origin.properties.platformName||l.origin.properties.platform)||""})).filter(r=>{const k=r.line+r.dep;if(seen.has(k))return false;seen.add(k);return true;});
+      if(rows.length){const lo=new Date(rows[0].dep).getTime();x.rows=[...rows,...x.rows.filter(r=>new Date(r.dep).getTime()>new Date(rows[rows.length-1].dep).getTime())].sort((p,q)=>new Date(p.dep)-new Date(q.dep));x.live=true;ch=true;}}catch(e){}}));
+  }finally{BUSLIVE_BUSY=false;BUSLIVE_AT=Date.now();}
+  if(ch&&EFADATA)renderEFA();clearTimeout(BUSLIVE_T);BUSLIVE_T=setTimeout(()=>{const box=$("efa");if(box&&box.offsetParent&&EFADATA)renderEFA();},50000);}
 /* Abruf älter als 15 min (GitHub verzögert geplante Läufe): deutlicher Hinweis + Live-Abfahrten beim VRR */
 function efaStale(d){const age=(Date.now()-new Date(d.generated))/6e4;if(!(age>15))return"";const st=(d.data&&d.data.stop)||EFASTOP||"";const mm=stopMatch(st);
   const u="https://efa.vrr.de/vrr/XSLT_DM_REQUEST?language=de&type_dm=stop&mode=direct&useRealtime=1&name_dm="+encodeURIComponent(mm.id||st);
