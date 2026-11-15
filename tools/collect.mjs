@@ -767,6 +767,34 @@ async function eventsDus() {
       } catch (e) { console.log("::notice::Spielstätte " + venue + " " + u + ": " + (e.message || e)); }
     }
   }));
+  // ---- Sport: Heimspiele DEG (DEL2, PSD Bank Dome) und Fortuna (OpenLigaDB, Merkur Spiel-Arena) ----
+  try { const html = await get("https://www.del-2.org/spielplan/", { type: "text", headers: H, ms: 30000 }); const seenG = new Set(); const y0 = new Date().getFullYear(), m0 = new Date().getMonth() + 1;
+    for (const m of html.matchAll(/href="(\/spiel\/dusseldorfer-eg-vs-([a-z0-9-]+)_(\d+))"([\s\S]{0,2500})/g)) { if (seenG.has(m[3])) continue;
+      const w = m[4]; const al = (w.match(/^[^>]*aria-label="([^"]+)"/) || [])[1] || ""; const src = al || strip(w.slice(0, 2500));
+      let d = src.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})?/), t = src.match(/(\d{1,2}):(\d{2})\s*Uhr/), day;
+      if (/Heute/.test(al)) day = new Date(); else if (/Morgen/.test(al)) day = new Date(Date.now() + 864e5);
+      let ds; if (day) ds = day.toISOString().slice(0, 10); else if (d) { const mo = +d[2]; const yy = d[3] ? (d[3].length === 2 ? 2000 + +d[3] : +d[3]) : (mo < m0 - 2 ? y0 + 1 : y0); ds = yy + "-" + String(mo).padStart(2, "0") + "-" + String(+d[1]).padStart(2, "0"); } else continue;
+      const opp = (al.match(/ - zu - ([^,]+),/) || [])[1] || m[2].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      seenG.add(m[3]); out.push({ name: "DEG – " + opp.trim(), start: ds + (t ? "T" + t[1].padStart(2, "0") + ":" + t[2] + ":00" : ""), allDay: !t, url: "https://www.del-2.org" + m[1], venue: "PSD Bank Dome", kind: "Eishockey" }); }
+    console.log("::notice::Spielstätte DEG (DEL2): " + seenG.size + " Heimspiele");
+  } catch (e) { console.log("::notice::Spielstätte DEG: " + e.message); }
+  try { let ms = [];
+    for (const u of ["https://api.openligadb.de/getmatchesbyteam/Fortuna%20D%C3%BCsseldorf/0/30"]) { try { ms = await get(u, { ms: 20000 }); if (Array.isArray(ms) && ms.length) break; } catch (e) { console.log("::notice::Fortuna " + u + ": " + e.message); } }
+    let n = 0; for (const m of ms || []) { const h = (m.team1 && m.team1.teamName) || ""; if (!/Fortuna D(ü|ue)sseldorf/i.test(h)) continue; const g = (m.team2 && m.team2.teamName) || "";
+      const st = m.matchDateTime || ""; if (!st) continue; n++; out.push({ name: "Fortuna Düsseldorf – " + g, start: st.slice(0, 19), url: "https://www.f95.de/", venue: "Merkur Spiel-Arena", kind: "Fußball" }); }
+    console.log("::notice::Spielstätte Fortuna (OpenLigaDB): " + n + " Heimspiele von " + (ms || []).length);
+  } catch (e) { console.log("::notice::Spielstätte Fortuna: " + e.message); }
+  // ---- fehlende Anfangszeiten von den Detailseiten holen (mit Zwischenspeicher aus dem letzten Lauf) ----
+  const prev = new Map(); try { ((await get(LIVE + "events-dus.json", { ms: 15000 })).data || []).forEach(r => { if (r.url && /T\d\d:\d\d/.test(r.start)) prev.set(r.url + "|" + r.start.slice(0, 10), r.start); }); } catch {}
+  const need = out.filter(r => !/T\d\d:\d\d/.test(r.start) && r.url && /^https?:/.test(r.url));
+  let hit = 0, fetched = 0; const q = need.slice(0, 160);
+  const timeOf = html => { const c = html.replace(/\s+/g, " ");
+    let m = c.match(/Einlass:<br>\s*Beginn:<br><\/div><div[^>]*>\s*\d{1,2}:\d{2}<br>\s*(\d{1,2}):(\d{2})/) || c.match(/Beginn:?\s*(?:<[^>]+>\s*)*(\d{1,2})[:.](\d{2})/i) || c.match(/event-time">\s*(\d{1,2})(?:[:.](\d{2}))?\s*Uhr/) || c.match(/Beginn[^0-9<]{0,12}(\d{1,2})(?:[:.](\d{2}))?\s*Uhr/i);
+    return m ? String(+m[1]).padStart(2, "0") + ":" + (m[2] || "00") : null; };
+  await Promise.all(Array.from({ length: 6 }, async () => { while (q.length) { const r = q.shift(); const k = r.url + "|" + r.start.slice(0, 10);
+    if (prev.has(k)) { r.start = prev.get(k); r.allDay = false; hit++; continue; }
+    try { fetched++; const t = timeOf(await get(r.url, { type: "text", headers: H, ms: 15000 })); if (t && +t.slice(0, 2) < 24) { r.start = r.start.slice(0, 10) + "T" + t + ":00"; r.allDay = false; hit++; } } catch {} } }));
+  console.log("::notice::Anfangszeiten ergänzt: " + hit + " von " + need.length + " (" + fetched + " Seiten geladen)");
   const seen = new Set();
   return out.filter(r => { const k = r.venue + "|" + r.name.toLowerCase().slice(0, 40) + "|" + r.start.slice(0, 10); if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => a.start.localeCompare(b.start));
 }
