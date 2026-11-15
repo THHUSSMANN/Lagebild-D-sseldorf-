@@ -512,11 +512,16 @@ function flightsMap(ac,lat,lon){const el=$("flights-map");if(!el||typeof L==="un
   setTimeout(()=>FMAP.invalidateSize(),80);}
 /* Großveranstaltungen über Ticketmaster (eigener kostenloser Schlüssel) */
 let TMKEY=load("tm")||"";
-async function loadTM(){const box=$("tm-list");if(!box)return;
-  if(!TMKEY){box.innerHTML='<div class="muted small">Für Konzerte, Sport und Shows in der Nähe einmal einen kostenlosen Ticketmaster-Schlüssel unter <a href="#einstellungen">Einstellungen</a> eintragen.</div>';setStatus("tm",false,"Schlüssel fehlt");return;}
-  try{const R0={lat:C.lat,lon:C.lon}; /* Bezugspunkt: der oben gewählte Ort */const iso=d=>d.toISOString().slice(0,19)+"Z";const now=new Date(),end=new Date(Date.now()+60*864e5);
-    const U="https://app.ticketmaster.com/discovery/v2/events.json?apikey="+encodeURIComponent(TMKEY)+"&latlong="+R0.lat+","+R0.lon+"&radius=70&unit=km&locale=*&size=200&sort=date,asc&startDateTime="+iso(now)+"&endDateTime="+iso(end);
-    const d=await getJSON(U+"&page=0");let ev=((d._embedded||{}).events||[]);
+let TMSCOPE=load("tmscope")||"umkreis";
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tmscope]");if(!b)return;TMSCOPE=b.dataset.tmscope;store("tmscope",TMSCOPE);loadTM();});
+async function loadTM(){const box=$("tm-list");if(!box)return;const DUSONLY=TMSCOPE==="dus";
+  document.querySelectorAll("#tm-seg [data-tmscope]").forEach(b=>b.classList.toggle("on",b.dataset.tmscope===TMSCOPE));
+  /* Programm der Düsseldorfer Spielstätten (Oper, Schauspielhaus, Arena, PSD Bank Dome, Mitsubishi Electric Halle, Castello, Capitol, zakk …) aus dem Sammler */
+  let house=[];if(DUSONLY){try{house=(await getData("events-dus.json")).data||[];}catch(e){}}
+  if(!TMKEY&&!(DUSONLY&&house.length)){box.innerHTML='<div class="muted small">Für Konzerte, Sport und Shows in der Nähe einmal einen kostenlosen Ticketmaster-Schlüssel unter <a href="#einstellungen">Einstellungen</a> eintragen.</div>';setStatus("tm",false,"Schlüssel fehlt");return;}
+  try{const R0=DUSONLY?{lat:51.2254,lon:6.7763}:{lat:C.lat,lon:C.lon}; /* Bezugspunkt: gewählter Ort bzw. Düsseldorf */const iso=d=>d.toISOString().slice(0,19)+"Z";const now=new Date(),end=new Date(Date.now()+60*864e5);
+    const U="https://app.ticketmaster.com/discovery/v2/events.json?apikey="+encodeURIComponent(TMKEY)+"&latlong="+R0.lat+","+R0.lon+"&radius="+(DUSONLY?15:70)+"&unit=km&locale=*&size=200&sort=date,asc&startDateTime="+iso(now)+"&endDateTime="+iso(end);
+    let d={};if(TMKEY){try{d=await getJSON(U+"&page=0");}catch(e){if(!house.length)throw e;}}let ev=((d._embedded||{}).events||[]);
     if(((d.page||{}).totalPages||1)>1){try{const d2=await getJSON(U+"&page=1");ev=ev.concat(((d2._embedded||{}).events||[]));}catch(e){}}const seen=new Set();const rows=[];
     const today0=isoDay(new Date());
     ev.forEach(e=>{const s=(e.dates||{}).start||{};
@@ -526,8 +531,12 @@ async function loadTM(){const box=$("tm-list");if(!box)return;
       const v=(((e._embedded||{}).venues||[])[0])||{};const city=(((v.city||{}).name||"").replace(/^D(ue|ü|u)sseldorf.*/i,"Düsseldorf").replace(/^Cologne$/i,"Köln").replace(/^Munich$/i,"München").replace(/^Muenster$/i,"Münster").replace(/^Moenchengladbach$/i,"Mönchengladbach"));
       const lat=+((v.location||{}).latitude),lon=+((v.location||{}).longitude);const km=isFinite(lat)&&isFinite(lon)?distKm(R0.lat,R0.lon,lat,lon):(isFinite(+e.distance)?+e.distance:99);
       rows.push({e,s,v,city,km,key:(s.localDate||"9")+(s.localTime||"99")});});
-    rows.sort((a,b)=>(a.s.localDate||"9").localeCompare(b.s.localDate||"9")||a.km-b.km||a.key.localeCompare(b.key));
-    if(!rows.length){box.innerHTML='<div class="muted small">Keine Ticketmaster-Veranstaltungen im Umkreis von 70 km in den nächsten 60 Tagen.</div>';setStatus("tm",true);return;}
+    if(DUSONLY){const nk=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"").slice(0,18);
+      const have=new Set();for(let i=rows.length-1;i>=0;i--){if(rows[i].city!=="Düsseldorf"){rows.splice(i,1);continue;}have.add(nk(rows[i].e.name)+"|"+rows[i].s.localDate);}
+      house.forEach(h=>{const ld=String(h.start).slice(0,10);if(ld<today0||ld>isoDay(end))return;const k=nk(h.name)+"|"+ld;if(have.has(k))return;have.add(k);
+        rows.push({e:{name:h.name,url:h.url,classifications:[{segment:{name:h.kind||""}}]},s:{localDate:ld,localTime:h.allDay||String(h.start).length<16?"":String(h.start).slice(11,16)},v:{name:h.venue},city:"Düsseldorf",km:0,key:ld+(String(h.start).slice(11,16)||"99")});});}
+    rows.sort((a,b)=>(a.s.localDate||"9").localeCompare(b.s.localDate||"9")||(DUSONLY?(a.s.localTime||"99").localeCompare(b.s.localTime||"99"):a.km-b.km)||a.key.localeCompare(b.key));
+    if(!rows.length){box.innerHTML='<div class="muted small">Keine Veranstaltungen '+(DUSONLY?'in Düsseldorf':'im Umkreis von 70 km')+' in den nächsten 60 Tagen.</div>';setStatus("tm",true);return;}
     const today=isoDay(),tmr=isoDay(new Date(Date.now()+864e5));
     const dayH=d=>d===today?"Heute":d===tmr?"Morgen":new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
     const seg=e=>{const c=((e.classifications||[])[0]||{}).segment;return c&&c.name&&c.name!=="Undefined"?({Music:"Musik",Sports:"Sport","Arts & Theatre":"Kultur",Film:"Film",Miscellaneous:"Sonstiges"}[c.name]||c.name):"";};
@@ -537,7 +546,7 @@ async function loadTM(){const box=$("tm-list");if(!box)return;
         html+='<a class="li tm-li" href="'+esc(safeUrl(e.url))+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="tag">'+esc(s.localTime?s.localTime.slice(0,5):"—")+'</span><div class="t"><span class="tm-city">'+esc(city||"–")+(km>=1.5?' <span class="muted">· '+fmt(km)+' km</span>':'')+'</span><span class="tm-venue">'+esc(v.name||"")+'</span><b>'+esc(e.name)+'</b></div><div class="r muted small">'+esc(seg(e))+'</div></a>';});
       if(last)html+='</div>';
       if(rows.length>shown)html+='<button type="button" class="btn" id="tm-more" style="width:100%;margin-top:12px">Weitere Termine anzeigen ('+(rows.length-shown)+')</button>';
-      box.innerHTML=html+'<div class="muted small" style="margin-top:10px">Quelle: Ticketmaster · nächste 60 Tage, Umkreis 70 km um den gewählten Ort · nach Datum, am selben Tag nach Entfernung.</div>';
+      box.innerHTML=html+'<div class="muted small" style="margin-top:10px">'+(DUSONLY?'Nur Düsseldorf · Quellen: Ticketmaster und Programme von Oper, Schauspielhaus, Merkur Spiel-Arena, PSD Bank Dome, Mitsubishi Electric Halle, Castello, Capitol, zakk · nach Tag und Uhrzeit':'Quelle: Ticketmaster · nächste 60 Tage, Umkreis 70 km um den gewählten Ort · nach Datum, am selben Tag nach Entfernung')+'.</div>';
       const m=$("tm-more");if(m)m.addEventListener("click",()=>{shown+=40;render();});};
     render();
     setStatus("tm",true);

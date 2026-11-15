@@ -722,13 +722,14 @@ async function eventsDus() {
     (html, base) => { const evs = []; const parts = html.split(/itemtype=["']https?:\/\/schema\.org\/(?:\w*Event)["']/i).slice(1);
       for (const p of parts) { const chunk = p.slice(0, 6000); const sd = (chunk.match(/itemprop=["']startDate["'][^>]*content=["']([^"']+)/i) || chunk.match(/content=["']([^"']+)["'][^>]*itemprop=["']startDate/i) || [])[1];
         let nm = (chunk.match(/itemprop=["']name["'][^>]*content=["']([^"']+)/i) || [])[1] || (chunk.match(/itemprop=["']name["'][^>]*>([\s\S]*?)<\//i) || [])[1] || "";
-        nm = strip(nm); if (/schauspielhaus|opernhaus|tonhalle/i.test(nm) && nm.length < 40) { const n2 = [...chunk.matchAll(/itemprop=["']name["'][^>]*>([\s\S]*?)<\//gi)].map(x => strip(x[1])).find(x => x && !/schauspielhaus|opernhaus|deutsche oper/i.test(x)); if (n2) nm = n2; }
+        nm = strip(nm); const VN = /schauspielhaus|opernhaus|tonhalle|deutsche oper|oper am rhein|theater duisburg|^d[üu]sseldorf$/i; if (VN.test(nm) && nm.length < 45) { const n2 = [...chunk.matchAll(/itemprop=["']name["'][^>]*>([\s\S]*?)<\//gi), ...chunk.matchAll(/<h[2-4][^>]*>([\s\S]*?)<\/h[2-4]>/gi)].map(x => strip(x[1])).find(x => x && x.length > 2 && !VN.test(x)); if (n2) nm = n2; }
+        if (/Duisburg/.test(chunk.slice(0, 1500)) && !/D[üu]sseldorf/.test(chunk.slice(0, 1500))) continue;
         const ur = (chunk.match(/itemprop=["']url["'][^>]*(?:href|content)=["']([^"']+)/i) || chunk.match(/<a [^>]*href=["']([^"'#]+)["']/i) || [])[1];
         if (sd && nm) evs.push({ name: nm, start: sd, url: abs(ur || base, base) }); } return evs; },
     (html, base) => { const evs = []; const seen = new Set();
       for (const m of html.matchAll(/<a [^>]*href=["']([^"']*\/event\/([a-z0-9-]+?)-(\d{2})-(\d{2})-(\d{4}))["'][^>]*>([\s\S]*?)<\/a>/gi)) { const key = m[1]; if (seen.has(key)) continue; seen.add(key);
         const txt = strip(m[6]); const ctx = html.slice(Math.max(0, m.index - 1500), m.index); const h = [...ctx.matchAll(/class="header[^"]*"[^>]*>([\s\S]*?)<\/p>/g)].pop();
-        let nm = h ? strip(h[1]).replace(/\s*\|\s*\d{2}\.\d{2}\.\d{4}.*$/, "") : ""; if (!nm || nm.length < 3) nm = txt && !/mehr erfahren|tickets|details/i.test(txt) ? txt : m[2].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+        let nm = h ? strip(h[1]).replace(/\s*\|.*$/, "") : ""; if (!nm || nm.length < 3) nm = txt && !/mehr erfahren|tickets|details/i.test(txt) ? txt : m[2].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
         evs.push({ name: nm, start: ymd(m[3], m[4], m[5]), url: abs(m[1], base), allDay: true }); } return evs; },
     (html, base) => { const evs = []; for (const m of html.matchAll(/<li class="single-ticket[^"]*" data-value="(\d{2})\.(\d{2})\.(\d{4})">([\s\S]*?)<\/li>\s*(?=<li|<\/ul)/g)) {
         const b = m[4]; const a = b.match(/<h2><a href="([^"]+)">([\s\S]*?)<\/a><\/h2>/); if (!a) continue; const tm = (b.match(/(\d{1,2}):(\d{2})\s*Uhr/) || b.match(/\b(\d{1,2}):(\d{2})\b/) || []);
