@@ -776,7 +776,13 @@ async function eventsDus() {
       let ds; if (day) ds = day.toISOString().slice(0, 10); else if (d) { const mo = +d[2]; const yy = d[3] ? (d[3].length === 2 ? 2000 + +d[3] : +d[3]) : (mo < m0 - 2 ? y0 + 1 : y0); ds = yy + "-" + String(mo).padStart(2, "0") + "-" + String(+d[1]).padStart(2, "0"); } else continue;
       const opp = (al.match(/ - zu - ([^,]+),/) || [])[1] || m[2].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
       seenG.add(m[3]); out.push({ name: "DEG – " + opp.trim(), start: ds + (t ? "T" + t[1].padStart(2, "0") + ":" + t[2] + ":00" : ""), allDay: !t, url: "https://www.del-2.org" + m[1], venue: "PSD Bank Dome", kind: "Eishockey" }); }
-    console.log("::notice::Spielstätte DEG (DEL2): " + seenG.size + " Heimspiele");
+    // genaue Gegner-Namen und Bully-Zeiten von den Spielseiten (Titel „Düsseldorfer EG vs. X - TT.MM.JJ HH:MM Uhr“)
+    const today = new Date(Date.now() - 864e5).toISOString().slice(0, 10); const dq = out.filter(r => r.kind === "Eishockey" && r.start.slice(0, 10) >= today); let dn = 0;
+    await Promise.all(Array.from({ length: 4 }, async () => { while (dq.length) { const r = dq.shift(); try { const h = await get(r.url, { type: "text", headers: H, ms: 15000 });
+      const t = strip((h.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || ""); const m = t.match(/vs\.\s+(.+?)\s+-\s+(\d{2})\.(\d{2})\.(\d{2})\s+(\d{1,2}):(\d{2})/);
+      if (m) { r.name = "DEG – " + m[1]; r.start = "20" + m[4] + "-" + m[3] + "-" + m[2] + "T" + m[5].padStart(2, "0") + ":" + m[6] + ":00"; r.allDay = false; dn++; } } catch {} } }));
+    for (let i = out.length - 1; i >= 0; i--) if (out[i].kind === "Eishockey" && out[i].start.slice(0, 10) < today) out.splice(i, 1);
+    console.log("::notice::Spielstätte DEG (DEL2): " + seenG.size + " Heimspiele, " + dn + " kommende mit Zeit");
   } catch (e) { console.log("::notice::Spielstätte DEG: " + e.message); }
   try { let ms = [];
     for (const u of ["https://api.openligadb.de/getmatchesbyteam/Fortuna%20D%C3%BCsseldorf/0/30"]) { try { ms = await get(u, { ms: 20000 }); if (Array.isArray(ms) && ms.length) break; } catch (e) { console.log("::notice::Fortuna " + u + ": " + e.message); } }
