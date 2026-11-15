@@ -707,7 +707,7 @@ console.log(JSON.stringify(results, null, 1));
 // Je Seite: schema.org (JSON-LD und Microdata), D.LIVE-Eventlinks (…/event/name-TT-MM-JJJJ), zakk-Liste, Capitol-Kacheln.
 async function eventsDus() {
   const V = [
-    ["Opernhaus", "Oper", ["https://www.operamrhein.de/spielplan/kalender/"], "oper"],
+    ["Opernhaus", "Oper", [0, 1, 2].map(i => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + i); return "https://www.operamrhein.de/spielplan/kalender/" + d.toISOString().slice(0, 7) + "/"; }), "oper"],
     ["Schauspielhaus", "Theater", ["https://www.dhaus.de/programm/spielplan/", "https://www.dhaus.de/"]],
     ["Tonhalle", "Konzert", ["https://www.tonhalle.de/"]],
     ["Capitol Theater", "Show", ["https://www.capitol-theater.de/"]],
@@ -763,7 +763,7 @@ async function eventsDus() {
       try { const html = await get(u, { type: "text", headers: H, ms: 25000 }); let rows = [];
         for (const p of (only === "oper" ? [oper] : parsers)) { try { rows.push(...p(html, u, venue).filter(ok)); } catch {} }
         console.log("::notice::Spielstätte " + venue + " " + u + ": " + rows.length + " Termine" + (rows[0] ? " z. B. " + rows[0].start + " " + rows[0].name : ""));
-        if (rows.length) { out.push(...rows.map(r => ({ ...r, venue, kind: r.cat || kind }))); break; }
+        if (rows.length) { out.push(...rows.map(r => ({ ...r, venue, kind: r.cat || kind }))); if (only !== "oper") break; }
       } catch (e) { console.log("::notice::Spielstätte " + venue + " " + u + ": " + (e.message || e)); }
     }
   }));
