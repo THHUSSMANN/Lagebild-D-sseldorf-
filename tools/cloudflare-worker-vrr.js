@@ -2,7 +2,7 @@
 // Einrichten: dash.cloudflare.com → Workers & Pages → Create → Worker → diesen Code einfügen → Deploy.
 // Die Adresse (z. B. https://vrr-proxy.DEIN-NAME.workers.dev) im Lagebild unter Einstellungen → „Abfahrten-Vermittler“ eintragen.
 // Sicher: leitet nur Abfahrts- und Haltestellen-Abfragen an efa.vrr.de weiter, sonst nichts.
-const ALLOWED = ["/standard/XML_DM_REQUEST", "/standard/XML_STOPFINDER_REQUEST"];
+const ALLOWED = ["/standard/XML_DM_REQUEST", "/standard/XML_STOPFINDER_REQUEST", "/standard/XML_TRIP_REQUEST2"];
 export default {
   async fetch(req) {
     const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET", "Cache-Control": "max-age=20" };

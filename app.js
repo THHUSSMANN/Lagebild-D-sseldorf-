@@ -1893,7 +1893,7 @@ async function loadEFA(){const EK=ec().key;
   catch(e){setStatus("efa",false,errText(e));$("efa").innerHTML=stateBox("Abfahrten nicht verfügbar – "+errText(e)+".",link(ec().isDus?"https://www.rheinbahn.de/":"https://www.vrr.de/",ec().isDus?"Rheinbahn":"VRR-Fahrplanauskunft"));}
 }
 /* Abfahrten live – Reihenfolge: 1) eigener Cloudflare-Vermittler, 2) VRR direkt, 3) DB-Auskunft (transport.rest), 4) gesammelte Daten */
-let EFASEQ=0,EFALIVE_T=null,EFAPROXY=(load("efaproxy")||"").trim();const HAFASID=load("hafasid")||{};
+let EFASEQ=0,EFALIVE_T=null,EFAPROXY=(load("efaproxy")||"https://vrr-proxy.thomas-hussmann.workers.dev").trim();const HAFASID=load("hafasid")||{};
 const efaRows=d=>(d.stopEvents||[]).map(e=>{const tr=e.transportation||{};return{planned:e.departureTimePlanned,est:e.departureTimeEstimated,line:tr.disassembledName||tr.number||tr.name||"",dir:tr.destination&&tr.destination.name||"",
   plat:e.location&&e.location.properties&&(e.location.properties.platform||e.location.properties.platformName)||"",cancelled:(e.realtimeStatus||[]).includes("TRIP_CANCELLED")};});
 async function efaFrom(base,id,name){const d=await getJSON(base+"/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm="+(id?"stop":"any")+"&name_dm="+encodeURIComponent(id||name)+"&mode=direct&useRealtime=1&limit=160&itdDateTimeDepArr=dep&useAllStops=1",7000);
