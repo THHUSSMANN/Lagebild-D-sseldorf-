@@ -446,6 +446,10 @@ svg.c24 text.tv{font:800 17px var(--f-display);fill:var(--fg)}
 #rs-tdir{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 @media (min-width:700px){#rs-tdir{grid-template-columns:repeat(4,minmax(0,1fr))}}
 #rs-tdir>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:60px!important;padding:8px 10px!important;white-space:normal!important;overflow:visible;text-overflow:clip;text-align:center;font:700 16px/1.2 var(--f-display)!important}
+.tm-sport .tm-logos{display:flex;align-items:center;gap:6px;margin:2px 0 4px}
+.tm-sport .tm-logos img{width:30px;height:30px;object-fit:contain;border-radius:8px;background:#fff;padding:3px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.tm-sport .tm-logos i{font-style:normal;font-weight:700;opacity:.6}
+.tm-li .tm-ic{width:20px;height:20px;object-fit:contain;vertical-align:-4px;margin-right:6px;border-radius:5px;background:#fff;padding:1px}
 #rs-tdir>button small{display:block;font:500 12.5px/1.25 var(--f-body)!important;opacity:.75}
 #rs-mode button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px}
 header .hbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
@@ -1828,7 +1832,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
   </section>
   <section class="card wide" id="tm-card" data-alp="ev" hidden>
     <div class="card-head"><h2>Konzerte, Sport &amp; Shows</h2><span class="src">Ticketmaster · nach Datum sortiert</span></div>
-    <div class="seg" id="tm-seg"><button type="button" data-tmscope="umkreis">Umkreis 70 km</button><button type="button" data-tmscope="dus">Nur Düsseldorf</button></div>
+    <div class="seg" id="tm-seg"><button type="button" data-tmscope="umkreis">Umkreis 70 km</button><button type="button" data-tmscope="dus">Düsseldorf</button><button type="button" data-tmscope="sport">Fortuna &amp; DEG</button></div>
     <div id="tm-list"><div class="state">wird geladen …</div></div>
   </section>
 </div>
@@ -1974,6 +1978,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=356"></script>
+<script src="app.js?v=357"></script>
 </body>
 </html>

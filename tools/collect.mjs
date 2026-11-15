@@ -775,7 +775,8 @@ async function eventsDus() {
       if (/Heute/.test(al)) day = new Date(); else if (/Morgen/.test(al)) day = new Date(Date.now() + 864e5);
       let ds; if (day) ds = day.toISOString().slice(0, 10); else if (d) { const mo = +d[2]; const yy = d[3] ? (d[3].length === 2 ? 2000 + +d[3] : +d[3]) : (mo < m0 - 2 ? y0 + 1 : y0); ds = yy + "-" + String(mo).padStart(2, "0") + "-" + String(+d[1]).padStart(2, "0"); } else continue;
       const opp = (al.match(/ - zu - ([^,]+),/) || [])[1] || m[2].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-      seenG.add(m[3]); out.push({ name: "DEG – " + opp.trim(), start: ds + (t ? "T" + t[1].padStart(2, "0") + ":" + t[2] + ":00" : ""), allDay: !t, url: "https://www.del-2.org" + m[1], venue: "PSD Bank Dome", kind: "Eishockey" }); }
+      const ims = [...w.slice(0, 2500).matchAll(/<img src="(https:\/\/assets\.holema\.de\/[^"]+)"/g)].map(x => x[1]);
+      seenG.add(m[3]); out.push({ team: "deg", icon: "https://assets.holema.de/core/image/G43DSMS7GUYF6X3BGAYTMMJY", icon2: ims[1] || "", name: "DEG – " + opp.trim(), start: ds + (t ? "T" + t[1].padStart(2, "0") + ":" + t[2] + ":00" : ""), allDay: !t, url: "https://www.del-2.org" + m[1], venue: "PSD Bank Dome", kind: "Eishockey" }); }
     // genaue Gegner-Namen und Bully-Zeiten von den Spielseiten (Titel „Düsseldorfer EG vs. X - TT.MM.JJ HH:MM Uhr“)
     const today = new Date(Date.now() - 864e5).toISOString().slice(0, 10); const dq = out.filter(r => r.kind === "Eishockey" && r.start.slice(0, 10) >= today); let dn = 0;
     await Promise.all(Array.from({ length: 4 }, async () => { while (dq.length) { const r = dq.shift(); try { const h = await get(r.url, { type: "text", headers: H, ms: 15000 });
@@ -787,7 +788,7 @@ async function eventsDus() {
   try { let ms = [];
     for (const u of ["https://api.openligadb.de/getmatchesbyteam/Fortuna%20D%C3%BCsseldorf/0/30"]) { try { ms = await get(u, { ms: 20000 }); if (Array.isArray(ms) && ms.length) break; } catch (e) { console.log("::notice::Fortuna " + u + ": " + e.message); } }
     let n = 0; for (const m of ms || []) { const h = (m.team1 && m.team1.teamName) || ""; if (!/Fortuna D(ü|ue)sseldorf/i.test(h)) continue; const g = (m.team2 && m.team2.teamName) || "";
-      const st = m.matchDateTime || ""; if (!st) continue; n++; out.push({ name: "Fortuna Düsseldorf – " + g, start: st.slice(0, 19), url: "https://www.f95.de/", venue: "Merkur Spiel-Arena", kind: "Fußball" }); }
+      const st = m.matchDateTime || ""; if (!st) continue; n++; out.push({ team: "f95", icon: m.team1.teamIconUrl || "", icon2: (m.team2 && m.team2.teamIconUrl) || "", league: (m.leagueName || ""), name: "Fortuna Düsseldorf – " + g, start: st.slice(0, 19), url: "https://www.f95.de/", venue: "Merkur Spiel-Arena", kind: "Fußball" }); }
     console.log("::notice::Spielstätte Fortuna (OpenLigaDB): " + n + " Heimspiele von " + (ms || []).length);
   } catch (e) { console.log("::notice::Spielstätte Fortuna: " + e.message); }
   // ---- fehlende Anfangszeiten von den Detailseiten holen (mit Zwischenspeicher aus dem letzten Lauf) ----
