@@ -649,12 +649,12 @@ function dbLink(from,to,date,time,kl,fe,te){const ie=n=>{try{return IRISEVA[n]||
   return "https://www.bahn.de/buchung/fahrplan/suche#sts=true&so="+encodeURIComponent(from)+"&zo="+encodeURIComponent(to)+"&kl="+(kl||2)+"&r=13:16:KLASSENLOS:1&soid="+id(from,fev)+"&zoid="+id(to,tev)+"&sot=ST&zot=ST"+(fev?"&soei="+fev:"")+(tev?"&zoei="+tev:"")+"&hd="+encodeURIComponent(hd)+"&hza=D&hz=%5B%5D&ar=false&s=true&d=false&vm=00,01,02,03,04,05,06,07,08,09&fm=false&bp=false";}
 const UL_DEFAULT=[{id:"wagrain-2026",title:"Urlaub Wagrain",place:"Wagrain",lat:47.3356,lon:13.2989,from:"2026-12-19",to:"2026-12-26",
   hotel:{name:"Sporthotel Wagrain",url:"https://www.sporthotel.at/de",addr:"Wagrain, Salzburger Land"},
-  hin:{from:"Düsseldorf Hbf",to:"St. Johann im Pongau",date:"2026-12-19",dep:"07:22",arr:"14:56",note:"Sparpreis Europa, 1. Kl. · Sitzplatz reserviert"},
+  hin:{from:"Düsseldorf Hbf",to:"St. Johann im Pongau",date:"2026-12-19",dep:"07:22",arr:"14:56",note:"Sparpreis Europa, 1. Kl. · Sitzplatz reserviert",booked:true},
   rueck:{from:"St. Johann im Pongau",to:"Recklinghausen Hbf",date:"2026-12-26",dep:"11:01",arr:"20:16",note:"Gemerkte Reise – noch nicht gebucht"},
   cams:[{t:"Wagrain – Live-Webcam",u:"https://webtv.feratel.com/webtv/?design=v5&cam=75290&c1=0&c2=0&c8=0&lg=de"}],
   links:[{t:"Sporthotel Wagrain",u:"https://www.sporthotel.at/de"},{t:"Snow Space Salzburg",u:"https://www.snow-space.com/"},{t:"Wagrain-Kleinarl Tourismus",u:"https://www.wagrain-kleinarl.at/"}],
   berg:{name:"Grafenberg",ele:1700,lat:47.3525,lon:13.3115}}];
-let UL=load("urlaube")||UL_DEFAULT,ULSEL=load("urlaub_sel")||(UL[0]&&UL[0].id);
+let UL=(load("urlaube")||UL_DEFAULT).map(u=>{if(u.hin&&u.hin.booked===undefined&&/sparpreis|flexpreis|gebucht|reserviert/i.test(u.hin.note||"")&&!/nicht gebucht/i.test(u.hin.note||""))u.hin.booked=true;return u;}),ULSEL=load("urlaub_sel")||(UL[0]&&UL[0].id);
 const ulCur=()=>UL.find(u=>u.id===ULSEL)||UL[0];
 const ulDays=d=>{const a=new Date(d+"T00:00:00"),b=new Date();b.setHours(0,0,0,0);return Math.round((a-b)/864e5);};
 const ulDate=d=>d?new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"}):"";
@@ -668,14 +668,15 @@ async function loadUrlaub(){ulKpi();const u=ulCur();if(!$("ul-top"))return;
   $("ul-top").innerHTML='<div class="ul-count"><b>'+(n>0?n:m>=0?"🏔️":"✓")+'</b><span>'+(n>1?"Tage bis zur Abreise":n===1?"Tag bis zur Abreise – morgen geht's los!":n===0?"Heute geht's los!":m>=0?"Du bist im Urlaub – noch "+m+(m===1?" Tag":" Tage"):"Urlaub vorbei")+'</span></div>'+
     '<div class="muted">'+esc(ulDate(u.from))+' bis '+esc(ulDate(u.to))+' · '+len+' Nächte · '+esc(u.place||"")+'</div>'+
     (u.hotel&&u.hotel.name?'<div style="margin-top:10px"><b>🏨 '+esc(u.hotel.name)+'</b>'+(u.hotel.addr?'<div class="muted small">'+esc(u.hotel.addr)+'</div>':'')+'<div class="sync-btns" style="margin-top:8px">'+(u.hotel.url?'<a class="btn" href="'+esc(safeUrl(u.hotel.url))+'" target="_blank" rel="noopener">Hotel-Website</a>':'')+'<a class="btn" href="https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent("Alt-Heerdt 87, Düsseldorf")+'&destination='+encodeURIComponent((u.hotel.name||"")+" "+(u.place||""))+'" target="_blank" rel="noopener">Route ab Düsseldorf</a></div></div>':'');
-  const trip=(t,lbl,ic)=>{if(!t||!t.from)return"";const k=ulDays(t.date);
-    return '<div class="ul-trip"><span class="ul-ic">'+ic+'</span><div><b>'+esc(lbl)+' · '+esc(ulDate(t.date))+'</b><div class="muted small">'+esc(t.from)+' → '+esc(t.to)+'</div></div><div class="ul-t">'+esc(t.dep||"")+' – '+esc(t.arr||"")+'</div>'+
+  const trip=(t,lbl,ic,key)=>{if(!t||!t.from)return"";const k=ulDays(t.date);
+    return '<div class="ul-trip'+(t.booked?' ul-booked':'')+'"'+(t.booked?' data-ulrt="'+key+'"':'')+'><span class="ul-ic">'+ic+'</span><div>'+(t.booked?'<span class="ul-fav">★ Gebucht · Favorit</span><br>':'')+'<b>'+esc(lbl)+' · '+esc(ulDate(t.date))+'</b><div class="muted small">'+esc(t.from)+' → '+esc(t.to)+'</div></div><div class="ul-t">'+esc(t.dep||"")+' – '+esc(t.arr||"")+'</div>'+
       '<div style="grid-column:2/4">'+(t.note?'<span class="'+(/nicht gebucht|gemerkt/i.test(t.note)?"ul-tag":"muted small")+'">'+esc(t.note)+'</span> ':'')+(k>=0&&k<=1?'<span class="ul-tag">Prüfe Echtzeit vor Abfahrt</span>':'')+
       '<div class="sync-btns" style="margin-top:6px"><a class="btn" href="'+esc(dbLink(t.from,t.to,t.date,t.dep,/1\. ?Kl/i.test(t.note||"")?1:2))+'" target="_blank" rel="noopener">Verbindung bei bahn.de</a></div></div></div>';};
-  $("ul-trips").innerHTML=(trip(u.hin,"Hinreise","🚆")+trip(u.rueck,"Rückreise","🏠"))||'<div class="muted">Keine Bahnfahrten eingetragen.</div>';
+  $("ul-trips").innerHTML=(trip(u.hin,"Hinreise","🚆","hin")+trip(u.rueck,"Rückreise","🏠","rueck"))||'<div class="muted">Keine Bahnfahrten eingetragen.</div>';
   $("ul-cams").innerHTML=(u.cams||[]).length?(u.cams||[]).map((c,i)=>'<div class="ul-cam" style="margin-bottom:10px"><b>'+esc(c.t)+'</b>'+(i===0?'<iframe src="'+esc(safeUrl(c.u))+'" loading="lazy" allowfullscreen referrerpolicy="no-referrer"></iframe>':'')+'<div class="sync-btns" style="margin-top:6px"><a class="btn" href="'+esc(safeUrl(c.u))+'" target="_blank" rel="noopener">Webcam öffnen ↗</a></div></div>').join(""):'<div class="muted">Keine Webcams eingetragen.</div>';
   $("ul-links").innerHTML=(u.links||[]).length?'<div class="ul-links">'+u.links.map(l=>'<a class="btn" href="'+esc(safeUrl(l.u))+'" target="_blank" rel="noopener">'+esc(l.t)+' ↗</a>').join("")+'</div>':'<div class="muted">Keine Links eingetragen.</div>';
   $("ul-src").textContent=u.place||"";ulForm(u);
+  ulLive(u);
   /* Wetter Tal + Berg mit Schneehöhe; Vorhersage reicht 16 Tage – davor aktueller Stand */
   try{const q=(lat,lon,ele)=>getJSON("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+(ele?"&elevation="+ele:"")+"&current=temperature_2m,weather_code,snow_depth,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,snowfall_sum,precipitation_sum&timezone=Europe%2FBerlin&forecast_days=16");
     const [tal,berg]=await Promise.all([q(u.lat,u.lon),u.berg&&u.berg.lat?q(u.berg.lat,u.berg.lon,u.berg.ele).catch(()=>null):Promise.resolve(null)]);
@@ -685,9 +686,20 @@ async function loadUrlaub(){ulKpi();const u=ulCur();if(!$("ul-top"))return;
     show.forEach(i=>{const[tx,ik]=wmo(d.weather_code[i]);tb+='<tr><td>'+esc(new Date(d.time[i]+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}))+'</td><td>'+icon(ik)+'</td><td class="num">'+fmt(d.temperature_2m_min[i])+'°</td><td class="num"><b>'+fmt(d.temperature_2m_max[i])+'°</b></td><td class="num">'+fmt(d.snowfall_sum[i],1)+' cm</td></tr>';});
     $("ul-wx").innerHTML='<div class="ul-wxgrid">'+box(tal,"Jetzt im Tal · "+(u.place||""))+box(berg,u.berg?"Jetzt am Berg · "+u.berg.name+" ("+u.berg.ele+" m)":"")+'</div>'+tb+'</tbody></table>'+(inTrip.length?'':'<div class="muted small" style="margin-top:6px">Die Vorhersage für die Urlaubstage erscheint ab '+esc(ulDate(new Date(new Date(u.from+"T12:00:00").getTime()-15*864e5).toISOString().slice(0,10)))+'.</div>');
   }catch(e){$("ul-wx").innerHTML='<div class="muted">Wetter gerade nicht abrufbar.</div>';}}
+/* Gebuchte Fahrt: am Reisetag (ab 6 Std. vorher) Echtzeit des Zuges am Abfahrtsbahnhof – Verspätung, Gleis, Ausfall (DB IRIS über den Vermittler) */
+async function ulLive(u){for(const key of ["hin","rueck"]){const t=u[key];if(!t||!t.booked||!t.dep||!t.date)continue;
+  const el=document.querySelector('[data-ulrt="'+key+'"]');if(!el)continue;const dep=new Date(t.date+"T"+t.dep+":00"),h=(dep-Date.now())/36e5;
+  let box=el.querySelector(".ul-live");if(!box){box=document.createElement("div");box.className="ul-live";el.appendChild(box);}
+  if(h>6){box.textContent="Echtzeit (Verspätung, Gleis) erscheint hier am Reisetag ab "+String(Math.max(0,dep.getHours()-6)).padStart(2,"0")+":"+t.dep.slice(3)+" Uhr.";continue;}
+  if(h<-3){box.textContent="";continue;}
+  try{const map=await irisStation(t.from);const want=t.date.slice(2).replace(/-/g,"")+t.dep.replace(":","");
+    const tr=Object.values(map).find(v=>v.dpT===want);if(!tr){box.textContent="Zug noch nicht in der Echtzeit gefunden.";continue;}
+    const late=tr.dpCt?Math.round((new Date(irisT(tr.dpCt))-new Date(irisT(tr.dpT)))/6e4):0;
+    box.innerHTML='<b>● live</b> '+esc(tr.c+" "+tr.n)+' · '+(tr.dpCs==="c"?'<b style="color:#e53935">fällt aus</b>':late>0?'<b style="color:#e53935">+'+late+' min</b> (ab '+esc(irisT(tr.dpCt).slice(11,16))+')':'<b style="color:var(--ok)">pünktlich</b>')+(tr.dpPp?' · Gleis '+esc(tr.dpPp):'');
+  }catch(e){box.textContent="Echtzeit gerade nicht abrufbar.";}}}
 const ulLines=t=>(t||"").split("\n").map(l=>l.split("|").map(x=>x.trim())).filter(a=>a[0]&&a[1]).map(a=>({t:a[0],u:a[1]}));
-const ulTrip=t=>{const a=(t||"").split("|").map(x=>x.trim());return a[0]?{from:a[0],to:a[1]||"",date:a[2]||"",dep:a[3]||"",arr:a[4]||"",note:a[5]||""}:null;};
-const ulTripStr=t=>t?[t.from,t.to,t.date,t.dep,t.arr,t.note].join(" | "):"";
+const ulTrip=t=>{let x=(t||"").trim();const b=/^★/.test(x);x=x.replace(/^★\s*/,"");const a=x.split("|").map(y=>y.trim());return a[0]?{from:a[0],to:a[1]||"",date:a[2]||"",dep:a[3]||"",arr:a[4]||"",note:a[5]||"",booked:b}:null;};
+const ulTripStr=t=>t?(t.booked?"★ ":"")+[t.from,t.to,t.date,t.dep,t.arr,t.note].join(" | "):"";
 function ulForm(u){const v=(id,x)=>{const e=$(id);if(e&&document.activeElement!==e)e.value=x||"";};
   v("ulf-title",u.title);v("ulf-place",u.place);v("ulf-from",u.from);v("ulf-to",u.to);v("ulf-hotel",u.hotel?[u.hotel.name,u.hotel.url,u.hotel.addr].join(" | "):"");
   v("ulf-hin",ulTripStr(u.hin));v("ulf-rueck",ulTripStr(u.rueck));v("ulf-cams",(u.cams||[]).map(c=>c.t+" | "+c.u).join("\n"));v("ulf-links",(u.links||[]).map(c=>c.t+" | "+c.u).join("\n"));v("ulf-berg",u.berg?u.berg.name+" | "+u.berg.ele:"");}

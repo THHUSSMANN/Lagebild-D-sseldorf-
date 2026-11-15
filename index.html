@@ -455,6 +455,9 @@ svg.c24 text.tv{font:800 17px var(--f-display);fill:var(--fg)}
 #tm-seg>button:active{transform:scale(.965)}
 .ul-count{display:flex;align-items:baseline;gap:10px;margin:4px 0 10px}.ul-count b{font:800 44px/1 var(--f-display)}
 .ul-trip{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--fg) 5%,transparent);margin-bottom:8px}
+.ul-trip.ul-booked{border:2px solid #f5b800;background:color-mix(in srgb,#ffcc00 12%,transparent);box-shadow:0 2px 10px color-mix(in srgb,#ffcc00 25%,transparent)}
+.ul-fav{display:inline-block;margin-bottom:3px;padding:1px 9px;border-radius:999px;font:700 11.5px/18px var(--f-body);background:#f5b800;color:#1a1400;letter-spacing:.03em}
+.ul-live{grid-column:1/-1;font-size:13.5px;margin-top:4px}
 .ul-trip .ul-ic{font-size:22px;grid-row:span 2}.ul-trip b{font-size:16px}.ul-trip .ul-t{font:700 15px var(--f-display);font-variant-numeric:tabular-nums;text-align:right}
 .ul-trip .ul-tag{display:inline-block;padding:1px 8px;border-radius:999px;font:700 11.5px/18px var(--f-body);background:#ffcc00;color:#1a1400}
 .ul-wxgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.ul-wxbox{padding:12px;border-radius:16px;background:color-mix(in srgb,var(--fg) 5%,transparent)}
@@ -1911,7 +1914,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
         <label>Ort (für Wetter)<input id="ulf-place" placeholder="z. B. Wagrain"></label>
         <div class="ul-2"><label>Von<input type="date" id="ulf-from"></label><label>Bis<input type="date" id="ulf-to"></label></div>
         <label>Unterkunft – Name | Link | Adresse<input id="ulf-hotel" placeholder="Sporthotel Wagrain | https://… | Adresse"></label>
-        <label>Hinreise (Von | Nach | Datum | Ab | An | Hinweis)<input id="ulf-hin" placeholder="Düsseldorf Hbf | St. Johann im Pongau | 2026-12-19 | 07:22 | 14:56 | Sparpreis 1. Kl."></label>
+        <label>Hinreise (Von | Nach | Datum | Ab | An | Hinweis) – „★“ vorne = gebucht/Favorit<input id="ulf-hin" placeholder="Düsseldorf Hbf | St. Johann im Pongau | 2026-12-19 | 07:22 | 14:56 | Sparpreis 1. Kl."></label>
         <label>Rückreise (Von | Nach | Datum | Ab | An | Hinweis)<input id="ulf-rueck"></label>
         <label>Webcams (je Zeile: Titel | Link)<textarea id="ulf-cams" rows="3"></textarea></label>
         <label>Weitere Links (je Zeile: Titel | Link)<textarea id="ulf-links" rows="3"></textarea></label>
@@ -2039,6 +2042,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=366"></script>
+<script src="app.js?v=367"></script>
 </body>
 </html>
