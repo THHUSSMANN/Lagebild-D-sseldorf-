@@ -2066,22 +2066,25 @@ async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includ
   }catch(e){STOPIDX={available:[],all:[]};}}
 function proxyOn(){try{return !!EFAPROXY;}catch(e){return false;}}
 /* U78 Heinrich-Heine-Allee → MERKUR SPIEL-ARENA: Direktfahrten live über den VRR-Vermittler, Abfahrt und Ankunft */
-let U78T=null;
+let U78T=null,U78GAP=false;
 async function u78Live(seq){const R=EFASTOP==="@U78R",SP=EFASTOP;const box=$("efa");clearTimeout(U78T);if(!box)return;if(!box.innerHTML||(box.dataset.v||"")!=="u78"+(R?"r":""))box.innerHTML='<div class="state">Live-Fahrten werden geladen …</div>';box.dataset.v="u78"+(R?"r":"");
   try{if(!proxyOn())throw new Error("Vermittler fehlt");const base=EFAPROXY.replace(/\/+$/,"");const HA=await tripStopId("Düsseldorf Heinrich-Heine-Allee"),AR="de:05111:18075";const a=R?AR:HA,z=R?HA:AR;
     /* Abfahrtsmonitor Heine-Allee (viele Fahrten) + Verbindungsauskunft (genaue Ankunft) zusammenführen */
     const [d,dm,ALTD]=await Promise.all([getJSON(base+"/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin="+encodeURIComponent(a)+"&type_destination=any&name_destination="+encodeURIComponent(z)+"&itdTripDateTimeDepArr=dep&calcNumberOfTrips=8&maxChanges=0&useRealtime=1",9000).catch(()=>({})),
       (async()=>{/* Heine-Allee ist sehr belebt: zwei Abfragen (jetzt und in 60 min), damit genug U78-Fahrten zusammenkommen */
         const at=m=>{const t=new Date(Date.now()+m*6e4),p=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(t).reduce((o,x)=>(o[x.type]=x.value,o),{});return "&itdDate="+p.year+p.month+p.day+"&itdTime="+p.hour+p.minute;};
-        const rs=await Promise.all([0,60].map(m=>getJSON(base+"/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=any&name_dm="+encodeURIComponent(a)+"&mode=direct&useRealtime=1&limit=250&lineRestriction=400"+at(m),15000).catch(()=>({}))));
-        return {stopEvents:rs.flatMap(x=>x.stopEvents||[])};})(),
+        /* nacheinander statt gleichzeitig und mit eigenen Wiederholungen: der VRR lehnt parallele Abfragen gern ab (HTTP 403) –
+           fehlte das Fenster „jetzt“, begann die Liste sonst erst eine Stunde später */
+        const one=async m=>{for(let i=0;i<3;i++){try{return await getJSON(base+"/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=any&name_dm="+encodeURIComponent(a)+"&mode=direct&useRealtime=1&limit=250&lineRestriction=400"+at(m),15000);}catch(e){await new Promise(r=>setTimeout(r,1500*(i+1)));}}return null;};
+        const r0=await one(0),r1=await one(60);
+        return {stopEvents:[r0,r1].flatMap(x=>(x&&x.stopEvents)||[]),gap:!r0};})(),
       /* Rückweg: Verbindungen mit Umstieg/Fußweg (z. B. abends zu Fuß zum Freiligrathplatz + U79/U80), falls keine U78 mehr fährt */
       R?(async()=>{/* Rückweg ohne U78 (abends/nachts): U79/U80 ab Freiligrathplatz Richtung Stadt – zwei Zeitfenster, damit auch die Nachtfahrten dabei sind */
         const atT=ms=>{const p=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date(ms)).reduce((o,x)=>(o[x.type]=x.value,o),{});return "&itdDate="+p.year+p.month+p.day+"&itdTime="+p.hour+p.minute;};
         const rs=await Promise.all([0,180,360].map(m=>getJSON(base+"/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=any&name_dm=de%3A05111%3A18028&mode=direct&useRealtime=1&limit=200&lineRestriction=400"+atT(Date.now()+m*6e4),15000).catch(()=>({}))));
         return {stopEvents:rs.flatMap(x=>x.stopEvents||[])};})():Promise.resolve({})]);
 
-    if(seq!==EFASEQ||EFASTOP!==SP)return;
+    if(seq!==EFASEQ||EFASTOP!==SP)return;U78GAP=!!dm.gap;
     const seen=new Set();const tr=(d.journeys||[]).map(j=>(j.legs||[]).filter(l=>l.transportation&&l.transportation.product&&![99,100].includes(l.transportation.product.class))).filter(l=>l.length===1).map(([l])=>({line:l.transportation.disassembledName||"",dep:l.origin.departureTimePlanned,depEst:l.origin.departureTimeEstimated,arr:l.destination.arrivalTimePlanned,arrEst:l.destination.arrivalTimeEstimated,plat:(l.origin.properties||{}).platformName||(l.origin.properties||{}).platform||"",cx:(l.realtimeStatus||[]).includes("TRIP_CANCELLED")}))
       .filter(r=>/U\s?78/i.test(r.line)&&!seen.has(r.dep)&&seen.add(r.dep));
     const tt=tr.length?tr.reduce((x,r)=>x+(new Date(r.arr)-new Date(r.dep)),0)/tr.length:16*6e4;const mk=x=>String(x||"").slice(0,16);const byDep=new Map(tr.map(r=>[mk(r.dep),r]));
@@ -2105,14 +2108,14 @@ async function u78Live(seq){const R=EFASTOP==="@U78R",SP=EFASTOP;const box=$("ef
       rows.sort((x,y)=>tm(x.dep)-tm(y.dep));}
     rows.splice(R?24:20);
     const hm=x=>new Date(x).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"});const dl=(p,e)=>e?Math.round((new Date(e)-new Date(p))/6e4):0;
-    box.innerHTML=rows.length?'<table class="tbl efa-tbl u78-tbl" style="width:100%"><thead><tr><th>Ab</th><th>Linie</th><th>'+(R?"An Heine-Allee":"An Arena")+'</th></tr></thead><tbody>'+rows.map(r=>{const d1=dl(r.dep,r.depEst),d2=dl(r.arr,r.arrEst);
+    box.innerHTML=(U78GAP?'<div class="state warn" style="margin-bottom:8px">Die Fahrten der nächsten Stunde werden gerade nachgeladen …</div>':'')+(rows.length?'<table class="tbl efa-tbl u78-tbl" style="width:100%"><thead><tr><th>Ab</th><th>Linie</th><th>'+(R?"An Heine-Allee":"An Arena")+'</th></tr></thead><tbody>'+rows.map(r=>{const d1=dl(r.dep,r.depEst),d2=dl(r.arr,r.arrEst);
       const st=[];if(!r.other)st.push("background:rgba(255,204,0,.28)");if(r.cx)st.push("opacity:.5;text-decoration:line-through");
       if(r.alt)return '<tr style="background:rgba(79,182,211,.14)"><td><b>'+hm(r.depEst||r.dep)+'</b>'+(d1>0?' <span style="color:#e53935;font-weight:700">+'+d1+'</span>':'')+'</td><td><span class="line">'+esc(r.line)+'</span><small class="muted" style="display:block;font-size:12.5px;line-height:1.25">'+esc(r.dest)+'</small></td><td><b>'+hm(r.arrEst||r.arr)+'</b><small class="muted" style="display:block;font-size:12.5px">'+Math.round((new Date(r.arrEst||r.arr)-new Date(r.depEst||r.dep))/6e4)+' min</small></td></tr>';
       if(r.other)return '<tr'+(st.length?' style="'+st.join(";")+'"':'')+'><td><b>'+hm(r.depEst||r.dep)+'</b>'+(d1>0?' <span style="color:#e53935;font-weight:700">+'+d1+'</span>':'')+'</td><td><span class="line">'+esc(r.line)+'</span><small class="muted" style="display:block;font-size:12.5px;line-height:1.25">'+esc(r.dest)+'</small></td><td class="muted">–</td></tr>';
       return '<tr'+(st.length?' style="'+st.join(";")+'"':'')+'><td><b>'+hm(r.depEst||r.dep)+'</b>'+(d1>0?' <span style="color:#e53935;font-weight:700">+'+d1+'</span>':'')+'</td><td><span class="line">U78</span></td><td><b>'+hm(r.arrEst||r.arr)+'</b>'+(d2>0?' <span style="color:#e53935">+'+d2+'</span>':'')+'<small class="muted" style="display:block;font-size:12.5px">'+Math.round((new Date(r.arrEst||r.arr)-new Date(r.depEst||r.dep))/6e4)+' min</small></td></tr>';}).join("")+'</tbody></table><div class="muted small" style="margin-top:6px">'+(R?'<span style="background:rgba(255,204,0,.28);padding:0 4px;border-radius:4px">U78 gelb</span> · '+(rows.some(x=>x.alt)?'<span style="background:rgba(79,182,211,.14);padding:0 4px;border-radius:4px">Blau</span> = Alternative, solange keine U78 fährt (U79/U80 ab Freiligrathplatz, ca. 34 min Fußweg) · ':''):'<span style="background:rgba(255,204,0,.28);padding:0 4px;border-radius:4px">U78 gelb</span> fährt bis zur Arena · U79/U80 fahren ein Stück dieselbe Strecke Richtung Norden (ohne Arena-Ankunft) · ')+'Direktfahrten '+(R?'U78 ':'')+(R?'ab MERKUR SPIEL-ARENA/Messe Nord bis Heinrich-Heine-Allee':'ab Heinrich-Heine-Allee bis MERKUR SPIEL-ARENA/Messe Nord')+' · <b style="color:var(--ok)">● live</b> (VRR) · erneuert alle 45 s</div>'
-      :'<div class="state">Gerade keine U78-Fahrt zur Arena gefunden.</div>';setStatus("efa",true,"U78 live");
+      :'<div class="state">Gerade keine U78-Fahrt zur Arena gefunden.</div>');setStatus("efa",true,"U78 live");
   }catch(e){if(seq===EFASEQ)box.innerHTML=stateBox("U78-Fahrten gerade nicht abrufbar.",link("https://www.rheinbahn.de/","Rheinbahn"));}
-  U78T=setTimeout(()=>{if(EFASTOP===SP&&box.offsetParent)u78Live(seq);},45000);}
+  U78T=setTimeout(()=>{if(EFASTOP===SP&&box.offsetParent)u78Live(seq);},U78GAP?8000:45000);}
 async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){$("efa-title").textContent="Abfahrten";$("efa-stops").innerHTML="";$("efa").innerHTML=stateBox("Für diesen Ort gibt es keine Echtzeit-Abfahrten im VRR.",'<a href="https://www.hvv.de/de/fahrplaene/abruf-fahrplaninfos/abfahrten" target="_blank" rel="noopener">HVV-Abfahrten ↗</a>');setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
