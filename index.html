@@ -467,6 +467,10 @@ svg.c24 text.tv{font:800 17px var(--f-display);fill:var(--fg)}
 .ul-form{display:grid;gap:10px;margin-top:12px}.ul-form label{display:grid;gap:4px;font-size:13px;color:var(--muted,#8a96a3)}
 .ul-form input,.ul-form textarea{font:15px var(--f-body);padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg)}
 .ul-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* v-Check 16.11.: Urlaub auf dem iPhone ruhiger – Knöpfe gleich breit nebeneinander, Reisezeit unter den Titel, Symbol oben */
+#v-urlaub .ul-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}#v-urlaub .ul-btns .btn{margin:0;text-align:center;justify-content:center}
+.ul-trip{align-items:start}.ul-trip .ul-ic{align-self:start;padding-top:2px}
+@media (max-width:560px){.ul-trip{grid-template-columns:auto 1fr}.ul-trip .ul-t{grid-column:2;text-align:left;font-size:17px}.ul-trip .ul-ic{grid-row:span 3}}
 #sp-seg{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:12px}
 .fb-par{display:block;width:fit-content;max-width:100%;margin-top:6px;padding:4px 10px;border-radius:10px;border-left:3px solid #f5b800;background:color-mix(in srgb,#ffcc00 22%,transparent);color:var(--fg);font:600 13px/1.3 var(--f-body)}
 .fb-when .fb-par{margin:8px auto 0}
@@ -1355,6 +1359,13 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 .view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2))>button.on,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2))>a.on,.view .seg:not(#rs-mode):not(#rs-dir):not(#ships-pos):not(#efa-stops):not(#rs-tdir):not(#tm-seg):has(>:nth-child(2))>button[aria-pressed="true"],.tabseg button.on,#al-seg button.on,#wx-seg button.on{opacity:1;background:var(--seg-on,#fff)!important;color:var(--seg-on-fg,#111)!important;box-shadow:0 1px 2px rgba(0,0,0,.12),0 3px 10px rgba(0,0,0,.14)!important}
 .vtop .subtabs a{font-size:16px!important}
 @media (max-width:430px){.vtop:has(.subtabs a:nth-child(5)) .subtabs a{padding:0 6px!important;font-size:14.5px!important}}
+
+/* Gesamtcheck 16.11.: U78-Tabelle passt auf das iPhone; aktiver Haltestellen-Knopf gut lesbar im hellen Modus */
+.u78-tbl{table-layout:fixed;width:100%!important;max-width:100%}
+.u78-tbl th,.u78-tbl td{white-space:normal!important;padding-left:6px!important;padding-right:6px!important;overflow-wrap:anywhere}
+.u78-tbl th:nth-child(1),.u78-tbl td:nth-child(1){width:24%}.u78-tbl th:nth-child(3),.u78-tbl td:nth-child(3){width:31%}
+:root{--on-accent:#fff}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--on-accent:#0b1a24}}:root[data-theme="dark"]{--on-accent:#0b1a24}
+.stop-seg>button.on,#efa-stops.stop-seg>button.on{color:var(--on-accent)!important}
 </style>
 </head>
 <body>
