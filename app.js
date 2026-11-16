@@ -3155,6 +3155,28 @@ function evNext(days,max){const td=isoDay(new Date()),end=isoDay(new Date(Date.n
   return (EVDUS||[]).filter(r=>{const d=String(r.start).slice(0,10);if(d<td||d>end)return false;return String(r.start).length<16||new Date(r.start).getTime()>now-36e5;})
     .sort((a,b)=>String(a.start).localeCompare(String(b.start))).filter((r,i,a)=>a.findIndex(x=>x.name===r.name&&String(x.start).slice(0,10)===String(r.start).slice(0,10))===i).slice(0,max);}
 setTimeout(()=>evDus(),3000);
+/* Messen (Messe Düsseldorf u. a.) aus dem Datensammler, falls vorhanden */
+let MESSE_LAST=null;async function messeLoad(){if(MESSE_LAST)return MESSE_LAST;try{MESSE_LAST=((await getData("messen.json")).data||[]);}catch(e){MESSE_LAST=[];}return MESSE_LAST;}
+/* Störungen Bus & Bahn (VRR-Meldungen) – nur deine Linien bzw. Datteln/Recklinghausen */
+let STOER_LAST=null;async function stoerLoad(){if(STOER_LAST)return STOER_LAST;try{STOER_LAST=((await getData("stoerungen.json")).data||[]);}catch(e){STOER_LAST=[];}return STOER_LAST;}
+const STOER_RX=/^(U7[5-9]|U80)$/i;
+function stoerMine(){const now=Date.now();return (STOER_LAST||[]).filter(x=>(!x.from||new Date(x.from).getTime()<=now)&&(x.lines.some(l=>STOER_RX.test(l))||/datteln|recklinghausen/i.test(x.title+" "+x.subtitle+" "+x.text)))
+  .sort((a,b)=>(a.planned-b.planned)||String(a.to||"9").localeCompare(String(b.to||"9")));}
+/* Großlagen an einem Tag: Messen, Arena/PSD Bank Dome/Mitsubishi Electric Halle, Heimspiele Fortuna und DEG */
+function grossLagen(day){const out=[];const big=/arena|dome|mitsubishi|messe\b|iss\s*dome/i;
+  (MESSE_LAST||[]).forEach(m=>{if(m.start<=day&&(m.end||m.start)>=day)out.push({t:"",title:m.name,where:m.place||"Messe Düsseldorf",kind:"Messe"});});
+  (EVDUS||[]).forEach(e=>{if(String(e.start).slice(0,10)===day&&big.test(e.venue||""))out.push({t:String(e.start).length>=16?String(e.start).slice(11,16):"",title:noPic0(e.name),where:e.venue});});
+  (SP.f95||[]).forEach(x=>{if(x.day===day&&x.home)out.push({t:x.time,title:"Fortuna – "+x.opp+(x.lg?" ("+x.lg+")":""),where:"Merkur Spiel-Arena"});});
+  (SP.deg||[]).forEach(x=>{if(x.day===day&&x.home)out.push({t:x.time,title:"DEG – "+x.opp,where:"PSD Bank Dome"});});
+  const seen=new Set();return out.filter(x=>{const k=x.title.toLowerCase().slice(0,30)+x.t;if(seen.has(k))return false;seen.add(k);return true;}).sort((a,b)=>(a.t||"00").localeCompare(b.t||"00"));}
+/* Wetter-Hinweise für die nächsten 48 Stunden (nur wenn relevant) */
+function wxHints(){const w=WX&&WX[C.wxIdx];if(!w||!w.daily)return[];const d=w.daily,H=[];
+  for(let i=0;i<3;i++){if(d.temperature_2m_max[i]==null)continue;const tag=i===0?"heute":i===1?"morgen":new Date(d.time[i]+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long"});
+    const g=d.wind_gusts_10m_max[i],c=d.weather_code[i],tmin=d.temperature_2m_min[i],pr=d.precipitation_sum[i]||0;
+    if(c>=95)H.push("Gewitter möglich "+tag);
+    if(g>=75)H.push("Schwere Sturmböen bis "+fmt(g)+" km/h "+tag);else if(g>=60)H.push("Sturmböen bis "+fmt(g)+" km/h "+tag);
+    if(tmin<=1&&(pr>=.3||[56,57,66,67,71,73,75,77,85,86].includes(c)))H.push(([71,73,75,77,85,86].includes(c)?"Schnee und Glätte ":"Glättegefahr ")+tag+" (Tiefstwert "+fmt(tmin)+" °C)");}
+  return H;}
 function lageText(){
   /* Reiner Text ohne Piktogramme, luftig gegliedert: Abschnitt = Trennlinie, Überschrift, Leerzeile, Einträge */
   const noPic=s=>String(s||"").replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u2190-\u21FF\u2B00-\u2BFF️‍⃣]/gu,"").replace(/\s+/g," ").replace(/\s+([,.:])/g,"$1").replace(/^[\s·–-]+|[\s·–-]+$/g,"").trim();
@@ -3172,6 +3194,18 @@ function lageText(){
   favPlaces().forEach(p=>{const a=FAV_ALARM[p.key];if(a)nL++;if(a&&a.n)nW+=a.n;
     L.push(p.name+": "+(!a?"noch nicht geladen":a.n?[...new Set((a.all&&a.all.length?a.all:[a.title]).map(short))].join(", "):"keine"));});
   if(!FAVKEYS.includes(C.key)&&LOCAL_ALARM.n>0){nW+=LOCAL_ALARM.n;L.push(C.town+": "+[...new Set((LOCAL_ALARM.all.length?LOCAL_ALARM.all:[LOCAL_ALARM.title]).map(short))].join(", "));}
+  // Großlagen heute und morgen (Messen, Arena, Dome, Heimspiele)
+  const td0=isoDay(new Date()),tm0=isoDay(new Date(Date.now()+864e5));const GL=[[td0,"Heute"],[tm0,"Morgen"]].map(([d,n])=>[n,grossLagen(d)]);
+  if(GL.some(([,l])=>l.length)){H("Großlagen Düsseldorf");let first=true;GL.forEach(([n,l])=>{if(!l.length)return;if(!first)L.push("","– – –","");first=false;L.push(n.toUpperCase(),"");
+      l.forEach((x,i)=>{if(i)L.push("");L.push((x.t?x.t+" Uhr · ":(x.kind?x.kind+" · ":""))+x.title);if(x.where)L.push(x.where);});
+      if(l.length>1)L.push("","Gleichzeitig "+l.length+" Großlagen – mit erhöhtem Verkehr rechnen");});}
+  // Störungen Bus & Bahn (deine Linien)
+  const ST=stoerMine();if(ST.length){H("Störungen Bus & Bahn");ST.slice(0,6).forEach((x,i)=>{if(i)L.push("");const ln=x.lines.filter(l=>STOER_RX.test(l));
+      L.push((ln.length?ln.join(", ")+": ":"")+(x.subtitle||x.title).replace(/^Straßenbahnlinie\s*\d+:\s*/i,""));if(x.text&&!/^hier alle infos$/i.test(x.text))L.push(x.text);
+      if(x.to)L.push((x.planned?"Baustelle":"Störung")+" bis "+new Date(x.to).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}));});
+    if(ST.length>6)L.push("","… und "+(ST.length-6)+" weitere Meldungen");}
+  // Wetter-Hinweise 48 h
+  const WH=wxHints();if(WH.length){H("Wetter-Hinweise");WH.forEach(h=>L.push(h));}
   // Wetter
   H("Wetter "+C.town);
   try{const w=WX&&WX[C.wxIdx];if(!w)throw 0;const c=w.current,d=w.daily;
@@ -3215,9 +3249,19 @@ function lageText(){
       lp.forEach(x=>{const t=levelText(x.value,{MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3},x.unit);if(!first)L.push("");first=false;
         L.push(x.water+" (Pegel "+String(x.name||"").replace(/_\d+$/,"")+")",fmt(x.value,x.value<100?1:0)+" "+(x.unit||"cm")+" · "+t.st+(x.time?" · Stand "+hhmm(x.time)+" Uhr":""));});}}
   const more=["k-aq"].map(id=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
+    if(id==="k-aq"&&!(parseInt(v,10)>=60))return null;/* Luft nur bei schlechten Werten */
     const n=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");const lb={"k-strom":"Nächster Feiertag","k-urlaub":"Urlaub"}[id]||(T(k.querySelector(".lbl"))+(k.dataset.water?" ("+k.dataset.water+")":""));
     return lb+": "+v+(n&&n!=="wird geladen"?" ("+n.replace(/ · /g,", ")+")":"");}).filter(Boolean);
-  if(more.length){H("Weiteres");more.forEach((m,n)=>{if(n)L.push("");L.push(m);});}
+  if(more.length){H("Luftqualität");more.forEach((m,n)=>{if(n)L.push("");L.push(m);});}
+  // AUF EINEN BLICK – Kurzfazit oben einfügen
+  {const S=[];const ws=[];favPlaces().forEach(p=>{const a=FAV_ALARM[p.key];if(a&&a.n)ws.push(...(a.all&&a.all.length?a.all:[a.title]).map(short));});
+    const wu=[...new Set(ws)];S.push(nW?"Warnungen: "+nW+" ("+wu.slice(0,3).join(", ")+")":"Keine Warnungen");
+    GL.forEach(([n,l])=>{if(l.length)S.push(n+": "+l.map(x=>(x.kind==="Messe"?x.title:x.title.replace(/\s*\(.*\)$/,""))+(x.t?" "+x.t:"")).slice(0,4).join(" · "));});
+    const rt=[...document.querySelectorAll("#prio .route")];const bad=rt.filter(r=>/\b(warn|bad|crit)\b/.test(r.className));
+    if(rt.length)S.push(bad.length?"Verkehr: "+bad.map(r=>T(r.querySelector(".rt")).replace(/^→\s*/,"")+" "+T(r.querySelector(".rv"))).join(" · "):"Verkehr: alle Strecken frei");
+    if(ST.length){const u=ST.filter(x=>!x.planned);S.push("Bus & Bahn: "+(u.length?u.length+" Störung"+(u.length>1?"en":""):"")+(u.length&&ST.length>u.length?", ":"")+(ST.length>u.length?(ST.length-u.length)+" Baustelle"+(ST.length-u.length>1?"n":""):"")+" auf deinen Linien");}
+    if(WH.length)S.push("Wetter: "+WH.slice(0,2).join(" · "));
+    L.splice(4,0,"",LINE,"","AUF EINEN BLICK","",...S);}
   L.push("",LINE,"","Live im Dashboard:",location.origin+location.pathname,"","© Thomas Hußmann");
   return {subject:"Lage "+now.toLocaleDateString("de-DE",{...dt,day:"2-digit",month:"2-digit"})+", "+hhmm(now)+" Uhr"+(nW?" – "+nW+(nW===1?" Warnung":" Warnungen"):nL===favPlaces().length?" – keine Warnungen":""),body:L.join("\n")};}
 function lageMailUrl(){const {subject,body}=lageText();const to=(load("lagemail_to")||"").split(/[,;\s]+/).filter(Boolean).map(encodeURIComponent).join(",");
@@ -3238,6 +3282,8 @@ function lageMissing(){const m=[];
   if(!status.fb)m.push("Spielplan");
   if(typeof EVDUS!=="undefined"&&!EVDUS)m.push("Veranstaltungen");
   if(!LP_LAST)m.push("Pegel");
+  if(!MESSE_LAST)m.push("Messen");
+  if(!STOER_LAST)m.push("Störungen");
   return m;}
 let LM_WAIT=0;
 function lageSend(btn){const mode=load("lagemail_mode")||(IOS||/Mac/.test(navigator.platform)?"kb":"mail");const lbl=btn.querySelector(".qa-ml");
@@ -3253,6 +3299,8 @@ function sendLageMail(btn){const lbl=btn.querySelector(".qa-ml");
   try{if(TTKEY&&typeof loadReise==="function")loadReise(false);}catch(e){}
   try{if(typeof evDus==="function"&&!EVDUS)evDus().catch(()=>{});}catch(e){}
   try{if(!LP_LAST)lpLoad();}catch(e){}
+  try{if(!MESSE_LAST)messeLoad();}catch(e){}
+  try{if(!STOER_LAST)stoerLoad();}catch(e){}
   const t0=Date.now();clearInterval(LM_WAIT);
   LM_WAIT=setInterval(()=>{const miss=lageMissing();if(miss.length&&Date.now()-t0<30000){lbl.textContent="Lädt: "+miss[0]+" …";return;}
     clearInterval(LM_WAIT);btn.classList.remove("busy");btn.classList.add("ready");lbl.textContent="Jetzt senden";},700);}

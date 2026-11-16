@@ -378,6 +378,7 @@ if (process.env.MODUS === "events") { // nur Düsseldorfer Spielstätten neu, Re
   const q = [...names]; await Promise.all(Array.from({ length: 8 }, async () => { while (q.length) { const n = q.shift(); try { await fs.writeFile(path.join(OUT, n), JSON.stringify(await get(LIVE + n, { ms: 20000 }))); } catch {} } }));
   console.log("::notice::" + await evCopy());
   await job("events-dus.json", eventsDus);
+  await job("messen.json", messenData);
   let prevStatus = {}; try { prevStatus = (await get(LIVE + "status.json", { ms: 15000 })).data || {}; } catch {}
   await write("status.json", { ...prevStatus, ...results }); process.exit(0);
 }
@@ -402,6 +403,7 @@ if (process.env.MODUS === "oepnv") {
   }
   await Promise.allSettled(deps);
   await job("busfahrten.json", busfahrtenData);
+  await job("stoerungen.json", stoerungenData);
   let prevStatus = {}; try { prevStatus = (await get(LIVE + "status.json", { ms: 15000 })).data || {}; } catch {}
   await write("status.json", { ...prevStatus, ...results });
   console.log(JSON.stringify(results, null, 1));
@@ -529,7 +531,43 @@ tasks.push(job("boerse.json", async () => {
 }));
 for (const [k, url] of Object.entries(ODD)) tasks.push(job("odd-" + k + ".json", async () => places(await get(url, { ms: 40000 }))));
 await Promise.all(tasks);
+
+// ---------- Messen in Düsseldorf (messen.de: Messe Düsseldorf + übrige Orte in Düsseldorf) ----------
+async function messenData() {
+  const H = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", "Accept-Language": "de-DE,de;q=0.9" };
+  const urls = ["https://www.messen.de/de/6/messeort/messe-duesseldorf/messen", "https://www.messen.de/de/197/in/deutschland/nordrhein-westfalen/duesseldorf/uebersicht"];
+  const iso = (d, m, y) => y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  const txt = h => h.replace(/<!--.*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&shy;/g, "").replace(/\s+/g, " ").trim();
+  const out = []; const seen = new Set(); const today = new Date().toISOString().slice(0, 10);
+  for (const u of urls) { let h = ""; try { const r = await fetch(u, { headers: H }); if (!r.ok) continue; h = await r.text(); } catch { continue; }
+    for (const a of h.split("<article").slice(1)) {
+      const nm = (a.match(/<h3[^>]*>([\s\S]*?)<\/h3>/) || [])[1]; const t = a.match(/Termin:<\/span>\s*<span[^>]*>\s*(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s*[–-]\s*(\d{1,2})\.(\d{1,2})\.(\d{4}))?/);
+      const place = txt((a.match(/Ort:<\/span>\s*<span[^>]*>([\s\S]*?)<\/span>\s*<\/div>/) || [])[1] || "").replace(/^Düsseldorf\s*,\s*/, "");
+      if (!nm || !t) continue; const name = txt(nm); const start = iso(t[1], t[2], t[3]), end = t[4] ? iso(t[4], t[5], t[6]) : start;
+      if (end < today || !name) continue; const k = name.toLowerCase() + start; if (seen.has(k)) continue; seen.add(k);
+      out.push({ name, start, end, place: place || "Düsseldorf" }); } }
+  if (!out.length) throw new Error("keine Messen gefunden");
+  out.sort((a, b) => a.start.localeCompare(b.start));
+  console.log("::notice::Messen: " + out.slice(0, 8).map(m => m.name + " " + m.start + "–" + m.end + " (" + m.place + ")").join(" | "));
+  return out.slice(0, 80);
+}
+// ---------- Störungen & Baustellen Bus/Bahn (VRR-Meldungen, u. a. Rheinbahn) ----------
+async function stoerungenData() {
+  const d = await get("https://efa.vrr.de/standard/XML_ADDINFO_REQUEST?outputFormat=rapidJSON&language=de&filterPublicationStatus=current", { ms: 60000 });
+  const now = Date.now(); const strip = h => String(h || "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+  const L = (d.infos && d.infos.current) || [];
+  const out = L.map(x => { const il = (x.infoLinks || [])[0] || {}; const pr = x.properties || {}; const v = ((x.timestamps || {}).validity || [])[0] || {};
+    const lines = [...new Set(((x.affected || {}).lines || []).map(l => String(l.number || l.disassembledName || "").replace(/\s+/g, "")).filter(Boolean))];
+    return { id: x.id, title: strip(il.title), subtitle: strip(il.subtitle), text: strip(il.smsText || il.wmlText || "").slice(0, 200), url: il.url || "", provider: pr.providerCode || "",
+      planned: pr.MessageType === "planned", prio: x.priority || "", from: v.from || null, to: v.to || null, lines }; })
+    .filter(x => (!x.from || new Date(x.from).getTime() <= now + 864e5) && (!x.to || new Date(x.to).getTime() >= now))
+    .filter(x => /rheinbahn|vest|db|regio/i.test(x.provider) || x.lines.some(l => /^(U7\d|U8\d|7\d\d|8\d\d|SB\d+|SB1\d)$/i.test(l)));
+  console.log("::notice::Störungen: " + out.length + " Meldungen (" + [...new Set(out.map(o => o.provider))].join(", ") + ")");
+  return out.slice(0, 300);
+}
 // ---------- Landespegel NRW (Düssel, Anger) – LANUK Hochwasserportal ----------
+await job("messen.json", messenData);
+await job("stoerungen.json", stoerungenData);
 await job("landespegel.json", async () => {
   const L = await get("https://hochwasserportal.nrw.de/lanuv/data/internet/layers/10/index.json", { ms: 40000 });
   const arr = Array.isArray(L) ? L : (L.features || L.data || Object.values(L));
