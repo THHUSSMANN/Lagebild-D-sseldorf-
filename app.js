@@ -184,6 +184,14 @@ setTimeout(async()=>{const m=location.hash.match(/^#home=(.+)$/);if(!m)return;
     for(const [k,q] of Object.entries(o)){try{const h=await geocodeHome(k,q);done.push(h.label);}catch(e){done.push(q+" (nicht gefunden)");}}
     history.replaceState(null,"",location.pathname+location.search);
     alert("Adressen auf diesem Gerät gespeichert:\n"+done.join("\n"));if(typeof loadTomTom==="function")loadTomTom();}catch(e){}},800);
+let GMKEY=load("gmkey")||"";const GMC={};
+/* Fahrzeit von Google Maps (Routes API, Verkehr berücksichtigt) – je Strecke höchstens alle 10 min */
+async function gmTime(o,d){const k=(o.label||o.lat+","+o.lon)+"|"+(d.label||d.lat+","+d.lon);const c=GMC[k];if(c&&Date.now()-c.at<10*6e4)return c.v;
+  const pt=x=>x.label?{address:x.label}:{location:{latLng:{latitude:x.lat,longitude:x.lon}}};
+  const r=await fetch("https://routes.googleapis.com/directions/v2:computeRoutes",{method:"POST",headers:{"Content-Type":"application/json","X-Goog-Api-Key":GMKEY,"X-Goog-FieldMask":"routes.duration,routes.staticDuration,routes.distanceMeters"},
+    body:JSON.stringify({origin:pt(o),destination:pt(d),travelMode:"DRIVE",routingPreference:"TRAFFIC_AWARE_OPTIMAL",languageCode:"de-DE"})});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error((j.error&&j.error.message)||("HTTP "+r.status));const rt=(j.routes||[])[0];if(!rt)throw new Error("keine Route");
+  const sec=parseInt(rt.duration,10),st=parseInt(rt.staticDuration||rt.duration,10);const v={min:Math.round(sec/60),dl:Math.max(0,Math.round((sec-st)/60)),km:(rt.distanceMeters||0)/1000};GMC[k]={at:Date.now(),v};return v;}
 const TTKEY_DEFAULT="RSDptU00A2TYdT3fwL1oTHnKl6XOEf51";let TTKEY=load("tomtom")||TTKEY_DEFAULT;
 const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
 // Strecken je Ort; die bisherige Liste gilt für Düsseldorf
@@ -826,6 +834,9 @@ $("home-save").addEventListener("click",async()=>{const q=$("home-addr").value.t
   $("home-hint").textContent="Adresse wird gesucht …";
   try{const h=await geocodeHome(key,q);$("home-hint").textContent="✓ Gefunden: "+h.label;loadTomTom();}
   catch(e){$("home-hint").textContent="Adresse nicht gefunden – bitte mit Ort eingeben ("+errText(e)+").";}});
+{const g=$("gmkey");if(g)g.value=GMKEY;const b=$("gmkey-save");if(b)b.addEventListener("click",async()=>{GMKEY=$("gmkey").value.trim();store("gmkey",GMKEY||null);const h=$("gmkey-hint");
+  if(!GMKEY){h.textContent="Entfernt – Fahrzeiten wieder von TomTom.";return;}h.textContent="Prüfe …";
+  try{const v=await gmTime(FIXHOME.dus,FIXHOME.datteln);h.textContent="✓ Funktioniert: Düsseldorf → Datteln laut Google "+v.min+" min. Reise-Kacheln nutzen jetzt Google-Zeiten.";RS.at=0;}catch(e){h.textContent="✗ Google meldet: "+(e.message||e);}});}
 $("tomtom-save").addEventListener("click",async()=>{TTKEY=$("tomtom").value.trim()||TTKEY_DEFAULT;store("tomtom",TTKEY===TTKEY_DEFAULT?null:TTKEY);
   
   $("tomtom-hint").textContent="Schlüssel wird geprüft …";
@@ -2429,6 +2440,7 @@ async function loadReise(force){if(!$("rs-alts"))return;if(!RS.city)rsCity(C.isD
         return {t,i,...P,min:Math.round(sm.travelTimeInSeconds/60),dl:Math.round((sm.trafficDelayInSeconds||0)/60),km:sm.lengthInMeters/1000,arr:new Date(Date.now()+sm.travelTimeInSeconds*1000),via,rw:null};});
       {const pv=RS.data[k]&&RS.data[k].alts;if(pv&&pv[0]&&pv[0].ab)alts[0].ab=pv[0].ab;}
       RS.data[k]={alts};
+      if(GMKEY)gmTime(o,d).then(g=>{const a=alts[0];a.tt={min:a.min,dl:a.dl};a.min=g.min;a.dl=g.dl;a.arr=new Date(Date.now()+g.min*6e4);a.src="Google";if(g.km)a.km=g.km;svUpd&&RS.data[k]&&RS.data[k].alts===alts&&svUpd(k,a);renderReise();}).catch(e=>{RS.gmErr=String(e.message||e);renderReise();});
       alts.forEach(a=>routeRW(a,["warning","closure"]).then(async l=>{a.ab=l.map(w=>({...w,jam:jamInfo(w),cl:w._svc==="closure"||w.isBlocked===true||w.isBlocked==="true"})).filter(w=>w.cl||w.jam);if(a.i===0&&RS.data[k]&&RS.data[k].alts===alts){svUpd(k,a);renderReise();}else if(RS.dir===k)renderReise();for(const w of a.ab)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k)renderReise();}}));
       alts.forEach(a=>routeRW(a).then(async l=>{a.rw=l;if(RS.dir===k)renderReise();for(const w of l)if(!w.ort){w.ort=await placeOf(w.lat,w.lon);if(RS.dir===k&&RS.data[k]&&RS.data[k].alts&&RS.data[k].alts[RS.sel]===a)renderReise();}}));
       (async()=>{for(const a of alts)for(const x of a.secs)if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);if(RS.dir===k)renderReise();}})();
@@ -2499,7 +2511,7 @@ function renderReise(){const D=RS.data;setStauTitle();try{renderAutoPrio();}catc
   box.innerHTML='<h3 class="sub2 vl-h rs-h">'+GMICON+esc((rsDirs().find(x=>x[0]===RS.dir)||RSDIRS.find(x=>x[0]===RS.dir)||[,""])[1])+'</h3><div class="muted small" style="margin:2px 2px 6px">'+(cur.alts.length>1?cur.alts.length+" Routen, die schnellste zuerst. Route antippen zeigt sie in der Karte und ihre Störungen darunter.":"Eine Route gefunden.")+'</div>'+
     cur.alts.map(a=>{const m=(a.rw||[]).length;
       return '<div class="alt'+(a.i===RS.sel?" on":"")+'" data-rsalt="'+a.i+'" role="button" tabindex="0"><span class="an">'+(a.i+1)+'</span><span class="at">'+hm(a.min)+' <span class="cs '+(a.dl>=20?"bad":a.dl>=10?"warn":a.dl>0?"lo":"ok")+'">'+(a.dl>0?"+"+a.dl+" Stau":"frei")+'</span></span><span class="muted small">'+fmt(a.km)+' km</span>'+
-        '<span class="ad">'+(a.i===0?"Schnellste · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
+        '<span class="ad">'+(a.i===0?"Schnellste"+(a.src?" · Zeit: Google Maps":"")+" · ":"+"+(a.min-cur.alts[0].min)+" min · ")+(a.abs.length?"über "+esc(a.abs.join(", "))+" · ":"")+'Ankunft '+hhmm(a.arr)+(a.secs.length?" · "+a.secs.length+(a.secs.length===1?" Behinderung":" Behinderungen"):"")+(a.ab&&a.ab.some(w=>w.cl)?" · ⛔ Sperrung":"")+(m?" · 🚧 "+m+(m===1?" Baustelle":" Baustellen"):"")+'</span>'+
         (a.i===RS.sel?'<span class="ag"><a href="'+gmView(o,d,null)+'"'+(IOS?'':' target="_blank" rel="noopener"')+'>'+GMICON+'In Google Maps öffnen ↗</a><a class="sec" href="'+uberUrl(d)+'" target="_blank" rel="noopener">Uber bestellen ↗</a></span>':'')+'</div>';}).join("")+
     '<div class="muted small" style="margin:0 2px 8px">Google Maps öffnet die Route von '+esc(o.label)+' nach '+esc(d.label)+' zur Kontrolle. Die Navigation startest du dort selbst; Alternativen zeigt Google grau zum Antippen.</div>';
   const a=cur.alts[RS.sel];const n=a.secs.length,m=(a.rw||[]).length;

@@ -2003,6 +2003,11 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
       <span class="hint" id="home-hint">Meldungen rund um diese Adresse stehen im Verkehr direkt nach den Autobahnen. Wird nur auf diesem Gerät gespeichert.</span>
     </div>
     <div class="field">
+      <label for="gmkey">Google-Schlüssel für Fahrzeiten (Routes API)</label>
+      <div class="inline"><input id="gmkey" type="text" autocomplete="off" spellcheck="false" placeholder="API-Schlüssel aus console.cloud.google.com"><button type="button" id="gmkey-save">Speichern</button></div>
+      <span class="hint" id="gmkey-hint">Mit Schlüssel kommen die Fahrzeiten der Reise-Kacheln von Google Maps (mit aktuellem Verkehr); Karte, Staus und Baustellen weiter von TomTom. Abfrage höchstens alle 10 min. Der Schlüssel bleibt nur auf diesem Gerät (wird mit „Übertragen“ mitgeschickt).</span>
+    </div>
+    <div class="field">
       <label for="tomtom">TomTom-Schlüssel (Verkehrslage auf allen Straßen)</label>
       <div class="inline"><input id="tomtom" type="text" autocomplete="off" spellcheck="false" placeholder="API Key von developer.tomtom.com"><button type="button" id="tomtom-save">Speichern</button></div>
       <span class="hint" id="tomtom-hint">Kostenlos, ohne Kreditkarte: <a href="https://developer.tomtom.com/user/me/apps" target="_blank" rel="noopener">developer.tomtom.com → Dashboard → Keys</a>. Der Schlüssel bleibt nur auf diesem Gerät gespeichert.</span>
@@ -2042,6 +2047,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=370"></script>
+<script src="app.js?v=371"></script>
 </body>
 </html>
