@@ -633,9 +633,14 @@ async function loadFussball(){const y=new Date().getFullYear(),season=new Date()
       '<div class="fb-where">'+esc(m._lg)+(m.group&&m.group.groupName?" · "+esc(m.group.groupName):"")+(loc.locationStadium?"<br>"+esc(loc.locationStadium):"")+(loc.locationCity?", "+esc(loc.locationCity):"")+'</div>'+
       (nh&&nh!==m?'<div class="fb-count"><b>'+nhd+'</b><span>Tage bis zum nächsten Heimspiel<br><em>'+esc(dl(nh))+' · vs. '+esc((nh.team2||{}).teamName||"")+'</em></span></div>':(home?'':'<div class="fb-count"><b>–</b><span>Kein weiteres Heimspiel im Kalender</span></div>'))+
       (ms.length>1?'<div class="sublbl" style="margin-top:14px">Danach</div><div class="list">'+ms.slice(1,40).map((x,i)=>(i===6?'</div><button type="button" class="btn" data-tmmore style="width:100%;margin:8px 0">Alle '+(ms.length-1)+' weiteren Spiele anzeigen</button><div class="list" hidden>':'')+(()=>{const h=is(x.team1),o=h?x.team2:x.team1;return '<div class="li fb-li '+(h?"h":"a")+'" data-day="'+isoDay(dt(x))+'" data-team="'+f.k+'"><span class="tag">'+esc(dl(x))+'</span><div class="t"><span class="fb-ha">'+(h?"Heimspiel":"Auswärts")+'</span><b>'+(h?"vs. ":"bei ")+esc(o.teamName)+'</b><span class="muted small">'+esc(tl(x))+' Uhr · '+esc(x._lg)+'</span></div><div class="r fb-in">'+esc(inDays(dayDiff(x.matchDateTime)))+'</div></div>';})()).join("")+'</div>':'');});
-  setKpi("k-fb",esc(kv.join(" · ")||"–"),"nächste Spiele","info");setStatus("fb",true);markParallel();}
+  sportTile();setStatus("fb",true);markParallel();}
 /* DEG: Heimspiele aus dem DEL2-Spielplan (Sammler) im gleichen Kartenstil wie Fortuna/BVB */
 const SP={f95:[],deg:[],bvb:[]},SPN={f95:"Fortuna",deg:"DEG",bvb:"BVB"};
+/* Kachel „Events Sport“: nächstes Spiel je Verein (Fortuna, DEG, BVB) mit Tag und Uhrzeit */
+function sportTile(){const nx=[["f95","F95"],["deg","DEG"],["bvb","BVB"]].map(([k,t])=>{const g=(SP[k]||[])[0];return g?{t,g}:null;}).filter(Boolean).sort((a,b)=>(a.g.day+a.g.time).localeCompare(b.g.day+b.g.time));
+  if(!nx.length){setKpi("k-fb","–","nächste Spiele","info");return;}
+  const wd=d=>new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}).replace(/\.,/,"").replace(/\.$/,"");const f=nx[0];
+  setKpi("k-fb",esc(f.t)+'<small> '+esc(wd(f.g.day))+'</small>',nx.map(x=>x.t+" "+wd(x.g.day)+(x.g.time?" "+x.g.time:"")+(x.g.home?" (H)":"")).join(" · "),"info");}
 async function loadDEG(){const box=$("fb-deg");if(!box)return;let L=[];
   try{L=((await getData("events-dus.json")).data||[]).filter(r=>r.team==="deg"&&new Date(r.start).getTime()>Date.now()-2.5*36e5).sort((a,b)=>a.start.localeCompare(b.start));}catch(e){}
   const card=box.closest(".card");if(card){card.classList.add("fb-card");card.style.setProperty("--club1","#d40019");card.style.setProperty("--club2","#ffd200");card.style.setProperty("--clubfg","#fff");}
@@ -643,7 +648,7 @@ async function loadDEG(){const box=$("fb-deg");if(!box)return;let L=[];
   const day=r=>r.start.slice(0,10),tm=r=>/T\d\d:\d\d/.test(r.start)?r.start.slice(11,16):"",dl=r=>new Date(day(r)+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
   const dd=r=>{const a=new Date(day(r)+"T00:00:00"),b=new Date();b.setHours(0,0,0,0);return Math.round((a-b)/864e5);},inD=n=>n<=0?"heute":n===1?"morgen":"in "+n+" Tagen";
   const opp=r=>r.name.replace(/^DEG – /,""),img=u=>u?'<img src="'+esc(safeUrl(u))+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="fb-mono">?</span>';
-  SP.deg=L.map(r=>({day:day(r),time:tm(r),home:true,opp:opp(r)}));const m=L[0];
+  SP.deg=L.map(r=>({day:day(r),time:tm(r),home:true,opp:opp(r)}));try{sportTile();}catch(e){}const m=L[0];
   box.innerHTML='<div class="fb-banner h"><span>🏟️ Heimspiel</span><b>'+esc(inD(dd(m)))+'</b></div>'+
     '<div class="fb-when" data-day="'+day(m)+'" data-team="deg">'+esc(dl(m))+(tm(m)?' · '+esc(tm(m))+' Uhr':'')+'</div>'+
     '<div class="fb-next"><div class="fb-team me">'+img(m.icon)+'<b>Düsseldorfer EG</b></div><div class="fb-vs">:</div><div class="fb-team">'+img(m.icon2)+'<b>'+esc(opp(m))+'</b></div></div>'+
@@ -2323,7 +2328,11 @@ function renderCal(){
     const hol=HOL&&HOL.find(h=>h.date>=today);
     if(cur){v='<span class="vt">'+esc(cur.name).replace(/^(Herbst|Oster|Sommer|Winter|Pfingst|Weihnachts)(ferien)/i,"$1&shy;$2")+'</span>';n="bis "+dateShort(nd(cur.end))+" · "+(STATE_NAME[C.state]||"");cls="ok";}
     else if(hol){v=nd(hol.date).toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})+"<small> "+esc(hol.localName)+"</small>";n=rel(days(hol.date))+" · "+(STATE_NAME[C.state]||"");}
-    setKpi("k-strom",v,n,cls);}
+    setKpi("k-strom",v,n,cls);
+    /* Kachel „Events Kultur“: Veranstaltungen in Düsseldorf statt Feiertag */
+    evDus().then(()=>{const td=evNext(0,50),nx=evNext(14,1)[0];if(!td.length&&!nx)return;
+      if(td.length)setKpi("k-strom",td.length+'<small> heute</small>',noPic0(td[0].name).slice(0,60)+(td.length>1?" u. a.":""),"info");
+      else setKpi("k-strom",new Date(String(nx.start).slice(0,10)+"T12:00:00").toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})+'<small> '+esc(noPic0(nx.name).slice(0,40))+'</small>',"nächstes Event in Düsseldorf","info");});}
   $("cal").innerHTML=html||stateBox("wird geladen …");
 }
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7);}
@@ -3126,7 +3135,14 @@ document.addEventListener("click",e=>{if(!e.target.closest(".vlback"))return;e.p
 
 
 // ================= Lage-Mail (v375): ein Tipp öffnet die Mail-App mit der aktuellen Lage =================
+const noPic0=s=>String(s||"").replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}️‍⃣]/gu,"").replace(/\s+/g," ").trim();
 var BL_LAST=null;
+/* Programm der Düsseldorfer Spielstätten (ohne Fortuna/DEG/BVB) für Kachel „Events Kultur“ und Lage-Mail */
+let EVDUS=null;async function evDus(){if(EVDUS)return EVDUS;try{EVDUS=((await getData("events-dus.json")).data||[]).filter(r=>!r.team&&r.name&&r.start);}catch(e){EVDUS=[];}return EVDUS;}
+function evNext(days,max){const td=isoDay(new Date()),end=isoDay(new Date(Date.now()+days*864e5)),now=Date.now();
+  return (EVDUS||[]).filter(r=>{const d=String(r.start).slice(0,10);if(d<td||d>end)return false;return String(r.start).length<16||new Date(r.start).getTime()>now-36e5;})
+    .sort((a,b)=>String(a.start).localeCompare(String(b.start))).filter((r,i,a)=>a.findIndex(x=>x.name===r.name&&String(x.start).slice(0,10)===String(r.start).slice(0,10))===i).slice(0,max);}
+setTimeout(()=>evDus(),3000);
 function lageText(){
   /* Reiner Text ohne Piktogramme, luftig gegliedert: Abschnitt = Trennlinie, Überschrift, Leerzeile, Einträge */
   const noPic=s=>String(s||"").replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}️‍⃣]/gu,"").replace(/\s+/g," ").replace(/\s+([,.:])/g,"$1").replace(/^[\s·–-]+|[\s·–-]+$/g,"").trim();
@@ -3156,7 +3172,7 @@ function lageText(){
   {const h=$("prio-h");H(h&&T(h)?T(h).replace(/\s*·.*$/,""):"Reise und Verkehr");
     const rows=[...document.querySelectorAll("#prio .route")];
     if(rows.length)rows.forEach((r,n)=>{const g=s=>T(r.querySelector(s));if(n)L.push("");
-      L.push("Nach "+g(".rt").replace(/^→\s*/,"")+": "+(g(".rv")||"–"));const sub=g(".rs");if(sub)L.push(sub);});
+      const rv=g(".rv");L.push("Nach "+g(".rt").replace(/^→\s*/,"")+": "+(!rv||/berechnet/.test(rv)?"Fahrzeit gerade nicht abrufbar":rv));const sub=g(".rs");if(sub)L.push(sub);});
     else{const k=$("k-traffic");L.push(k?(T(k.querySelector(".val"))+", "+T(k.querySelector(".note"))):"noch nicht geladen");}}
   // Polizei & Feuerwehr
   if(BL_LAST&&BL_LAST.key===C.key){const td=new Date().toLocaleDateString("sv-SE",dt),day=x=>new Date(x.date).toLocaleDateString("sv-SE",dt);
@@ -3165,7 +3181,15 @@ function lageText(){
     l.slice(0,4).forEach(x=>{L.push("",(day(x)===td?"Heute":new Date(x.date).toLocaleDateString("de-DE",{...dt,day:"2-digit",month:"2-digit"}))+" "+hhmm(x.date)+" Uhr",
       noPic(String(x.title||"").replace(/^(POL|FW)[-\w ]*:\s*/,"")));});}
   // Übrige Kacheln mit Kennzahl
-  const more=["k-aq","k-rhein","k-fb","k-strom","k-urlaub"].map(id=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
+  // Events Sport – je Verein die nächsten zwei Spiele
+  {const fd=d=>new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
+    if(["f95","deg","bvb"].some(k=>SP[k]&&SP[k].length)){H("Events Sport");let first=true;[["f95","Fortuna Düsseldorf"],["deg","DEG"],["bvb","BVB"]].forEach(([k,nm])=>{const g=(SP[k]||[]).slice(0,2);if(!first)L.push("");first=false;
+      L.push(nm+":");if(!g.length)L.push("kein Spiel im Kalender");g.forEach(x=>L.push(fd(x.day)+(x.time?", "+x.time+" Uhr":"")+" · "+(x.home?"Heimspiel gegen ":"auswärts bei ")+x.opp));});}}
+  // Events Kultur – Programm der Düsseldorfer Spielstätten, heute bis übermorgen
+  {const ev=evNext(2,10);if(ev.length){H("Events Kultur Düsseldorf");let last="";
+    ev.forEach(r=>{const d=String(r.start).slice(0,10);if(d!==last){if(last)L.push("");L.push(new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"}));last=d;}
+      L.push((String(r.start).length>=16&&!r.allDay?String(r.start).slice(11,16)+" Uhr · ":"")+noPic(r.name)+(r.venue?" ("+noPic(r.venue)+")":""));});}}
+  const more=["k-aq","k-rhein","k-urlaub"].map(id=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
     const n=T(k.querySelector(".note"));return T(k.querySelector(".lbl"))+": "+v+(n&&n!=="wird geladen"?", "+n:"");}).filter(Boolean);
   if(more.length){H("Weiteres");more.forEach((m,n)=>{if(n)L.push("");L.push(m);});}
   L.push("",LINE,"","Live im Dashboard:",location.origin+location.pathname,"","© Thomas Hußmann");
@@ -3179,7 +3203,12 @@ const okMail=v=>!!v&&v.split(/[,;\s]+/).filter(Boolean).every(x=>/^[^@\s]+@[^@\s
 function cutBytes(s,max){const enc=new TextEncoder();if(enc.encode(s).length<=max)return s;while(enc.encode(s+"\n…").length>max)s=s.slice(0,-40);return s+"\n…";}
 /* Versand (v382): ntfy.sh nimmt keine anonymen Mails an. Auf iPhone/iPad/Mac übernimmt deshalb der Kurzbefehl „Lage-Mail“
    den Versand ohne Rückfrage (Aktion „E-Mail senden“, „Verfassen anzeigen“ aus). Sonst bzw. auf Wunsch: Mail-App mit fertigem Text. */
-function sendLageMail(btn){
+async function sendLageMail(btn){
+  /* vor dem Versand fertig laden: Fahrzeiten „Meine Strecken“ und Veranstaltungen (höchstens 15 s) */
+  {const lbl=btn.querySelector(".qa-ml");const need=typeof RS!=="undefined"&&RS.city&&!rsDirs().every(x=>RS.data[x[0]]&&(RS.data[x[0]].alts||RS.data[x[0]].err));
+    if(need||!EVDUS){if(lbl)lbl.textContent="wird vorbereitet …";
+      try{await Promise.race([Promise.all([evDus(),need?loadReise(true).catch(()=>{}):0]),new Promise(r=>setTimeout(r,15000))]);try{renderAutoPrio();}catch(e){}}catch(e){}
+      if(lbl)lbl.textContent="Lage-Mail";}}
   const mode=load("lagemail_mode")||(IOS||/Mac/.test(navigator.platform)?"kb":"mail");
   if(mode==="kb"){const {subject,body}=lageText();
     location.href="shortcuts://run-shortcut?name="+encodeURIComponent("Lage-Mail")+"&input=text&text="+encodeURIComponent(subject+"\n"+body);
