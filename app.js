@@ -2052,14 +2052,32 @@ async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includ
   try{STOPIDX=(await getData("stops-"+ec().key+".json")).data;
   }catch(e){STOPIDX={available:[],all:[]};}}
 function proxyOn(){try{return !!EFAPROXY;}catch(e){return false;}}
+/* U78 Heinrich-Heine-Allee → MERKUR SPIEL-ARENA: Direktfahrten live über den VRR-Vermittler, Abfahrt und Ankunft */
+let U78T=null;
+async function u78Live(seq){const box=$("efa");clearTimeout(U78T);if(!box)return;if(!box.innerHTML||!/u78/.test(box.dataset.v||""))box.innerHTML='<div class="state">Live-Fahrten werden geladen …</div>';box.dataset.v="u78";
+  try{if(!proxyOn())throw new Error("Vermittler fehlt");const base=EFAPROXY.replace(/\/+$/,"");const a=await tripStopId("Düsseldorf Heinrich-Heine-Allee");
+    const d=await getJSON(base+"/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin="+encodeURIComponent(a)+"&type_destination=any&name_destination="+encodeURIComponent("de:05111:18075")+"&itdTripDateTimeDepArr=dep&calcNumberOfTrips=8&maxChanges=0&useRealtime=1",9000);
+    if(seq!==EFASEQ||EFASTOP!=="@U78")return;
+    const seen=new Set();const rows=(d.journeys||[]).map(j=>(j.legs||[]).filter(l=>l.transportation&&l.transportation.product&&![99,100].includes(l.transportation.product.class))).filter(l=>l.length===1).map(([l])=>({line:l.transportation.disassembledName||"",dep:l.origin.departureTimePlanned,depEst:l.origin.departureTimeEstimated,arr:l.destination.arrivalTimePlanned,arrEst:l.destination.arrivalTimeEstimated,plat:(l.origin.properties||{}).platformName||(l.origin.properties||{}).platform||"",cx:(l.realtimeStatus||[]).includes("TRIP_CANCELLED")}))
+      .filter(r=>/U\s?78/i.test(r.line)&&!seen.has(r.dep)&&seen.add(r.dep)).filter(r=>new Date(r.depEst||r.dep).getTime()>Date.now()-60e3);
+    const hm=x=>new Date(x).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"});const dl=(p,e)=>e?Math.round((new Date(e)-new Date(p))/6e4):0;
+    box.innerHTML=rows.length?'<table class="tbl efa-tbl"><thead><tr><th>Ab</th><th>Linie</th><th>An Arena</th><th>Fahrzeit</th><th>Steig</th></tr></thead><tbody>'+rows.map(r=>{const d1=dl(r.dep,r.depEst),d2=dl(r.arr,r.arrEst);
+      return '<tr'+(r.cx?' style="opacity:.5;text-decoration:line-through"':'')+'><td><b>'+hm(r.depEst||r.dep)+'</b>'+(d1>0?' <span style="color:#e53935;font-weight:700">+'+d1+'</span>':'')+'</td><td><span class="line">U78</span></td><td>'+hm(r.arrEst||r.arr)+(d2>0?' <span style="color:#e53935">+'+d2+'</span>':'')+'</td><td>'+Math.round((new Date(r.arrEst||r.arr)-new Date(r.depEst||r.dep))/6e4)+' min</td><td>'+esc(r.plat||"–")+'</td></tr>';}).join("")+'</tbody></table><div class="muted small" style="margin-top:6px">Nur Direktfahrten U78 ab Heinrich-Heine-Allee bis MERKUR SPIEL-ARENA/Messe Nord · <b style="color:var(--ok)">● live</b> (VRR) · erneuert alle 45 s</div>'
+      :'<div class="state">Gerade keine U78-Fahrt zur Arena gefunden.</div>';setStatus("efa",true,"U78 live");
+  }catch(e){if(seq===EFASEQ)box.innerHTML=stateBox("U78-Fahrten gerade nicht abrufbar.",link("https://www.rheinbahn.de/","Rheinbahn"));}
+  U78T=setTimeout(()=>{if(EFASTOP==="@U78"&&box.offsetParent)u78Live(seq);},45000);}
 async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){$("efa-title").textContent="Abfahrten";$("efa-stops").innerHTML="";$("efa").innerHTML=stateBox("Für diesen Ort gibt es keine Echtzeit-Abfahrten im VRR.",'<a href="https://www.hvv.de/de/fahrplaene/abruf-fahrplaninfos/abfahrten" target="_blank" rel="noopener">HVV-Abfahrten ↗</a>');setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
   // gespeicherte Haltestelle nur verwenden, wenn sie für diesen Ort wirklich abgerufen wird (sonst Standard, z. B. Nikolaus-Knopp-Platz)
-  let stop=STOPS[ec().key]||ec().efaDefault;{const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file&&!(mm.id&&proxyOn())){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
+  let stop=STOPS[ec().key]||ec().efaDefault;
+  if(ec().isDus&&stop==="@U78"){EFASTOP=stop;efaGo();const avail=(STOPIDX&&STOPIDX.available)||[];
+    $("efa-stops").innerHTML=avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join("")+'<button type="button" data-stop="@U78" class="on">U78 → Arena</button>';
+    $("efa-title").textContent="U78 · Heinrich-Heine-Allee → Arena";$("efa-src").textContent="Direktfahrten · Echtzeit";u78Live(++EFASEQ);return;}
+  {const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file&&!(mm.id&&proxyOn())){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
   const m=stopMatch(stop);EFASTOP=stop;efaGo();
   const avail=(STOPIDX&&STOPIDX.available)||[];
-  $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join(""):"";
+  $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join("")+(ec().isDus?'<button type="button" data-stop="@U78">U78 → Arena</button>':''):"";
   $("efa-dir").value=DIRF[ec().key]||"";
   $("efa-title").textContent=(ec().isDus?"Rheinbahn · ":"Abfahrten ")+(m.name||stop).replace(/^Düsseldorf[, ]*/,"");
   $("efa-src").textContent=ec().isDus?"Bus, U- und Straßenbahn · Echtzeit":"Bus & Bahn vor Ort · Echtzeit";
