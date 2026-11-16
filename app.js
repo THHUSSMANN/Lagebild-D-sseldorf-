@@ -1215,10 +1215,12 @@ async function loadRhein(){
     $("pegel").innerHTML=html;setStatus("pegel",true);loadRheinWV(uuid,cm.value);
   }catch(e){const w=$("pegel-wv");if(w)w.innerHTML="";setStatus("pegel",false,errText(e));$("pegel").innerHTML=stateBox("Pegel nicht verfügbar – "+errText(e)+".",link("https://www.pegelonline.wsv.de/gast/start","PEGELONLINE"));setKpi("k-rhein","–","kein Pegel","info");}
 }
+/* Landespegel (Düssel, Anger, Itter …) auch für die Lage-Mail vorhalten */
+let LP_LAST=null;async function lpLoad(){if(LP_LAST)return LP_LAST;try{const d=await getData("landespegel.json");LP_LAST=(d.data||[]).filter(x=>x.value!=null);}catch(e){LP_LAST=[];}return LP_LAST;}
 async function loadLandespegel(){
   const fb=document.querySelector('.tabseg[data-tabs="pg"] [data-t="fl"]');if(fb)fb.hidden=!C.isDus;if(!C.isDus){if(fb&&fb.classList.contains("on"))tabSet("pg","rhein");return;}
   try{const d=await getData("landespegel.json");const l=(d.data||[]).filter(x=>x.value!=null).sort((a,b)=>["Düssel","Anger","Itter"].indexOf(a.water)-["Düssel","Anger","Itter"].indexOf(b.water));
-    if(!l.length)throw new Error("keine Messwerte");
+    if(!l.length)throw new Error("keine Messwerte");LP_LAST=l;
     $("landespegel").innerHTML=l.map(x=>{const M={MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3};const t=levelText(x.value,M,x.unit);
       return '<div class="lp"><div class="lp-h"><div><b>'+esc(x.water)+'</b> <span class="muted small">Pegel '+esc(x.name.replace(/_\d+$/,""))+'</span></div><span class="lp-v">'+fmt(x.value,x.value<100?1:0)+' <small>'+esc(x.unit)+'</small></span></div>'+
         '<div class="row" style="gap:6px;margin-top:4px"><span class="pill p-'+t.cls+'"><i></i>'+esc(t.st)+'</span></div>'+(t.cmp?'<div class="cmp small">'+esc(t.cmp)+'</div>':'')+levelScale(x.value,M)+
@@ -3206,7 +3208,13 @@ function lageText(){
     ev.forEach(r=>{const d=String(r.start).slice(0,10);if(d!==last){if(last)L.push("","– – –","");L.push(new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"}).toUpperCase(),"");last=d;}else L.push("");
       L.push((String(r.start).length>=16&&!r.allDay?String(r.start).slice(11,16)+" Uhr · ":"")+noPic(r.name));if(r.venue)L.push(noPic(r.venue));});}}
   // Übrige Kacheln mit Kennzahl
-  const more=["k-aq","k-rhein","k-urlaub"].map(id=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
+  // Pegel: Rhein + Düsseldorfer Bäche (Düssel, Anger, Itter …)
+  {const k=$("k-rhein");const rv=k&&!k.hidden?T(k.querySelector(".val")):"";const lp=(LP_LAST||[]).slice().sort((a,b)=>["Düssel","Anger","Itter"].indexOf(a.water)-["Düssel","Anger","Itter"].indexOf(b.water));
+    if((rv&&rv!=="–")||lp.length){H("Pegel");let first=true;
+      if(rv&&rv!=="–"){const nt=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");L.push(T(k.querySelector(".lbl")),rv+(nt&&nt!=="wird geladen"?" · "+nt.replace(/ · /g,", "):""));first=false;}
+      lp.forEach(x=>{const t=levelText(x.value,{MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3},x.unit);if(!first)L.push("");first=false;
+        L.push(x.water+" (Pegel "+String(x.name||"").replace(/_\d+$/,"")+")",fmt(x.value,x.value<100?1:0)+" "+(x.unit||"cm")+" · "+t.st+(x.time?" · Stand "+hhmm(x.time)+" Uhr":""));});}}
+  const more=["k-aq"].map(id=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
     const n=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");const lb={"k-strom":"Nächster Feiertag","k-urlaub":"Urlaub"}[id]||(T(k.querySelector(".lbl"))+(k.dataset.water?" ("+k.dataset.water+")":""));
     return lb+": "+v+(n&&n!=="wird geladen"?" ("+n.replace(/ · /g,", ")+")":"");}).filter(Boolean);
   if(more.length){H("Weiteres");more.forEach((m,n)=>{if(n)L.push("");L.push(m);});}
@@ -3229,6 +3237,7 @@ function lageMissing(){const m=[];
   if(TTKEY&&typeof RS!=="undefined"&&RS.city&&rsDirs().some(x=>!(RS.data[x[0]]&&(RS.data[x[0]].alts||RS.data[x[0]].err))))m.push("Fahrzeiten");
   if(!status.fb)m.push("Spielplan");
   if(typeof EVDUS!=="undefined"&&!EVDUS)m.push("Veranstaltungen");
+  if(!LP_LAST)m.push("Pegel");
   return m;}
 let LM_WAIT=0;
 function lageSend(btn){const mode=load("lagemail_mode")||(IOS||/Mac/.test(navigator.platform)?"kb":"mail");const lbl=btn.querySelector(".qa-ml");
@@ -3243,6 +3252,7 @@ function sendLageMail(btn){const lbl=btn.querySelector(".qa-ml");
   btn.classList.add("busy");lbl.textContent="Lage wird geladen …";
   try{if(TTKEY&&typeof loadReise==="function")loadReise(false);}catch(e){}
   try{if(typeof evDus==="function"&&!EVDUS)evDus().catch(()=>{});}catch(e){}
+  try{if(!LP_LAST)lpLoad();}catch(e){}
   const t0=Date.now();clearInterval(LM_WAIT);
   LM_WAIT=setInterval(()=>{const miss=lageMissing();if(miss.length&&Date.now()-t0<30000){lbl.textContent="Lädt: "+miss[0]+" …";return;}
     clearInterval(LM_WAIT);btn.classList.remove("busy");btn.classList.add("ready");lbl.textContent="Jetzt senden";},700);}
