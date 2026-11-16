@@ -2811,6 +2811,8 @@ function applyTileOrder(){
   let order=load("tile_order")||TILE_DEFAULT;const box=$("tiles");
   // „Bus & Bahn“ einmalig direkt hinter „Verkehr“ einsortieren
   if(!load("ord_bahn2")){order=order.filter(v=>v!=="bahn");const i=order.indexOf("staus");order.splice(i<0?order.length:i+1,0,"bahn");store("ord_bahn2",1);if(load("tile_order"))store("tile_order",order);}
+  /* einmalig: gewünschte Reihenfolge wiederherstellen – Reise & Verkehr, Wetter, darunter Feuerwehreinsätze */
+  if(!load("ord_fix_1116")){const top=["staus","wetter","einsaetze"];order=[...top,...order.filter(v=>!top.includes(v))];store("tile_order",order);store("ord_fix_1116",1);}
   TILE_DEFAULT.forEach((v,i)=>{if(!order.includes(v)){const prev=TILE_DEFAULT[i-1];const j=order.indexOf(prev);order.splice(j<0?order.length:j+1,0,v);}});
   [...order,...TILE_DEFAULT.filter(v=>!order.includes(v))].forEach(v=>{const t=box.querySelector('.tile[data-view="'+v+'"]');if(t)box.appendChild(t);});
 }
@@ -2943,8 +2945,8 @@ document.addEventListener("click",e=>{if(!HEDIT)return;const t=e.target.closest(
   const saveHead=()=>{const tiles=$("tiles");[...hn.querySelectorAll("[data-v]")].forEach(x=>{const t=tiles.querySelector('.tile[data-view="'+x.dataset.v+'"]');if(t)tiles.appendChild(t);});saveTileOrder();};
   const saveTools=()=>store("tool_order",[...tg.children].map(x=>x.dataset.tool));
   [hn,tg].forEach(b=>{b.addEventListener("dragstart",e=>e.preventDefault());b.addEventListener("contextmenu",e=>e.preventDefault());});
-  reorder(hn,"[data-v]",()=>!HEDIT,saveHead,320);reorder(tg,"[data-tool]:not([data-tool='arrange'])",()=>!HEDIT,saveTools,320);
-  const ar=$("arrange-tool");if(ar)ar.hidden=true;}
+  /* 16.11.: Verschieben nur noch im Modus „Anordnen“ (Tools) – sonst rutschten Kacheln beim Scrollen versehentlich weg */
+  const ar=$("arrange-tool");if(ar)ar.hidden=false;}
 $("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});
 applyTileOrder();{const kb=$("k-bahn");if(kb)kb.hidden=true;}route();
 applyPlaceUi();renderSources();tick();setInterval(tick,1000);
