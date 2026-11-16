@@ -3187,14 +3187,14 @@ function lageText(){
   else [...FB.slice(0,1),{k:"deg",name:"Düsseldorfer EG"},...FB.slice(1)].forEach((f,fi)=>{const l=(SP[f.k]||[]);if(fi)L.push("");L.push(f.name);
     if(!l.length){L.push("kein anstehendes Spiel im Spielplan");return;}
     const wd=d=>new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
-    const row=x=>wd(x.day)+", "+x.time+" Uhr – "+(x.home?"Heimspiel gegen ":"auswärts bei ")+x.opp+(x.lg?" ("+x.lg+")":"");
+    const row=x=>wd(x.day)+(x.time?", "+x.time+" Uhr":"")+" – "+(x.home?"Heimspiel gegen ":"auswärts bei ")+x.opp+(x.lg?" ("+x.lg+")":"");
     l.slice(0,3).forEach(x=>L.push(row(x)));
     const nh=l.find(x=>x.home);if(nh&&l.slice(0,3).indexOf(nh)<0)L.push("Nächstes Heimspiel: "+row(nh));});
-  // Übrige Kacheln mit Kennzahl
   // Events Kultur – Programm der Düsseldorfer Spielstätten, heute bis übermorgen
   {const ev=evNext(2,10);if(ev.length){H("Events Kultur Düsseldorf");let last="";
     ev.forEach(r=>{const d=String(r.start).slice(0,10);if(d!==last){if(last)L.push("");L.push(new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"}));last=d;}
       L.push((String(r.start).length>=16&&!r.allDay?String(r.start).slice(11,16)+" Uhr · ":"")+noPic(r.name)+(r.venue?" ("+noPic(r.venue)+")":""));});}}
+  // Übrige Kacheln mit Kennzahl
   const more=["k-aq","k-rhein","k-urlaub"].map(id=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
     const n=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");const lb={"k-strom":"Nächster Feiertag","k-urlaub":"Urlaub"}[id]||(T(k.querySelector(".lbl"))+(k.dataset.water?" ("+k.dataset.water+")":""));
     return lb+": "+v+(n&&n!=="wird geladen"?" ("+n.replace(/ · /g,", ")+")":"");}).filter(Boolean);
