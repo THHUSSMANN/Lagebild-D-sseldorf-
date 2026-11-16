@@ -1,0 +1,1 @@
+js:[...document.querySelectorAll("a,button,.tile,[role=button]")].find(e=>/Reise & Verkehr/.test(e.textContent)).click()|[...document.querySelectorAll("button,a")].filter(e=>e.offsetParent).find(e=>/^\s*ÖPNV/.test(e.textContent)).click()|document.querySelector('[data-stop="@U78"]').click();document.querySelector('[data-stop="@U78"]').scrollIntoView();scrollBy(0,-80)
