@@ -1186,7 +1186,7 @@ async function loadRhein(){
     const sName=(st.longname||st.shortname||"").replace(/\p{L}+/gu,w=>w.charAt(0)+w.slice(1).toLowerCase());
     $("pegel-title").textContent="Pegel "+sName;
     $("pegel-src").textContent="WSV PEGELONLINE · "+wName+(st.km!=null?" · km "+fmt(st.km,1):"")+(!C.isDus&&st.km!=null?"":"");
-    $("k-rhein-lbl").textContent="Pegel "+sName;
+    $("k-rhein-lbl").textContent=(/^rhein$/i.test(wName)?"Rheinpegel ":"Pegel ")+sName;$("k-rhein").dataset.water=/^rhein$/i.test(wName)?"":wName;
     const tr=cm.trend===1?"steigend ↑":cm.trend===-1?"fallend ↓":"gleichbleibend →";
     const cvRaw=await getJSON(P+"/"+uuid+"/W.json?includeCharacteristicValues=true").then(x=>x.characteristicValues||[]).catch(()=>[]);
     const M={};cvRaw.forEach(c=>{M[c.shortname]=c.value;});
@@ -3196,7 +3196,7 @@ function lageText(){
     ev.forEach(r=>{const d=String(r.start).slice(0,10);if(d!==last){if(last)L.push("");L.push(new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"}));last=d;}
       L.push((String(r.start).length>=16&&!r.allDay?String(r.start).slice(11,16)+" Uhr · ":"")+noPic(r.name)+(r.venue?" ("+noPic(r.venue)+")":""));});}}
   const more=["k-aq","k-rhein","k-urlaub"].map(id=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
-    const n=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");const lb={"k-strom":"Nächster Feiertag","k-urlaub":"Urlaub"}[id]||T(k.querySelector(".lbl"));
+    const n=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");const lb={"k-strom":"Nächster Feiertag","k-urlaub":"Urlaub"}[id]||(T(k.querySelector(".lbl"))+(k.dataset.water?" ("+k.dataset.water+")":""));
     return lb+": "+v+(n&&n!=="wird geladen"?" ("+n.replace(/ · /g,", ")+")":"");}).filter(Boolean);
   if(more.length){H("Weiteres");more.forEach((m,n)=>{if(n)L.push("");L.push(m);});}
   L.push("",LINE,"","Live im Dashboard:",location.origin+location.pathname,"","© Thomas Hußmann");
