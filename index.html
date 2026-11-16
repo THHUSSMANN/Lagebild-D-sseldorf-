@@ -1305,7 +1305,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 /* v375: vierter Schnellknopf „Lage-Mail“ – iPhone 2 × 2, ab Tablet-Breite eine Reihe */
 .qapps{grid-template-columns:repeat(2,1fr)!important}
 @media (min-width:700px){.qapps{grid-template-columns:repeat(4,1fr)!important}}
-.qapp.qa-mail.busy{opacity:.7}.qapp.qa-mail.sent{background:linear-gradient(135deg,#2e9d5b,#1c6b3c)!important;border-color:rgba(255,255,255,.4)!important}
+.qapp.qa-mail.busy{opacity:.75}.qapp.qa-mail.ready{background:linear-gradient(135deg,#2f9bd6,#0b5f8f)!important;border-color:rgba(255,255,255,.45)!important;animation:rglow 2.4s ease-in-out infinite}.qapp.qa-mail.sent{background:linear-gradient(135deg,#2e9d5b,#1c6b3c)!important;border-color:rgba(255,255,255,.4)!important}
 button.qapp{font:600 15px/1.2 var(--f-body);cursor:pointer;-webkit-appearance:none;appearance:none}
 .qapp .qa-rv{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qapp.qa-radio.on{outline:2px solid var(--accent);outline-offset:1px}
@@ -2073,6 +2073,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=382"></script>
+<script src="app.js?v=384"></script>
 </body>
 </html>

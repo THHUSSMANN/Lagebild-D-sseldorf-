@@ -626,7 +626,7 @@ async function loadFussball(){const y=new Date().getFullYear(),season=new Date()
     const m=ms[0],home=is(m.team1),loc=m.location||{},dd=dayDiff(m.matchDateTime);
     const nh=ms.find(x=>is(x.team1));const nhd=nh?dayDiff(nh.matchDateTime):null;
     kv.push(f.short+" "+dt(m).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}));
-    SP[f.k]=ms.map(x=>({day:isoDay(dt(x)),time:tl(x),home:is(x.team1),opp:((is(x.team1)?x.team2:x.team1)||{}).teamName||""}));
+    SP[f.k]=ms.map(x=>({day:isoDay(dt(x)),time:tl(x),home:is(x.team1),opp:((is(x.team1)?x.team2:x.team1)||{}).teamName||"",lg:x._lg||""}));
     box.innerHTML='<div class="fb-banner '+(home?"h":"a")+'"><span>'+(home?"🏟️ Heimspiel":"🚌 Auswärtsspiel")+'</span><b>'+esc(inDays(dd))+'</b></div>'+
       '<div class="fb-when" data-day="'+isoDay(dt(m))+'" data-team="'+f.k+'">'+esc(dl(m))+' · '+esc(tl(m))+' Uhr</div>'+
       '<div class="fb-next">'+team(m.team1,home)+'<div class="fb-vs">:</div>'+team(m.team2,!home)+'</div>'+
@@ -3145,7 +3145,7 @@ function evNext(days,max){const td=isoDay(new Date()),end=isoDay(new Date(Date.n
 setTimeout(()=>evDus(),3000);
 function lageText(){
   /* Reiner Text ohne Piktogramme, luftig gegliedert: Abschnitt = Trennlinie, Überschrift, Leerzeile, Einträge */
-  const noPic=s=>String(s||"").replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}️‍⃣]/gu,"").replace(/\s+/g," ").replace(/\s+([,.:])/g,"$1").replace(/^[\s·–-]+|[\s·–-]+$/g,"").trim();
+  const noPic=s=>String(s||"").replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u2190-\u21FF\u2B00-\u2BFF️‍⃣]/gu,"").replace(/\s+/g," ").replace(/\s+([,.:])/g,"$1").replace(/^[\s·–-]+|[\s·–-]+$/g,"").trim();
   const T=el=>el?noPic(el.textContent):"";
   const cap=w=>w.charAt(0)+w.slice(1).toLowerCase();
   const short=t=>noPic(String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"")).replace(/\b[A-ZÄÖÜ]{3,}\b/g,cap).replace(/^./,c=>c.toUpperCase());
@@ -3172,7 +3172,8 @@ function lageText(){
   {const h=$("prio-h");H(h&&T(h)?T(h).replace(/\s*·.*$/,""):"Reise und Verkehr");
     const rows=[...document.querySelectorAll("#prio .route")];
     if(rows.length)rows.forEach((r,n)=>{const g=s=>T(r.querySelector(s));if(n)L.push("");
-      const rv=g(".rv");L.push("Nach "+g(".rt").replace(/^→\s*/,"")+": "+(!rv||/berechnet/.test(rv)?"Fahrzeit gerade nicht abrufbar":rv));const sub=g(".rs");if(sub)L.push(sub);});
+      const rv=g(".rv").replace(/wird berechnet\s*…?/,"Fahrzeit noch nicht berechnet").replace(/\s*·\s*TomTom-Kontingent/," (TomTom-Abfragen gerade erschöpft)");
+      L.push("Nach "+g(".rt")+": "+(rv||"–"));const sub=g(".rs");if(sub)L.push(sub.replace(/ \(davon \+(\d+) min Stau\)/," (davon $1 min Stau)"));});
     else{const k=$("k-traffic");L.push(k?(T(k.querySelector(".val"))+", "+T(k.querySelector(".note"))):"noch nicht geladen");}}
   // Polizei & Feuerwehr
   if(BL_LAST&&BL_LAST.key===C.key){const td=new Date().toLocaleDateString("sv-SE",dt),day=x=>new Date(x.date).toLocaleDateString("sv-SE",dt);
@@ -3180,17 +3181,23 @@ function lageText(){
     L.push(l.filter(x=>day(x)===td).length+" Meldungen heute");
     l.slice(0,4).forEach(x=>{L.push("",(day(x)===td?"Heute":new Date(x.date).toLocaleDateString("de-DE",{...dt,day:"2-digit",month:"2-digit"}))+" "+hhmm(x.date)+" Uhr",
       noPic(String(x.title||"").replace(/^(POL|FW)[-\w ]*:\s*/,"")));});}
+  // Sport: nächste Spiele von Fortuna, DEG und BVB aus dem Spielplan
+  H("Events Sport");
+  if(!status.fb)L.push("Spielplan wird noch geladen");
+  else [...FB.slice(0,1),{k:"deg",name:"Düsseldorfer EG"},...FB.slice(1)].forEach((f,fi)=>{const l=(SP[f.k]||[]);if(fi)L.push("");L.push(f.name);
+    if(!l.length){L.push("kein anstehendes Spiel im Spielplan");return;}
+    const wd=d=>new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
+    const row=x=>wd(x.day)+", "+x.time+" Uhr – "+(x.home?"Heimspiel gegen ":"auswärts bei ")+x.opp+(x.lg?" ("+x.lg+")":"");
+    l.slice(0,3).forEach(x=>L.push(row(x)));
+    const nh=l.find(x=>x.home);if(nh&&l.slice(0,3).indexOf(nh)<0)L.push("Nächstes Heimspiel: "+row(nh));});
   // Übrige Kacheln mit Kennzahl
-  // Events Sport – je Verein die nächsten zwei Spiele
-  {const fd=d=>new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
-    if(["f95","deg","bvb"].some(k=>SP[k]&&SP[k].length)){H("Events Sport");let first=true;[["f95","Fortuna Düsseldorf"],["deg","DEG"],["bvb","BVB"]].forEach(([k,nm])=>{const g=(SP[k]||[]).slice(0,2);if(!first)L.push("");first=false;
-      L.push(nm+":");if(!g.length)L.push("kein Spiel im Kalender");g.forEach(x=>L.push(fd(x.day)+(x.time?", "+x.time+" Uhr":"")+" · "+(x.home?"Heimspiel gegen ":"auswärts bei ")+x.opp));});}}
   // Events Kultur – Programm der Düsseldorfer Spielstätten, heute bis übermorgen
   {const ev=evNext(2,10);if(ev.length){H("Events Kultur Düsseldorf");let last="";
     ev.forEach(r=>{const d=String(r.start).slice(0,10);if(d!==last){if(last)L.push("");L.push(new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"}));last=d;}
       L.push((String(r.start).length>=16&&!r.allDay?String(r.start).slice(11,16)+" Uhr · ":"")+noPic(r.name)+(r.venue?" ("+noPic(r.venue)+")":""));});}}
   const more=["k-aq","k-rhein","k-urlaub"].map(id=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
-    const n=T(k.querySelector(".note"));return T(k.querySelector(".lbl"))+": "+v+(n&&n!=="wird geladen"?", "+n:"");}).filter(Boolean);
+    const n=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");const lb={"k-strom":"Nächster Feiertag","k-urlaub":"Urlaub"}[id]||T(k.querySelector(".lbl"));
+    return lb+": "+v+(n&&n!=="wird geladen"?" ("+n.replace(/ · /g,", ")+")":"");}).filter(Boolean);
   if(more.length){H("Weiteres");more.forEach((m,n)=>{if(n)L.push("");L.push(m);});}
   L.push("",LINE,"","Live im Dashboard:",location.origin+location.pathname,"","© Thomas Hußmann");
   return {subject:"Lage "+now.toLocaleDateString("de-DE",{...dt,day:"2-digit",month:"2-digit"})+", "+hhmm(now)+" Uhr"+(nW?" – "+nW+(nW===1?" Warnung":" Warnungen"):nL===favPlaces().length?" – keine Warnungen":""),body:L.join("\n")};}
@@ -3203,17 +3210,31 @@ const okMail=v=>!!v&&v.split(/[,;\s]+/).filter(Boolean).every(x=>/^[^@\s]+@[^@\s
 function cutBytes(s,max){const enc=new TextEncoder();if(enc.encode(s).length<=max)return s;while(enc.encode(s+"\n…").length>max)s=s.slice(0,-40);return s+"\n…";}
 /* Versand (v382): ntfy.sh nimmt keine anonymen Mails an. Auf iPhone/iPad/Mac übernimmt deshalb der Kurzbefehl „Lage-Mail“
    den Versand ohne Rückfrage (Aktion „E-Mail senden“, „Verfassen anzeigen“ aus). Sonst bzw. auf Wunsch: Mail-App mit fertigem Text. */
-async function sendLageMail(btn){
-  /* vor dem Versand fertig laden: Fahrzeiten „Meine Strecken“ und Veranstaltungen (höchstens 15 s) */
-  {const lbl=btn.querySelector(".qa-ml");const need=typeof RS!=="undefined"&&RS.city&&!rsDirs().every(x=>RS.data[x[0]]&&(RS.data[x[0]].alts||RS.data[x[0]].err));
-    if(need||!EVDUS){if(lbl)lbl.textContent="wird vorbereitet …";
-      try{await Promise.race([Promise.all([evDus(),need?loadReise(true).catch(()=>{}):0]),new Promise(r=>setTimeout(r,15000))]);try{renderAutoPrio();}catch(e){}}catch(e){}
-      if(lbl)lbl.textContent="Lage-Mail";}}
-  const mode=load("lagemail_mode")||(IOS||/Mac/.test(navigator.platform)?"kb":"mail");
+/* Erst senden, wenn die Lage vollständig ist (Warnungen aller Orte, Wetter, alle Fahrzeiten, Spielplan).
+   Fehlt noch etwas: Knopf zeigt „Lädt …“, danach „Jetzt senden“ – zweiter Tipp verschickt (iOS öffnet den Kurzbefehl nur direkt nach einem Tipp). */
+function lageMissing(){const m=[];
+  if(favPlaces().some(p=>!FAV_ALARM[p.key]))m.push("Warnungen");
+  if(!(WX&&WX[C.wxIdx]))m.push("Wetter");
+  if(TTKEY&&typeof RS!=="undefined"&&RS.city&&rsDirs().some(x=>!(RS.data[x[0]]&&(RS.data[x[0]].alts||RS.data[x[0]].err))))m.push("Fahrzeiten");
+  if(!status.fb)m.push("Spielplan");
+  if(typeof EVDUS!=="undefined"&&!EVDUS)m.push("Veranstaltungen");
+  return m;}
+let LM_WAIT=0;
+function lageSend(btn){const mode=load("lagemail_mode")||(IOS||/Mac/.test(navigator.platform)?"kb":"mail");const lbl=btn.querySelector(".qa-ml");
+  btn.classList.remove("ready","busy");
   if(mode==="kb"){const {subject,body}=lageText();
     location.href="shortcuts://run-shortcut?name="+encodeURIComponent("Lage-Mail")+"&input=text&text="+encodeURIComponent(subject+"\n"+body);
-    const lbl=btn.querySelector(".qa-ml");lbl.textContent="Gestartet ✓";btn.classList.add("sent");setTimeout(()=>{lbl.textContent="Lage-Mail";btn.classList.remove("sent");},4000);return;}
-  location.href=lageMailUrl();}
+    lbl.textContent="Gestartet ✓";btn.classList.add("sent");setTimeout(()=>{lbl.textContent="Lage-Mail";btn.classList.remove("sent");},4000);return;}
+  lbl.textContent="Lage-Mail";location.href=lageMailUrl();}
+function sendLageMail(btn){const lbl=btn.querySelector(".qa-ml");
+  if(btn.classList.contains("ready")||!lageMissing().length){clearInterval(LM_WAIT);lageSend(btn);return;}
+  if(btn.classList.contains("busy"))return;
+  btn.classList.add("busy");lbl.textContent="Lage wird geladen …";
+  try{if(TTKEY&&typeof loadReise==="function")loadReise(false);}catch(e){}
+  try{if(typeof evDus==="function"&&!EVDUS)evDus().catch(()=>{});}catch(e){}
+  const t0=Date.now();clearInterval(LM_WAIT);
+  LM_WAIT=setInterval(()=>{const miss=lageMissing();if(miss.length&&Date.now()-t0<30000){lbl.textContent="Lädt: "+miss[0]+" …";return;}
+    clearInterval(LM_WAIT);btn.classList.remove("busy");btn.classList.add("ready");lbl.textContent="Jetzt senden";},700);}
 {const m=$("qa-mail");if(m)m.addEventListener("click",e=>{e.preventDefault();sendLageMail(m);});}
 {const s=$("lm-mode");if(s){s.value=load("lagemail_mode")||(IOS||/Mac/.test(navigator.platform)?"kb":"mail");s.addEventListener("change",()=>store("lagemail_mode",s.value));}}
 {const i=$("lm-to");if(i)i.value=load("lagemail_to")||"";
