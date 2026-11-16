@@ -2155,7 +2155,9 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   /* Heine-Allee & Oststraße: nur die linksrheinischen Linien U75/U76/U77 Richtung Oberkassel/Heerdt/Neuss/Krefeld */
   {const sn=normStop(d.data.stop||"");
   /* Barbarossaplatz: nur Richtung Neuss */
-  if(ec().isDus&&sn.includes("barbarossa"))rows=rows.filter(x=>/neuss/i.test(x.dir||""));
+  /* Knopp-Platz: nur U75 Richtung Vennhauser Allee (alles andere in der Rheinbahn-App) */
+  if(ec().isDus&&sn.includes("knopp")){rows=rows.filter(x=>/^U\s?75$/i.test(x.line||"")&&/vennhaus/i.test(x.dir||""));const sk=new Set();rows=rows.filter(x=>{const k=x.line+"|"+String(x.planned||x.time||x.dep||"").slice(0,16);if(sk.has(k))return false;sk.add(k);return true;});}
+  else if(ec().isDus&&sn.includes("barbarossa"))rows=rows.filter(x=>/neuss/i.test(x.dir||""));
   else if(ec().isDus&&(sn.includes("heinrichheine")||sn.includes("oststr")))
     rows=rows.filter(x=>/^U ?7[567]$/i.test(String(x.line).trim())&&!/lierenfeld|holthausen|vennhauser|eller|benrath|hbf$|hauptbahnhof$/i.test((x.dir||"").replace(/^Neuss.*/,"")));}
   let noHit=false;if(f){const fr=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);if(fr.length)rows=fr;else noHit=true;}
@@ -2164,7 +2166,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Linie fährt Richtung „"+esc(DIRF[ec().key])+"“. Für eine Verbindung mit Umsteigen den Knopf oben antippen.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
     if(!(ec().isDus||ec().key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
-  $("efa").innerHTML=busTripsHtml(d.data.stop)+efaStale(d)+(noHit?'<div class="muted small" style="margin-bottom:6px">Keine Linie fährt direkt Richtung „'+esc(DIRF[ec().key])+'“ – hier alle Abfahrten:</div>':'')+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · '+(d.live?'<b style="color:var(--ok)">● live</b> ('+esc(d.src==='DB'?'DB-Auskunft':d.src==='VRR'?'VRR':'eigener Vermittler')+')':'Echtzeit abgerufen '+dataAge(d))+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
+  $("efa").innerHTML=busTripsHtml(d.data.stop)+efaStale(d)+(noHit?'<div class="muted small" style="margin-bottom:6px">Keine Linie fährt direkt Richtung „'+esc(DIRF[ec().key])+'“ – hier alle Abfahrten:</div>':'')+'<div class="muted small">'+esc(d.data.stop)+' · '+(ec().isDus&&normStop(d.data.stop||"").includes("knopp")?'nur U75 Richtung Vennhauser Allee':'alle Abfahrten')+' · '+(d.live?'<b style="color:var(--ok)">● live</b> ('+esc(d.src==='DB'?'DB-Auskunft':d.src==='VRR'?'VRR':'eigener Vermittler')+')':'Echtzeit abgerufen '+dataAge(d))+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>'+(ec().isDus&&normStop(d.data.stop||"").includes("knopp")?'<div class="muted small" style="margin-top:6px">Andere Linien: <a href="https://www.rheinbahn.de/" target="_blank" rel="noopener">Rheinbahn ↗</a></div>':'');
 }
 let BUSF=null;
 /* Direkte Busfahrten (Datteln Lohstr. ⇄ Busbahnhof, Westfalenstadion → Hbf) live über den VRR-Vermittler */
