@@ -263,7 +263,9 @@ async function trips() {
 // daraus nehmen wir die Fernzüge, die ohne Umstieg zum Ziel fahren.
 const IRIS = "https://iris.noncd.db.de/iris-tts/timetable/";
 async function irisEva(name) {
-  const x = await get(IRIS + "station/" + encodeURIComponent(name), { type: "text" });
+  let x = await get(IRIS + "station/" + encodeURIComponent(name), { type: "text" });
+  /* „Alpen Bahnhof“ heißt bei der DB nur „Alpen“: Zusatz „Bahnhof/Bf“ notfalls weglassen */
+  if (!/<station /.test(x) && /\s+(Bahnhof|Bf\.?)$/i.test(name)) x = await get(IRIS + "station/" + encodeURIComponent(name.replace(/\s+(Bahnhof|Bf\.?)$/i, "")), { type: "text" });
   const m = x.match(/<station[^>]*name="([^"]+)"[^>]*eva="(\d+)"/) || x.match(/<station[^>]*eva="(\d+)"[^>]*name="([^"]+)"/);
   if (!m) throw new Error("IRIS: Bahnhof nicht gefunden: " + name);
   return /^\d+$/.test(m[2]) ? m[2] : m[1];

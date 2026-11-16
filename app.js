@@ -625,6 +625,7 @@ async function loadFussball(){const y=new Date().getFullYear(),season=new Date()
       /* Kalender-Spiele ergänzen, die OpenLigaDB nicht führt (z. B. Champions League) – Doppelte am selben Tag weglassen */
       const extra=bvbCal.filter(c=>!src.some(m=>(is(m.team1)||is(m.team2))&&Math.abs(new Date(m.matchDateTime)-new Date(c.matchDateTime))<36e6));src=src.concat(extra);}
     const ms=src.filter(m=>(is(m.team1)||is(m.team2))&&!m.matchIsFinished&&new Date(m.matchDateTime).getTime()>now).sort((a,b)=>new Date(a.matchDateTime)-new Date(b.matchDateTime));
+    {const se=$("fb-"+f.k+"-src");const lg=[...new Set(ms.map(m=>m._lg).filter(Boolean))];if(se&&lg.length)se.textContent=lg.join(" · ");}
     const box=$("fb-"+f.k);if(!box)return;const card=box.closest(".card");if(card){card.classList.add("fb-card");card.style.setProperty("--club1",f.c1);card.style.setProperty("--club2",f.c2);card.style.setProperty("--clubfg",f.fg);}
     if(!ms.length){box.innerHTML='<div class="muted">Kein anstehendes Spiel gefunden – der Spielplan wird ergänzt, sobald OpenLigaDB ihn führt.</div>';return;}
     const dt=m=>new Date(m.matchDateTime);const dl=m=>dt(m).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});const tl=m=>dt(m).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
@@ -1420,7 +1421,7 @@ const irisParse=x=>{const o={};for(const m of x.matchAll(/<s id="([^"]+)"[^>]*>(
   o[m[1]]={c:g(tl,"c"),n:g(tl,"n"),dpT:g(dp,"pt"),dpCt:g(dp,"ct"),dpCs:g(dp,"cs"),dpPp:g(dp,"cp")||g(dp,"pp"),arT:g(ar,"pt"),arCt:g(ar,"ct"),arCs:g(ar,"cs"),arPp:g(ar,"cp")||g(ar,"pp")};}return o;};
 async function irisText(path){const base=((typeof EFAPROXY!=="undefined"&&EFAPROXY)||"").replace(/\/+$/,"");const r=await fetch(base+"/iris/"+path);if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}
 async function irisStation(name){const k=name.replace(/\s+/g," ").trim();const c=IRISC[k];if(c&&Date.now()-c.at<45000)return c.map;
-  let eva=IRISEVA[k];if(!eva){const x=await irisText("station/"+encodeURIComponent(k.replace(/^Winsen ?\(Luhe\)$/,"Winsen(Luhe)")));const m=x.match(/eva="(\d+)"/);if(!m)throw 0;eva=m[1];IRISEVA[k]=eva;store("iriseva",IRISEVA);}
+  let eva=IRISEVA[k];if(!eva){const x=await irisText("station/"+encodeURIComponent(k.replace(/^Winsen ?\(Luhe\)$/,"Winsen(Luhe)").replace(/\s+(Bahnhof|Bf\.?)$/i,"")));const m=x.match(/eva="(\d+)"/);if(!m)throw 0;eva=m[1];IRISEVA[k]=eva;store("iriseva",IRISEVA);}
   const all={};const hrs=[0,1,2,3].map(h=>{const p=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",year:"2-digit",month:"2-digit",day:"2-digit",hour:"2-digit",hour12:false}).formatToParts(new Date(Date.now()+h*3600e3)).reduce((o,x)=>(o[x.type]=x.value,o),{});return p.year+p.month+p.day+"/"+p.hour;});
   await Promise.all(hrs.map(async h=>{try{Object.assign(all,irisParse(await irisText("plan/"+eva+"/"+h)));}catch(e){}}));
   try{const ch=irisParse(await irisText("fchg/"+eva));for(const [id,v] of Object.entries(ch))if(all[id]){const a=all[id];for(const f of ["dpCt","arCt","dpCs","arCs","dpPp","arPp"])if(v[f])a[f]=v[f];}}catch(e){}
@@ -2337,7 +2338,7 @@ function renderCal(){
     const cur=SCHOOL&&SCHOOL.find(x=>x.start<=today&&x.end>=today);
     const hol=HOL&&HOL.find(h=>h.date>=today);
     if(cur){v='<span class="vt">'+esc(cur.name).replace(/^(Herbst|Oster|Sommer|Winter|Pfingst|Weihnachts)(ferien)/i,"$1&shy;$2")+'</span>';n="bis "+dateShort(nd(cur.end))+" · "+(STATE_NAME[C.state]||"");cls="ok";}
-    else if(hol){v=nd(hol.date).toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})+"<small> "+esc(hol.localName)+"</small>";n=rel(days(hol.date))+" · "+(STATE_NAME[C.state]||"");}
+    else if(hol){v="–";n="Feiertag "+nd(hol.date).toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})+" "+hol.localName;}
     setKpi("k-strom",v,n,cls);
     /* Kachel „Events Kultur“: Veranstaltungen in Düsseldorf statt Feiertag */
     evDus().then(()=>{const td=evNext(0,50),nx=evNext(14,1)[0];if(!td.length&&!nx)return;
@@ -3164,7 +3165,7 @@ function stoerMine(){const now=Date.now();return (STOER_LAST||[]).filter(x=>(!x.
   .sort((a,b)=>(a.planned-b.planned)||String(a.to||"9").localeCompare(String(b.to||"9")));}
 /* Großlagen an einem Tag: Messen, Arena/PSD Bank Dome/Mitsubishi Electric Halle, Heimspiele Fortuna und DEG */
 function grossLagen(day){const out=[];const big=/arena|dome|mitsubishi|messe\b|iss\s*dome/i;
-  (MESSE_LAST||[]).forEach(m=>{if(m.start<=day&&(m.end||m.start)>=day)out.push({t:"",title:m.name,where:m.place||"Messe Düsseldorf",kind:"Messe"});});
+  (MESSE_LAST||[]).forEach(m=>{if(/messe d(ü|ue)sseldorf/i.test(m.place||"")&&m.start<=day&&(m.end||m.start)>=day)out.push({t:"",title:m.name,where:m.place||"Messe Düsseldorf",kind:"Messe"});});
   (EVDUS||[]).forEach(e=>{if(String(e.start).slice(0,10)===day&&big.test(e.venue||""))out.push({t:String(e.start).length>=16?String(e.start).slice(11,16):"",title:noPic0(e.name),where:e.venue});});
   (SP.f95||[]).forEach(x=>{if(x.day===day&&x.home)out.push({t:x.time,title:"Fortuna – "+x.opp+(x.lg?" ("+x.lg+")":""),where:"Merkur Spiel-Arena"});});
   (SP.deg||[]).forEach(x=>{if(x.day===day&&x.home)out.push({t:x.time,title:"DEG – "+x.opp,where:"PSD Bank Dome"});});
