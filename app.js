@@ -1487,7 +1487,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bl-orte [data-b
 async function loadBlaulicht(){
   $("bl-title").textContent="Pressemitteilungen Polizei & Feuerwehr "+C.town;
   if(!FAVKEYS.includes(C.key)){$("bl").innerHTML=stateBox("Meldungen sind für Düsseldorf und die Favoriten hinterlegt. Für "+C.town+":",link("https://www.presseportal.de/blaulicht/r/"+encodeURIComponent(C.town),"Presseportal "+C.town));return;}
-  try{const d=await getData("blaulicht-"+C.key+".json");const list=d.data||[];
+  try{const d=await getData("blaulicht-"+C.key+".json");const list=d.data||[];BL_LAST={key:C.key,town:C.town,list};
     if(!list.length){$("bl").innerHTML='<div class="state good">Keine aktuellen Meldungen.</div>';setStatus("blaulicht",true);return;}
     const bday=x=>new Date(x).toLocaleDateString("sv-SE",{timeZone:"Europe/Berlin"});const td=bday(Date.now()),yd=bday(Date.now()-864e5);
     const day=list.filter(x=>bday(x.date)===td).length;
@@ -3101,9 +3101,58 @@ document.addEventListener("click",e=>{const it=e.target.closest("#vl-body [data-
 document.addEventListener("click",e=>{if(!e.target.closest(".vlback"))return;e.preventDefault();if(VLBACK&&VLBACK.isConnected)VLBACK.scrollIntoView({behavior:"smooth",block:"center"});});
 {let vlT=0;const mo=new MutationObserver(()=>{clearTimeout(vlT);vlT=setTimeout(vlCount,250);});const b=$("vl-body");if(b){mo.observe(b,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});setVL(VLK);}}
 
+
+// ================= Lage-Mail (v375): ein Tipp öffnet die Mail-App mit der aktuellen Lage =================
+var BL_LAST=null;
+function lageText(){
+  const T=el=>el?el.textContent.replace(/\s+/g," ").trim():"";
+  const short=t=>String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"Warnung vor ").replace(/^Amtliche /i,"");
+  const now=new Date(),dt={timeZone:"Europe/Berlin"};
+  const L=[],H=t=>{L.push("",t.toUpperCase());};
+  L.push("Lagebild Thomas Hußmann",
+    "Stand: "+now.toLocaleDateString("de-DE",{...dt,weekday:"long",day:"numeric",month:"long",year:"numeric"})+", "+hhmm(now)+" Uhr",
+    "Gewählter Ort: "+C.name+(C.detail?" · "+C.detail:""));
+  // Warnungen – immer alle Lieblingsorte
+  let nW=0,nL=0;H("⚠️ Warnungen – alle Lieblingsorte");
+  favPlaces().forEach(p=>{const a=FAV_ALARM[p.key];if(a)nL++;if(a&&a.n)nW+=a.n;
+    L.push("• "+p.name+": "+(!a?"noch nicht geladen":a.n?[...new Set(a.all&&a.all.length?a.all:[a.title])].map(short).join("; "):"keine Warnungen"));});
+  if(!FAVKEYS.includes(C.key)&&LOCAL_ALARM.n>0){nW+=LOCAL_ALARM.n;L.push("• "+C.town+": "+[...new Set(LOCAL_ALARM.all.length?LOCAL_ALARM.all:[LOCAL_ALARM.title])].map(short).join("; "));}
+  // Wetter
+  H("🌤️ Wetter · "+C.town);
+  try{const w=WX&&WX[C.wxIdx];if(!w)throw 0;const c=w.current,d=w.daily;
+    L.push("Jetzt: "+fmt(c.temperature_2m,1)+" °C, "+wmo(c.weather_code)[0]+", Böen "+fmt(c.wind_gusts_10m)+" km/h");
+    [["Heute",0],["Morgen",1]].forEach(([n,i])=>{if(d.temperature_2m_max[i]==null)return;
+      L.push(n+": "+wmo(d.weather_code[i])[0]+", "+fmt(d.temperature_2m_min[i])+" bis "+fmt(d.temperature_2m_max[i])+" °C, Regenrisiko "+fmt(d.precipitation_probability_max[i])+" %"+(d.precipitation_sum[i]>=.5?" ("+fmt(d.precipitation_sum[i],1)+" mm)":"")+", Böen bis "+fmt(d.wind_gusts_10m_max[i])+" km/h");});
+  }catch(e){const k=$("k-temp"),v=T(k&&k.querySelector(".val"));L.push(v&&v!=="–"?v+" · "+T(k.querySelector(".note")):"noch nicht geladen");}
+  // Reise & Verkehr – „Meine Strecken“ wie im Dashboard
+  {const h=$("prio-h");H("🚗 "+(h&&T(h)?T(h).replace(/\s*·.*$/,""):"Reise & Verkehr"));
+    const rows=[...document.querySelectorAll("#prio .route")];
+    if(rows.length)rows.forEach(r=>{const g=s=>T(r.querySelector(s));L.push("• "+[g(".tag"),g(".rt"),g(".rv")].filter(Boolean).join(" ")+(g(".rs")?" – "+g(".rs"):""));});
+    else{const k=$("k-traffic");L.push(k?(T(k.querySelector(".val"))+" · "+T(k.querySelector(".note"))):"noch nicht geladen");}}
+  // Polizei & Feuerwehr
+  if(BL_LAST&&BL_LAST.key===C.key){const td=new Date().toLocaleDateString("sv-SE",dt),day=x=>new Date(x.date).toLocaleDateString("sv-SE",dt);
+    const l=BL_LAST.list;H("🚓 Polizei & Feuerwehr · "+BL_LAST.town+" ("+l.filter(x=>day(x)===td).length+" heute)");
+    if(!l.length)L.push("keine aktuellen Meldungen");
+    l.slice(0,4).forEach(x=>L.push("• "+(day(x)===td?"":new Date(x.date).toLocaleDateString("de-DE",{...dt,day:"2-digit",month:"2-digit"})+" ")+hhmm(x.date)+" "+String(x.title||"").replace(/^(POL|FW)[-\w ]*:\s*/,"")));}
+  // Übrige Kacheln mit Kennzahl
+  const more=[["k-aq","🌿"],["k-rhein","🌊"],["k-fb","⚽"],["k-strom","🎭"],["k-urlaub","🏔️"]].map(([id,ic])=>{const k=$(id);if(!k||k.hidden)return null;const v=T(k.querySelector(".val"));if(!v||v==="–")return null;
+    const n=T(k.querySelector(".note"));return "• "+ic+" "+T(k.querySelector(".lbl"))+": "+v+(n&&n!=="wird geladen"?" – "+n:"");}).filter(Boolean);
+  if(more.length){H("Weiteres");L.push(...more);}
+  L.push("","Live im Dashboard: "+location.origin+location.pathname,"© Thomas Hußmann");
+  return {subject:"Lage "+now.toLocaleDateString("de-DE",{...dt,day:"2-digit",month:"2-digit"})+", "+hhmm(now)+" Uhr"+(nW?" · ⚠️ "+nW+(nW===1?" Warnung":" Warnungen"):nL===favPlaces().length?" · keine Warnungen":""),body:L.join("\n")};}
+function lageMailUrl(){const {subject,body}=lageText();const to=(load("lagemail_to")||"").split(/[,;\s]+/).filter(Boolean).map(encodeURIComponent).join(",");
+  let b=body;if(b.length>6000)b=b.slice(0,6000)+"\n…";
+  return "mailto:"+to+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(b.replace(/\n/g,"\r\n"));}
+{const m=$("qa-mail");if(m){const upd=()=>{try{m.href=lageMailUrl();}catch(e){}};
+  m.addEventListener("pointerdown",upd);m.addEventListener("touchstart",upd,{passive:true});m.addEventListener("click",upd);}}
+{const i=$("lm-to");if(i)i.value=load("lagemail_to")||"";
+  const b=$("lm-save");if(b)b.addEventListener("click",()=>{const v=$("lm-to").value.trim();const bad=v&&v.split(/[,;\s]+/).filter(Boolean).some(x=>!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));const msg=$("lm-msg");
+    if(bad){msg.textContent="Bitte gültige Mail-Adresse(n) eintragen.";msg.style.color="var(--bad)";return;}
+    store("lagemail_to",v||null);msg.textContent=v?"Gespeichert ✓":"Gelöscht – Empfänger wird in der Mail-App gewählt.";msg.style.color="";});}
 })();
 
 
 /* Aktiven Reiter oben sichtbar mittig halten (einzeilige iOS-Leiste) */
 function vtopCenter(){document.querySelectorAll(".vtop .subtabs").forEach(b=>{const a=b.querySelector("a.on");if(a&&b.scrollWidth>b.clientWidth)b.scrollLeft=a.offsetLeft-(b.clientWidth-a.offsetWidth)/2;});}
 addEventListener("hashchange",()=>setTimeout(vtopCenter,60));addEventListener("load",()=>setTimeout(vtopCenter,300));
+
