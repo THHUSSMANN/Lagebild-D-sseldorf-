@@ -2201,7 +2201,9 @@ function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
       return '<div class="li"><span class="tag">'+esc(r.line)+'</span><div class="t"><b>'+hhmm(r.dep)+'</b>'+(dm>0?' <span style="color:var(--bad);font-weight:600">+'+dm+'</span>':'')+' → an '+hhmm(r.arrEst||r.arr)+'</div><div class="r muted small">'+(r.plat?'Steig '+esc(r.plat):'')+'</div><div class="d">Richtung '+esc(r.dir)+'</div></div>';}).join("")+'</div>':'<div class="muted small" style="margin-bottom:10px">Keine direkte Fahrt im abgerufenen Zeitraum.</div>');}).join("");}
 function depTable(rows){
   let r='<table><thead><tr><th>Zeit</th><th>Linie</th><th>Richtung</th><th class="num">Gleis/Steig</th><th class="num">+min</th></tr></thead><tbody>';
-  rows.forEach(x=>{const del=x.delay!=null?x.delay:(x.planned&&x.est?Math.round((new Date(x.est)-new Date(x.planned))/6e4):null);
+  /* gleiche Fahrt doppelt (z. B. „Neuss Hbf“ und „Neuss Hauptbahnhof“ zur selben Minute) nur einmal zeigen */
+  {const sk=new Set();rows=rows.filter(x=>{const k=String(x.line).trim()+"|"+hhmm(x.planned||x.est)+"|"+String(x.dir||"").replace(/Hauptbahnhof/i,"Hbf").replace(/^D-/,"");if(sk.has(k))return false;sk.add(k);return true;});}
+  rows.forEach(x=>{const mm=t=>{const d=new Date(t);d.setSeconds(0,0);return d.getTime();};const del=x.delay!=null?x.delay:(x.planned&&x.est?Math.round((mm(x.est)-mm(x.planned))/6e4):null);
     const st=normStop((EFADATA&&EFADATA.data&&EFADATA.data.stop)||"");
     /* U75 gelb: am Nikolaus-Knopp-Platz Richtung Stadt (Vennhauser Allee), an der Heinrich-Heine-Allee zurück Richtung Heerdt/Neuss */
     const u75=/^U ?75$/i.test(String(x.line).trim());
@@ -2209,7 +2211,7 @@ function depTable(rows){
     /* U75 gelb: am Knopp-Platz in die Stadt (alles außer Neuss), an Heine-Allee und Oststraße zurück Richtung Neuss */
     const toNeuss=/neuss/i.test(x.dir||"");
     const hl=ec().isDus&&(st.includes("barbarossa")?toNeuss:u75&&(st.includes("knopp")?!toNeuss:toNeuss));
-    const tA=x.est||x.planned;r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(tA?hhmm(tA):"–")+'</b>'+(del>0&&x.planned?'<br><s class="muted small">'+hhmm(x.planned)+'</s>':'')+'</td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
+    const tA=x.est||x.planned;r+='<tr'+(hl?' class="hl"':'')+'><td><b>'+(tA?hhmm(tA):"–")+'</b>'+(del>0&&x.planned&&hhmm(x.planned)!==hhmm(tA)?'<br><s class="muted small">'+hhmm(x.planned)+'</s>':'')+'</td><td><span class="tag">'+esc(x.line)+'</span></td><td class="wrap-txt">'+esc(x.dir)+'</td><td class="num">'+esc(x.plat||"")+'</td><td class="num">'+
       (x.cancelled?'<span class="pill p-bad"><i></i>fällt aus</span>':del==null?'<span class="muted">–</span>':del>0?'<span style="color:var(--bad);font-weight:600">+'+del+'</span>':'<span style="color:var(--ok)">0</span>')+'</td></tr>';});
   return r+'</tbody></table>';
 }
