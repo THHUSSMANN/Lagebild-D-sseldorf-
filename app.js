@@ -593,6 +593,12 @@ function tabSet(g,v){const seg=document.querySelector('.tabseg[data-tabs="'+g+'"
 document.addEventListener("click",e=>{const b=e.target.closest(".tabseg [data-t]");if(b)tabSet(b.closest(".tabseg").dataset.tabs,b.dataset.t);});
 document.querySelectorAll(".tabseg[data-tabs]").forEach(s=>{const v=load("tab_"+s.dataset.tabs);if(v)tabSet(s.dataset.tabs,v);});
 /* Fußball: nächste Spiele von Fortuna Düsseldorf und Borussia Dortmund (OpenLigaDB, frei, ohne Schlüssel) */
+/* Zusatzspiele, die OpenLigaDB nicht führt (z. B. Niederrheinpokal). Format: Datum/Uhrzeit (Ortszeit), Heim, Gast, Wettbewerb, Stadion, Stadt.
+   Neue Spiele einfach hier ergänzen; vergangene Spiele werden automatisch ausgeblendet. */
+const EXTRA_GAMES=[
+  {at:"2026-11-18T20:00",home:"Fortuna Düsseldorf",away:"MSV Duisburg",lg:"Niederrheinpokal",group:"Viertelfinale",stadium:"Merkur Spiel-Arena",city:"Düsseldorf"}
+];
+const extraMatches=()=>EXTRA_GAMES.map(g=>({matchDateTime:g.at,matchIsFinished:false,team1:{teamName:g.home},team2:{teamName:g.away},_lg:g.lg,group:g.group?{groupName:g.group}:null,location:{locationStadium:g.stadium||"",locationCity:g.city||""},_extra:true}));
 const FB=[{k:"f95",name:"Fortuna Düsseldorf",rx:/Fortuna D(ü|ue|u)sseldorf/i,short:"F95",c1:"#e30613",c2:"#ffffff",fg:"#fff"},{k:"bvb",name:"Borussia Dortmund",rx:/^(Borussia Dortmund|BVB|Dortmund)$|Borussia Dortmund(?!\s*II)/i,short:"BVB",c1:"#fde100",c2:"#000000",fg:"#000"}];
 /* Kalender-Termin (iCal) in ein Spiel umwandeln: „Heim - Gast | Wettbewerb | Spieltag“ */
 function calMatch(e){const parts=(e.summary||"").split(/\s*\|\s*/);const teams=parts[0].replace(/\s*\(([^)]*)\)\s*$/,"").split(/\s+(?:-|–|:|vs\.?)\s+/);
@@ -613,9 +619,11 @@ async function loadFussball(){const y=new Date().getFullYear(),season=new Date()
   const inDays=n=>n<=0?"heute":n===1?"morgen":"in "+n+" Tagen";
   FB.forEach(f=>{const is=x=>x&&x.teamName&&f.rx.test(x.teamName)&&!/\bII\b|U\s?\d{2}/.test(x.teamName);
     let src=all;
+    /* Zusatzspiele (Pokal u. a.) ergänzen – doppelte am selben Tag weglassen */
+    {const own=all.filter(m=>is(m.team1)||is(m.team2));const ex=extraMatches().filter(m=>(is(m.team1)||is(m.team2))&&!own.some(o=>Math.abs(new Date(o.matchDateTime)-new Date(m.matchDateTime))<36e6));if(ex.length)src=src.concat(ex);}
     if(f.k==="bvb"&&bvbCal.length){const own=all.filter(m=>is(m.team1)||is(m.team2));
       /* Kalender-Spiele ergänzen, die OpenLigaDB nicht führt (z. B. Champions League) – Doppelte am selben Tag weglassen */
-      const extra=bvbCal.filter(c=>!own.some(m=>Math.abs(new Date(m.matchDateTime)-new Date(c.matchDateTime))<36e6));src=own.concat(extra);}
+      const extra=bvbCal.filter(c=>!src.some(m=>(is(m.team1)||is(m.team2))&&Math.abs(new Date(m.matchDateTime)-new Date(c.matchDateTime))<36e6));src=src.concat(extra);}
     const ms=src.filter(m=>(is(m.team1)||is(m.team2))&&!m.matchIsFinished&&new Date(m.matchDateTime).getTime()>now).sort((a,b)=>new Date(a.matchDateTime)-new Date(b.matchDateTime));
     const box=$("fb-"+f.k);if(!box)return;const card=box.closest(".card");if(card){card.classList.add("fb-card");card.style.setProperty("--club1",f.c1);card.style.setProperty("--club2",f.c2);card.style.setProperty("--clubfg",f.fg);}
     if(!ms.length){box.innerHTML='<div class="muted">Kein anstehendes Spiel gefunden – der Spielplan wird ergänzt, sobald OpenLigaDB ihn führt.</div>';return;}
