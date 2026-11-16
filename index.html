@@ -2009,9 +2009,14 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
       <span class="hint">Einfachster Weg auf iPhone/iPad: Feld leer lassen und in der Kurzbefehle-App einen Kurzbefehl „Kontostand“ anlegen (Aktion „Datei“ → deine Finanztabelle wählen, darunter Aktion „Datei öffnen“). Der Knopf „Kontostand“ startet ihn dann. Alternativ hier einen Link oder Dateipfad eintragen – wird nur auf diesem Gerät gespeichert.</span>
     </div>
     <div class="field">
-      <label for="lm-to">Lage-Mail an</label>
+      <label for="lm-mode">Lage-Mail</label>
+      <select id="lm-mode"><option value="kb">Automatisch senden (Kurzbefehl „Lage-Mail“)</option><option value="mail">Mail-App mit fertigem Text öffnen</option></select>
+      <span class="hint">Automatisch: Einmalig in der Kurzbefehle-App einen Kurzbefehl mit dem Namen „Lage-Mail“ anlegen – Aktion „E-Mail senden“, Empfänger deine Adresse, Betreff z. B. „Lagebild“, Nachricht = „Kurzbefehleingabe“, und bei „Verfassen anzeigen“ den Schalter ausschalten. Dann geht die Mail mit einem Tipp ohne Rückfrage raus. Die Adresse steht nur im Kurzbefehl, nicht im Dashboard.</span>
+    </div>
+    <div class="field">
+      <label for="lm-to">Empfänger für „Mail-App öffnen“</label>
       <div class="inline"><input id="lm-to" type="email" inputmode="email" autocapitalize="off" autocorrect="off" autocomplete="email" spellcheck="false" placeholder="name@beispiel.de"><button type="button" id="lm-save">Speichern</button></div><div id="lm-msg" class="small" aria-live="polite" style="margin-top:6px"></div>
-      <span class="hint">An diese Adresse schickt der Knopf „Lage-Mail“ die aktuelle Lage direkt – ohne Mail-App (Versand über ntfy.sh, Absender „ntfy“, bis etwa 16 Mails am Tag). Wird nur auf diesem Gerät gespeichert.</span>
+      <span class="hint">Wird in der Mail-App schon als Empfänger eingetragen. Nur auf diesem Gerät gespeichert.</span>
     </div>
     <div class="field">
       <label for="tk">Tankerkönig-API-Schlüssel</label>
@@ -2068,6 +2073,6 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=381"></script>
+<script src="app.js?v=382"></script>
 </body>
 </html>

@@ -3177,22 +3177,20 @@ function lageMailUrl(){const {subject,body}=lageText();const to=(load("lagemail_
    Klappt der Versand nicht, öffnet sich ersatzweise die Mail-App mit fertigem Text. */
 const okMail=v=>!!v&&v.split(/[,;\s]+/).filter(Boolean).every(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
 function cutBytes(s,max){const enc=new TextEncoder();if(enc.encode(s).length<=max)return s;while(enc.encode(s+"\n…").length>max)s=s.slice(0,-40);return s+"\n…";}
-async function sendLageMail(btn){
-  let to=(load("lagemail_to")||"").trim();
-  if(!okMail(to)){to=(prompt("An welche Adresse soll die Lage-Mail gehen? (wird nur auf diesem Gerät gespeichert)","")||"").trim();
-    if(!to)return;if(!okMail(to)){alert("Das ist keine gültige Mail-Adresse.");return;}store("lagemail_to",to);const i=$("lm-to");if(i)i.value=to;}
-  const lbl=btn.querySelector(".qa-ml"),old="Lage-Mail",set=(t,c)=>{lbl.textContent=t;btn.classList.toggle("sent",c==="ok");btn.classList.toggle("busy",c==="busy");};
-  set("wird gesendet …","busy");const {subject,body}=lageText();
-  try{const first=to.split(/[,;\s]+/).filter(Boolean)[0];
-    const r=await fetch("https://ntfy.sh/",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({topic:NTFY_TOPIC+"-mail",title:subject,message:cutBytes(body,3900),email:first})});
-    if(!r.ok)throw new Error("HTTP "+r.status);
-    set("Gesendet ✓","ok");setTimeout(()=>set(old),4000);}
-  catch(e){set(old);if(confirm("Die Lage-Mail konnte nicht direkt verschickt werden ("+(e.message||e)+"). Stattdessen die Mail-App mit fertigem Text öffnen?"))location.href=lageMailUrl();}}
-{const m=$("qa-mail");if(m)m.addEventListener("click",e=>{e.preventDefault();if(m.classList.contains("busy"))return;sendLageMail(m);});}
+/* Versand (v382): ntfy.sh nimmt keine anonymen Mails an. Auf iPhone/iPad/Mac übernimmt deshalb der Kurzbefehl „Lage-Mail“
+   den Versand ohne Rückfrage (Aktion „E-Mail senden“, „Verfassen anzeigen“ aus). Sonst bzw. auf Wunsch: Mail-App mit fertigem Text. */
+function sendLageMail(btn){
+  const mode=load("lagemail_mode")||(IOS||/Mac/.test(navigator.platform)?"kb":"mail");
+  if(mode==="kb"){const {subject,body}=lageText();
+    location.href="shortcuts://run-shortcut?name="+encodeURIComponent("Lage-Mail")+"&input=text&text="+encodeURIComponent(subject+"\n"+body);
+    const lbl=btn.querySelector(".qa-ml");lbl.textContent="Gestartet ✓";btn.classList.add("sent");setTimeout(()=>{lbl.textContent="Lage-Mail";btn.classList.remove("sent");},4000);return;}
+  location.href=lageMailUrl();}
+{const m=$("qa-mail");if(m)m.addEventListener("click",e=>{e.preventDefault();sendLageMail(m);});}
+{const s=$("lm-mode");if(s){s.value=load("lagemail_mode")||(IOS||/Mac/.test(navigator.platform)?"kb":"mail");s.addEventListener("change",()=>store("lagemail_mode",s.value));}}
 {const i=$("lm-to");if(i)i.value=load("lagemail_to")||"";
   const b=$("lm-save");if(b)b.addEventListener("click",()=>{const v=$("lm-to").value.trim();const bad=v&&v.split(/[,;\s]+/).filter(Boolean).some(x=>!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));const msg=$("lm-msg");
     if(bad){msg.textContent="Bitte gültige Mail-Adresse(n) eintragen.";msg.style.color="var(--bad)";return;}
-    store("lagemail_to",v||null);msg.textContent=v?"Gespeichert ✓":"Gelöscht – beim nächsten Tipp auf „Lage-Mail“ wird nach der Adresse gefragt.";msg.style.color="";});}
+    store("lagemail_to",v||null);msg.textContent=v?"Gespeichert ✓":"Gelöscht.";msg.style.color="";});}
 })();
 
 
