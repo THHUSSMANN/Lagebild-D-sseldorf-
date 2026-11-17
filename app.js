@@ -3288,7 +3288,8 @@ function lageText(){
     const wu=[...new Set(ws)];S.push(nW?"Warnungen: "+nW+" ("+wu.slice(0,3).join(", ")+")":"Keine Warnungen");
     GL.forEach(([n,l])=>{if(l.length)S.push(n+": "+l.map(x=>(x.kind==="Messe"?x.title:x.title.replace(/\s*\(.*\)$/,""))+(x.t?" "+x.t:"")).slice(0,4).join(" · "));});
     const rt=[...document.querySelectorAll("#prio .route")];const bad=rt.filter(r=>/\b(warn|bad|crit)\b/.test(r.className));
-    if(rt.length)S.push(bad.length?"Verkehr: "+bad.map(r=>T(r.querySelector(".rt")).replace(/^→\s*/,"")+" "+T(r.querySelector(".rv"))).join(" · "):"Verkehr: alle Strecken frei");
+    const nv=rt.filter(r=>/nicht verfügbar|nicht abrufbar|berechnet|^–?$/.test(T(r.querySelector(".rv"))));
+    if(rt.length)S.push(bad.length?"Verkehr: "+bad.map(r=>T(r.querySelector(".rt")).replace(/^→\s*/,"")+" "+T(r.querySelector(".rv"))).join(" · "):nv.length===rt.length?"Verkehr: Fahrzeiten gerade nicht abrufbar":"Verkehr: alle Strecken frei");
     if(ST.length){const u=ST.filter(x=>!x.planned);S.push("Bus & Bahn: "+(u.length?u.length+" Störung"+(u.length>1?"en":""):"")+(u.length&&ST.length>u.length?", ":"")+(ST.length>u.length?(ST.length-u.length)+" Baustelle"+(ST.length-u.length>1?"n":""):"")+" auf deinen Linien");}
     if(WH.length)S.push("Wetter: "+WH.slice(0,2).join(" · "));
     L.splice(4,0,"",LINE,"","AUF EINEN BLICK","",...S);}
