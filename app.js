@@ -2827,7 +2827,7 @@ async function refreshAll(force){
     tasks.push(loadWindy(),loadParking(),loadTM(),loadFussball(),loadDEG(),loadUrlaub());
   }
   await Promise.allSettled(tasks);
-  {const um=$("upd-mini");if(um)um.innerHTML="<b>"+esc(C.isDus?"Düsseldorf":C.town)+"</b><span> · zuletzt aktualisiert "+new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"})+" Uhr</span>";}
+  {const um=$("upd-mini");if(um)um.innerHTML="<b>"+esc(C.isDus?"Düsseldorf":C.town)+"</b><span> · zuletzt aktualisiert "+new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"})+" Uhr"+(APPV?' · <span class="appv">'+esc(APPV)+'</span>':"")+"</span>";}
   $("updated").textContent=C.name+" · zuletzt aktualisiert "+new Date().toLocaleString("de-DE",{...TZ,dateStyle:"medium",timeStyle:"short"})+" · Staus alle 3, Rest alle 10 Minuten";
   btn.disabled=false;busy=false;lastRun=Date.now();
   if(pending){pending=false;refreshAll(true);}
@@ -3177,6 +3177,11 @@ document.addEventListener("click",e=>{if(!e.target.closest(".vlback"))return;e.p
 
 
 // ================= Lage-Mail (v375): ein Tipp öffnet die Mail-App mit der aktuellen Lage =================
+/* Versionsnummer der geladenen App: Name des aktiven Offline-Speichers (lagebild-vNNN), sonst aus sw.js */
+let APPV="";(async()=>{try{const k=(await caches.keys()).map(x=>(x.match(/^lagebild-v(\d+)$/)||[])[1]).filter(Boolean).map(Number);if(k.length)APPV="v"+Math.max(...k);}catch(e){}
+  if(!APPV){try{const t=await (await fetch("sw.js",{cache:"no-store"})).text();const m=t.match(/lagebild-v(\d+)/);if(m)APPV="v"+m[1];}catch(e){}}
+  if(APPV){const um=document.querySelector("#upd-mini > span");if(um&&!um.querySelector(".appv"))um.insertAdjacentHTML("beforeend",' · <span class="appv">'+APPV+'</span>');
+    const ft=document.querySelector(".ft-min");if(ft)ft.textContent="© Thomas Hußmann · "+APPV;}})();
 const noPic0=s=>String(s||"").replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}️‍⃣]/gu,"").replace(/\s+/g," ").trim();
 var BL_LAST=null;
 /* Programm der Düsseldorfer Spielstätten (ohne Fortuna/DEG/BVB) für Kachel „Events Kultur“ und Lage-Mail */

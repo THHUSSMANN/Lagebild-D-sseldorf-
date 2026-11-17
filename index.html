@@ -1370,6 +1370,19 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 .u78-tbl th:nth-child(1),.u78-tbl td:nth-child(1){width:24%}.u78-tbl th:nth-child(3),.u78-tbl td:nth-child(3){width:31%}
 :root{--on-accent:#fff}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--on-accent:#0b1a24}}:root[data-theme="dark"]{--on-accent:#0b1a24}
 .stop-seg>button.on,#efa-stops.stop-seg>button.on{color:var(--on-accent)!important}
+
+/* 17.11.: Startseite passt ohne Scrollen auf das iPhone – Schnellknöpfe in einer Reihe, Kacheln und Orte etwas flacher */
+@media (max-width:560px){
+  .qapps{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;margin:8px 0 0!important}
+  .qapps .qapp{min-height:54px!important;padding:5px 2px!important;font-size:12.5px!important;gap:3px!important}
+  .qapps .qapp > span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .favs .fav{min-height:40px!important;padding-top:4px!important;padding-bottom:4px!important}
+  #headnav{row-gap:6px!important}
+  #headnav .hbtn{min-height:44px!important;padding-top:3px!important;padding-bottom:3px!important}
+  header .tools-toggle{min-height:40px!important;padding-top:4px!important;padding-bottom:4px!important}
+  .ft-min{padding-top:6px!important}
+}
+.appv{font-variant-numeric:tabular-nums;opacity:.8}
 </style>
 </head>
 <body>
