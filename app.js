@@ -3184,6 +3184,10 @@ document.addEventListener("click",e=>{if(!e.target.closest(".vlback"))return;e.p
 
 
 // ================= Lage-Mail (v375): ein Tipp öffnet die Mail-App mit der aktuellen Lage =================
+/* Texte in Großbuchstaben (CSS uppercase) würden aus „ß“ ein „SS“ machen – dort das große ẞ einsetzen */
+function fixSharpS(){try{document.querySelectorAll("label,th,small,.lbl,.stop-grp,.badge,.chip,.kicker,h3,h4").forEach(e=>{if(getComputedStyle(e).textTransform!=="uppercase")return;
+  for(const n of e.childNodes)if(n.nodeType===3&&n.textContent.includes("ß"))n.textContent=n.textContent.replace(/ß/g,"ẞ");});}catch(e){}}
+setTimeout(fixSharpS,1500);addEventListener("hashchange",()=>setTimeout(fixSharpS,600));
 /* Versionsnummer der geladenen App: Name des aktiven Offline-Speichers (lagebild-vNNN), sonst aus sw.js */
 let APPV="";(async()=>{try{const k=(await caches.keys()).map(x=>(x.match(/^lagebild-v(\d+)$/)||[])[1]).filter(Boolean).map(Number);if(k.length)APPV="v"+Math.max(...k);}catch(e){}
   if(!APPV){try{const t=await (await fetch("sw.js",{cache:"no-store"})).text();const m=t.match(/lagebild-v(\d+)/);if(m)APPV="v"+m[1];}catch(e){}}
@@ -3229,11 +3233,11 @@ function lageText(){
   const noPic=s=>String(s||"").replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u2190-\u21FF\u2B00-\u2BFF️‍⃣]/gu,"").replace(/\s+/g," ").replace(/\s+([,.:])/g,"$1").replace(/^[\s·–-]+|[\s·–-]+$/g,"").trim();
   const T=el=>el?noPic(el.textContent):"";
   const cap=w=>w.charAt(0)+w.slice(1).toLowerCase();
-  const short=t=>noPic(String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"")).replace(/\b[A-ZÄÖÜ]{3,}\b/g,cap).replace(/^./,c=>c.toUpperCase());
+  const short=t=>noPic(String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"")).replace(/\b[A-ZÄÖÜ]{3,}\b/g,cap).replace(/^./,c=>c.replace(/ß/g,"ẞ").toUpperCase());
   const now=new Date(),dt={timeZone:"Europe/Berlin"};
   const LINE="————————————————————";
   const L=[],H=t=>{L.push("",LINE,t.replace(/ß/g,"ẞ").toUpperCase(),"");};
-  L.push("LAGEBILD THOMAS HUSSMANN","",
+  L.push("Lagebild Thomas Hußmann","",
     now.toLocaleDateString("de-DE",{...dt,weekday:"long",day:"numeric",month:"long",year:"numeric"})+", "+hhmm(now)+" Uhr",
     "Ort: "+String(C.name).replace(/ · /g,", "));
   const B="• ";const dshort=x=>new Date(x).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
@@ -3268,7 +3272,7 @@ function lageText(){
   H("Warnungen");WL.forEach(([n,t])=>L.push(B+n+": "+t));
   // ---- GROSSLAGEN ----
   if(GL.some(([,l])=>l.length)){H("Großveranstaltungen Düsseldorf");let first=true;GL.forEach(([n,l])=>{if(!l.length)return;if(!first)L.push("");first=false;
-      const gl=glLines(l);L.push(n.toUpperCase()+(gl.length>1?" – "+gl.length+" Großveranstaltungen gleichzeitig":""),...gl);});}
+      const gl=glLines(l);L.push(n.replace(/ß/g,"ẞ").toUpperCase()+(gl.length>1?" – "+gl.length+" Großveranstaltungen gleichzeitig":""),...gl);});}
   // ---- STÖRUNGEN BUS & BAHN ----
   if(ST.length){H("Bus & Bahn – deine Linien");ST.slice(0,5).forEach((x,i)=>{if(i)L.push("");
       L.push(B+x.lines.filter(l=>STOER_RX.test(l)).join(", ")+": "+x.head);const d=[];if(x.when)d.push(x.when);if(x.to)d.push("bis "+dshort(x.to));if(d.length)L.push(d.join(" · "));});
@@ -3295,13 +3299,13 @@ function lageText(){
   // ---- SPORT ----
   H("Events Sport");
   if(!status.fb)L.push("Spielplan wird noch geladen");
-  else [...FB.slice(0,1),{k:"deg",name:"Düsseldorfer EG"},...FB.slice(1)].forEach((f,fi)=>{const l=(SP[f.k]||[]);if(fi)L.push("");L.push(f.name.toUpperCase());
+  else [...FB.slice(0,1),{k:"deg",name:"Düsseldorfer EG"},...FB.slice(1)].forEach((f,fi)=>{const l=(SP[f.k]||[]);if(fi)L.push("");L.push(f.name.replace(/ß/g,"ẞ").toUpperCase());
     if(!l.length){L.push("kein anstehendes Spiel im Spielplan");return;}
     const wd=d=>new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}).replace(/\.,/,".");
     l.slice(0,3).forEach(x=>L.push(B+wd(x.day)+(x.time?", "+x.time+" Uhr":"")+" – "+(x.home?"Heim gegen ":"Auswärts bei ")+x.opp+(x.lg&&!/^(3\. Liga|Bundesliga|DEL2?)$/.test(x.lg)?" ("+x.lg+")":"")));});
   // ---- KULTUR ----
   {const ev=evNext(2,10);if(ev.length){H("Events Kultur Düsseldorf");let last="";
-    ev.forEach(r=>{const d=String(r.start).slice(0,10);if(d!==last){if(last)L.push("");L.push(new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"}).toUpperCase());last=d;}
+    ev.forEach(r=>{const d=String(r.start).slice(0,10);if(d!==last){if(last)L.push("");L.push(new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"}).replace(/ß/g,"ẞ").toUpperCase());last=d;}
       L.push(B+(String(r.start).length>=16&&!r.allDay?String(r.start).slice(11,16)+" Uhr – ":"")+noPic(r.name)+(r.venue?" ("+noPic(r.venue)+")":""));});}}
   // ---- PEGEL ----
   {const k=$("k-rhein");const rv=k&&!k.hidden?T(k.querySelector(".val")):"";const lp=(LP_LAST||[]).slice().sort((a,b)=>["Düssel","Anger","Itter"].indexOf(a.water)-["Düssel","Anger","Itter"].indexOf(b.water));
