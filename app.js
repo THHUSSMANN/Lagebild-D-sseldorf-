@@ -3232,7 +3232,7 @@ function lageText(){
   const short=t=>noPic(String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"")).replace(/\b[A-ZÄÖÜ]{3,}\b/g,cap).replace(/^./,c=>c.toUpperCase());
   const now=new Date(),dt={timeZone:"Europe/Berlin"};
   const LINE="————————————————————";
-  const L=[],H=t=>{L.push("",LINE,t.toUpperCase(),"");};
+  const L=[],H=t=>{L.push("",LINE,t.replace(/ß/g,"ẞ").toUpperCase(),"");};
   L.push("LAGEBILD THOMAS HUSSMANN","",
     now.toLocaleDateString("de-DE",{...dt,weekday:"long",day:"numeric",month:"long",year:"numeric"})+", "+hhmm(now)+" Uhr",
     "Ort: "+String(C.name).replace(/ · /g,", "));
@@ -3267,8 +3267,8 @@ function lageText(){
   // ---- WARNUNGEN ----
   H("Warnungen");WL.forEach(([n,t])=>L.push(B+n+": "+t));
   // ---- GROSSLAGEN ----
-  if(GL.some(([,l])=>l.length)){H("Großlagen Düsseldorf");let first=true;GL.forEach(([n,l])=>{if(!l.length)return;if(!first)L.push("");first=false;
-      const gl=glLines(l);L.push(n.toUpperCase()+(gl.length>1?" – "+gl.length+" Großlagen gleichzeitig":""),...gl);});}
+  if(GL.some(([,l])=>l.length)){H("Großveranstaltungen Düsseldorf");let first=true;GL.forEach(([n,l])=>{if(!l.length)return;if(!first)L.push("");first=false;
+      const gl=glLines(l);L.push(n.toUpperCase()+(gl.length>1?" – "+gl.length+" Großveranstaltungen gleichzeitig":""),...gl);});}
   // ---- STÖRUNGEN BUS & BAHN ----
   if(ST.length){H("Bus & Bahn – deine Linien");ST.slice(0,5).forEach((x,i)=>{if(i)L.push("");
       L.push(B+x.lines.filter(l=>STOER_RX.test(l)).join(", ")+": "+x.head);const d=[];if(x.when)d.push(x.when);if(x.to)d.push("bis "+dshort(x.to));if(d.length)L.push(d.join(" · "));});
