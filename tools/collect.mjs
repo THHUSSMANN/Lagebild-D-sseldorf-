@@ -110,10 +110,11 @@ async function ubaStations() {
   return UBA_ST;
 }
 async function uba(p) {
-  const st = (await ubaStations()).map(s => ({ ...s, km: distKm(p.lat, p.lon, s.lat, s.lon) })).filter(s => s.km <= p.uR).sort((a, b) => a.km - b.km).slice(0, 4);
+  const st = (await ubaStations()).map(s => ({ ...s, km: distKm(p.lat, p.lon, s.lat, s.lon) })).filter(s => s.km <= p.uR).sort((a, b) => a.km - b.km).slice(0, 12); // weiter suchen: manche Stationen (z. B. Passivsammler in Dortmund) liefern keine Stundenwerte
   const day = d => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
   const rows = [];
   for (const s of st) {
+    if (rows.length >= 4) break;
     try {
       const d = await get("https://luftdaten.umweltbundesamt.de/api/air-data/v3/airquality/json?date_from=" + day(new Date(Date.now() - 864e5)) + "&time_from=1&date_to=" + day(new Date()) + "&time_to=24&station=" + s.id + "&lang=de");
       const per = d.data && (d.data[s.id] || Object.values(d.data)[0]); if (!per) continue;

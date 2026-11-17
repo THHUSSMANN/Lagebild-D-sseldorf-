@@ -2098,7 +2098,7 @@ async function takiLive(seq){const box=$("efa");clearTimeout(TAKIT);if(!box)retu
       if(!/^U(78|79|80)$/.test(line)||!/uni ost|botanisch|hbf|hauptbahnhof|holthausen|heine/i.test((tr.destination||{}).name||""))return;
       const k=line+mk(e.departureTimePlanned);if(seen.has(k))return;seen.add(k);const dep=e.departureTimePlanned,depEst=e.departureTimeEstimated;
       if(new Date(depEst||dep).getTime()<Date.now()-60e3)return;const x=arrBy.get(k);
-      rows.push({line,dest:((tr.destination||{}).name||"").replace(/^(Düsseldorf[ ,-]*|D-)/,""),dep,depEst,arr:x?x.arr:new Date(new Date(dep).getTime()+11*6e4).toISOString(),arrEst:x?x.arrEst:(depEst?new Date(new Date(depEst).getTime()+11*6e4).toISOString():null),exact:!!x,
+      rows.push({line,dest:((tr.destination||{}).name||"").replace(/^(Düsseldorf[ ,-]*|D-)/,"").replace(/\/Botanischer Garten$/,""),dep,depEst,arr:x?x.arr:new Date(new Date(dep).getTime()+11*6e4).toISOString(),arrEst:x?x.arrEst:(depEst?new Date(new Date(depEst).getTime()+11*6e4).toISOString():null),exact:!!x,
         cx:(e.realtimeStatus||[]).includes("TRIP_CANCELLED")||!!e.isCancelled});});
     rows.sort((x,y)=>new Date(x.depEst||x.dep)-new Date(y.depEst||y.dep));rows.splice(18);
     const hm=x=>new Date(x).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"});const dl=(p,e)=>e?Math.round((new Date(e)-new Date(p))/6e4):0;
