@@ -3293,7 +3293,9 @@ function lageText(){
     if(WH.length)S.push("Wetter: "+WH.slice(0,2).join(" · "));
     L.splice(4,0,"",LINE,"","AUF EINEN BLICK","",...S);}
   L.push("",LINE,"","Live im Dashboard:",location.origin+location.pathname,"","© Thomas Hußmann");
-  return {subject:"Lage "+now.toLocaleDateString("de-DE",{...dt,day:"2-digit",month:"2-digit"})+", "+hhmm(now)+" Uhr"+(nW?" – "+nW+(nW===1?" Warnung":" Warnungen"):nL===favPlaces().length?" – keine Warnungen":""),body:L.join("\n")};}
+  return {subject:"Lage "+now.toLocaleDateString("de-DE",{...dt,day:"2-digit",month:"2-digit"})+", "+hhmm(now)+" Uhr"+(nW?" – "+nW+(nW===1?" Warnung":" Warnungen"):nL===favPlaces().length?" – keine Warnungen":""),
+    /* Schlussfilter: keine Piktogramme/Emojis in der Mail (© bleibt) */
+    body:L.map(l=>String(l).replace(/(?!©)[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}\uFE0F\u200D\u20E3]/gu,"").replace(/[ \t]{2,}/g," ").replace(/^ +| +$/g,"")).join("\n")};}
 function lageMailUrl(){const {subject,body}=lageText();const to=(load("lagemail_to")||"").split(/[,;\s]+/).filter(Boolean).map(encodeURIComponent).join(",");
   let b=body;if(b.length>6000)b=b.slice(0,6000)+"\n…";
   return "mailto:"+to+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(b.replace(/\n/g,"\r\n"));}
