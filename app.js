@@ -2083,6 +2083,32 @@ async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includ
 function proxyOn(){try{return !!EFAPROXY;}catch(e){return false;}}
 /* U78 Heinrich-Heine-Allee → MERKUR SPIEL-ARENA: Direktfahrten live über den VRR-Vermittler, Abfahrt und Ankunft */
 let U78T=null,U78GAP=false;
+/* „Taki“ (Grieche an der Messe Ost): U78/U79/U80 ab Messe Ost/Stockumer Kirchstr. Richtung Heinrich-Heine-Allee */
+let TAKIT=null;
+async function takiLive(seq){const box=$("efa");clearTimeout(TAKIT);if(!box)return;if((box.dataset.v||"")!=="taki")box.innerHTML='<div class="state">Live-Fahrten werden geladen …</div>';box.dataset.v="taki";
+  const base=EFAPROXY.replace(/\/$/,""),ID="de%3A05111%3A18281",HA="de%3A05111%3A18036";
+  const atT=ms=>{const p=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date(ms)).reduce((o,x)=>(o[x.type]=x.value,o),{});return "&itdDate="+p.year+p.month+p.day+"&itdTime="+p.hour+p.minute;};
+  try{const [a,b,t]=await Promise.all([0,75].map(m=>getJSON(base+"/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=any&name_dm="+ID+"&mode=direct&useRealtime=1&limit=120&lineRestriction=400"+atT(Date.now()+m*6e4),15000).catch(()=>({}))).concat(
+      getJSON(base+"/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin="+ID+"&type_destination=any&name_destination="+HA+"&maxChanges=0&calcNumberOfTrips=8&useRealtime=1",15000).catch(()=>({}))));
+    if(seq!==EFASEQ||EFASTOP!=="@TAKI")return;
+    const mk=x=>String(x||"").slice(0,16),arrBy=new Map();
+    (t.journeys||[]).forEach(j=>{const l=(j.legs||[])[0];if(!l||!l.transportation)return;arrBy.set(String(l.transportation.disassembledName||"").replace(/\s+/g,"")+mk(l.origin.departureTimePlanned),{arr:l.destination.arrivalTimePlanned,arrEst:l.destination.arrivalTimeEstimated});});
+    const seen=new Set(),rows=[];
+    [...(a.stopEvents||[]),...(b.stopEvents||[])].forEach(e=>{const tr=e.transportation||{};const line=String(tr.disassembledName||tr.number||"").replace(/\s+/g,"").toUpperCase();
+      if(!/^U(78|79|80)$/.test(line)||!/uni ost|botanisch|hbf|hauptbahnhof|holthausen|heine/i.test((tr.destination||{}).name||""))return;
+      const k=line+mk(e.departureTimePlanned);if(seen.has(k))return;seen.add(k);const dep=e.departureTimePlanned,depEst=e.departureTimeEstimated;
+      if(new Date(depEst||dep).getTime()<Date.now()-60e3)return;const x=arrBy.get(k);
+      rows.push({line,dest:((tr.destination||{}).name||"").replace(/^(Düsseldorf[ ,-]*|D-)/,""),dep,depEst,arr:x?x.arr:new Date(new Date(dep).getTime()+11*6e4).toISOString(),arrEst:x?x.arrEst:(depEst?new Date(new Date(depEst).getTime()+11*6e4).toISOString():null),exact:!!x,
+        cx:(e.realtimeStatus||[]).includes("TRIP_CANCELLED")||!!e.isCancelled});});
+    rows.sort((x,y)=>new Date(x.depEst||x.dep)-new Date(y.depEst||y.dep));rows.splice(18);
+    const hm=x=>new Date(x).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"});const dl=(p,e)=>e?Math.round((new Date(e)-new Date(p))/6e4):0;
+    box.innerHTML=rows.length?'<table class="tbl efa-tbl u78-tbl" style="width:100%"><thead><tr><th>Ab</th><th>Linie</th><th>An Heine-Allee</th></tr></thead><tbody>'+rows.map(r=>{const d1=dl(r.dep,r.depEst);const st=[];if(r.line==="U78")st.push("background:rgba(255,204,0,.28)");if(r.cx)st.push("opacity:.5;text-decoration:line-through");
+        return '<tr'+(st.length?' style="'+st.join(";")+'"':'')+'><td><b>'+hm(r.depEst||r.dep)+'</b>'+(d1>0?' <span style="color:#e53935;font-weight:700">+'+d1+'</span>':'')+'</td><td><span class="line">'+esc(r.line)+'</span><small class="muted" style="display:block;font-size:12.5px;line-height:1.25">'+esc(r.dest)+'</small></td><td><b>'+(r.exact?'':'ca. ')+hm(r.arrEst||r.arr)+'</b><small class="muted" style="display:block;font-size:12.5px">'+Math.round((new Date(r.arrEst||r.arr)-new Date(r.depEst||r.dep))/6e4)+' min</small></td></tr>';}).join("")+'</tbody></table>'
+      +'<div class="muted small" style="margin-top:6px"><span style="background:rgba(255,204,0,.28);padding:0 4px;border-radius:4px">U78 gelb</span> · ab Messe Ost/Stockumer Kirchstr., Steig 1 · alle drei Linien fahren durch bis Heinrich-Heine-Allee (ca. 11 min) · '+link("https://www.rheinbahn.de/","Rheinbahn")+'</div>'
+      :stateBox("Gerade keine Abfahrten Richtung Heinrich-Heine-Allee gefunden.",link("https://www.rheinbahn.de/","Rheinbahn"));
+    setStatus("efa",true,"live");}
+  catch(e){if(seq===EFASEQ)box.innerHTML=stateBox("Live-Abfahrten gerade nicht verfügbar – "+errText(e)+".",link("https://www.rheinbahn.de/","Rheinbahn"));}
+  TAKIT=setTimeout(()=>{if(EFASTOP==="@TAKI"&&document.visibilityState==="visible")takiLive(EFASEQ);},45000);}
 async function u78Live(seq){const R=EFASTOP==="@U78R",SP=EFASTOP;const box=$("efa");clearTimeout(U78T);if(!box)return;if(!box.innerHTML||(box.dataset.v||"")!=="u78"+(R?"r":""))box.innerHTML='<div class="state">Live-Fahrten werden geladen …</div>';box.dataset.v="u78"+(R?"r":"");
   try{if(!proxyOn())throw new Error("Vermittler fehlt");const base=EFAPROXY.replace(/\/+$/,"");const HA=await tripStopId("Düsseldorf Heinrich-Heine-Allee"),AR="de:05111:18075";const a=R?AR:HA,z=R?HA:AR;
     /* Abfahrtsmonitor Heine-Allee (viele Fahrten) + Verbindungsauskunft (genaue Ankunft) zusammenführen */
@@ -2138,13 +2164,16 @@ async function loadEFA(){const EK=ec().key;
   if(!STOPIDX)await loadStopIndex();
   // gespeicherte Haltestelle nur verwenden, wenn sie für diesen Ort wirklich abgerufen wird (sonst Standard, z. B. Nikolaus-Knopp-Platz)
   let stop=STOPS[ec().key]||ec().efaDefault;
+  if(ec().isDus&&stop==="@TAKI"){EFASTOP=stop;efaGo();const avail=(STOPIDX&&STOPIDX.available)||[];
+    $("efa-stops").innerHTML=avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join("")+'<button type="button" data-stop="@U78">U78<small>ab Heinrich-Heine-Allee</small></button><button type="button" data-stop="@U78R">U78<small>ab Arena</small></button><button type="button" data-stop="@TAKI"'+(stop==="@TAKI"?' class="on"':'')+'>Taki<small>Messe Ost → Heine-Allee</small></button>';
+    $("efa-title").textContent="Taki · Messe Ost → Heinrich-Heine-Allee";$("efa-src").textContent="U78 · U79 · U80 · Echtzeit";takiLive(++EFASEQ);return;}
   if(ec().isDus&&(stop==="@U78"||stop==="@U78R")){const R=stop==="@U78R";EFASTOP=stop;efaGo();const avail=(STOPIDX&&STOPIDX.available)||[];
-    $("efa-stops").innerHTML=avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join("")+'<button type="button" data-stop="@U78"'+(R?'':' class="on"')+'>U78<small>ab Heinrich-Heine-Allee</small></button><button type="button" data-stop="@U78R"'+(R?' class="on"':'')+'>U78<small>ab Arena</small></button>';
+    $("efa-stops").innerHTML=avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join("")+'<button type="button" data-stop="@U78"'+(R?'':' class="on"')+'>U78<small>ab Heinrich-Heine-Allee</small></button><button type="button" data-stop="@U78R"'+(R?' class="on"':'')+'>U78<small>ab Arena</small></button><button type="button" data-stop="@TAKI"'+(stop==="@TAKI"?' class="on"':'')+'>Taki<small>Messe Ost → Heine-Allee</small></button>';
     $("efa-title").textContent=R?"U78 · Arena → Heinrich-Heine-Allee":"U78 · Heine-Allee → Arena (+ U79/U80)";$("efa-src").textContent="Direktfahrten · Echtzeit";u78Live(++EFASEQ);return;}
   {const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file&&!(mm.id&&proxyOn())){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
   const m=stopMatch(stop);EFASTOP=stop;efaGo();
   let avail=(STOPIDX&&STOPIDX.available)||[];if(avail.length<2&&ec().isDus)avail=["Düsseldorf Nikolaus-Knopp-Platz","Düsseldorf Heinrich-Heine-Allee","Düsseldorf Oststraße","Düsseldorf Barbarossaplatz"].map(n=>({name:n,file:null}));
-  $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+((a.file?m.file===a.file:stop===a.name)?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join("")+(ec().isDus?'<button type="button" data-stop="@U78">U78<small>ab Heinrich-Heine-Allee</small></button><button type="button" data-stop="@U78R">U78<small>ab Arena</small></button>':''):"";
+  $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+((a.file?m.file===a.file:stop===a.name)?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join("")+(ec().isDus?'<button type="button" data-stop="@U78">U78<small>ab Heinrich-Heine-Allee</small></button><button type="button" data-stop="@U78R">U78<small>ab Arena</small></button><button type="button" data-stop="@TAKI"'+(stop==="@TAKI"?' class="on"':'')+'>Taki<small>Messe Ost → Heine-Allee</small></button>':''):"";
   $("efa-dir").value=DIRF[ec().key]||"";
   $("efa-title").textContent=(ec().isDus?"Rheinbahn · ":"Abfahrten ")+(m.name||stop).replace(/^Düsseldorf[, ]*/,"");
   $("efa-src").textContent=ec().isDus?"Bus, U- und Straßenbahn · Echtzeit":"Bus & Bahn vor Ort · Echtzeit";
