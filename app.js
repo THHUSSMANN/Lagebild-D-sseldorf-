@@ -833,7 +833,7 @@ function applyPlaceUi(){
   $("gmaps").href=gmapsUrl();
   setStauTitle();
   if($("ab-list"))$("ab-list").textContent=(C.ab.length?C.ab.join(" · "):"keine Autobahnen gewählt")+" · Umkreis "+JAM_RADIUS_KM+" km";
-  $("rhein-sec").textContent=C.isDus?"Pegel Rhein":"Pegel & Gewässer";
+  $("rhein-sec").textContent=C.isDus?"Pegel Düsseldorf":"Pegel & Gewässer";
   $("efa-card").hidden=!C.efaDefault;
   $("stop").value=STOPS[C.key]||C.efaDefault||"";STOPIDX=null;if(C.efaDefault)loadStopIndex();
   $("stop-lbl").textContent="Haltestelle für Abfahrten in "+C.town;
