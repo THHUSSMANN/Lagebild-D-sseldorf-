@@ -1195,7 +1195,7 @@ async function loadRhein(){
     const sName=(st.longname||st.shortname||"").replace(/\p{L}+/gu,w=>w.charAt(0)+w.slice(1).toLowerCase());
     $("pegel-title").textContent="Pegel "+sName;
     $("pegel-src").textContent="WSV PEGELONLINE · "+wName+(st.km!=null?" · km "+fmt(st.km,1):"")+(!C.isDus&&st.km!=null?"":"");
-    $("k-rhein-lbl").textContent=(/^rhein$/i.test(wName)?"Rheinpegel ":"Pegel ")+sName;$("k-rhein").dataset.water=/^rhein$/i.test(wName)?"":wName;
+    $("k-rhein-lbl").textContent="Pegel "+sName;$("k-rhein").dataset.water=/^rhein$/i.test(wName)?"":wName;
     const tr=cm.trend===1?"steigend ↑":cm.trend===-1?"fallend ↓":"gleichbleibend →";
     const cvRaw=await getJSON(P+"/"+uuid+"/W.json?includeCharacteristicValues=true").then(x=>x.characteristicValues||[]).catch(()=>[]);
     const M={};cvRaw.forEach(c=>{M[c.shortname]=c.value;});
@@ -3310,7 +3310,7 @@ function lageText(){
   // ---- PEGEL ----
   {const k=$("k-rhein");const rv=k&&!k.hidden?T(k.querySelector(".val")):"";const lp=(LP_LAST||[]).slice().sort((a,b)=>["Düssel","Anger","Itter"].indexOf(a.water)-["Düssel","Anger","Itter"].indexOf(b.water));
     if((rv&&rv!=="–")||lp.length){H("Pegel");
-      if(rv&&rv!=="–"){const nt=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");L.push(B+T(k.querySelector(".lbl")).replace(/^Rheinpegel /,"Rhein ")+": "+rv+(nt&&nt!=="wird geladen"?", "+nt.replace(/ · /g,", "):""));}
+      if(rv&&rv!=="–"){const nt=T(k.querySelector(".note")).replace(/\s*·\s*$/,"");L.push(B+T(k.querySelector(".lbl")).replace(/^Pegel Düsseldorf$/,"Rhein Düsseldorf")+": "+rv+(nt&&nt!=="wird geladen"?", "+nt.replace(/ · /g,", "):""));}
       lp.forEach(x=>{const t=levelText(x.value,{MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3},x.unit);
         L.push(B+x.water+" ("+String(x.name||"").replace(/_\d+$/,"")+"): "+fmt(x.value,x.value<100?1:0)+" "+(x.unit||"cm")+", "+t.st);});}}
   // ---- LUFT nur bei schlechten Werten ----
