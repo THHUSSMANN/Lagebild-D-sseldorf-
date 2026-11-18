@@ -14,6 +14,7 @@ const tasks=[...stops.map(s=>["ÖPNV-Abfahrten "+s,()=>dm(s)]),
  ["Bus Datteln Busbahnhof → Lohstr.",()=>trip("Datteln Busbahnhof","Datteln Lohstr.")],
  ["Dortmund Stadion → Hbf",()=>trip("Dortmund Stadion","Dortmund Hbf")],
  ["Taki: Messe Ost → Heine-Allee",()=>trip("de:05111:18281","de:05111:18036")],
+ ["Knopp-Platz → Arena (U75+U78)",()=>trip("de:05111:18131","de:05111:18075")],
  ["U78 Heine-Allee → Arena",()=>trip("Düsseldorf Heinrich-Heine-Allee","de:05111:18075")],
  ["U78 Arena → Heine-Allee",()=>trip("de:05111:18075","Düsseldorf Heinrich-Heine-Allee")],
  ...["Düsseldorf Hbf","Recklinghausen Hbf","Dortmund Hbf"].map(s=>["DB-Fernverkehr "+s,()=>iris(s)])];

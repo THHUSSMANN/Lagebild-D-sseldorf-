@@ -2083,6 +2083,37 @@ async function loadStopIndex(){STOPIDX=null;if(!ec().efaDefault||!EFAKEYS.includ
 function proxyOn(){try{return !!EFAPROXY;}catch(e){return false;}}
 /* U78 Heinrich-Heine-Allee → MERKUR SPIEL-ARENA: Direktfahrten live über den VRR-Vermittler, Abfahrt und Ankunft */
 let U78T=null,U78GAP=false;
+/* Nikolaus-Knopp-Platz → MERKUR SPIEL-ARENA: Verbindungen mit Umstieg (U75 bis Heine-Allee, dann U78) aus der VRR-Auskunft */
+let KAT=null;
+async function kaLive(seq){const box=$("efa");clearTimeout(KAT);if(!box)return;if((box.dataset.v||"")!=="ka")box.innerHTML='<div class="state">Verbindungen werden geladen …</div>';box.dataset.v="ka";
+  const base=EFAPROXY.replace(/\/$/,""),A="de%3A05111%3A18131",Z="de%3A05111%3A18075";
+  const atT=ms=>{const p=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date(ms)).reduce((o,x)=>(o[x.type]=x.value,o),{});return "&itdDate="+p.year+p.month+p.day+"&itdTime="+p.hour+p.minute;};
+  const isPT=l=>l.transportation&&l.transportation.product&&![99,100].includes(l.transportation.product.class);
+  try{/* der VRR liefert pro Anfrage nur ca. 3 Fahrten – bis zu viermal ab der letzten Abfahrt weiterfragen */
+    const all=[];let t=Date.now();
+    for(let k=0;k<4;k++){const j=await getJSON(base+"/standard/XML_TRIP_REQUEST2?outputFormat=rapidJSON&language=de&type_origin=any&name_origin="+A+"&type_destination=any&name_destination="+Z+"&calcNumberOfTrips=6&useRealtime=1"+atT(t),15000).catch(()=>({}));
+      if(seq!==EFASEQ||EFASTOP!=="@KA")return;const js=(j.journeys||[]).filter(x=>(x.legs||[]).some(isPT));if(!js.length)break;all.push(...js);
+      t=Math.max(...js.map(x=>new Date(x.legs.find(isPT).origin.departureTimePlanned).getTime()))+60e3;}
+    const seen=new Set(),rows=[];
+    all.forEach(x=>{const P=x.legs.filter(isPT);if(!P.length)return;const f=P[0],l=P[P.length-1];const k=P.map(q=>q.transportation.disassembledName+q.origin.departureTimePlanned).join("|");if(seen.has(k))return;seen.add(k);
+      const dep=f.origin.departureTimePlanned,depEst=f.origin.departureTimeEstimated;if(new Date(depEst||dep).getTime()<Date.now()-60e3)return;
+      rows.push({dep,depEst,arr:l.destination.arrivalTimePlanned,arrEst:l.destination.arrivalTimeEstimated,legs:P.map(q=>({line:String(q.transportation.disassembledName||q.transportation.number||"").replace(/\s+/g,""),
+        from:(q.origin.name||"").replace(/^(Düsseldorf[ ,-]*|D-)/,"").replace(/\s+U$/,""),dep:q.origin.departureTimePlanned,depEst:q.origin.departureTimeEstimated,arr:q.destination.arrivalTimePlanned,arrEst:q.destination.arrivalTimeEstimated})),
+        cx:P.some(q=>(q.realtimeStatus||[]).includes("TRIP_CANCELLED")||q.isCancelled)});});
+    /* gleiche Abfahrt am Knopp-Platz: nur die schnellste Verbindung */
+    {const best=new Map();rows.forEach(r=>{const k=String(r.dep).slice(0,16);const b=best.get(k);if(!b||new Date(r.arrEst||r.arr)<new Date(b.arrEst||b.arr))best.set(k,r);});rows.length=0;rows.push(...best.values());}
+    rows.sort((a,b)=>new Date(a.depEst||a.dep)-new Date(b.depEst||b.dep));rows.splice(12);
+    const hm=x=>new Date(x).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"});const dl=(p,e)=>e?Math.round((new Date(e)-new Date(p))/6e4):0;
+    const late=(p,e)=>{const d=dl(p,e);return d>0?' <span style="color:#e53935;font-weight:700">+'+d+'</span>':"";};
+    box.innerHTML=rows.length?'<table class="tbl efa-tbl u78-tbl" style="width:100%"><thead><tr><th>Ab</th><th>Verbindung</th><th>An Arena</th></tr></thead><tbody>'+rows.map(r=>{
+        const lines=r.legs.map(q=>'<span class="line">'+esc(q.line)+'</span>').join(" ");
+        const via=r.legs.slice(1).map(q=>"Umstieg "+esc(q.from)+" "+hm(q.depEst||q.dep)+late(q.dep,q.depEst)).join("<br>");
+        return '<tr'+(r.cx?' style="opacity:.5;text-decoration:line-through"':'')+'><td><b>'+hm(r.depEst||r.dep)+'</b>'+late(r.dep,r.depEst)+'</td><td>'+lines+(via?'<small class="muted" style="display:block;font-size:12.5px;line-height:1.3;margin-top:2px">'+via+'</small>':'')+'</td><td><b>'+hm(r.arrEst||r.arr)+'</b>'+late(r.arr,r.arrEst)+'<small class="muted" style="display:block;font-size:12.5px">'+Math.round((new Date(r.arrEst||r.arr)-new Date(r.depEst||r.dep))/6e4)+' min</small></td></tr>';}).join("")+'</tbody></table>'
+      +'<div class="muted small" style="margin-top:6px">ab Nikolaus-Knopp-Platz · Umstieg an der Heinrich-Heine-Allee in die U78 · Verbindungen laut VRR-Auskunft · '+link("https://www.rheinbahn.de/","Rheinbahn")+'</div>'
+      :stateBox("Gerade keine Verbindung zur Arena gefunden.",link("https://www.rheinbahn.de/","Rheinbahn"));
+    setStatus("efa",true,"live");}
+  catch(e){if(seq===EFASEQ)box.innerHTML=stateBox("Verbindungen gerade nicht verfügbar – "+errText(e)+".",link("https://www.rheinbahn.de/","Rheinbahn"));}
+  KAT=setTimeout(()=>{if(EFASTOP==="@KA"&&document.visibilityState==="visible")kaLive(EFASEQ);},60000);}
 /* „Taki“ (Grieche an der Messe Ost): U78/U79/U80 ab Messe Ost/Stockumer Kirchstr. Richtung Heinrich-Heine-Allee */
 let TAKIT=null;
 async function takiLive(seq){const box=$("efa");clearTimeout(TAKIT);if(!box)return;if((box.dataset.v||"")!=="taki")box.innerHTML='<div class="state">Live-Fahrten werden geladen …</div>';box.dataset.v="taki";
@@ -2164,12 +2195,14 @@ function dusStops(cur){const av=((STOPIDX&&STOPIDX.available)||[]).map(a=>a.name
   const K=nm(/knopp/i,"Düsseldorf Nikolaus-Knopp-Platz"),O=nm(/oststr/i,"Düsseldorf Oststraße"),B=nm(/barbarossa/i,"Düsseldorf Barbarossaplatz"),H=nm(/heine/i,"Düsseldorf Heinrich-Heine-Allee"),S=nm(/steinstr/i,"Düsseldorf Steinstr./Königsallee");
   const b=(id,t,sm,wide)=>'<button type="button" data-stop="'+esc(id)+'" class="'+(cur===id?"on":"")+(wide?" wide":"")+'">'+esc(t)+'<small>'+esc(sm)+'</small></button>';
   return '<div class="stop-grp">U75 · Nikolaus-Knopp-Platz</div>'+b(K,"Knopp-Platz","U75 → Stadt",1)+b(H,"Heine-Allee","→ nach Hause")+b(O,"Oststraße","→ nach Hause")+b(S,"Kö/Steinstraße","→ nach Hause")+b(B,"Barbarossaplatz","→ nach Hause")
-    +'<div class="stop-grp">Arena &amp; Messe</div>'+b("@U78","Heine-Allee","→ zur Arena")+b("@U78R","Arena","→ Heine-Allee")+b("@TAKI","Taki","Messe Ost → Heine-Allee",1);}
+    +'<div class="stop-grp">Arena &amp; Messe</div>'+b("@KA","Knopp-Platz","U75 + U78 → Arena",1)+b("@U78","Heine-Allee","→ zur Arena")+b("@U78R","Arena","→ Heine-Allee")+b("@TAKI","Taki","Messe Ost → Heine-Allee");}
 async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){$("efa-title").textContent="Abfahrten";$("efa-stops").innerHTML="";$("efa").innerHTML=stateBox("Für diesen Ort gibt es keine Echtzeit-Abfahrten im VRR.",'<a href="https://www.hvv.de/de/fahrplaene/abruf-fahrplaninfos/abfahrten" target="_blank" rel="noopener">HVV-Abfahrten ↗</a>');setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
   // gespeicherte Haltestelle nur verwenden, wenn sie für diesen Ort wirklich abgerufen wird (sonst Standard, z. B. Nikolaus-Knopp-Platz)
   let stop=STOPS[ec().key]||ec().efaDefault;
+  if(ec().isDus&&stop==="@KA"){EFASTOP=stop;efaGo();$("efa-stops").innerHTML=dusStops(stop);
+    $("efa-title").textContent="Nikolaus-Knopp-Platz → Arena";$("efa-src").textContent="U75 bis Heine-Allee, dort U78 · Echtzeit";kaLive(++EFASEQ);return;}
   if(ec().isDus&&stop==="@TAKI"){EFASTOP=stop;efaGo();const avail=(STOPIDX&&STOPIDX.available)||[];
     $("efa-stops").innerHTML=dusStops(stop);
     $("efa-title").textContent="Taki · Messe Ost → Heinrich-Heine-Allee";$("efa-src").textContent="U78 · U79 · U80 · Echtzeit";takiLive(++EFASEQ);return;}
