@@ -2,7 +2,7 @@ const B="https://vrr-proxy.thomas-hussmann.workers.dev";
 const J=async u=>{const r=await fetch(B+u);if(!r.ok)throw new Error("HTTP "+r.status);return r.json();};
 const T=async u=>{const r=await fetch(B+u);if(!r.ok)throw new Error("HTTP "+r.status);return r.text();};
 const enc=encodeURIComponent;
-const stops=["Düsseldorf Nikolaus-Knopp-Platz","Düsseldorf Heinrich-Heine-Allee","Düsseldorf Oststraße","Düsseldorf Barbarossaplatz","Datteln Lohstr.","Datteln Busbahnhof","Alpen Bahnhof","Dortmund Stadion","Dortmund Hbf","Düsseldorf Hbf","Recklinghausen Hbf"];
+const stops=["Düsseldorf Nikolaus-Knopp-Platz","Düsseldorf Heinrich-Heine-Allee","Düsseldorf Oststraße","Düsseldorf Barbarossaplatz","Düsseldorf Steinstr./Königsallee","Datteln Lohstr.","Datteln Busbahnhof","Alpen Bahnhof","Dortmund Stadion","Dortmund Hbf","Düsseldorf Hbf","Recklinghausen Hbf"];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));const IDS={};
 async function sid(n){if(n.startsWith("de:"))return n;if(IDS[n])return IDS[n];const d=await J("/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf="+enc(n));const l=(d.locations||[]).filter(x=>x.type==="stop").sort((a,b)=>(b.matchQuality||0)-(a.matchQuality||0))[0];if(!l)throw new Error("Haltestelle nicht gefunden");return IDS[n]=l.id;}
 async function dm(n){const d=await J("/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=any&name_dm="+enc(await sid(n))+"&mode=direct&useRealtime=1&limit=40");const ev=d.stopEvents||[];const rt=ev.filter(e=>e.departureTimeEstimated).length;const loc=(d.locations&&d.locations[0]&&d.locations[0].name)||"?";return `${ev.length} Abfahrten, ${rt} mit Echtzeit (${loc})`;}
@@ -13,6 +13,7 @@ const tasks=[...stops.map(s=>["ÖPNV-Abfahrten "+s,()=>dm(s)]),
  ["Bus Datteln Lohstr. → Busbahnhof",()=>trip("Datteln Lohstr.","Datteln Busbahnhof")],
  ["Bus Datteln Busbahnhof → Lohstr.",()=>trip("Datteln Busbahnhof","Datteln Lohstr.")],
  ["Dortmund Stadion → Hbf",()=>trip("Dortmund Stadion","Dortmund Hbf")],
+ ["Taki: Messe Ost → Heine-Allee",()=>trip("de:05111:18281","de:05111:18036")],
  ["U78 Heine-Allee → Arena",()=>trip("Düsseldorf Heinrich-Heine-Allee","de:05111:18075")],
  ["U78 Arena → Heine-Allee",()=>trip("de:05111:18075","Düsseldorf Heinrich-Heine-Allee")],
  ...["Düsseldorf Hbf","Recklinghausen Hbf","Dortmund Hbf"].map(s=>["DB-Fernverkehr "+s,()=>iris(s)])];
