@@ -2739,9 +2739,16 @@ function spanLast(){["tiles","toolgrid","headnav"].forEach(id=>{const g=document
 ["tiles","toolgrid","headnav"].forEach(id=>{const g=document.getElementById(id);if(g)new MutationObserver(()=>{clearTimeout(spanLast.t);spanLast.t=setTimeout(spanLast,50);}).observe(g,{childList:true,subtree:false,attributes:true,attributeFilter:["hidden","class","style"]});});
 window.addEventListener("resize",()=>spanLast());document.addEventListener("click",()=>setTimeout(spanLast,120));setTimeout(spanLast,300);
 // Kopf-Knöpfe WeekCal / Erinnerungen: Ziel lokal anpassbar (z. B. Kurzbefehl)
-const QA={cal:["qa-cal","weekcal://"],rem:["qa-rem","x-apple-reminderkit://"],sonos:["qa-sonos","shortcuts://run-shortcut?name=WDR%202%20Sonos"],sonos4:["qa-sonos4","shortcuts://run-shortcut?name=WDR%204%20Sonos"],sonosfav:["qa-sonosfav","shortcuts://run-shortcut?name=Sonos%20Favoriten"],licht:["qa-licht","shortcuts://run-shortcut?name=Licht%20Entspannen"]};
+const QA={cal:["qa-cal","weekcal://"],rem:["qa-rem","x-apple-reminderkit://"],sonos:["qa-sonos","shortcuts://run-shortcut?name=WDR%202%20Sonos"],sonos4:["qa-sonos4","shortcuts://run-shortcut?name=WDR%204%20Sonos"],sonosfav:["qa-sonosfav","shortcuts://run-shortcut?name=Sonos%20Favoriten"],licht:["qa-licht","shortcuts://run-shortcut?name=Licht%20Entspannen"],lichtaus:["qa-lichtaus","shortcuts://run-shortcut?name=Licht%20Aus"]};
 function scUrl(u){const m=/^shortcuts:\/\/run-shortcut\?name=([^&]+)/.exec(u||"");if(!m)return u;const back=encodeURIComponent(location.href.split("#")[0]);return "shortcuts://x-callback-url/run-shortcut?name="+m[1]+"&x-success="+back+"&x-cancel="+back+"&x-error="+back;}
-document.addEventListener("click",e=>{const a=e.target.closest("#qa-sonos,#qa-sonos4,#qa-sonosfav,#qa-licht,[data-sonos]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();if(a.id==="qa-licht"){a.classList.add("go");setTimeout(()=>a.classList.remove("go"),2500);}const k=a.id?a.id.slice(3):"sonos";location.href=scUrl(load("qa_"+k)||(QA[k]||QA.sonos)[1]);});
+document.addEventListener("click",e=>{const a=e.target.closest("#qa-sonos,#qa-sonos4,#qa-sonosfav,[data-sonos]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();const k=a.id?a.id.slice(3):"sonos";location.href=scUrl(load("qa_"+k)||(QA[k]||QA.sonos)[1]);});
+
+// Licht (Hue über Kurzbefehle): Glühbirne öffnet Menü „Entspannen / Aus“
+{const lb=$("qa-licht"),lm=$("licht-menu");const close=()=>{if(lm){lm.hidden=true;}if(lb)lb.setAttribute("aria-expanded","false");};
+ if(lb&&lm){lb.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const o=lm.hidden;lm.hidden=!o;lb.setAttribute("aria-expanded",String(o));});
+  lm.addEventListener("click",e=>{const b=e.target.closest("[data-licht]");if(!b)return;e.stopPropagation();const k=b.dataset.licht;close();lb.classList.add("go");setTimeout(()=>lb.classList.remove("go"),2500);location.href=scUrl(load("qa_"+k)||QA[k][1]);});
+  document.addEventListener("click",e=>{if(!lm.hidden&&!e.target.closest("#licht-menu,#qa-licht"))close();});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")close();});}}
 function qaInit(){Object.entries(QA).forEach(([k,[id,def]])=>{const v=load("qa_"+k)||"";const a=$(id);if(a)a.href=v||def;const i=$(id+"-in");if(i)i.value=v;});}
 qaInit();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-qasave]");if(!b)return;const k=b.dataset.qasave;const i=$(QA[k][0]+"-in");const v=(i.value||"").trim();
