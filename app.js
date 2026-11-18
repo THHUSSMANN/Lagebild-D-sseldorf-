@@ -2161,10 +2161,10 @@ async function u78Live(seq){const R=EFASTOP==="@U78R",SP=EFASTOP;const box=$("ef
   U78T=setTimeout(()=>{if(EFASTOP===SP&&box.offsetParent)u78Live(seq);},U78GAP?8000:45000);}
 /* Düsseldorf: Haltestellen-Knöpfe in zwei Gruppen – U75 zum/vom Nikolaus-Knopp-Platz und Arena & Messe */
 function dusStops(cur){const av=((STOPIDX&&STOPIDX.available)||[]).map(a=>a.name);const nm=(rx,def)=>av.find(n=>rx.test(n))||def;
-  const K=nm(/knopp/i,"Düsseldorf Nikolaus-Knopp-Platz"),O=nm(/oststr/i,"Düsseldorf Oststraße"),B=nm(/barbarossa/i,"Düsseldorf Barbarossaplatz"),H=nm(/heine/i,"Düsseldorf Heinrich-Heine-Allee");
-  const b=(id,t,sm)=>'<button type="button" data-stop="'+esc(id)+'"'+(cur===id?' class="on"':'')+'>'+esc(t)+'<small>'+esc(sm)+'</small></button>';
-  return '<div class="stop-grp">U75 · Nikolaus-Knopp-Platz</div>'+b(K,"Knopp-Platz","→ Stadt")+b(H,"Heine-Allee","→ nach Hause")+b(O,"Oststraße","→ nach Hause")+b(B,"Barbarossaplatz","→ nach Hause")
-    +'<div class="stop-grp">Arena &amp; Messe</div>'+b("@U78","Heine-Allee","→ zur Arena")+b("@U78R","Arena","→ Heine-Allee")+b("@TAKI","Taki","Messe Ost → Heine-Allee");}
+  const K=nm(/knopp/i,"Düsseldorf Nikolaus-Knopp-Platz"),O=nm(/oststr/i,"Düsseldorf Oststraße"),B=nm(/barbarossa/i,"Düsseldorf Barbarossaplatz"),H=nm(/heine/i,"Düsseldorf Heinrich-Heine-Allee"),S=nm(/steinstr/i,"Düsseldorf Steinstr./Königsallee");
+  const b=(id,t,sm,wide)=>'<button type="button" data-stop="'+esc(id)+'" class="'+(cur===id?"on":"")+(wide?" wide":"")+'">'+esc(t)+'<small>'+esc(sm)+'</small></button>';
+  return '<div class="stop-grp">U75 · Nikolaus-Knopp-Platz</div>'+b(K,"Knopp-Platz","U75 → Stadt",1)+b(H,"Heine-Allee","→ nach Hause")+b(O,"Oststraße","→ nach Hause")+b(S,"Kö/Steinstraße","→ nach Hause")+b(B,"Barbarossaplatz","→ nach Hause")
+    +'<div class="stop-grp">Arena &amp; Messe</div>'+b("@U78","Heine-Allee","→ zur Arena")+b("@U78R","Arena","→ Heine-Allee")+b("@TAKI","Taki","Messe Ost → Heine-Allee",1);}
 async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){$("efa-title").textContent="Abfahrten";$("efa-stops").innerHTML="";$("efa").innerHTML=stateBox("Für diesen Ort gibt es keine Echtzeit-Abfahrten im VRR.",'<a href="https://www.hvv.de/de/fahrplaene/abruf-fahrplaninfos/abfahrten" target="_blank" rel="noopener">HVV-Abfahrten ↗</a>');setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
@@ -2182,8 +2182,8 @@ async function loadEFA(){const EK=ec().key;
   $("efa-stops").innerHTML=ec().isDus?dusStops(stop):avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+((a.file?m.file===a.file:stop===a.name)?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join(""):"";
   $("efa-dir").value=DIRF[ec().key]||"";
   {const sn0=normStop(stop),nmS=(m.name||stop).replace(/^Düsseldorf[, ]*/,"").replace(/\s+U$/,"");
-    $("efa-title").textContent=!ec().isDus?"Abfahrten "+nmS:sn0.includes("knopp")?"U75 ab Nikolaus-Knopp-Platz → Stadt":/heinrichheine|oststr|barbarossa/.test(sn0)?"U75 ab "+nmS+" → Nikolaus-Knopp-Platz":"Rheinbahn · "+nmS;}
-  $("efa-src").textContent=ec().isDus?(/knopp|heinrichheine|oststr|barbarossa/.test(normStop(stop))?"U75 · Echtzeit":"Bus, U- und Straßenbahn · Echtzeit"):"Bus & Bahn vor Ort · Echtzeit";
+    $("efa-title").textContent=!ec().isDus?"Abfahrten "+nmS:sn0.includes("knopp")?"U75 ab Nikolaus-Knopp-Platz → Stadt":/heinrichheine|oststr|barbarossa|steinstr/.test(sn0)?"U75 ab "+nmS.replace(/^Steinstr\.\/Königsallee$/,"Königsallee/Steinstraße")+" → Nikolaus-Knopp-Platz":"Rheinbahn · "+nmS;}
+  $("efa-src").textContent=ec().isDus?(/knopp|heinrichheine|oststr|barbarossa|steinstr/.test(normStop(stop))?"U75 · Echtzeit":"Bus, U- und Straßenbahn · Echtzeit"):"Bus & Bahn vor Ort · Echtzeit";
   const file=m.file||(stop===ec().efaDefault?"efa-"+ec().key+".json":null);
   if(!file&&m.id&&proxyOn()&&EFAKEYS.includes(ec().key)){/* jede beliebige VRR-Haltestelle: direkt live über den Vermittler */
     EFADATA=null;$("efa").innerHTML='<div class="state">Live-Abfahrten werden geladen …</div>';
@@ -2240,7 +2240,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   /* Barbarossaplatz: nur Richtung Neuss */
   /* Knopp-Platz: nur U75 Richtung Vennhauser Allee (alles andere in der Rheinbahn-App) */
   if(ec().isDus&&sn.includes("knopp")){rows=rows.filter(x=>/^U\s?75$/i.test(x.line||"")&&/vennhaus/i.test(x.dir||""));const sk=new Set();rows=rows.filter(x=>{const k=x.line+"|"+String(x.planned||x.time||x.dep||"").slice(0,16);if(sk.has(k))return false;sk.add(k);return true;});}
-  else if(ec().isDus&&(sn.includes("barbarossa")||sn.includes("heinrichheine")||sn.includes("oststr"))){
+  else if(ec().isDus&&(sn.includes("barbarossa")||sn.includes("heinrichheine")||sn.includes("oststr")||sn.includes("steinstr"))){
     /* nach Hause: nur die U75 Richtung Neuss – sie hält am Nikolaus-Knopp-Platz */
     rows=rows.filter(x=>/^U ?75$/i.test(String(x.line).trim())&&/neuss/i.test(x.dir||""));const sk=new Set();rows=rows.filter(x=>{const k=String(x.planned||x.time||x.dep||"").slice(0,16);if(sk.has(k))return false;sk.add(k);return true;});}}
   let noHit=false;if(f){const fr=rows.filter(x=>normStop(x.dir).includes(f)||normStop(x.line)===f);if(fr.length)rows=fr;else noHit=true;}
