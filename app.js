@@ -2085,8 +2085,8 @@ function proxyOn(){try{return !!EFAPROXY;}catch(e){return false;}}
 let U78T=null,U78GAP=false;
 /* Nikolaus-Knopp-Platz → MERKUR SPIEL-ARENA: Verbindungen mit Umstieg (U75 bis Heine-Allee, dann U78) aus der VRR-Auskunft */
 let KAT=null;
-const KA_CFG={"@KA":{first:/^U75$/,A:"de%3A05111%3A18131",Z:"de%3A05111%3A18075",to:"An Arena",note:"ab Nikolaus-Knopp-Platz · Umstieg an der Heinrich-Heine-Allee in die U78",none:"Gerade keine Verbindung zur Arena gefunden."},
- "@TAKI":{A:"de%3A05111%3A18281",Z:"de%3A05111%3A18131",to:"An Knopp-Pl.",last:/^U75$/,note:"ab Messe Ost/Stockumer Kirchstr. mit U78/U79/U80 · Umstieg in die U75 Richtung Neuss",none:"Gerade keine Verbindung nach Hause gefunden."}};
+const KA_CFG={"@KA":{first:/^U75$/,A:"de%3A05111%3A18131",Z:"de%3A05111%3A18075",to:"Ankunft",note:"ab Nikolaus-Knopp-Platz · Umstieg an der Heinrich-Heine-Allee in die U78",none:"Gerade keine Verbindung zur Arena gefunden."},
+ "@TAKI":{A:"de%3A05111%3A18281",Z:"de%3A05111%3A18131",to:"Ankunft",last:/^U75$/,note:"ab Messe Ost/Stockumer Kirchstr. mit U78/U79/U80 · Umstieg in die U75 Richtung Neuss",none:"Gerade keine Verbindung nach Hause gefunden."}};
 async function kaLive(seq,key){key=key||"@KA";const C=KA_CFG[key];const box=$("efa");clearTimeout(KAT);if(!box)return;if((box.dataset.v||"")!=="ka"+key)box.innerHTML='<div class="state">Verbindungen werden geladen …</div>';box.dataset.v="ka"+key;
   const base=EFAPROXY.replace(/\/$/,""),A=C.A,Z=C.Z;
   const atT=ms=>{const p=new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date(ms)).reduce((o,x)=>(o[x.type]=x.value,o),{});return "&itdDate="+p.year+p.month+p.day+"&itdTime="+p.hour+p.minute;};
@@ -2106,9 +2106,9 @@ async function kaLive(seq,key){key=key||"@KA";const C=KA_CFG[key];const box=$("e
     const hm=x=>new Date(x).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"});const dl=(p,e)=>e?Math.round((new Date(e)-new Date(p))/6e4):0;
     const late=(p,e)=>{const d=dl(p,e);return d>0?' <span style="color:#e53935;font-weight:700">+'+d+'</span>':"";};
     box.innerHTML=rows.length?'<table class="tbl efa-tbl u78-tbl" style="width:100%"><thead><tr><th>Ab</th><th>Verbindung</th><th>'+C.to+'</th></tr></thead><tbody>'+rows.map(r=>{
-        const lines=r.legs.map(q=>'<span class="line">'+esc(q.line)+'</span>').join(" ");
-        const via=r.legs.slice(1).map(q=>"Umstieg "+esc(q.from)+" "+hm(q.depEst||q.dep)+late(q.dep,q.depEst)).join("<br>");
-        return '<tr'+(r.cx?' style="opacity:.5;text-decoration:line-through"':'')+'><td><b>'+hm(r.depEst||r.dep)+'</b>'+late(r.dep,r.depEst)+'</td><td>'+lines+(via?'<small class="muted" style="display:block;font-size:12.5px;line-height:1.3;margin-top:2px">'+via+'</small>':'')+'</td><td><b>'+hm(r.arrEst||r.arr)+'</b>'+late(r.arr,r.arrEst)+'<small class="muted" style="display:block;font-size:12.5px">'+Math.round((new Date(r.arrEst||r.arr)-new Date(r.depEst||r.dep))/6e4)+' min</small></td></tr>';}).join("")+'</tbody></table>'
+        const lines='<span class="kl-row">'+r.legs.map(q=>'<span class="kline">'+esc(q.line)+'</span>').join('<span class="kl-ar">→</span>')+'</span>';
+        const via=r.legs.slice(1).map(q=>"Umstieg <span style=\"white-space:nowrap\">"+esc(q.from.replace(/^Heinrich-Heine-Allee$/,"Heine-Allee"))+" <b>"+hm(q.depEst||q.dep)+"</b>"+late(q.dep,q.depEst)+"</span>").join("<br>");
+        return '<tr'+(r.cx?' style="opacity:.5;text-decoration:line-through"':'')+'><td><b>'+hm(r.depEst||r.dep)+'</b>'+late(r.dep,r.depEst)+'</td><td>'+lines+(via?'<span class="kl-via">'+via+'</span>':'')+'</td><td><b>'+hm(r.arrEst||r.arr)+'</b>'+late(r.arr,r.arrEst)+'<small class="muted" style="display:block;font-size:12.5px">'+Math.round((new Date(r.arrEst||r.arr)-new Date(r.depEst||r.dep))/6e4)+' min</small></td></tr>';}).join("")+'</tbody></table>'
       +'<div class="muted small" style="margin-top:6px">'+C.note+' · Verbindungen laut VRR-Auskunft · '+link("https://www.rheinbahn.de/","Rheinbahn")+'</div>'
       :!fin?'<div class="state">Verbindungen werden geladen …</div>':stateBox(C.none,link("https://www.rheinbahn.de/","Rheinbahn"));
     };
