@@ -2903,7 +2903,7 @@ function tileAvailable(v){
   v=String(v).split("/")[0];
   if(["bezirke","events"].includes(v))return C.isDus; // Veranstaltungen gibt es nur für Düsseldorf
   if(v==="einsaetze")return C.key==="datteln";
-  if(v==="bahn"||v==="oepnv")return false; // jetzt unter Verkehr → Reise → Bus & Bahn
+  if(v==="bahn")return false;if(v==="oepnv")return true; // jetzt unter Verkehr → Reise → Bus & Bahn
   return !!$("v-"+v);
 }
 const groupOf=v=>Object.keys(GROUPS).find(g=>GROUPS[g].some(([x])=>x===v||x.split("/")[0]===v));
@@ -2935,7 +2935,7 @@ let ROUTEKEY=null;
 window.addEventListener("hashchange",route);
 function route(){try{route0();}finally{const h=location.hash.slice(1);ROUTEKEY=(h.split("/")[0]||"")+"/"+(h.split("/")[1]||"reise");}}
 function route0(){
-  {const h=location.hash.slice(1);if(h==="verkehr"||h==="staus/meld"){history.replaceState(null,"","#staus/karte");}
+  {const h=location.hash.slice(1);if(h==="oepnv"){history.replaceState(null,"","#staus/reise");RS.mode="oepnv";try{sessionStorage.setItem("lb_rsmode","oepnv");}catch(e){}setTimeout(()=>{try{rsMode("oepnv");}catch(e){}},0);}if(h==="verkehr"||h==="staus/meld"){history.replaceState(null,"","#staus/karte");}
   if(h==="stadtverkehr"||h==="stadtdatteln"){const k=h==="stadtverkehr"?"dus":"datteln";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
   let v=location.hash.slice(1);const pane=v.split("/")[1]||"reise";v=v.split("/")[0];
   document.querySelectorAll("#staus [data-pane]").forEach(p=>p.hidden=p.dataset.pane!==pane);
