@@ -2532,7 +2532,7 @@ document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)ret
 // ================= Karte: Orte und Strecken =================
 let MAPGO=null;
 // ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
-let RS={dir:null,data:{},sel:0,at:0,sv:{}},RSMAP=null,RSLAY=null;
+let RS={dir:null,data:{},sel:0,at:0,sv:{}},RSMAP=null,RSLAY=null;try{const m=sessionStorage.getItem("lb_rsmode");if(m)RS.mode=m;}catch(e){}
 // Stabile Ampel je Strecke: Verschärfung sofort, Entwarnung erst nach 2 Bestätigungen (kein Flackern)
 function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=20?2:a.dl>=10?1:0;/* nur echte Verzögerung zählt, Sperrungen ohne Zeitverlust nicht */const s=RS.sv[k];
   const mk=()=>({lv,cl,sv:lv>=2?"dl-bad":lv?"dl-warn":"",n:0,cand:-1});
@@ -2616,7 +2616,7 @@ function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opt
   else if(RS.oe==="dep"){sec.hidden=true;dep.hidden=false;}
   else{dep.hidden=true;sec.hidden=false;ob.hidden=false;$("oe-title").textContent=(opts.find(o=>o[0]===RS.oe)||[])[1]||"Bus & Bahn";ob.innerHTML='<div class="state">wird geladen …</div>';loadTrips({keys:RS.oe.split(","),box:ob});}}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-oe]");if(!b)return;RS.oe=RS.oe===b.dataset.oe?null:b.dataset.oe;rsOe();});
-function rsMode(m){RS.mode=m;setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();
+function rsMode(m){RS.mode=m;try{sessionStorage.setItem("lb_rsmode",m);}catch(e){}setStauTitle();if(m==="auto")renderReise();if(m==="oepnv"){loadEFA();
     rsOe();}document.querySelectorAll("#rs-mode [data-rsm]").forEach(b=>b.classList.toggle("on",b.dataset.rsm===m));document.querySelectorAll("[data-rsp]").forEach(p=>p.hidden=p.dataset.rsp!==m);
   if(m==="bahn"){
     const td=$("rs-tdir");
@@ -3145,7 +3145,8 @@ const rwBreite=(p,div,w)=>p>0?Math.max(rwMin(p,div),p/div*(w||1.2)):0;
 {const myV=((document.querySelector('script[src*="app.js?v="]')||{}).src||"").split("v=")[1]||"";let chk=0;
   const check=async()=>{if(!myV||Date.now()-chk<60000)return;chk=Date.now();
     try{const t=await (await fetch("index.html?nv="+Date.now(),{cache:"no-store"})).text();const m=t.match(/app\.js\?v=(\d+)/);
-      if(m&&m[1]!==myV&&!document.body.classList.contains("harrange"))location.reload();}catch(e){}};
+      if(m&&m[1]!==myV&&!document.body.classList.contains("harrange")){if(location.hash.length>1)PENDV=1;else location.reload();}}catch(e){}};
+  let PENDV=0;window.addEventListener("hashchange",()=>{if(PENDV&&location.hash.length<=1&&!document.body.classList.contains("harrange"))location.reload();});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)check();});setInterval(()=>{if(!document.hidden)check();},10*60000);setTimeout(check,15000);}
 
 // Verkehr: aufklappbare Bereiche, Zustand merken, Anzahl im Titel
@@ -3425,3 +3426,7 @@ function sendLageMail(btn){const lbl=btn.querySelector(".qa-ml");
 function vtopCenter(){document.querySelectorAll(".vtop .subtabs").forEach(b=>{const a=b.querySelector("a.on");if(a&&b.scrollWidth>b.clientWidth)b.scrollLeft=a.offsetLeft-(b.clientWidth-a.offsetWidth)/2;});}
 addEventListener("hashchange",()=>setTimeout(vtopCenter,60));addEventListener("load",()=>setTimeout(vtopCenter,300));
 
+
+// Scrollposition in Unteransichten merken (iOS lädt die Seite nach App-Wechsel oft neu)
+{const K="lb_scroll";let t=0;addEventListener("scroll",()=>{clearTimeout(t);t=setTimeout(()=>{try{if(location.hash.length>1)sessionStorage.setItem(K,JSON.stringify({h:location.hash,y:Math.round(scrollY),at:Date.now()}));}catch(e){}},250);},{passive:true});
+ try{const o=JSON.parse(sessionStorage.getItem(K)||"null");if(o&&o.h===location.hash&&o.y>0&&Date.now()-o.at<6*3600e3){let n=0,stop=0;addEventListener("touchstart",()=>stop=1,{once:true,passive:true});addEventListener("wheel",()=>stop=1,{once:true,passive:true});const go=()=>{if(stop)return;if(scrollY<o.y-40&&document.body.scrollHeight>o.y+innerHeight*.5)scrollTo(0,o.y);if(++n<8)setTimeout(go,500);};setTimeout(go,700);}}catch(e){}}
