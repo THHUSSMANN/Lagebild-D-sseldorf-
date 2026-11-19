@@ -1391,8 +1391,10 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 }
 .appv{font-variant-numeric:tabular-nums;opacity:.8}
 
-#efa-stops .stop-grp{grid-column:1/-1;font:700 12px/1.2 var(--f-body);letter-spacing:.06em;text-transform:uppercase;opacity:.7;margin:6px 2px -2px}
-#efa-stops .stop-grp:first-child{margin-top:0}
+#efa-stops .stop-grp{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;font:700 19px/1.2 var(--f-display);letter-spacing:-.01em;color:var(--fg);margin:16px 4px 0}
+#efa-stops .stop-grp span{font:500 14px/1.2 var(--f-body);opacity:.65;letter-spacing:0}
+#efa-stops .stop-grp:first-child{margin-top:2px}
+#efa-stops,#efa-stops *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #efa-stops > button:last-child:nth-child(odd){grid-column:1/-1}
 #efa-stops > button.wide{grid-column:1/-1}
 </style>

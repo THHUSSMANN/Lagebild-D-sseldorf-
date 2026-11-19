@@ -2194,29 +2194,30 @@ async function u78Live(seq){const R=EFASTOP==="@U78R",SP=EFASTOP;const box=$("ef
 function dusStops(cur){const av=((STOPIDX&&STOPIDX.available)||[]).map(a=>a.name);const nm=(rx,def)=>av.find(n=>rx.test(n))||def;
   const K=nm(/knopp/i,"Düsseldorf Nikolaus-Knopp-Platz"),O=nm(/oststr/i,"Düsseldorf Oststraße"),B=nm(/barbarossa/i,"Düsseldorf Barbarossaplatz"),H=nm(/heine/i,"Düsseldorf Heinrich-Heine-Allee"),S=nm(/steinstr/i,"Düsseldorf Steinstr./Königsallee");
   const b=(id,t,sm,wide)=>'<button type="button" data-stop="'+esc(id)+'" class="'+(cur===id?"on":"")+(wide?" wide":"")+'">'+esc(t)+'<small>'+esc(sm)+'</small></button>';
-  return '<div class="stop-grp">U75 · Nikolaus-Knopp-Platz</div>'+b(K,"Knopp-Platz","U75 → Stadt",1)+b(H,"Heine-Allee","→ nach Hause")+b(O,"Oststraße","→ nach Hause")+b(S,"Kö/Steinstraße","→ nach Hause")+b(B,"Barbarossaplatz","→ nach Hause")
-    +'<div class="stop-grp">Arena &amp; Messe</div>'+b("@KA","Knopp-Platz","U75 + U78 → Arena",1)+b("@U78","Heine-Allee","→ zur Arena")+b("@U78R","Arena","→ Heine-Allee")+b("@TAKI","Taki","Messe Ost → Heine-Allee");}
+  return '<div class="stop-grp">Ab Knopp-Platz</div>'+b(K,"In die City","U75")+b("@KA","Zur Arena","U75 + U78")
+    +'<div class="stop-grp">Nach Hause <span>U75 → Knopp-Platz</span></div>'+b(H,"Heine-Allee","ab hier")+b(O,"Oststraße","ab hier")+b(S,"Kö/Steinstraße","ab hier")+b(B,"Barbarossaplatz","ab hier")
+    +'<div class="stop-grp">Arena &amp; Messe</div>'+b("@U78","Heine-Allee","→ Arena")+b("@U78R","Arena","→ Heine-Allee")+b("@TAKI","Taki","Messe Ost → Heine-Allee",1);}
 async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){$("efa-title").textContent="Abfahrten";$("efa-stops").innerHTML="";$("efa").innerHTML=stateBox("Für diesen Ort gibt es keine Echtzeit-Abfahrten im VRR.",'<a href="https://www.hvv.de/de/fahrplaene/abruf-fahrplaninfos/abfahrten" target="_blank" rel="noopener">HVV-Abfahrten ↗</a>');setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
   // gespeicherte Haltestelle nur verwenden, wenn sie für diesen Ort wirklich abgerufen wird (sonst Standard, z. B. Nikolaus-Knopp-Platz)
   let stop=STOPS[ec().key]||ec().efaDefault;
   if(ec().isDus&&stop==="@KA"){EFASTOP=stop;efaGo();$("efa-stops").innerHTML=dusStops(stop);
-    $("efa-title").textContent="Nikolaus-Knopp-Platz → Arena";$("efa-src").textContent="U75 bis Heine-Allee, dort U78 · Echtzeit";kaLive(++EFASEQ);return;}
+    $("efa-title").textContent="Richtung Arena";$("efa-src").textContent="U75 + U78 · Umstieg Heine-Allee · Echtzeit";kaLive(++EFASEQ);return;}
   if(ec().isDus&&stop==="@TAKI"){EFASTOP=stop;efaGo();const avail=(STOPIDX&&STOPIDX.available)||[];
     $("efa-stops").innerHTML=dusStops(stop);
-    $("efa-title").textContent="Taki · Messe Ost → Heinrich-Heine-Allee";$("efa-src").textContent="U78 · U79 · U80 · Echtzeit";takiLive(++EFASEQ);return;}
+    $("efa-title").textContent="Richtung City";$("efa-src").textContent="Taki · Messe Ost → Heine-Allee · U78 · U79 · U80 · Echtzeit";takiLive(++EFASEQ);return;}
   if(ec().isDus&&(stop==="@U78"||stop==="@U78R")){const R=stop==="@U78R";EFASTOP=stop;efaGo();const avail=(STOPIDX&&STOPIDX.available)||[];
     $("efa-stops").innerHTML=dusStops(stop);
-    $("efa-title").textContent=R?"U78 · Arena → Heinrich-Heine-Allee":"U78 · Heine-Allee → Arena (+ U79/U80)";$("efa-src").textContent="Direktfahrten · Echtzeit";u78Live(++EFASEQ);return;}
+    $("efa-title").textContent=R?"Richtung City":"Richtung Arena";$("efa-src").textContent=R?"U78 ab Arena → Heine-Allee · Echtzeit":"U78 ab Heine-Allee → Arena (+ U79/U80) · Echtzeit";u78Live(++EFASEQ);return;}
   {const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file&&!(mm.id&&proxyOn())){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
   const m=stopMatch(stop);EFASTOP=stop;efaGo();
   let avail=(STOPIDX&&STOPIDX.available)||[];if(avail.length<2&&ec().isDus)avail=["Düsseldorf Nikolaus-Knopp-Platz","Düsseldorf Heinrich-Heine-Allee","Düsseldorf Oststraße","Düsseldorf Barbarossaplatz"].map(n=>({name:n,file:null}));
   $("efa-stops").innerHTML=ec().isDus?dusStops(stop):avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+((a.file?m.file===a.file:stop===a.name)?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,"").replace(/\s+U$/,"").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee").replace(/^Nikolaus-Knopp-Platz$/,"Knopp-Platz"))+'</button>').join(""):"";
   $("efa-dir").value=DIRF[ec().key]||"";
   {const sn0=normStop(stop),nmS=(m.name||stop).replace(/^Düsseldorf[, ]*/,"").replace(/\s+U$/,"");
-    $("efa-title").textContent=!ec().isDus?"Abfahrten "+nmS:sn0.includes("knopp")?"U75 ab Nikolaus-Knopp-Platz → Stadt":/heinrichheine|oststr|barbarossa|steinstr/.test(sn0)?"U75 ab "+nmS.replace(/^Steinstr\.\/Königsallee$/,"Königsallee/Steinstraße")+" → Nikolaus-Knopp-Platz":"Rheinbahn · "+nmS;}
-  $("efa-src").textContent=ec().isDus?(/knopp|heinrichheine|oststr|barbarossa|steinstr/.test(normStop(stop))?"U75 · Echtzeit":"Bus, U- und Straßenbahn · Echtzeit"):"Bus & Bahn vor Ort · Echtzeit";
+    $("efa-title").textContent=!ec().isDus?"Abfahrten "+nmS:sn0.includes("knopp")?"Richtung City":/heinrichheine|oststr|barbarossa|steinstr/.test(sn0)?"Nach Hause":"Rheinbahn · "+nmS;}
+  $("efa-src").textContent=ec().isDus?(/knopp/.test(normStop(stop))?"U75 ab Knopp-Platz · Echtzeit":/heinrichheine|oststr|barbarossa|steinstr/.test(normStop(stop))?"U75 ab "+String(stop).replace(/^Düsseldorf\s+/,"").replace(/^Steinstr\.\/Königsallee$/,"Kö/Steinstraße").replace(/^Heinrich-Heine-Allee$/,"Heine-Allee")+" → Knopp-Platz · Echtzeit":"Bus, U- und Straßenbahn · Echtzeit"):"Bus & Bahn vor Ort · Echtzeit";
   const file=m.file||(stop===ec().efaDefault?"efa-"+ec().key+".json":null);
   if(!file&&m.id&&proxyOn()&&EFAKEYS.includes(ec().key)){/* jede beliebige VRR-Haltestelle: direkt live über den Vermittler */
     EFADATA=null;$("efa").innerHTML='<div class="state">Live-Abfahrten werden geladen …</div>';
