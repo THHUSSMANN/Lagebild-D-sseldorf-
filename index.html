@@ -1394,6 +1394,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 #efa-stops .stop-grp{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;font:700 19px/1.2 var(--f-display);letter-spacing:-.01em;color:var(--fg);margin:16px 4px 0}
 #efa-stops .stop-grp span{font:500 14px/1.2 var(--f-body);opacity:.65;letter-spacing:0}
 #efa-stops .stop-grp:first-child{margin-top:2px}
+.efa-sel{margin:20px 4px 10px;padding-top:14px;border-top:1px solid color-mix(in srgb,var(--fg) 12%,transparent)}.efa-sel[hidden]{display:none}.efa-sel b{display:block;font:700 22px/1.2 var(--f-display);letter-spacing:-.01em}.efa-sel small{display:block;font:500 14px/1.3 var(--f-body);opacity:.7;margin-top:3px}
 #efa-stops,#efa-stops *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #efa-stops > button:last-child:nth-child(odd){grid-column:1/-1}
 #efa-stops > button.wide{grid-column:1/-1}
@@ -1636,6 +1637,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
   <section class="card" id="efa-card">
     <div class="card-head"><h2 id="efa-title">Abfahrten</h2><span class="src" id="efa-src">Echtzeit</span></div>
     <div class="seg stop-seg" id="efa-stops"></div>
+    <div class="efa-sel" id="efa-sel" hidden></div>
     <div class="efa-filter"><input id="efa-dir" type="search" enterkeyhint="go" autocomplete="off" placeholder="Ziel oder Linie filtern"><div id="efa-go" class="efa-go2" hidden></div></div>
     <div id="efa"><div class="state">wird geladen …</div></div>
   </section>

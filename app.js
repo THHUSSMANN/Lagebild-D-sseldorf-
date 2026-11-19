@@ -2200,8 +2200,8 @@ function dusStops(cur){const av=((STOPIDX&&STOPIDX.available)||[]).map(a=>a.name
   const K=nm(/knopp/i,"Düsseldorf Nikolaus-Knopp-Platz"),O=nm(/oststr/i,"Düsseldorf Oststraße"),B=nm(/barbarossa/i,"Düsseldorf Barbarossaplatz"),H=nm(/heine/i,"Düsseldorf Heinrich-Heine-Allee"),S=nm(/steinstr/i,"Düsseldorf Steinstr./Königsallee");
   const b=(id,t,sm,wide)=>'<button type="button" data-stop="'+esc(id)+'" class="'+(cur===id?"on":"")+(wide?" wide":"")+'">'+esc(t)+'<small>'+esc(sm)+'</small></button>';
   return '<div class="stop-grp">Ab Knopp-Platz</div>'+b(K,"In die City","U75")+b("@KA","Zur Arena","U75 + U78")
-    +'<div class="stop-grp">Nach Hause <span>U75 → Knopp-Platz</span></div>'+b(H,"Heine-Allee","ab hier")+b(O,"Oststraße","ab hier")+b(S,"Kö/Steinstraße","ab hier")+b(B,"Barbarossaplatz","ab hier")
-    +'<div class="stop-grp">Arena &amp; Messe</div>'+b("@U78","Heine-Allee","→ Arena")+b("@U78R","Arena","→ Heine-Allee")+b("@TAKI","Taki","Messe Ost → nach Hause",1);}
+    +'<div class="stop-grp">Nach Hause <span>→ Knopp-Platz</span></div>'+b(H,"Heine-Allee","U75")+b(O,"Oststraße","U75")+b(S,"Kö/Steinstraße","U75")+b(B,"Barbarossaplatz","U75")+b("@TAKI","Taki · Messe Ost","U78/U79/U80 + U75",1)
+    +'<div class="stop-grp">Arena &amp; Messe</div>'+b("@U78","Heine-Allee","→ Arena")+b("@U78R","Arena","→ Heine-Allee");}
 async function loadEFA(){const EK=ec().key;
   if(!ec().efaDefault){$("efa-title").textContent="Abfahrten";$("efa-stops").innerHTML="";$("efa").innerHTML=stateBox("Für diesen Ort gibt es keine Echtzeit-Abfahrten im VRR.",'<a href="https://www.hvv.de/de/fahrplaene/abruf-fahrplaninfos/abfahrten" target="_blank" rel="noopener">HVV-Abfahrten ↗</a>');setStatus("efa",true,"keine Haltestelle hinterlegt");return;}
   if(!STOPIDX)await loadStopIndex();
@@ -2755,6 +2755,13 @@ document.addEventListener("click",e=>{const a=e.target.closest("#qa-sonos,#qa-so
   lm.addEventListener("click",e=>{const b=e.target.closest("[data-licht]");if(!b)return;e.stopPropagation();const k=b.dataset.licht;close();lb.classList.add("go");setTimeout(()=>lb.classList.remove("go"),2500);location.href=scUrl(load("qa_"+k)||QA[k][1]);});
   document.addEventListener("click",e=>{if(!lm.hidden&&!e.target.closest("#licht-menu,#qa-licht"))close();});
   document.addEventListener("keydown",e=>{if(e.key==="Escape")close();});}}
+
+// Düsseldorf: neutrale Karten-Überschrift; die gewählte Verbindung steht unter den Knöpfen
+{const T=$("efa-title"),S=$("efa-src"),E=$("efa-sel");if(T&&S&&E){const N="Bus & Bahn Düsseldorf",NS="Rheinbahn · Echtzeit";
+ const sync=()=>{const d=!!(ec()&&ec().isDus);if(!d){E.hidden=true;return;}const t=T.textContent,s=S.textContent;
+  if(t!==N){E.dataset.t=t;T.textContent=N;}if(s!==NS){E.dataset.s=s;S.textContent=NS;}
+  E.innerHTML='<b>'+esc(E.dataset.t||"")+'</b><small>'+esc(E.dataset.s||"")+'</small>';E.hidden=!E.dataset.t;};
+ const mo=new MutationObserver(sync);[T,S].forEach(x=>mo.observe(x,{childList:true,characterData:true,subtree:true}));}}
 function qaInit(){Object.entries(QA).forEach(([k,[id,def]])=>{const v=load("qa_"+k)||"";const a=$(id);if(a)a.href=v||def;const i=$(id+"-in");if(i)i.value=v;});}
 qaInit();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-qasave]");if(!b)return;const k=b.dataset.qasave;const i=$(QA[k][0]+"-in");const v=(i.value||"").trim();
