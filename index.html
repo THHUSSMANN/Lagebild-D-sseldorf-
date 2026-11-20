@@ -1310,9 +1310,9 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 /* Start kompakt (v329): Radio als dritter Schnellknopf neben WeekCal und Erinnerungen */
 .qapps{grid-template-columns:repeat(3,1fr)!important;gap:10px}
 /* v375: vierter Schnellknopf „Lage-Mail“ – iPhone 2 × 2, ab Tablet-Breite eine Reihe */
-.qapps{grid-template-columns:repeat(2,1fr)!important}
-@media (min-width:700px){.qapps{grid-template-columns:repeat(4,1fr)!important}}
-.qapp.qa-mail.busy{opacity:.75}.qapp.qa-mail.ready{background:linear-gradient(135deg,#2f9bd6,#0b5f8f)!important;border-color:rgba(255,255,255,.45)!important;animation:rglow 2.4s ease-in-out infinite}.qapp.qa-mail.sent{background:linear-gradient(135deg,#2e9d5b,#1c6b3c)!important;border-color:rgba(255,255,255,.4)!important}
+/* v417: Lage-Mail ins Tools-Fenster verschoben (kommt morgens automatisch) – drei Schnellknöpfe in einer Reihe */
+.qapps{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.qa-mail.busy{opacity:.75}.qa-mail.ready{background:linear-gradient(135deg,#2f9bd6,#0b5f8f)!important;border-color:rgba(255,255,255,.45)!important;animation:rglow 2.4s ease-in-out infinite}.qa-mail.sent{background:linear-gradient(135deg,#2e9d5b,#1c6b3c)!important;border-color:rgba(255,255,255,.4)!important}
 button.qapp{font:600 15px/1.2 var(--f-body);cursor:pointer;-webkit-appearance:none;appearance:none}
 .qapp .qa-rv{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qapp.qa-radio.on{outline:2px solid var(--accent);outline-offset:1px}
@@ -1380,7 +1380,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
 
 /* 17.11.: Startseite passt ohne Scrollen auf das iPhone – Schnellknöpfe in einer Reihe, Kacheln und Orte etwas flacher */
 @media (max-width:560px){
-  .qapps{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;margin:8px 0 0!important}
+  .qapps{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:8px 0 0!important}
   .qapps .qapp{min-height:54px!important;padding:5px 2px!important;font-size:12.5px!important;gap:3px!important}
   .qapps .qapp > span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .favs .fav{min-height:40px!important;padding-top:4px!important;padding-bottom:4px!important}
@@ -1408,7 +1408,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
       <div class="titlerow"><h1 id="app-title">Lagebild Thomas Hußmann</h1><button id="refresh" type="button" class="refresh" aria-label="Aktualisieren" title="Aktualisieren"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.5"/></svg></button><a id="qa-licht" class="refresh licht" href="shortcuts://run-shortcut?name=Licht%20Entspannen" aria-label="Licht" title="Licht" aria-controls="licht-menu" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg></a><div id="licht-menu" class="licht-menu" hidden><button type="button" data-licht="licht">Entspannen</button><button type="button" data-licht="lichtaus" class="aus">Aus</button></div><span class="updmini" id="upd-mini"></span></div>
       <div class="dt"><span class="clock" id="clock">--:--:--</span><span class="sub" id="sub"></span></div>
       <a class="warnpill wp-info" id="warnpill" href="#warnungen"><span class="wp-dot"></span><span class="wp-t">Warnungen</span><span class="wp-v" id="warnpill-v">…</span><span class="wp-go">›</span></a>
-      <div class="qapps"><a class="qapp" id="qa-cal" href="weekcal://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>WeekCal</a><a class="qapp" id="qa-rem" href="x-apple-reminderkit://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="7" r="1.6"/><circle cx="5.5" cy="12" r="1.6"/><circle cx="5.5" cy="17" r="1.6"/><path d="M10 7h10M10 12h10M10 17h10"/></svg>Erinnerungen</a><button type="button" class="qapp qa-radio" data-radio-open aria-controls="radio-list" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg><span class="qa-rv">Musik</span></button><button type="button" class="qapp qa-mail" id="qa-mail"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m3.8 7 8.2 6 8.2-6"/></svg><span class="qa-ml">Lage-Mail</span></button></div>
+      <div class="qapps"><a class="qapp" id="qa-cal" href="weekcal://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>WeekCal</a><a class="qapp" id="qa-rem" href="x-apple-reminderkit://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="7" r="1.6"/><circle cx="5.5" cy="12" r="1.6"/><circle cx="5.5" cy="17" r="1.6"/><path d="M10 7h10M10 12h10M10 17h10"/></svg>Erinnerungen</a><button type="button" class="qapp qa-radio" data-radio-open aria-controls="radio-list" aria-expanded="false"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg><span class="qa-rv">Musik</span></button></div>
     </div>
     <div class="hrow">
       <div class="places">
@@ -1445,6 +1445,7 @@ body.radio-on .qapp.qa-radio{background:linear-gradient(135deg,var(--rc1,#2f9bd6
       <button type="button" data-tool="radio" class="hbtn rtoggle" id="radio-toggle" aria-expanded="false" hidden><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M6.5 8 16 3.5"/><circle cx="15.5" cy="14" r="3"/><path d="M6.5 12h4M6.5 15h4"/></svg>Radio <span id="radio-now"></span> <span class="rcaret">▾</span></button>
       <button type="button" data-tool="bsicher" class="hbtn" id="bs-btn"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h9v16H4z"/><path d="M14 12h7m-3-3 3 3-3 3"/><circle cx="8.5" cy="12" r="1"/></svg><span class="hb2">Kapazität &amp;<br>Rettungswege</span></button>
       <a data-tool="flaechen" class="hbtn" href="#flaechen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M4 12h16M12 5v14"/><circle cx="8" cy="8.5" r="1"/><circle cx="16" cy="15.5" r="1"/></svg>Event-Flächen</a>
+      <button type="button" data-tool="lagemail" class="hbtn qa-mail" id="qa-mail"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m3.8 7 8.2 6 8.2-6"/></svg><span class="qa-ml">Lage-Mail</span></button>
       <a data-tool="settings" class="hbtn" href="#einstellungen"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>Einstellungen</a>
       <button type="button" data-tool="arrange" class="hbtn" id="arrange-tool"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><path d="M16.75 13.5v6.5M13.5 16.75H20"/></svg>Anordnen</button>
     </div>

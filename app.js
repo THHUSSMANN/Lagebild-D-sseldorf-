@@ -760,7 +760,7 @@ $("radio").addEventListener("click",async e=>{const b=e.target.closest(".rbtn");
 function toolsShow(open){const l=$("tools");l.hidden=!open;$("tools-toggle").setAttribute("aria-expanded",open?"true":"false");document.body.classList.toggle("t-open",open&&!document.body.classList.contains("harrange"));}
 $("tools-toggle").addEventListener("click",()=>toolsShow($("tools").hidden));
 document.addEventListener("click",e=>{if(e.target.closest("[data-tools-close]")){toolsShow(false);return;}
-  const t=e.target.closest("#toolgrid [data-tool]");if(t&&!document.body.classList.contains("harrange")&&!document.body.classList.contains("arranging")&&t.dataset.tool!=="arrange")setTimeout(()=>{if(!document.body.classList.contains("harrange"))toolsShow(false);},150);});
+  const t=e.target.closest("#toolgrid [data-tool]");if(t&&!document.body.classList.contains("harrange")&&!document.body.classList.contains("arranging")&&t.dataset.tool!=="arrange"&&t.dataset.tool!=="lagemail")setTimeout(()=>{if(!document.body.classList.contains("harrange"))toolsShow(false);},150);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("tools").hidden&&!document.body.classList.contains("harrange"))toolsShow(false);});
 window.addEventListener("hashchange",()=>{if(!$("tools").hidden&&!document.body.classList.contains("harrange")&&location.hash!=="")toolsShow(false);});
 /* App direkt öffnen; ist sie nicht da, nach kurzer Zeit die Webseite */
