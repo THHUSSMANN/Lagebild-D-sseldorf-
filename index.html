@@ -669,6 +669,8 @@ header .favs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr)
 header .favs .fav{min-width:0;justify-content:center;text-align:center;white-space:normal;line-height:1.15;padding:8px 8px;min-height:46px}
 header .favs .fav[data-fav="dus"]{grid-column:span 2;display:block}
 header .favs .fav{border-radius:16px!important}
+/* v418: Warnpunkt überdeckt Text im Ortsknopf nicht mehr */
+header .favs .fav.alarm-on{padding-left:20px;padding-right:20px}
 header .favs .fav[data-fav="dus"] small{display:inline;margin-left:6px}
 header .favs .fav small{font-size:12px;opacity:.9}
 header .tools #radio-list{margin-top:2px}
