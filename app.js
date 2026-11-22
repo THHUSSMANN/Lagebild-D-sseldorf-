@@ -83,8 +83,9 @@ const dateShort=d=>new Date(d).toLocaleDateString("de-DE",{...TZ,day:"2-digit",m
 const isoDay=(d=new Date())=>d.toLocaleDateString("sv-SE",TZ);
 function store(k,v){try{localStorage.setItem("lbd_"+k,JSON.stringify(v))}catch(e){}}
 function load(k){try{return JSON.parse(localStorage.getItem("lbd_"+k))}catch(e){return null}}
-/* VRR lehnt einzelne Anfragen gelegentlich kurz ab (HTTP 403/429/5xx) – dann bis zu zweimal kurz neu versuchen */
-async function getJSON(url,ms=15000){for(let i=0;;i++){try{return await getJSON1(url,ms);}catch(e){if(i>=2||!/workers\.dev|efa\.vrr\.de/.test(url)||!/HTTP (403|429|5\d\d)/.test(String(e&&e.message)))throw e;await new Promise(r=>setTimeout(r,900+i*900));}}}
+/* VRR lehnt einzelne Anfragen gelegentlich kurz ab (HTTP 403/429/5xx) – dann bis zu dreimal kurz neu versuchen */
+/* Wiederholung mit Zusatz „_r=…“: sonst liefert der Zwischenspeicher bei Cloudflare dieselbe Ablehnung noch einmal aus */
+async function getJSON(url,ms=15000){for(let i=0;;i++){try{return await getJSON1(i&&/workers\.dev/.test(url)?url+(url.includes("?")?"&":"?")+"_r="+Date.now().toString(36)+i:url,ms);}catch(e){if(i>=3||!/workers\.dev|efa\.vrr\.de/.test(url)||!/HTTP (403|429|5\d\d)/.test(String(e&&e.message)))throw e;await new Promise(r=>setTimeout(r,900+i*900));}}}
 async function getJSON1(url,ms=15000){
   const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),ms);
   try{const r=await fetch(url,{signal:ctl.signal,headers:{Accept:"application/json"}});

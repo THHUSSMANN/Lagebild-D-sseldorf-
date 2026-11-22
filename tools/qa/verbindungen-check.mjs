@@ -1,6 +1,7 @@
 const B="https://vrr-proxy.thomas-hussmann.workers.dev";
-const J=async u=>{const r=await fetch(B+u);if(!r.ok)throw new Error("HTTP "+r.status);return r.json();};
-const T=async u=>{const r=await fetch(B+u);if(!r.ok)throw new Error("HTTP "+r.status);return r.text();};
+let ATT=0;const bust=u=>ATT?u+(u.includes("?")?"&":"?")+"_r="+Date.now().toString(36)+ATT:u;
+const J=async u=>{const r=await fetch(B+bust(u));if(!r.ok)throw new Error("HTTP "+r.status);return r.json();};
+const T=async u=>{const r=await fetch(B+bust(u));if(!r.ok)throw new Error("HTTP "+r.status);return r.text();};
 const enc=encodeURIComponent;
 const stops=["Düsseldorf Nikolaus-Knopp-Platz","Düsseldorf Heinrich-Heine-Allee","Düsseldorf Oststraße","Düsseldorf Barbarossaplatz","Düsseldorf Steinstr./Königsallee","Datteln Lohstr.","Datteln Busbahnhof","Alpen Bahnhof","Dortmund Stadion","Dortmund Hbf","Düsseldorf Hbf","Recklinghausen Hbf"];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));const IDS={};
@@ -18,4 +19,5 @@ const tasks=[...stops.map(s=>["ÖPNV-Abfahrten "+s,()=>dm(s)]),
  ["U78 Heine-Allee → Arena",()=>trip("Düsseldorf Heinrich-Heine-Allee","de:05111:18075")],
  ["U78 Arena → Heine-Allee",()=>trip("de:05111:18075","Düsseldorf Heinrich-Heine-Allee")],
  ...["Düsseldorf Hbf","Recklinghausen Hbf","Dortmund Hbf"].map(s=>["DB-Fernverkehr "+s,()=>iris(s)])];
-for(const [n,f] of tasks){await sleep(700);try{console.log("✅ "+n+": "+await f());}catch(e){await sleep(3000);try{console.log("✅ "+n+" (2. Versuch): "+await f());}catch(e2){console.log("❌ "+n+": "+e2.message);}}}
+/* VRR lehnt zeitweise ab (HTTP 403) – wie die App: mit wachsender Pause und „_r=“ (umgeht zwischengespeicherte Ablehnung) neu versuchen */
+for(const [n,f] of tasks){await sleep(900);let ok=false,err="";for(let i=0;i<5&&!ok;i++){ATT=i;try{const r=await f();console.log("✅ "+n+(i?" ("+(i+1)+". Versuch)":"")+": "+r);ok=true;}catch(e){err=e.message;await sleep(2500*(i+1));}}if(!ok)console.log("❌ "+n+": "+err);}
