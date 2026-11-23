@@ -2746,9 +2746,17 @@ function spanLast(){["tiles","toolgrid","headnav"].forEach(id=>{const g=document
 ["tiles","toolgrid","headnav"].forEach(id=>{const g=document.getElementById(id);if(g)new MutationObserver(()=>{clearTimeout(spanLast.t);spanLast.t=setTimeout(spanLast,50);}).observe(g,{childList:true,subtree:false,attributes:true,attributeFilter:["hidden","class","style"]});});
 window.addEventListener("resize",()=>spanLast());document.addEventListener("click",()=>setTimeout(spanLast,120));setTimeout(spanLast,300);
 // Kopf-Knöpfe WeekCal / Erinnerungen: Ziel lokal anpassbar (z. B. Kurzbefehl)
-const QA={cal:["qa-cal","weekcal://"],rem:["qa-rem","x-apple-reminderkit://"],sonos:["qa-sonos","shortcuts://run-shortcut?name=WDR%202%20Sonos"],sonos4:["qa-sonos4","shortcuts://run-shortcut?name=WDR%204%20Sonos"],sonosfav:["qa-sonosfav","shortcuts://run-shortcut?name=Sonos%20Favoriten"],sonosant:["qa-sonosant","shortcuts://run-shortcut?name=Antenne%20D%C3%BCsseldorf"],licht:["qa-licht","shortcuts://run-shortcut?name=Licht%20Entspannen"],lichtaus:["qa-lichtaus","shortcuts://run-shortcut?name=Licht%20Aus"]};
+const QA={cal:["qa-cal","weekcal://"],rem:["qa-rem","x-apple-reminderkit://"],sonos:["qa-sonos","shortcuts://run-shortcut?name=WDR%202%20Sonos"],sonos4:["qa-sonos4","shortcuts://run-shortcut?name=WDR%204%20Sonos"],sonosfav:["qa-sonosfav","shortcuts://run-shortcut?name=Sonos%20Favoriten"],sonosant:["qa-sonosant","shortcuts://run-shortcut?name=Antenne%20D%C3%BCsseldorf"],sonosstop:["qa-sonosstop","shortcuts://run-shortcut?name=SONOS%20Wiedergabe%2FPause"],licht:["qa-licht","shortcuts://run-shortcut?name=Licht%20Entspannen"],lichtaus:["qa-lichtaus","shortcuts://run-shortcut?name=Licht%20Aus"]};
 function scUrl(u){const m=/^shortcuts:\/\/run-shortcut\?name=([^&]+)/.exec(u||"");if(!m)return u;const back=encodeURIComponent(location.href.split("#")[0]);return "shortcuts://x-callback-url/run-shortcut?name="+m[1]+"&x-success="+back+"&x-cancel="+back+"&x-error="+back;}
-document.addEventListener("click",e=>{const a=e.target.closest("#qa-sonos,#qa-sonos4,#qa-sonosfav,#qa-sonosant,[data-sonos]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();const k=a.id?a.id.slice(3):"sonos";location.href=scUrl(load("qa_"+k)||(QA[k]||QA.sonos)[1]);});
+document.addEventListener("click",e=>{const a=e.target.closest("#qa-sonos,#qa-sonos4,#qa-sonosfav,#qa-sonosant,[data-sonos]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();const k=a.id?a.id.slice(3):"sonos";if(a.id)sonosSet(a.id);location.href=scUrl(load("qa_"+k)||(QA[k]||QA.sonos)[1]);});
+// Sonos: zuletzt gestarteten Sender als „läuft“ markieren (Sonos meldet keinen Status zurück – gilt 6 Stunden)
+function sonosGet(){const o=load("sonos_now");return o&&o.id&&Date.now()-o.at<6*3600e3?o:null;}
+function sonosSet(id){store("sonos_now",id?{id,at:Date.now()}:null);sonosMark();}
+function sonosMark(){const o=sonosGet();document.querySelectorAll("#radio .rsonos").forEach(b=>b.classList.toggle("on",!!o&&b.id===o.id));
+  const st=$("sonos-stop");if(st){st.hidden=!o;if(o){const b=$(o.id);const nm=b?((b.querySelector(".r-tx b")||{}).textContent||""):"";$("sonos-stop-sub").textContent="läuft: "+nm+" · seit "+new Date(o.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";}}}
+{const st=$("sonos-stop");if(st)st.addEventListener("click",()=>{sonosSet(null);location.href=scUrl(load("qa_sonosstop")||QA.sonosstop[1]);});
+ sonosMark();document.addEventListener("visibilitychange",()=>{if(!document.hidden)sonosMark();});}
+
 
 // Licht (Hue über Kurzbefehle): Glühbirne öffnet Menü „Entspannen / Aus“
 {const lb=$("qa-licht"),lm=$("licht-menu");const close=()=>{if(lm){lm.hidden=true;}if(lb)lb.setAttribute("aria-expanded","false");};
