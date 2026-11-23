@@ -2753,7 +2753,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("#qa-sonos,#qa-so
 function sonosGet(){const o=load("sonos_now");return o&&o.id&&Date.now()-o.at<6*3600e3?o:null;}
 function sonosSet(id){store("sonos_now",id?{id,at:Date.now()}:null);sonosMark();}
 function sonosMark(){const o=sonosGet();document.querySelectorAll("#radio .rsonos").forEach(b=>b.classList.toggle("on",!!o&&b.id===o.id));
-  const st=$("sonos-stop");if(st){st.hidden=!o;if(o){const b=$(o.id);const nm=b?((b.querySelector(".r-tx b")||{}).textContent||""):"";$("sonos-stop-sub").textContent="läuft: "+nm+" · seit "+new Date(o.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";}}}
+  const st=$("sonos-stop");if(st){st.hidden=false;$("sonos-stop-sub").textContent="Wiedergabe anhalten (Kurzbefehl)";if(o){const b=$(o.id);const nm=b?((b.querySelector(".r-tx b")||{}).textContent||""):"";$("sonos-stop-sub").textContent="läuft: "+nm+" · seit "+new Date(o.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";}}}
 {const st=$("sonos-stop");if(st)st.addEventListener("click",()=>{sonosSet(null);location.href=scUrl(load("qa_sonosstop")||QA.sonosstop[1]);});
  sonosMark();document.addEventListener("visibilitychange",()=>{if(!document.hidden)sonosMark();});}
 
