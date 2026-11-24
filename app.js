@@ -490,15 +490,17 @@ function shipsInit(pos){const box=$("ships-box");if(!box||!box.offsetParent)retu
   const cb=document.querySelector('#ships-pos [data-shp="city"]');if(cb){cb.hidden=!pos;cb.textContent="↩ "+(C.town||C.name||"Stadt");}
   const gb=document.querySelector('#ships-pos [data-shp="gps"]');if(gb)gb.classList.toggle("on",!!pos);
   const doc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;background:#dfe7ec}</style></head><body><script>var width="100%";var height="400";var latitude="'+lat+'";var longitude="'+lon+'";var zoom="13";var names=false;</'+'script><script src="https://www.vesselfinder.com/aismap.js"></'+'script></body></html>';
-  box.innerHTML='<iframe title="Schiffe live" style="width:100%;height:410px;border:0;border-radius:14px;display:block" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" loading="lazy"></iframe>';
-  const fr=box.firstChild;fr.srcdoc=doc;fr.addEventListener("load",()=>setStatus("ships",true));}
+  box.innerHTML='<div style="position:relative"><iframe title="Schiffe live" style="width:100%;height:410px;border:0;border-radius:14px;display:block" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" loading="lazy"></iframe>'+(pos?'<div class="ships-me" aria-hidden="true"><span></span><b>Du</b></div>':'')+'</div>'+(pos?'<p class="muted small" id="ships-me-note" style="margin:8px 2px 0">Blauer Punkt = dein Standort. Sobald du die Karte verschiebst, blendet er sich aus – „Mein Standort“ zentriert wieder.</p>':'');
+  const fr=box.querySelector("iframe");fr.srcdoc=doc;fr.addEventListener("load",()=>setStatus("ships",true));}
+/* eigener Standort: Punkt ausblenden, sobald in der Karte getippt/verschoben wird (iframe bekommt den Fokus) */
+window.addEventListener("blur",()=>{setTimeout(()=>{const a=document.activeElement;if(a&&a.tagName==="IFRAME"&&a.closest("#ships-box")){const m=document.querySelector("#ships-box .ships-me");if(m)m.classList.add("off");}},0);});
 
 /* Schiffskarte: auf aktuellen Standort springen */
 document.addEventListener("click",e=>{const b=e.target.closest("#ships-pos [data-shp]");if(!b)return;
   if(b.dataset.shp==="city"){SHIPS_GPS=null;SHIPS_KEY=null;shipsInit();return;}
   if(!navigator.geolocation){alert("Standort wird von diesem Gerät nicht unterstützt.");return;}
   const g=b.innerHTML;b.disabled=true;b.lastChild.textContent="Standort wird ermittelt …";
-  navigator.geolocation.getCurrentPosition(p=>{b.disabled=false;b.innerHTML=g;shipsInit({lat:p.coords.latitude,lon:p.coords.longitude});},
+  navigator.geolocation.getCurrentPosition(p=>{b.disabled=false;b.innerHTML=g;SHIPS_KEY=null;shipsInit({lat:p.coords.latitude,lon:p.coords.longitude});},
     err=>{b.disabled=false;b.innerHTML=g;const s=$("ships-box");if(s)s.insertAdjacentHTML("afterbegin",'<p class="muted small" style="margin:0 0 8px">Standort nicht verfügbar'+(err.code===1?' – bitte in Safari den Standortzugriff für diese Seite erlauben.':'.')+'</p>');},
     {enableHighAccuracy:true,timeout:12000,maximumAge:60000});});
 
